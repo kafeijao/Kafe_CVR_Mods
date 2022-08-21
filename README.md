@@ -1,11 +1,8 @@
-## Collection of ChilloutVR MelonLoader Mods
-
 - [LoginProfiles](#loginprofiles)
 - [PickupOverrides](#pickupoverrides)
 - [CCK.Debugger](#cckdebugger)
 
-
-### LoginProfiles
+## LoginProfiles
 This mod allows to use an argument when starting ChilloutVR in order to select a login profile. This enables
 swapping accounts without requiring to enter the credentials (if logged in on that profile previously). This is useful for me to deploy two clients on two different
 accounts to test avatars and worlds synchronization stuff.
@@ -20,17 +17,17 @@ the path to `\ChilloutVR\ChilloutVR_Data\autologin-profile_id.profile`.
 that profile, it will re-use the profile credentials. To clear a profile you can either delete the corresponding `autologin-profile_id.profile` file,
 or start the game with the profile you want to clear, and then use the in-game menu to logout (this also deletes the file).
 
-#### Example using via steam:
+### Example using via steam:
 ![login_profile_example.png](login_profile_example.png)
 
-#### Example using a bat file:
+### Example using a bat file:
 Create a `random_name_123.bat` file next to where `ChilloutVR.exe` file is, with the following contents:
 ```bat
 ChilloutVR.exe --profile=kafeijao
 ```
 Then all you need is double click that file and should open ChilloutVR with the respective profile.
 
-### PickupOverrides
+## PickupOverrides
 This mod allows to override certain pickup settings. Currently it only supports overriding the Auto-Hold settings.
 
 With Auto-Hold set to `true` all pickups will stick to your hand once you grab them. To release you need to:
@@ -43,7 +40,7 @@ Currently the only way to change whether you want Auto-Hold or not is through Me
 `<game_folder>\UserData\MelonPreferences.cfg`. You can edit the config while the game and it will take effect as soon
 as you save the config file.
 
-### CCK.Debugger
+## CCK.Debugger
 This mod allows to debug content you upload to CVR, for now it allows debugging `Avatars` and `Props`. It does so by
 creating a menu with a bunch information for the selected object. You can also use to debug your friend's content because
 it allows to see the information about other people's avatars/props.
@@ -51,7 +48,7 @@ it allows to see the information about other people's avatars/props.
 The menu will be attached to the left of your quick menu. There is a pin icon to fixate it in world space (this will also
 prevent disappearing when you close the menu).
 
-#### Avatar Menu Features
+### Avatar Menu Features
 - Attributes
   - Avatar User Name
   - Avatar Name (partial avatar id for now)
@@ -59,7 +56,7 @@ prevent disappearing when you close the menu).
 - Local Parameters (parameters prefixed with a `#`)
 - Default Parameters (parameters that cvr populates, eg: `GestureLeft`)
 
-#### Prop Menu Features
+### Prop Menu Features
 - Attributes
   - Prop Name (partial spawnable id for now)
   - User Name of the person that spawned it
@@ -70,19 +67,20 @@ prevent disappearing when you close the menu).
 - Pickups (lists all pickups in the prop, and who's grabbing them)
 - Attachments (lists all attachment scripts, and what they are attached to)
 
-#### Menu
+### Menu
 ![cck_debugger_menu.png](cck_debugger_menu.png)
 
 - The `orange` marked buttons allows swapping between the `avatars` and `props` debug menu.
 - The `green` marked button allows you to pin the menu in world space, and it will make it so it doesn't close with the menu.
 - The `deep pink` buttons allow you to iterate through avatars/props.
 
-#### Todo
+### Todo
 - [ ] Current playing animations by layer.
 - [ ] `CVR Pointer`, `CVR Avanced Avatar Settings Trigger`, and `CVR Spawnable Trigger` debug.
 - [ ] `Dynamic Bone` colliders and radius visualization.
 
-## Disclosure
+
+# Disclosure
 
 > ___
 > ### ⚠️ **Notice!**
