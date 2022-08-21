@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Util;
 using ABI.CCK.Components;
+using CCK.Debugger.Utils;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -140,18 +141,26 @@ public static class SpawnableMenuHandler {
         _attributeSpawnedByValue.SetText(menu.GetUsername(_currentSpawnablePropData?.SpawnedBy));
         _attributeSyncedByValue.SetText(menu.GetUsername(_currentSpawnablePropData?.syncedBy));
         var syncType = _currentSpawnablePropData?.syncType;
-        string syncTypeString;
-        if (syncType.HasValue && SyncTypeDict.ContainsKey(syncType.Value)) {
-            syncTypeString = SyncTypeDict[syncType.Value];
+        string syncTypeString = "N/A";
+        string syncTypeValue = "N/A";
+        if (syncType.HasValue) {
+            syncTypeValue = syncType.Value.ToString();
+            if (SyncTypeDict.ContainsKey(syncType.Value)) {
+                syncTypeString = SyncTypeDict[syncType.Value];
+            }
+            else {
+                syncTypeString = currentSpawnable.isPhysicsSynced ? "Physics" : "None";
+            }
         }
-        else {
-            syncTypeString = currentSpawnable.isPhysicsSynced ? "Physics" : "None";
-        }
-        _attributeSyncTypeValue.SetText(syncTypeString);
+        _attributeSyncTypeValue.SetText($"{syncTypeValue} [{syncTypeString}?]");
 
         // Update the menus if the spawnable changed
         if (_spawnableChanged) {
-            
+
+            // Place the highlighter on the first collider found
+            var firstCollider = currentSpawnable.transform.GetComponentInChildren<Collider>();
+            Highlighter.SetTargetHighlight(firstCollider.gameObject);
+
             // Restore parameters
             menu.ClearCategory(_categorySyncedParameters);
             SyncedParametersValues.Clear();

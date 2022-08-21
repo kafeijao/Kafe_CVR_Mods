@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using CCK.Debugger.Utils;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -110,7 +111,7 @@ public static class AvatarMenuHandler {
         
         var categoryAttributes = menu.AddCategory("Attributes");
         _attributeUsername = menu.AddCategoryEntry(categoryAttributes, "User Name:");
-        _attributeAvatar = menu.AddCategoryEntry(categoryAttributes, "Avatar Name:");
+        _attributeAvatar = menu.AddCategoryEntry(categoryAttributes, "Avatar Name/ID:");
         
         _categorySyncedParameters = menu.AddCategory("Avatar Synced Parameters");
         _categoryLocalParameters = menu.AddCategory("Avatar Local Parameters");
@@ -147,6 +148,14 @@ public static class AvatarMenuHandler {
 
             if (_mainAnimator == null || !_mainAnimator.isInitialized || _mainAnimator.parameters == null || _mainAnimator.parameters.Length < 1) return;
             
+            // Highlight on local player makes us lag for some reason
+            if (_currentPlayerIndex != LOCAL_PLAYER_INDEX) {
+                Highlighter.SetTargetHighlight(_mainAnimator.gameObject);
+            }
+            else {
+                Highlighter.ClearTargetHighlight();
+            }
+
             // Restore parameters
             menu.ClearCategory(_categorySyncedParameters);
             menu.ClearCategory(_categoryLocalParameters);

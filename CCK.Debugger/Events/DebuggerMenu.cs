@@ -4,6 +4,8 @@ namespace CCK.Debugger.Events;
 
 internal static class DebuggerMenu {
     
+    public static bool IsPinned;
+    
     public static event Action<bool> Pinned;
     
     public static event Action MainNextPage;
@@ -16,6 +18,7 @@ internal static class DebuggerMenu {
     public static event Action<Menu> MenuUpdate;
     
     public static void OnPinned(bool pinned) {
+        IsPinned = pinned;
         Pinned?.Invoke(pinned);
     }
     

@@ -1,4 +1,5 @@
 ﻿using CCK.Debugger.Components.MenuHandlers;
+using CCK.Debugger.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -79,6 +80,10 @@ public class Menu : MonoBehaviour {
         PinImage.color = Color.white;
     }
     
+    private void OnDisable() {
+        Highlighter.ClearTargetHighlight();
+    }
+
     void Start() {
         RootQuickMenu = transform.parent;
         ResetToMenu();

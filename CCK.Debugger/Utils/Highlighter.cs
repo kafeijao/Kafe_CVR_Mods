@@ -7,9 +7,15 @@ namespace CCK.Debugger.Utils;
 public static class Highlighter {
     
     private static GameObject lastTarget;
+    private static HighlightProfile debugHighlight;
     
-    public static void ClearTargetHighlight()
-    {
+    static Highlighter() {
+        debugHighlight = UnityEngine.Object.Instantiate(MetaPort.Instance.worldHighlightProfile);
+        // Todo: Customize the highlight
+        //var blue = new Color(0f, 0.69f, 1f);
+    }
+    
+    public static void ClearTargetHighlight() {
         if (lastTarget == null) return;
         
         HighlightEffect lastHighlightEffect = lastTarget.GetComponent<HighlightEffect>();
@@ -32,7 +38,7 @@ public static class Highlighter {
             highlightEffect = target.AddComponent<HighlightEffect>();
         
         // Setup the highlight and turn it on
-        highlightEffect.ProfileLoad(MetaPort.Instance.worldHighlightProfile);
+        highlightEffect.ProfileLoad(debugHighlight);
         highlightEffect.Refresh();
         highlightEffect.SetHighlighted(true);
         
