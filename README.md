@@ -1,85 +1,66 @@
-- [LoginProfiles](#loginprofiles)
-- [PickupOverrides](#pickupoverrides)
-- [CCK.Debugger](#cckdebugger)
+# Kafe's Melon Loader Mods
 
-## LoginProfiles
-This mod allows to use an argument when starting ChilloutVR in order to select a login profile. This enables
-swapping accounts without requiring to enter the credentials (if logged in on that profile previously). This is useful for me to deploy two clients on two different
-accounts to test avatars and worlds synchronization stuff.
+Welcome to my little collection of mods, feel free to leave bug reports or feature requests!
 
-The syntax for the argument is `--profile=profile_id`. Where `profile_id` is whatever name you want the profile to be called.
-It doesn't need to be the same as the username.
+---
+## In-Depth Mods info Links:
+- [OSC](OSC)
+- [CCK.Debugger](CCK.Debugger)
+- [LoginProfiles](LoginProfiles)
+- [PickupOverrides](PickupOverrides)
 
-By default the game saves the credentials in the file `\ChilloutVR\ChilloutVR_Data\autologin.profile`. This mod modifies
-the path to `\ChilloutVR\ChilloutVR_Data\autologin-profile_id.profile`.
+---
+## Small Descriptions:
 
-**Note**: You will need to enter your credentials when using a profile for the first time, and from there on when using
-that profile, it will re-use the profile credentials. To clear a profile you can either delete the corresponding `autologin-profile_id.profile` file,
-or start the game with the profile you want to clear, and then use the in-game menu to logout (this also deletes the file).
 
-### Example using via steam:
-![login_profile_example.png](login_profile_example.png)
+### OSC
+This mod enables interactions with ChilloutVR using OSC. It's very similar to other social VR games OSC Implementation,
+so most external applications should work without many (if any) changes.
 
-### Example using a bat file:
-Create a `random_name_123.bat` file next to where `ChilloutVR.exe` file is, with the following contents:
-```bat
-ChilloutVR.exe --profile=kafeijao
+#### Main Features
+- Change avatar parameters
+- Control the game inputs (like Gestures, movement, etc)
+- Trigger special game features (like flight, mute, etc)
+- Configurable endpoints (parameters address & type conversion)
+- Change avatar by providing avatar id
+
+More features can be added, exploring CVR possibilities to the max. Feel free to submit Feature Requests in the github.
+There is a in-depth **Readme** in the github page.
+
+
+Check [OSC In-Depth](OSC) for for info.
+
+
+---
+### CCK.Debugger
+The Content Creation Debugger allows you to debug `avatars` and `props`.
+
+Adds a menu that displays useful information, like `synced`/`local` parameter values, prop pickups/attachments, 
+who's grabbing, which bone is attached to, who's controlling the sync, etc...
+
+You can click on [CCK.Debugger In-Dept](CCK.Debugger) for a more detailed readme (with pictures).
+
+### LoginProfiles
+Allows to start CVR with different credentials profiles via args. The argument is:
 ```
-Then all you need is double click that file and should open ChilloutVR with the respective profile.
+--profile=profile_id
+```
 
-## PickupOverrides
-This mod allows to override certain pickup settings. Currently it only supports overriding the Auto-Hold settings.
+Check [LoginProfiles In-Dept](LoginProfiles) for more info.
 
-With Auto-Hold set to `true` all pickups will stick to your hand once you grab them. To release you need to:
- - Press `G` on your keyboard (if playing in desktop)
- - Hold the `grip` while pulling the `thumbstick down` on your **right** controller (if playing in VR).
+---
+### PickupOverrides
+Allows to override the Auto-Hold setting on all pickups.
+Currently you need to change the Auto-Hold settings to enforce on pickups on the Melon Loader config file:
+```
+<game_folder>\UserData\MelonPreferences.cfg
+```
+You can change the config while the game is running and it will update as soon as you save. 
+The default setting for Auto-Hold is `false`.
 
-If the Auto-Hold is set to `false` the pickup will be released as soon as you stop holding it.
+Check [PickupOverrides In-Dept](PickupOverrides) for more info.
 
-Currently the only way to change whether you want Auto-Hold or not is through Melon Config. The config is located at
-`<game_folder>\UserData\MelonPreferences.cfg`. You can edit the config while the game and it will take effect as soon
-as you save the config file.
-
-## CCK.Debugger
-This mod allows to debug content you upload to CVR, for now it allows debugging `Avatars` and `Props`. It does so by
-creating a menu with a bunch information for the selected object. You can also use to debug your friend's content because
-it allows to see the information about other people's avatars/props.
-
-The menu will be attached to the left of your quick menu. There is a pin icon to fixate it in world space (this will also
-prevent disappearing when you close the menu).
-
-### Avatar Menu Features
-- Attributes
-  - Avatar User Name
-  - Avatar Name (partial avatar id for now)
-- Synced Parameters
-- Local Parameters (parameters prefixed with a `#`)
-- Default Parameters (parameters that cvr populates, eg: `GestureLeft`)
-
-### Prop Menu Features
-- Attributes
-  - Prop Name (partial spawnable id for now)
-  - User Name of the person that spawned it
-  - Current person driving the sync (will be N/A when it's the local user)
-  - Sync type (I attempted to make a half-ass mapping but requires more investigation)
-- Synced Parameters
-- Main Animator Parameters (all parameters (including the synced) from the animator on the root)
-- Pickups (lists all pickups in the prop, and who's grabbing them)
-- Attachments (lists all attachment scripts, and what they are attached to)
-
-### Menu
-![cck_debugger_menu.png](cck_debugger_menu.png)
-
-- The `orange` marked buttons allows swapping between the `avatars` and `props` debug menu.
-- The `green` marked button allows you to pin the menu in world space, and it will make it so it doesn't close with the menu.
-- The `deep pink` buttons allow you to iterate through avatars/props.
-
-### Todo
-- [ ] Current playing animations by layer.
-- [ ] `CVR Pointer`, `CVR Avanced Avatar Settings Trigger`, and `CVR Spawnable Trigger` debug.
-- [ ] `Dynamic Bone` colliders and radius visualization.
-
-
+---
 # Disclosure
 
 > ___
