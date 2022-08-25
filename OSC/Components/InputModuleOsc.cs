@@ -16,7 +16,7 @@ public enum AxisNames {
     Horizontal,
     Vertical,
     LookHorizontal,
-    
+
     // === Waiting for features ===
     //UseAxisRight,
     //GrabAxisRight,
@@ -24,7 +24,7 @@ public enum AxisNames {
     //SpinHoldCwCcw,
     //SpinHoldUD,
     //SpinHoldLR,
-    
+
     // === New ===
     LookVertical,
     MouseScrollWheel,
@@ -53,7 +53,7 @@ public enum ButtonNames {
     QuickMenuToggleLeft,
     QuickMenuToggleRight,
     Voice,
-    
+
     // === New ===
     Crouch,
     Prone,
@@ -79,21 +79,21 @@ public enum ValueNames {
 }
 
 public class InputModuleOSC : CVRInputModule {
-    
+
     private float _independentHeadTurnDoubleTimer;
     private float _mainMenuTimer;
     private int _sensitivity;
-    
+
     internal static readonly Dictionary<AxisNames, float> InputAxes = new();
     internal static readonly Dictionary<ButtonNames, bool> InputButtons = new();
     internal static readonly Dictionary<ValueNames, float> InputValues = new();
-    
+
     private readonly Dictionary<AxisNames, float> InputAxesPrevious = new();
     private readonly Dictionary<ButtonNames, bool> InputButtonsPrevious = new();
     private readonly Dictionary<ValueNames, float> InputValuesPrevious = new();
 
     private CVRInputManager _thisInputManager;
-    
+
     private new void Start() {
         _thisInputManager = CVRInputManager.Instance;
         _thisInputManager.AddInputModule(this);
@@ -127,37 +127,37 @@ public class InputModuleOSC : CVRInputModule {
 
         // Prepare for inline outs
         float floatValue;
-        
+
         // Handle specials
-        
+
         var moveLeft = InputButtons[ButtonNames.MoveLeft];
         var moveRight = InputButtons[ButtonNames.MoveRight];
         var moveHorizontalValue = moveLeft ^ moveRight ? (moveLeft ? -1f : 1f) : 0f;
         var horizontal = Mathf.Clamp(InputAxes[AxisNames.Horizontal] + moveHorizontalValue, -1f, 1f);
-        
+
         var moveForward = InputButtons[ButtonNames.MoveForward];
         var moveBackward = InputButtons[ButtonNames.MoveBackward];
         var moveVerticalValue = moveForward ^ moveBackward ? (moveForward ? 1f : -1f) : 0f;
         var vertical = Mathf.Clamp(InputAxes[AxisNames.Vertical] + moveVerticalValue, -1f, 1f);
-        
+
         var lookLeft = InputButtons[ButtonNames.LookLeft];
         var lookRight = InputButtons[ButtonNames.LookRight];
         var lookHorizontalValue = lookLeft ^ lookRight ? (lookLeft ? -1f : 1f) : 0f;
         var lookHorizontal = Mathf.Clamp(InputAxes[AxisNames.LookHorizontal] + lookHorizontalValue, -1f, 1f);
-        
+
         var comfortLeft = InputButtons[ButtonNames.ComfortLeft];
         var comfortRight = InputButtons[ButtonNames.ComfortRight];
         var lookHorizontalComfortValue = comfortLeft ^ comfortRight ? (comfortLeft ? -1f : 1f) : 0f;
         lookHorizontal = Mathf.Clamp( lookHorizontal + InputAxes[AxisNames.LookHorizontal] + lookHorizontalComfortValue, -1f, 1f);
-        
+
         var playerInVrWithTwoHands = MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.CheckTwoTrackedHands();
-        
+
         // Handle inputs
-        
+
         _thisInputManager.movementVector += new Vector3(horizontal, 0.0f, vertical);
         _thisInputManager.accelerate += Mathf.Clamp(vertical, -1f, 1f);
         _thisInputManager.brake += Mathf.Clamp01(vertical * -1f);
-        
+
         if (!playerInVrWithTwoHands) {
             _thisInputManager.lookVector += new Vector2(
                 lookHorizontal * (1 + _sensitivity * 0.1f) / 50.0f,
@@ -188,7 +188,7 @@ public class InputModuleOSC : CVRInputModule {
         //_thisInputManager.objectPushPull += Input.mouseScrollDelta.y;
         _thisInputManager.scrollValue += InputAxes[AxisNames.MouseScrollWheel];
         _thisInputManager.mainMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleRight);
-        
+
         if (InputButtons[ButtonNames.QuickMenuToggleRight]) {
             _mainMenuTimer += Time.deltaTime;
             if (_mainMenuTimer > (double)CVRInputManager.buttonHoldThreshold && _mainMenuTimer < CVRInputManager.buttonHoldThreshold * 3.0) {
@@ -206,35 +206,35 @@ public class InputModuleOSC : CVRInputModule {
         _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
         _thisInputManager.mute |= InputButtons[ButtonNames.Voice];
         _thisInputManager.muteDown |= GetKeyDown(ButtonNames.Voice);
-        
+
         _thisInputManager.interactRightDown |= GetKeyDown(ButtonNames.UseRight);
         _thisInputManager.interactRightUp |= GetKeyUp(ButtonNames.UseRight);
-        
+
         _thisInputManager.interactLeftDown |= GetKeyDown(ButtonNames.UseLeft);
         _thisInputManager.interactLeftUp |= GetKeyUp(ButtonNames.UseLeft);
 
         _thisInputManager.interactLeftValue = Mathf.Min(_thisInputManager.interactLeftValue + (InputButtons[ButtonNames.UseLeft] ? 1f : 0.0f), 1f);
         _thisInputManager.interactRightValue = Mathf.Min(_thisInputManager.interactRightValue + (InputButtons[ButtonNames.UseRight] ? 1f : 0.0f), 1f);
-        
-        _thisInputManager.gripRightDown = GetKeyDown(ButtonNames.GrabRight);
-        _thisInputManager.gripRightUp = GetKeyUp(ButtonNames.GrabRight);
-        
-        _thisInputManager.gripLeftDown = playerInVrWithTwoHands && InputButtons[ButtonNames.GrabLeft];
-        _thisInputManager.gripLeftUp = playerInVrWithTwoHands && !InputButtons[ButtonNames.GrabLeft];
 
-        _thisInputManager.gripLeftValue = InputAxes[AxisNames.GripLeftValue];
-        _thisInputManager.gripRightValue = InputAxes[AxisNames.GripRightValue];
+        _thisInputManager.gripRightDown |= GetKeyDown(ButtonNames.GrabRight);
+        _thisInputManager.gripRightUp |= GetKeyUp(ButtonNames.GrabRight);
+
+        _thisInputManager.gripLeftDown = playerInVrWithTwoHands && (_thisInputManager.gripLeftDown | GetKeyDown(ButtonNames.GrabLeft));
+        _thisInputManager.gripLeftUp = playerInVrWithTwoHands && ( _thisInputManager.gripLeftUp | GetKeyUp(ButtonNames.GrabLeft));
+
+        _thisInputManager.gripLeftValue = Mathf.Min(_thisInputManager.gripLeftValue + Mathf.Clamp(InputAxes[AxisNames.GripLeftValue], 0f, 1f), 1f);
+        _thisInputManager.gripRightValue = Mathf.Min(_thisInputManager.gripRightValue + Mathf.Clamp(InputAxes[AxisNames.GripRightValue], 0f, 1f), 1f);
 
         if (GetKeyDown(ValueNames.Emote, out floatValue)) _thisInputManager.emote = floatValue;
         if (GetKeyDown(ValueNames.Toggle, out floatValue)) _thisInputManager.toggleState = floatValue;
         if (GetKeyDown(ValueNames.GestureLeft, out floatValue)) _thisInputManager.gestureLeft = floatValue;
         if (GetKeyDown(ValueNames.GestureRight, out floatValue)) _thisInputManager.gestureRight = floatValue;
-        
+
         _thisInputManager.reload = GetKeyDown(ButtonNames.Reload);
         _thisInputManager.switchMode = GetKeyDown(ButtonNames.SwitchMode);
         _thisInputManager.toggleHud = GetKeyDown(ButtonNames.ToggleHUD);
         _thisInputManager.toggleNameplates = GetKeyDown(ButtonNames.ToggleNameplates);
-        
+
         // Extras
 
         // Panic button, clear all avatars and props
@@ -243,7 +243,7 @@ public class InputModuleOSC : CVRInputModule {
             CVRPlayerManager.Instance.ClearPlayerAvatars();
             CVRSyncHelper.DeleteAllProps();
         }
-        
+
         // Drop left controller
         if (GetKeyDown(ButtonNames.DropLeft)) {
             var pickups = Traverse.Create(CVR_InteractableManager.Instance).Field("pickupList").GetValue<List<CVRPickupObject>>();
@@ -265,17 +265,17 @@ public class InputModuleOSC : CVRInputModule {
                 pickup.drop.Invoke();
             }
         }
-        
+
         // Toggle Flight mode
         if (GetKeyDown(ButtonNames.ToggleFlightMode)) {
             PlayerSetup.Instance._movementSystem.ToggleFlight();
         }
-        
+
         // Respawn
         if (GetKeyDown(ButtonNames.Respawn)) {
             RootLogic.Instance.Respawn();
         }
-        
+
         // Toggle Camera
         if (GetKeyDown(ButtonNames.ToggleCamera)) {
             CVRCamController.Instance.Toggle();
@@ -285,12 +285,12 @@ public class InputModuleOSC : CVRInputModule {
         if (GetKeyDown(ButtonNames.ToggleSeated)) {
             PlayerSetup.Instance.SwitchSeatedPlay();
         }
-        
+
         // Quit game
         if (GetKeyDown(ButtonNames.QuitGame)) {
             RootLogic.Instance.QuitApplication();
         }
-        
+
         // Update the previous values (needs to be the last instruction of the loop)
         UpdatePreviousValues();
     }
