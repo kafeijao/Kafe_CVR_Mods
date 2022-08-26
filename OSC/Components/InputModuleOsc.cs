@@ -219,8 +219,10 @@ public class InputModuleOSC : CVRInputModule {
         _thisInputManager.gripRightDown |= GetKeyDown(ButtonNames.GrabRight);
         _thisInputManager.gripRightUp |= GetKeyUp(ButtonNames.GrabRight);
 
-        _thisInputManager.gripLeftDown = playerInVrWithTwoHands && (_thisInputManager.gripLeftDown | GetKeyDown(ButtonNames.GrabLeft));
-        _thisInputManager.gripLeftUp = playerInVrWithTwoHands && ( _thisInputManager.gripLeftUp | GetKeyUp(ButtonNames.GrabLeft));
+        if (playerInVrWithTwoHands) {
+            _thisInputManager.gripLeftDown |= GetKeyDown(ButtonNames.GrabLeft);
+            _thisInputManager.gripLeftUp |= GetKeyUp(ButtonNames.GrabLeft);
+        }
 
         _thisInputManager.gripLeftValue = Mathf.Min(_thisInputManager.gripLeftValue + Mathf.Clamp(InputAxes[AxisNames.GripLeftValue], 0f, 1f), 1f);
         _thisInputManager.gripRightValue = Mathf.Min(_thisInputManager.gripRightValue + Mathf.Clamp(InputAxes[AxisNames.GripRightValue], 0f, 1f), 1f);
