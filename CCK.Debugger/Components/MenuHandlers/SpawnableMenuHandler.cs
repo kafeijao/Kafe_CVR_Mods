@@ -8,17 +8,11 @@ using UnityEngine;
 
 namespace CCK.Debugger.Components.MenuHandlers;
 
-public static class SpawnableMenuHandler {
+public class SpawnableMenuHandler : IMenuHandler {
 
     static SpawnableMenuHandler() {
-        Events.DebuggerMenu.ControlsNextPage += () => {
-            _pageIncrement += 1;
-        };
-        Events.DebuggerMenu.ControlsPreviousPage += () => {
-            _pageIncrement -= 1;
-        };
+        PropsData = new LooseList<CVRSyncHelper.PropData>(CVRSyncHelper.Props, propData => propData != null && propData.Spawnable != null);
 
-        SpawnablesPropData = new List<CVRSyncHelper.PropData>();
         SyncedParametersValues = new Dictionary<CVRSpawnableValue, TextMeshProUGUI>();
         AttachmentsValues = new Dictionary<CVRAttachment, TextMeshProUGUI>();
 
@@ -31,51 +25,7 @@ public static class SpawnableMenuHandler {
 
     private static readonly Dictionary<int, string> SyncTypeDict;
 
-    private static readonly List<CVRSyncHelper.PropData> SpawnablesPropData;
-
-    // Current Spawnable Prop Data
-    private static int _currentSpawnablePropDataIndex;
-    private static CVRSyncHelper.PropData _currentSpawnablePropData;
-
-    private static int _pageIncrement;
-    private static bool _spawnableChanged;
-
-    private static void UpdateCurrentProp() {
-
-        // Update indexes
-        SpawnablesPropData.Clear();
-        for (var index = 0; index < CVRSyncHelper.Props.Count; index++) {
-            var propData = CVRSyncHelper.Props[index];
-
-            // Ignore spawnables if they're null
-            if (propData == null || propData.Spawnable == null) continue;
-
-            SpawnablesPropData.Add(propData);
-        }
-
-        _currentSpawnablePropDataIndex = SpawnablesPropData.IndexOf(_currentSpawnablePropData);
-
-        // If there is no match, reset the spawnable and return
-        if (_currentSpawnablePropDataIndex == -1) {
-            _currentSpawnablePropData = null;
-            _currentSpawnablePropDataIndex = 0;
-
-            if (SpawnablesPropData.Count > 0) {
-                _currentSpawnablePropData = SpawnablesPropData[_currentSpawnablePropDataIndex];
-            }
-
-            _spawnableChanged = true;
-            return;
-        }
-
-        // Otherwise update the index with the page increment count
-        if (_pageIncrement != 0) {
-            _currentSpawnablePropDataIndex = (_currentSpawnablePropDataIndex + SpawnablesPropData.Count + _pageIncrement) % SpawnablesPropData.Count;
-            _pageIncrement = 0;
-            _currentSpawnablePropData = SpawnablesPropData[_currentSpawnablePropDataIndex];
-            _spawnableChanged = true;
-        }
-    }
+    private static readonly LooseList<CVRSyncHelper.PropData> PropsData;
 
     // Attributes
     private static TextMeshProUGUI _attributeId;
@@ -99,8 +49,7 @@ public static class SpawnableMenuHandler {
     private static GameObject _categoryAttachments;
     private static readonly Dictionary<CVRAttachment, TextMeshProUGUI> AttachmentsValues;
 
-
-    public static void Init(Menu menu) {
+    public void Load(Menu menu) {
 
         menu.AddNewDebugger("Props");
 
@@ -117,14 +66,22 @@ public static class SpawnableMenuHandler {
         _categoryPickups = menu.AddCategory("Pickups");
 
         _categoryAttachments = menu.AddCategory("Attachments");
+
+        PropsData.ListenPageChangeEvents = true;
+        PropsData.HasChanged = true;
     }
 
-    public static void Update(Menu menu) {
-        UpdateCurrentProp();
+    public void Unload() {
+        PropsData.ListenPageChangeEvents = false;
+    }
 
-        var propCount = SpawnablesPropData.Count;
+    public void Update(Menu menu) {
 
-        menu.SetControlsExtra($"({_currentSpawnablePropDataIndex+1}/{propCount})");
+        PropsData.UpdateViaSource();
+
+        var propCount = PropsData.Count;
+
+        menu.SetControlsExtra($"({PropsData.CurrentObjectIndex+1}/{propCount})");
 
         menu.ToggleCategories(propCount > 0);
 
@@ -132,13 +89,14 @@ public static class SpawnableMenuHandler {
 
         if (propCount < 1) return;
 
-        var currentSpawnable = _currentSpawnablePropData.Spawnable;
+        var currentSpawnablePropData = PropsData.CurrentObject;
+        var currentSpawnable = currentSpawnablePropData.Spawnable;
 
         // Prop Data Info
-        _attributeId.SetText(menu.GetSpawnableName(_currentSpawnablePropData?.ObjectId));
-        _attributeSpawnedByValue.SetText(menu.GetUsername(_currentSpawnablePropData?.SpawnedBy));
-        _attributeSyncedByValue.SetText(menu.GetUsername(_currentSpawnablePropData?.syncedBy));
-        var syncType = _currentSpawnablePropData?.syncType;
+        _attributeId.SetText(menu.GetSpawnableName(currentSpawnablePropData?.ObjectId));
+        _attributeSpawnedByValue.SetText(menu.GetUsername(currentSpawnablePropData?.SpawnedBy));
+        _attributeSyncedByValue.SetText(menu.GetUsername(currentSpawnablePropData?.syncedBy));
+        var syncType = currentSpawnablePropData?.syncType;
         string syncTypeString = "N/A";
         string syncTypeValue = "N/A";
         if (syncType.HasValue) {
@@ -153,7 +111,7 @@ public static class SpawnableMenuHandler {
         _attributeSyncTypeValue.SetText($"{syncTypeValue} [{syncTypeString}?]");
 
         // Update the menus if the spawnable changed
-        if (_spawnableChanged) {
+        if (PropsData.HasChanged) {
 
             // Place the highlighter on the first collider found
             var firstCollider = currentSpawnable.transform.GetComponentInChildren<Collider>();
@@ -197,7 +155,7 @@ public static class SpawnableMenuHandler {
             }
 
             // Consume the spawnable changed
-            _spawnableChanged = false;
+            PropsData.HasChanged = false;
         }
 
         // Update sync parameter values

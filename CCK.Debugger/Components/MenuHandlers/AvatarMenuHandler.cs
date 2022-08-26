@@ -9,80 +9,26 @@ using UnityEngine;
 
 namespace CCK.Debugger.Components.MenuHandlers;
 
-public static class AvatarMenuHandler {
+public class AvatarMenuHandler : IMenuHandler {
 
     static AvatarMenuHandler() {
-        Events.DebuggerMenu.ControlsNextPage += () => {
-            _pageIncrement = 1;
-        };
-        Events.DebuggerMenu.ControlsPreviousPage += () => {
-            _pageIncrement = - 1;
-        };
 
-        PlayerEntities = new List<CVRPlayerEntity>();
+        List<CVRPlayerEntity> players = new();
+        //List<CVRPlayerEntity> players = CVRPlayerManager.Instance.NetworkPlayers;
 
+        bool IsValid(CVRPlayerEntity entity) {
+            if (entity?.PuppetMaster == null) return false;
+            var animatorManager = Traverse.Create(entity.PuppetMaster)
+                .Field("_animatorManager")
+                .GetValue<CVRAnimatorManager>();
+            return animatorManager != null;
+        }
+
+        PlayerEntities = new LooseList<CVRPlayerEntity>(players, IsValid, true);
         CoreParameterNames = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
     }
 
-    private static readonly List<CVRPlayerEntity> PlayerEntities;
-
-    // Current Spawnable Prop Data
-    private const int LOCAL_PLAYER_INDEX = -1;
-    private static int _currentPlayerIndex = LOCAL_PLAYER_INDEX;
-    private static CVRPlayerEntity _currentPlayer;
-
-    private static int _pageIncrement;
-    private static bool _playerChanged;
-
-    private static void UpdateCurrentPlayer() {
-
-        // Update indexes
-        PlayerEntities.Clear();
-        for (var index = 0; index < CVRPlayerManager.Instance.NetworkPlayers.Count; index++) {
-            var playerEntity = CVRPlayerManager.Instance.NetworkPlayers[index];
-
-            // Ignore players if they're null
-            if (playerEntity?.PuppetMaster == null) continue;
-            var animatorManager = Traverse.Create(playerEntity.PuppetMaster).Field("_animatorManager").GetValue<CVRAnimatorManager>();
-            if (animatorManager == null) continue;
-
-            PlayerEntities.Add(playerEntity);
-        }
-
-        _currentPlayerIndex = PlayerEntities.IndexOf(_currentPlayer);
-
-        // If there is no match, reset the player, this will be us
-        if (_currentPlayerIndex == LOCAL_PLAYER_INDEX && (
-                _currentPlayer != null ||
-                _mainAnimator == null ||
-                !_mainAnimator.isInitialized)) {
-            _playerChanged = true;
-            _currentPlayer = null;
-            return;
-        }
-
-        // Otherwise update the index with the page increment count
-        // And temporarily represent the local player index as being the Count value
-        // And pretend the count is 1 higher for the local player calcs
-        if (_pageIncrement != 0) {
-            var fakeCount = PlayerEntities.Count + 1;
-            if (_currentPlayerIndex == LOCAL_PLAYER_INDEX) _currentPlayerIndex = fakeCount - 1;
-
-            _currentPlayerIndex = (_currentPlayerIndex + fakeCount + _pageIncrement) % fakeCount;
-            _pageIncrement = 0;
-
-            // Let's pick the max value to be us
-            if (_currentPlayerIndex == fakeCount - 1) {
-                _currentPlayerIndex = LOCAL_PLAYER_INDEX;
-                _currentPlayer = null;
-            }
-            // Otherwise pick the normal chosen
-            else {
-                _currentPlayer = PlayerEntities[_currentPlayerIndex];
-            }
-            _playerChanged = true;
-        }
-    }
+    private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
 
     // Attributes
     private static TextMeshProUGUI _attributeUsername;
@@ -100,7 +46,8 @@ public static class AvatarMenuHandler {
     private static readonly HashSet<string> CoreParameterNames;
     private static GameObject _coreParameters;
 
-    public static void Init(Menu menu) {
+    public void Load(Menu menu) {
+
         menu.AddNewDebugger("Avatars");
 
         var categoryAttributes = menu.AddCategory("Attributes");
@@ -113,44 +60,47 @@ public static class AvatarMenuHandler {
 
         menu.ToggleCategories(true);
 
-        _playerChanged = true;
+        PlayerEntities.ListenPageChangeEvents = true;
+        PlayerEntities.HasChanged = true;
+    }
+    public void Unload() {
+        PlayerEntities.ListenPageChangeEvents = false;
     }
 
-    public static void Update(Menu menu) {
+    public void Update(Menu menu) {
 
-        UpdateCurrentPlayer();
+        PlayerEntities.UpdateViaSource();
 
         // Waiting for players to give permission to see their parameters, via some info on the bio or something
         // Since it might come back (with a way to consent), I did a small hack to disable it instead of removing
-        var playerCount = /*PlayerEntities.Count +*/ 1;
+        var playerCount = PlayerEntities.Count;
 
-        menu.SetControlsExtra($"({_currentPlayerIndex+2}/{playerCount})");
+        var isLocal = PlayerEntities.CurrentObject == null;
+        var currentPlayer = PlayerEntities.CurrentObject;
+
+        menu.SetControlsExtra($"({PlayerEntities.CurrentObjectIndex+1}/{playerCount})");
 
         menu.ShowControls(playerCount > 1);
 
-        var playerUserName = _currentPlayerIndex == LOCAL_PLAYER_INDEX ? MetaPort.Instance.username : _currentPlayer.Username;
-        var playerAvatarName = menu.GetAvatarName(_currentPlayerIndex == LOCAL_PLAYER_INDEX ? MetaPort.Instance.currentAvatarGuid : _currentPlayer.AvatarId);
+        var playerUserName = isLocal ? MetaPort.Instance.username : currentPlayer.Username;
+        var playerAvatarName = menu.GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId);
 
         // Avatar Data Info
         _attributeUsername.SetText(playerUserName);
         _attributeAvatar.SetText(playerAvatarName);
 
         // Update the menus if the spawnable changed
-        if (_playerChanged) {
+        if (PlayerEntities.HasChanged) {
 
-            _mainAnimator = _currentPlayerIndex == LOCAL_PLAYER_INDEX
+            _mainAnimator = isLocal
                 ? Events.Avatar.LocalPlayerAnimatorManager?.animator
-                : Traverse.Create(_currentPlayer.PuppetMaster).Field("_animatorManager").GetValue<CVRAnimatorManager>().animator;
+                : Traverse.Create(currentPlayer.PuppetMaster).Field("_animatorManager").GetValue<CVRAnimatorManager>().animator;
 
             if (_mainAnimator == null || !_mainAnimator.isInitialized || _mainAnimator.parameters == null || _mainAnimator.parameters.Length < 1) return;
 
             // Highlight on local player makes us lag for some reason
-            if (_currentPlayerIndex != LOCAL_PLAYER_INDEX) {
-                Highlighter.SetTargetHighlight(_mainAnimator.gameObject);
-            }
-            else {
-                Highlighter.ClearTargetHighlight();
-            }
+            if (isLocal) Highlighter.ClearTargetHighlight();
+            else Highlighter.SetTargetHighlight(_mainAnimator.gameObject);
 
             // Restore parameters
             menu.ClearCategory(_categorySyncedParameters);
@@ -170,7 +120,7 @@ public static class AvatarMenuHandler {
             }
 
             // Consume the spawnable changed
-            _playerChanged = false;
+            PlayerEntities.HasChanged = false;
         }
 
         // Iterate the parameter entries and update their values
