@@ -1,58 +1,56 @@
-﻿using System.Xml;
+﻿using System.Reflection.Emit;
+using ABI_RC.Core.Savior;
+using ABI_RC.Core.UI;
 using HarmonyLib;
 using MelonLoader;
-using UnityEngine;
 
 namespace LoginProfiles;
 
 public class LoginProfiles : MelonMod {
 
-    private static void PatchProfilePath(ref string path) {
-        if (path == Application.dataPath + "/autologin.profile") {
-            path = Application.dataPath + $"/autologin{GetProfile()}.profile";
+    private const string AutoLoginFilePath = "/autologin.profile";
+    private static readonly string ProfilePath = GetProfilePath();
+
+    private static string GetProfilePath() {
+        var profilePath = AutoLoginFilePath;
+        foreach (var commandLineArg in Environment.GetCommandLineArgs()) {
+            if (!commandLineArg.StartsWith("--profile=")) continue;
+
+            var profile = "-" + commandLineArg.Split(new[] { "=" }, StringSplitOptions.None)[1];
+            profilePath = $"/autologin{profile}.profile";
+            break;
         }
+        return profilePath;
     }
 
-    private static string GetProfile() {
-        var profile = "";
-        foreach (var commandLineArg in Environment.GetCommandLineArgs()) {
-            if (commandLineArg.StartsWith("--profile=")) {
-                profile = "-" + commandLineArg.Split(new[] { "=" }, StringSplitOptions.None)[1];
-                break;
+    private static IEnumerable<CodeInstruction> ReplaceAutoLoginTranspiler(IEnumerable<CodeInstruction> instructions) {
+        foreach (var instruction in instructions) {
+            if (instruction.Is(OpCodes.Ldstr, AutoLoginFilePath)) {
+                yield return new CodeInstruction(OpCodes.Ldstr, ProfilePath);
+            }
+            else {
+                yield return instruction;
             }
         }
-        return profile;
     }
 
     [HarmonyPatch]
-    class HarmonyPatches
-    {
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(File), nameof(File.ReadAllText), typeof(string))]
-        private static bool BeforeReadAllText(ref string path) {
-            PatchProfilePath(ref path);
-            return true;
-        }
+    private static class HarmonyPatches {
 
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(File), nameof(File.Exists), typeof(string))]
-        private static bool BeforeExists(ref string path) {
-            PatchProfilePath(ref path);
-            return true;
-        }
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(AuthUIManager), "Start")]
+        private static IEnumerable<CodeInstruction> Transpiler_AuthUIManager_Start(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
 
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(File), nameof(File.Delete), typeof(string))]
-        private static bool BeforeDelete(ref string path) {
-            PatchProfilePath(ref path);
-            return true;
-        }
-        
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(XmlDocument), nameof(XmlDocument.Save), typeof(string))]
-        private static bool BeforeSave(ref string filename) {
-            PatchProfilePath(ref filename);
-            return true;
-        }
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(AuthUIManager), nameof(AuthUIManager.Authenticate), typeof(AuthUIManager.AuthType), typeof(string), typeof(string))]
+        private static IEnumerable<CodeInstruction> Transpiler_AuthUIManager_Authenticate(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(MetaPort), "Awake")]
+        private static IEnumerable<CodeInstruction> Transpiler_MetaPort_Awake(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(MetaPort), nameof(MetaPort.Logout))]
+        private static IEnumerable<CodeInstruction> Transpiler_MetaPort_Logout(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
     }
 }
