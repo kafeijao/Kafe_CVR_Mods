@@ -42,7 +42,8 @@ public class LoginProfiles : MelonMod {
         private static IEnumerable<CodeInstruction> Transpiler_AuthUIManager_Start(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
 
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(AuthUIManager), nameof(AuthUIManager.Authenticate), typeof(AuthUIManager.AuthType), typeof(string), typeof(string))]
+        [HarmonyPatch(typeof(AuthUIManager), nameof(AuthUIManager.Authenticate), MethodType.Enumerator)]
+        [HarmonyPatch( new[] {typeof(AuthUIManager.AuthType), typeof(string), typeof(string)})]
         private static IEnumerable<CodeInstruction> Transpiler_AuthUIManager_Authenticate(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
 
         [HarmonyTranspiler]
