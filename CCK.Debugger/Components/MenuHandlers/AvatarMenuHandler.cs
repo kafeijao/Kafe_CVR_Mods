@@ -26,6 +26,11 @@ public class AvatarMenuHandler : IMenuHandler {
 
         PlayerEntities = new LooseList<CVRPlayerEntity>(players, IsValid, true);
         CoreParameterNames = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
+
+        // Update local avatar if we changed avatar and local avatar is selected
+        Events.Avatar.AnimatorManagerUpdated += () => {
+            if (PlayerEntities.CurrentObject == null) PlayerEntities.HasChanged = true;
+        };
     }
 
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
