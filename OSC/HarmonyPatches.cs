@@ -1,11 +1,13 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util;
 using ABI_RC.Systems.MovementSystem;
+using ABI.CCK.Components;
 using HarmonyLib;
-using MelonLoader;
 
-namespace OSC; 
+namespace OSC;
 
 [HarmonyPatch]
 internal class HarmonyPatches {
@@ -47,8 +49,38 @@ internal class HarmonyPatches {
     internal static void AfterSetAnimatorParameterTrigger(string name, CVRAnimatorManager __instance) {
         Events.Avatar.OnParameterChangedTrigger(__instance, name);
     }
-    
+
+    // Spawnables
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateMultiPurposeFloat), typeof(CVRSpawnableValue), typeof(float), typeof(int))]
+    internal static void AfterUpdateMultiPurposeFloat(CVRSpawnableValue spawnableValue, CVRSpawnable __instance) {
+        Events.Spawnable.OnSpawnableParameterChanged(__instance, spawnableValue);
+    }
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn), typeof(CVRSyncHelper.PropData))]
+    internal static void AfterApplyPropValuesSpawn(CVRSyncHelper.PropData propData) {
+        Events.Spawnable.OnSpawnableCreated(propData);
+    }
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(CVRSyncHelper.PropData), nameof(CVRSyncHelper.PropData.Recycle))]
+    internal static void BeforePropDataRecycle(CVRSyncHelper.PropData __instance) {
+        Events.Spawnable.OnSpawnableDeleted(__instance);
+    }
+
+    // Trackers
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(VRTrackerManager), nameof(VRTrackerManager.Update))]
+    internal static void AfterVRTrackerManagerUpdate(VRTrackerManager __instance) {
+        Events.Tracking.OnTrackingDataDeviceUpdated(__instance);
+    }
+
     // Scene
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(PlayerSetup), "Start")]
+    internal static void AfterPlayerSetup() {
+        Events.Scene.OnPlayerSetup();
+    }
+
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRInputManager), "Start")]
     private static void AfterInputManagerCreated() {

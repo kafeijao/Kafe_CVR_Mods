@@ -1,298 +1,110 @@
-﻿using System;
-using System.Collections.Generic;
-using ABI_RC.Core;
-using ABI_RC.Core.Savior;
-using HarmonyLib;
-using MelonLoader;
+﻿using MelonLoader;
 using SharpOSC;
-using System.Linq;
-using OSC.Components;
-using OSC.Utils;
-using UnityEngine;
+using OSC.Handlers.OscModules;
 
-
-namespace OSC.Handlers; 
+namespace OSC.Handlers;
 
 internal class HandlerOsc {
-    private static readonly Dictionary<string, JsonConfigParameterEntry> ParameterAddressCache = new(); 
 
-    internal const string AddressParametersPrefix = "/avatar/parameters/";
-    private const string AddressInputPrefix = "/input/";
-    private const string AddressAvatarChange = "/avatar/change";
-    
-    private static readonly HashSet<string> CoreParameters = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
-    
-    
+    private static HandlerOsc Instance;
+
+    private UDPListener _listener;
+    private UDPSender _sender;
+
+    private Avatar AvatarHandler;
+    private Input InputHandler;
+    private Spawnable SpawnableHandler;
+    private Tracking TrackingHandler;
+
     public HandlerOsc() {
-        
-        // Start server
-        var listener = new UDPListener(OSC.Instance.meOSCInPort.Value, ReceiveMessageHandler);
-        
-        MelonLogger.Msg($"[Server] OSC Server started listening on the port {OSC.Instance.meOSCInPort.Value}.");
 
-        // Handle config listener port changing
-        Events.Config.InPortChanged += (oldPort, newPort) => {
+        // Start listener
+        _listener = new UDPListener(OSC.Instance.meOSCServerInPort.Value, ReceiveMessageHandler);
+        MelonLogger.Msg($"[Server] OSC Server started listening on the port {OSC.Instance.meOSCServerInPort.Value}.");
+
+        // Handle config listener port changes
+        OSC.Instance.meOSCServerInPort.OnValueChanged += (oldPort, newPort) => {
             if (oldPort == newPort) return;
             MelonLogger.Msg("[Server] OSC server port config has changed. Restarting server...");
-            listener.Close();
-            listener = new UDPListener(newPort, ReceiveMessageHandler);
-            MelonLogger.Msg($"[Server] OSC Server started listening on the port {newPort}.");
-        };
-        
-        // Setup sending messages
-        
-        // Execute actions on local avatar changed
-        Events.Avatar.AnimatorManagerUpdated += manager => {
-            
-            // Clear address cache
-            ParameterAddressCache.Clear();
-            
-            // Send change avatar event
-            SendMessage(AddressAvatarChange, MetaPort.Instance.currentAvatarGuid);
-            
-            // Send all parameter values when loads a new avatar
-            foreach (var param in manager.animator.parameters) {
-                // Cache addresses
-                CacheAddress(param.name);
-
-                switch (param.type) {
-                    case AnimatorControllerParameterType.Float:
-                        var fValue = manager.GetAnimatorParameterFloat(param.name);
-                        if (!fValue.HasValue) continue;
-                        Events.Avatar.OnParameterChangedFloat(manager, param.name, fValue.Value);
-                        break;
-                    case AnimatorControllerParameterType.Int:
-                        var iValue = manager.GetAnimatorParameterInt(param.name);
-                        if (!iValue.HasValue) continue;
-                        Events.Avatar.OnParameterChangedInt(manager, param.name, iValue.Value);
-                        break;
-                    case AnimatorControllerParameterType.Bool:
-                        var bValue = manager.GetAnimatorParameterBool(param.name);
-                        if (!bValue.HasValue) continue;
-                        Events.Avatar.OnParameterChangedBool(manager, param.name, bValue.Value);
-                        break;
-                    case AnimatorControllerParameterType.Trigger:
-                    default:
-                        break;
-                }
+            try {
+                _listener?.Close();
+                _listener = new UDPListener(newPort, ReceiveMessageHandler);
+                MelonLogger.Msg($"[Server] OSC Server started listening on the port {newPort}.");
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+                throw;
             }
         };
 
-        // Send avatar float parameter change events
-        Events.Avatar.ParameterChangedFloat += (parameter, value) => {
-            SendParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
+        // Start sender
+        MelonLogger.Msg($"[Server] OSC Server started sending to {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
+        ConnectSender(OSC.Instance.meOSCServerOutIp.Value, OSC.Instance.meOSCServerOutPort.Value);
+
+        // Handle config sender ip/port changes
+        OSC.Instance.meOSCServerOutIp.OnValueChanged += (_, newIp) => {
+            if (!ConnectSender(newIp, OSC.Instance.meOSCServerOutPort.Value)) return;
+            MelonLogger.Msg($"[Server] OSC out IP has changed, new messages will be sent to: {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
         };
-        
-        // Send avatar int parameter change events
-        Events.Avatar.ParameterChangedInt += (parameter, value) => {
-            SendParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
+        OSC.Instance.meOSCServerOutPort.OnValueChanged += (_, newPort) => {
+            if (!ConnectSender(OSC.Instance.meOSCServerOutIp.Value, newPort)) return;
+            MelonLogger.Msg($"[Server] OSC out Port has changed, new messages will be sent to: {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
         };
-        
-        // Send avatar bool parameter change events
-        Events.Avatar.ParameterChangedBool += (parameter, value) => {
-            SendParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
-        };
-        
-        // Send avatar trigger parameter change events
-        Events.Avatar.ParameterChangedTrigger += parameter => {
-            SendParamToConfigAddress(parameter);
-        };
-    }
-    
-    private static System.Object ConvertToConfigType(string paramName, float value) {
-        if (ParameterAddressCache.ContainsKey(paramName)) {
-            switch (ParameterAddressCache[paramName].type) {
-                case AnimatorControllerParameterType.Int: return Math.Round(value);
-                case AnimatorControllerParameterType.Bool: return value > 0.5;
-            }
-        }
-        return value;
-    }
-    private static System.Object ConvertToConfigType(string paramName, int value) {
-        if (ParameterAddressCache.ContainsKey(paramName) && 
-            ParameterAddressCache[paramName].type == AnimatorControllerParameterType.Bool) {
-            return value == 1;
-        }
-        return value;
-    }
-    
-    private static System.Object ConvertToConfigType(string paramName, bool value) {
-        if (ParameterAddressCache.ContainsKey(paramName)) {
-            switch (ParameterAddressCache[paramName].type) {
-                case AnimatorControllerParameterType.Float: return value ? 1f : 0f;
-                case AnimatorControllerParameterType.Int: return value ? 1 : 0;
-            }
-        }
-        return value;
-    }
-    
-    private static void CacheAddress(string paramName) {
-        // Cache addresses for all parameters (if there is a config)
-        if (JsonConfigOsc.CurrentAvatarConfig == null) return;
-        // If there is no address on our cache, resolve it with the config
-        if (!ParameterAddressCache.ContainsKey(paramName)) {
-            var paramConfig = JsonConfigOsc.CurrentAvatarConfig.parameters.FirstOrDefault(param => param.name.Equals(paramName));
-            // If we can't find an address we add a null value, so we can ignore later
-            ParameterAddressCache[paramName] = paramConfig?.output;
-        }
+
+        // Create instances of the handler modules
+        AvatarHandler = new Avatar();
+        InputHandler = new Input();
+        SpawnableHandler = new Spawnable();
+        TrackingHandler = new Tracking();
+
+        Instance = this;
     }
 
-    private static void SendParamToConfigAddress(string paramName, params object[] data) {
-        
-        // If there is no config, revert to default behavior
-        if (JsonConfigOsc.CurrentAvatarConfig == null) {
-            SendMessage($"{AddressParametersPrefix}{paramName}", data);
-            return;
-        }
-
-        // If there is no address on our cache, resolve it with the config (should be already cached but hey)
-        CacheAddress(paramName);
-
-        var paramEntity = ParameterAddressCache[paramName];
-        
-        // Ignore non-mapped addresses in the config
-        if (paramEntity == null) return;
-
-        SendMessage(paramEntity.address, data);
+    private bool ConnectSender(string ip, int port) {
+        if (_sender != null && _sender.Port == port && _sender.Address == ip) return false;
+        var oldSender = _sender;
+        _sender = new UDPSender(ip, port);
+        oldSender?.Close();
+        return true;
     }
-    
-    private static void SendMessage(string address, params object[] data) {
-        var message = new OscMessage(address, data);
-        var sender = new UDPSender(OSC.Instance.meOSCOutIp.Value, OSC.Instance.meOSCOutPort.Value);
-        sender.Send(message);
+
+    public static void SendMessage(string address, params object[] data) {
+        Instance._sender.Send(new OscMessage(address, data));
     }
 
     private static void ReceiveMessageHandler(OscPacket packet) {
 
         // Ignore packets that had errors
         if (packet == null) return;
+
         var oscMessage = (OscMessage) packet;
 
-        var address = oscMessage.Address;
-        var addressLower = oscMessage.Address.ToLower();
-        
-        // Get only the first value and assume no values to be null
-        var valueObj = oscMessage.Arguments.Count > 0 ? oscMessage.Arguments[0] : null;
-        
-        // Handle the change parameter requests
-        if (addressLower.StartsWith(AddressParametersPrefix)) {
-            ParameterChangeHandler(address, valueObj);
+        try {
+
+            var address = oscMessage.Address;
+
+            var addressLower = oscMessage.Address.ToLower();
+
+            switch (addressLower) {
+                case not null when addressLower.StartsWith(Avatar.AddressPrefixAvatar):
+                    Instance.AvatarHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
+                    break;
+                case not null when addressLower.StartsWith(Input.AddressPrefixInput):
+                    Instance.InputHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
+                    break;
+                case not null when addressLower.StartsWith(Spawnable.AddressPrefixSpawnable):
+                    Instance.SpawnableHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
+                    break;
+                case not null when addressLower.StartsWith(Tracking.AddressPrefixTracking):
+                    Instance.TrackingHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
+                    break;
+            }
         }
-        
-        // Handle the input requests
-        else if (addressLower.StartsWith(AddressInputPrefix)) {
-            InputHandler(address, valueObj);
-        }
-        
-        // Handle the change avtar requests
-        else if (addressLower.Equals(AddressAvatarChange) && valueObj is string valueStr) {
-            Events.Avatar.OnAvatarSet(valueStr);
+        catch (Exception e) {
+            MelonLogger.Error($"Failed executing the ReceiveMessageHandler from OSC. Contact the mod creator. " +
+                              $"Address: {oscMessage.Address} Args: {oscMessage.Arguments} Type: {oscMessage.Arguments.GetType()}");
+            MelonLogger.Error(e);
+            throw;
         }
     }
-
-    private static void ParameterChangeHandler(string address, object valueObj) {
-        var parameter = address.Substring(AddressParametersPrefix.Length);
-        
-        // Reject core parameters
-        if (CoreParameters.Contains(parameter)) {
-            MelonLogger.Msg($"[Error] Attempted to change the core {parameter}. These parameters are set by the " +
-                            $"game every frame, attempting to set them is pointless. If you want to change those use " +
-                            $"the /input/ address instead, it allows to send inputs that actually change the core " +
-                            $"parameters, like GestureRight, GestureLeft, Emote, Toggle, etc...");  
-            return;
-        }
-            
-        // Sort their types and call the correct handler
-        if (valueObj is float floatValue) Events.Avatar.OnParameterSetFloat(parameter, floatValue);
-        else if (valueObj is int intValue) Events.Avatar.OnParameterSetInt(parameter, intValue);
-        else if (valueObj is bool boolValue) Events.Avatar.OnParameterSetBool(parameter, boolValue);
-        else if (valueObj is null) Events.Avatar.OnParameterSetTrigger(parameter);
-            
-        // Attempt to parse the string into their proper type and then call the correct handler
-        else if (valueObj is string valueStr) {
-            if (string.IsNullOrEmpty(valueStr)) Events.Avatar.OnParameterSetTrigger(parameter);
-            else if (valueStr.ToLower().Equals("true")) Events.Avatar.OnParameterSetBool(parameter, true);
-            else if (valueStr.ToLower().Equals("false")) Events.Avatar.OnParameterSetBool(parameter, false);
-            else if (int.TryParse(valueStr, out int valueInt)) Events.Avatar.OnParameterSetInt(parameter, valueInt);
-            else if (float.TryParse(valueStr, out float valueFloat)) Events.Avatar.OnParameterSetFloat(parameter, valueFloat);
-        }
-            
-        // Well... erm... we tried
-        else {
-            MelonLogger.Msg($"[Error] Attempted to change {parameter} to {valueObj}, but the type {valueObj.GetType()} is not supported. " +
-                            $"Contact the mod creator if you think this is a bug.");   
-        }
-    }
-
-    private static void InputHandler(string address, object valueObj) {
-        var inputName = address.Substring(AddressInputPrefix.Length);
-
-        // Reject blacklisted inputs (ignore case)
-        if (OSC.Instance.meOSCInputBlacklist.Value.Contains(inputName, StringComparer.OrdinalIgnoreCase)) {
-            MelonLogger.Msg($"[Info] The OSC config has {inputName} blacklisted. Edit the config to allow.");
-            return;
-        }
-        
-        // Axes
-        if (Enum.TryParse<AxisNames>(inputName, true, out var axisName)) {
-            void UpdateAxisValue(AxisNames axis, float value) {
-                if (value is > 1f or < -1f) {
-                    MelonLogger.Msg($"[Error] The input name {inputName} is an Axis, so the allowed values " +
-                                    $"are floats between -1f and 1f (inclusive). Value provided: {valueObj}");
-                    return;
-                }
-                InputModuleOSC.InputAxes[axis] = value;
-            }
-            if (valueObj is float floatValue) UpdateAxisValue(axisName, floatValue);
-            else if (valueObj is int intValue) UpdateAxisValue(axisName, intValue);
-            else if (valueObj is string valueStr && float.TryParse(valueStr, out var valueFloat)) UpdateAxisValue(axisName, valueFloat);
-            else UpdateAxisValue(axisName, float.NaN);
-        }
-        
-        // Buttons
-        else if (Enum.TryParse<ButtonNames>(inputName, true, out var buttonName)) {
-            void UpdateButtonValue(ButtonNames button, bool? value) {
-                if (!value.HasValue) {
-                    MelonLogger.Msg($"[Error] The input name {inputName} is a Button, so the allowed values " +
-                                    $"are booleans, that can be represented with bool values, 0 and 1, or " +
-                                    $"true/false as a string. Value provided: {valueObj}");
-                    return;
-                }
-                InputModuleOSC.InputButtons[button] = value.Value;
-            }
-            if (valueObj is bool boolValue) UpdateButtonValue(buttonName, boolValue);
-            else if (valueObj is int intValue) UpdateButtonValue(buttonName, intValue == 1 ? true : intValue == 0 ? false : null);
-            else if (valueObj is string valueStr) {
-                if (int.TryParse(valueStr, out var valueInt)) UpdateButtonValue(buttonName, valueInt == 1 ? true : valueInt == 0 ? false : null);
-                else if (bool.TryParse(valueStr, out var valueBool)) UpdateButtonValue(buttonName, valueBool);
-                else UpdateButtonValue(buttonName, null);
-            }
-            else UpdateButtonValue(buttonName, null);
-        }
-        
-        // Values
-        else if (Enum.TryParse<ValueNames>(inputName, true, out var valueName)) {
-            void UpdateValueValue(ValueNames valName, float value) {
-                if (float.IsNaN(value)) {
-                    MelonLogger.Msg($"[Error] The input name {inputName} is a Value, so the allowed values " +
-                                    $"are any numbers floats/ints. Value provided: {valueObj}");
-                    return;
-                }
-                InputModuleOSC.InputValues[valName] = value;
-            }
-            if (valueObj is float floatValue) UpdateValueValue(valueName, floatValue);
-            else if (valueObj is int intValue) UpdateValueValue(valueName, intValue);
-            else if (valueObj is string valueStr && float.TryParse(valueStr, out var valueFloat)) UpdateValueValue(valueName, valueFloat);
-            else UpdateValueValue(valueName, float.NaN);
-        }
-        
-        // Yes
-        else {
-            MelonLogger.Msg($"[Error] The input name {inputName} is not supported! \n" +
-                            $"Supported Axis Names: {Enum.GetNames(typeof(AxisNames))}, \n" +
-                            $"Supported Button Names: {Enum.GetNames(typeof(ButtonNames))}, \n" +
-                            $"Supported Value Names: {Enum.GetNames(typeof(ValueNames))}.");
-        }
-    }
-
 }

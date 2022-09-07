@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using ABI_RC.Core;
+﻿using ABI_RC.Core;
 using HarmonyLib;
 using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using OSC.Handlers;
 using UnityEngine;
 
 namespace System.Runtime.CompilerServices {
@@ -16,7 +12,7 @@ namespace System.Runtime.CompilerServices {
 
 namespace OSC.Utils {
     public static class JsonConfigOsc {
-        
+
         public static JsonConfigAvatar CurrentAvatarConfig { get; private set; }
 
         private static readonly HashSet<string> CoreParameters = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
@@ -24,16 +20,16 @@ namespace OSC.Utils {
         internal static void ClearCurrentAvatarConfig() {
             CurrentAvatarConfig = null;
         }
-        
+
         private static string GetConfigFilePath(string userUuid, string avatarUuid) {
             var basePath = Application.persistentDataPath;
-            
+
             // Replace the base path with the override
-            if (OSC.Instance.meOSCEnableOverridePath.Value) {
-                basePath = OSC.Instance.meOSCOverridePath.Value;
+            if (OSC.Instance.meOSCJsonConfigOverridePathEnabled.Value) {
+                basePath = OSC.Instance.meOSCJsonConfigOverridePath.Value;
             }
-            
-            var usePrefix = OSC.Instance.meOSCEnableUuidPrefixes.Value;
+
+            var usePrefix = OSC.Instance.meOSCJsonConfigUuidPrefixes.Value;
             userUuid = usePrefix ? $"usr_{userUuid}" : userUuid;
             avatarUuid = usePrefix ? $"avtr_{avatarUuid}" : avatarUuid;
             return Path.Combine(basePath, "OSC", userUuid, "Avatars", avatarUuid + ".json");
@@ -44,20 +40,20 @@ namespace OSC.Utils {
                 List<JsonConfigParameter> parameters = new();
                 foreach (var parameter in animatorManager.animator.parameters) {
                     var input = new JsonConfigParameterEntry {
-                        address = HandlerOsc.AddressParametersPrefix + parameter.name,
+                        address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + parameter.name,
                         type = parameter.type,
                     };
                     var output = new JsonConfigParameterEntry {
-                        address = HandlerOsc.AddressParametersPrefix + parameter.name,
+                        address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + parameter.name,
                         type = parameter.type,
                     };
-                    
+
                     // Don't allow the core parameters to be inputs
                     var isCoreParameter = CoreParameters.Contains(parameter.name);
-                    var jsonParameter = isCoreParameter 
-                        ? new JsonConfigParameter { name = parameter.name, output = output } 
+                    var jsonParameter = isCoreParameter
+                        ? new JsonConfigParameter { name = parameter.name, output = output }
                         : new JsonConfigParameter { name = parameter.name, input = input, output = output };
-                    
+
                     parameters.Add(jsonParameter);
                 }
 
@@ -69,17 +65,17 @@ namespace OSC.Utils {
 
                 var jsonContent = JsonConvert.SerializeObject(avatarConfig, Formatting.Indented);
                 var file = new FileInfo(GetConfigFilePath(userGuid, avatarGuid));
-                
+
                 // Prevent replacing if the setting says so
-                if (file.Exists && !OSC.Instance.meOSCAlwaysReplaceConfig.Value) return;
-                
+                if (file.Exists && !OSC.Instance.meOSCJsonConfigAlwaysReplace.Value) return;
+
                 // Create directory if doesn't exist
                 file.Directory?.Create();
                 File.WriteAllText(file.FullName, jsonContent);
 
                 CurrentAvatarConfig = avatarConfig;
-                
-                MelonLogger.Msg($"[Config] Saved {avatarName}'s json config to: {file.FullName}");
+
+                // MelonLogger.Msg($"[Config] {(file.Exists ? "Overwritten" : "Saved")} {avatarName}'s json config to: {file.FullName}");
             }
             catch (Exception e) {
                 CurrentAvatarConfig = null;
@@ -95,7 +91,7 @@ namespace OSC.Utils {
                 if (!file.Exists) return null;
                 var currentAvatarConfig = JsonConvert.DeserializeObject<JsonConfigAvatar>(File.ReadAllText(file.FullName));
                 CurrentAvatarConfig = currentAvatarConfig;
-                MelonLogger.Msg($"[Config] Loaded existing json config for the avatar: {currentAvatarConfig.name}");
+                // MelonLogger.Msg($"[Config] Loaded existing json config for the avatar: {currentAvatarConfig.name}");
                 return currentAvatarConfig;
             }
             catch (Exception e) {
@@ -104,6 +100,16 @@ namespace OSC.Utils {
                 MelonLogger.Error(e);
                 throw;
             }
+        }
+
+        public static JsonConfigParameterEntry GetJsonConfigParameterEntry(string name, object value) {
+            if (Parameters.GetParameterType(value).HasValue) {
+                return new JsonConfigParameterEntry {
+                    address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + name,
+                    type = Parameters.GetParameterType(value).Value,
+                };
+            }
+            return null;
         }
     }
 
@@ -122,7 +128,7 @@ namespace OSC.Utils {
 
     public record JsonConfigParameterEntry {
         public string address { get; init; }
-        
+
         [JsonConverter(typeof(StringEnumConverter))]
         public AnimatorControllerParameterType type { get; init; }
     }

@@ -20,6 +20,8 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
+[assembly: MelonColor(ConsoleColor.Green)]
+[assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 
 namespace OSC.Properties;
 internal static class AssemblyInfoParams {

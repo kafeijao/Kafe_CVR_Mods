@@ -1,10 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
-using ABI_RC.Core.Networking.API;
+﻿using ABI_RC.Core.Networking.API;
 using ABI_RC.Core.Networking.API.Responses;
 using MelonLoader;
 
-namespace OSC.Utils; 
+namespace OSC.Utils;
 
 internal static class ApiRequests {
     internal static async Task<string> RequestAvatarDetailsPageTask(string guid) {

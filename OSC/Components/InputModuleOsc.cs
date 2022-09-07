@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ABI_RC.Core;
+﻿using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
@@ -20,14 +18,13 @@ public enum AxisNames {
     // === Waiting for features ===
     //UseAxisRight,
     //GrabAxisRight,
-    //MoveHoldFB,
+    MoveHoldFB,
     //SpinHoldCwCcw,
     //SpinHoldUD,
     //SpinHoldLR,
 
     // === New ===
     LookVertical,
-    MouseScrollWheel,
     GripLeftValue,
     GripRightValue,
 }
@@ -186,7 +183,7 @@ public class InputModuleOSC : CVRInputModule {
         }
 
         //_thisInputManager.objectPushPull += Input.mouseScrollDelta.y;
-        _thisInputManager.scrollValue += InputAxes[AxisNames.MouseScrollWheel];
+        _thisInputManager.scrollValue += InputAxes[AxisNames.MoveHoldFB];
         _thisInputManager.mainMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleRight);
 
         if (InputButtons[ButtonNames.QuickMenuToggleRight]) {
@@ -302,7 +299,7 @@ public class InputModuleOSC : CVRInputModule {
         _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
         _thisInputManager.mute |= InputButtons[ButtonNames.Voice];
         _thisInputManager.muteDown |= GetKeyDown(ButtonNames.Voice);
-        _thisInputManager.scrollValue += InputAxes[AxisNames.MouseScrollWheel];
+        _thisInputManager.scrollValue += InputAxes[AxisNames.MoveHoldFB];
     }
 
     private void UpdatePreviousValues() {
