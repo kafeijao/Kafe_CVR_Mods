@@ -56,13 +56,6 @@ public static class Spawnable {
         // Otherwise update the cache value
         cache[spawnableValue.name] = spawnableValue.currentValue;
 
-        // var pickup = Traverse.Create(spawnable).Field<CVRPickupObject>("pickup").Value;
-        // var attachments = Traverse.Create(spawnable).Field<List<CVRAttachment>>("_attachments").Value;
-
-        // Ignore prop if we're not grabbing it nor it is attached to us
-        //if ((pickup == null || pickup.grabbedBy != MetaPort.Instance.ownerId) &&
-        //    (attachments.Count <= 0 || !attachments.Any(a => a.IsAttached()))) return;
-
         SpawnableParameterChanged?.Invoke(spawnable, spawnableValue);
     }
     internal static void OnSpawnableParameterSet(string spawnableInstanceId, string spawnableParamName, float spawnableParamValue) {
@@ -73,7 +66,7 @@ public static class Spawnable {
 
         //MelonLogger.Msg($"[Spawnable] Setting spawnable prop {spawnableInstanceId} {spawnableParamName} parameter to {spawnableParamValue}!");
 
-        // Todo: Prevent doing this on objects we should not control
+        if (!ShouldControl(spawnable)) return;
 
         spawnable.SetValue(spawnableValueIndex, spawnableParamValue);
 
@@ -87,7 +80,7 @@ public static class Spawnable {
 
         //MelonLogger.Msg($"[Spawnable] Setting spawnable prop {spawnableInstanceId} {spawnableParamName} parameter to {spawnableParamValue}!");
 
-        // Todo: Prevent doing this on objects we should not control
+        if (!ShouldControl(spawnable)) return;
 
         // Update location
         spawnableTransform.position = pos;
@@ -95,5 +88,26 @@ public static class Spawnable {
         spawnable.ForceUpdate();
 
         //SpawnableLocationSet?.Invoke();
+    }
+
+    private static bool ShouldControl(CVRSpawnable spawnable) {
+
+        // Spawned by other people -> Ignore
+        if (!spawnable.IsMine()) return false;
+
+        // var pickup = Traverse.Create(spawnable).Field<CVRPickupObject>("pickup").Value;
+        // var attachments = Traverse.Create(spawnable).Field<List<CVRAttachment>>("_attachments").Value;
+
+        // Ignore prop if we're not grabbing it nor it is attached to us
+        //if ((pickup == null || pickup.grabbedBy != MetaPort.Instance.ownerId) &&
+        //    (attachments.Count <= 0 || !attachments.Any(a => a.IsAttached()))) return;
+
+        // Other people are syncing it (grabbing/telegrabbing/attatched) -> Ignore
+        if (spawnable.SyncType != 0) return false;
+
+        // This will be true when being synced by us (grabbing/telegrabbing/attatched) or physics -> Ignore
+        if (spawnable.isPhysicsSynced) return false;
+
+        return true;
     }
 }
