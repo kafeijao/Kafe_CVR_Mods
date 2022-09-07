@@ -6,6 +6,7 @@ using Valve.VR;
 namespace OSC.Events;
 
 public enum TrackingDataSource {
+    hmd,
     base_station,
     right_controller,
     left_controller,
@@ -20,6 +21,7 @@ public static class Tracking {
     private static float _nextUpdate;
 
     private static Transform _playerSpaceTransform;
+    private static Transform _playerHmdTransform;
 
     public static event Action<TrackingDataSource, int, string, Vector3, Vector3, float> TrackingDataDeviceUpdated;
     public static event Action<Vector3, Vector3> TrackingDataPlaySpaceUpdated;
@@ -40,6 +42,7 @@ public static class Tracking {
 
         // Set the play space transform when it loads
         Events.Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
+        Events.Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCameraRig.transform;
     }
 
     public static void OnTrackingDataDeviceUpdated(VRTrackerManager trackerManager) {
@@ -77,6 +80,11 @@ public static class Tracking {
                 //                 $"local: {vrTracker.transform.localPosition.ToString("F3")}");
 
                 TrackingDataDeviceUpdated?.Invoke(source, index, vrTracker.deviceName, transform.position, transform.rotation.eulerAngles, vrTracker.batteryStatus);
+            }
+
+            // Handle HMD
+            if (PlayerSetup.Instance._inVr && _playerHmdTransform != null) {
+                TrackingDataDeviceUpdated?.Invoke(TrackingDataSource.hmd, 0, "hmd", _playerHmdTransform.position, _playerHmdTransform.rotation.eulerAngles, 0);
             }
 
             // Handle Play Space
