@@ -28,25 +28,29 @@ internal class HarmonyPatches {
     // Parameters
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterFloat))]
-    internal static void AfterSetAnimatorParameterFloat(string name, float value, CVRAnimatorManager __instance) {
+    internal static void AfterSetAnimatorParameterFloat(string name, float value, CVRAnimatorManager __instance, bool ____parametersChanged) {
+        if (!____parametersChanged) return;
         Events.Avatar.OnParameterChangedFloat(__instance, name, value);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterInt))]
-    internal static void AfterSetAnimatorParameterInt(string name, int value, CVRAnimatorManager __instance) {
+    internal static void AfterSetAnimatorParameterInt(string name, int value, CVRAnimatorManager __instance, bool ____parametersChanged) {
+        if (!____parametersChanged) return;
         Events.Avatar.OnParameterChangedInt(__instance, name, value);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterBool))]
-    internal static void AfterSetAnimatorParameterBool(string name, bool value, CVRAnimatorManager __instance) {
+    internal static void AfterSetAnimatorParameterBool(string name, bool value, CVRAnimatorManager __instance, bool ____parametersChanged) {
+        if (!____parametersChanged) return;
         Events.Avatar.OnParameterChangedBool(__instance, name, value);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterTrigger))]
-    internal static void AfterSetAnimatorParameterTrigger(string name, CVRAnimatorManager __instance) {
+    internal static void AfterSetAnimatorParameterTrigger(string name, CVRAnimatorManager __instance, bool ____parametersChanged) {
+        if (!____parametersChanged) return;
         Events.Avatar.OnParameterChangedTrigger(__instance, name);
     }
 
@@ -55,6 +59,11 @@ internal class HarmonyPatches {
     [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateMultiPurposeFloat), typeof(CVRSpawnableValue), typeof(float), typeof(int))]
     internal static void AfterUpdateMultiPurposeFloat(CVRSpawnableValue spawnableValue, CVRSpawnable __instance) {
         Events.Spawnable.OnSpawnableParameterChanged(__instance, spawnableValue);
+    }
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateFromNetwork), typeof(CVRSyncHelper.PropData))]
+    internal static void AfterSpawnableUpdateFromNetwork(CVRSyncHelper.PropData propData, CVRSpawnable __instance) {
+        Events.Spawnable.OnSpawnableUpdateFromNetwork(propData, __instance);
     }
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn), typeof(CVRSyncHelper.PropData))]

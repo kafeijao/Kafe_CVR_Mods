@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace OSC.Handlers.OscModules;
 
+enum TrackingOperation {
+    device,
+    play_space,
+}
+
 public class Tracking : OscHandler {
 
     internal const string AddressPrefixTracking = "/tracking/";
@@ -14,13 +19,14 @@ public class Tracking : OscHandler {
 
         // Send tracking data device update events
         _trackingDataDeviceUpdated = (source, id, deviceName, pos, rot, battery) => {
-            var address = $"{AddressPrefixTracking}device/{Enum.GetName(typeof(Events.TrackingDataSource), source)}/{id}";
-            HandlerOsc.SendMessage(address, deviceName, pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, battery);
+            var address = $"{AddressPrefixTracking}{nameof(TrackingOperation.device)}";
+            HandlerOsc.SendMessage(address, Enum.GetName(typeof(TrackingDataSource), source), id, deviceName,
+                pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, battery);
         };
 
         // Send tracking data play space update events
         _trackingDataPlaySpaceUpdated = (pos, rot) => {
-            var address = $"{AddressPrefixTracking}play_space";
+            var address = $"{AddressPrefixTracking}{nameof(TrackingOperation.play_space)}";
             HandlerOsc.SendMessage(address, pos.x, pos.y, pos.z, rot.x, rot.y, rot.z);
         };
 

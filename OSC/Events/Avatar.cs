@@ -11,18 +11,18 @@ namespace OSC.Events;
 public static class Avatar {
 
     // Data
-    internal static readonly Dictionary<string, string> AvatarsNamesCache = new();
-    internal static CVRAnimatorManager LocalPlayerAnimatorManager { get; private set; }
+    private static readonly Dictionary<string, string> AvatarsNamesCache = new();
+    private static CVRAnimatorManager _localPlayerAnimatorManager;
 
     // Caches for osc input
-    public static readonly Dictionary<string, float> ParameterCacheInFloat = new();
-    public static readonly Dictionary<string, int> ParameterCacheInInt = new();
-    public static readonly Dictionary<string, bool> ParameterCacheInBool = new();
+    private static readonly Dictionary<string, float> ParameterCacheInFloat = new();
+    private static readonly Dictionary<string, int> ParameterCacheInInt = new();
+    private static readonly Dictionary<string, bool> ParameterCacheInBool = new();
 
     // Caches for osc output (because some parameters get spammed like hell)
-    public static readonly Dictionary<string, float> ParameterCacheOutFloat = new();
-    public static readonly Dictionary<string, int> ParameterCacheOutInt = new();
-    public static readonly Dictionary<string, bool> ParameterCacheOutBool = new();
+    private static readonly Dictionary<string, float> ParameterCacheOutFloat = new();
+    private static readonly Dictionary<string, int> ParameterCacheOutInt = new();
+    private static readonly Dictionary<string, bool> ParameterCacheOutBool = new();
 
     // Configs cache
     private static bool _triggersEnabled;
@@ -32,22 +32,13 @@ public static class Avatar {
     private static readonly Stopwatch AvatarSetStopwatch = new();
 
     // Actions
-    public static event Action<string, string> AvatarDetailsReceived;
     public static event Action<CVRAnimatorManager> AnimatorManagerUpdated;
-    public static event Action<string> AvatarSet;
 
     // Actions parameters changed
     public static event Action<string, float> ParameterChangedFloat;
     public static event Action<string, int> ParameterChangedInt;
     public static event Action<string, bool> ParameterChangedBool;
     public static event Action<string> ParameterChangedTrigger;
-
-    // Actions parameters set
-    public static event Action<string, float> ParameterSetFloat;
-    public static event Action<string, int> ParameterSetInt;
-    public static event Action<string, bool> ParameterSetBool;
-    public static event Action<string> ParameterSetTrigger;
-
 
     static Avatar() {
 
@@ -63,11 +54,15 @@ public static class Avatar {
     // Callers
     internal static void OnAvatarDetailsReceived(string guid, string name) {
         AvatarsNamesCache[guid] = name;
-        AvatarDetailsReceived?.Invoke(guid, name);
+    }
+
+    internal static void Reset() {
+        if (_localPlayerAnimatorManager == null) return;
+        OnAnimatorManagerUpdate(_localPlayerAnimatorManager);
     }
 
     internal static async void OnAnimatorManagerUpdate(CVRAnimatorManager animatorManager) {
-        LocalPlayerAnimatorManager = animatorManager;
+        _localPlayerAnimatorManager = animatorManager;
 
         // Clear caches
         ParameterCacheInFloat.Clear();
@@ -131,33 +126,32 @@ public static class Avatar {
         AvatarSetStopwatch.Restart();
         MelonLogger.Msg($"[Command] Received OSC command to change avatar to {uuid}. Changing...");
         AssetManagement.Instance.LoadLocalAvatar(uuid);
-        AvatarSet?.Invoke(uuid);
     }
 
     // Callers parameters changed
     internal static void OnParameterChangedFloat(CVRAnimatorManager animatorManager, string name, float value) {
-        if (animatorManager != LocalPlayerAnimatorManager) return;
+        if (animatorManager != _localPlayerAnimatorManager) return;
         if (ParameterCacheInFloat.ContainsKey(name) && Mathf.Approximately(ParameterCacheInFloat[name], value)) return;
         ParameterCacheInFloat[name] = value;
         ParameterChangedFloat?.Invoke(name, value);
     }
 
     internal static void OnParameterChangedInt(CVRAnimatorManager animatorManager, string name, int value) {
-        if (animatorManager != LocalPlayerAnimatorManager) return;
+        if (animatorManager != _localPlayerAnimatorManager) return;
         if (ParameterCacheInInt.ContainsKey(name) && ParameterCacheInInt[name] == value) return;
         ParameterCacheInInt[name] = value;
         ParameterChangedInt?.Invoke(name, value);
     }
 
     internal static void OnParameterChangedBool(CVRAnimatorManager animatorManager, string name, bool value) {
-        if (animatorManager != LocalPlayerAnimatorManager) return;
+        if (animatorManager != _localPlayerAnimatorManager) return;
         if (ParameterCacheInBool.ContainsKey(name) && ParameterCacheInBool[name] == value) return;
         ParameterCacheInBool[name] = value;
         ParameterChangedBool?.Invoke(name, value);
     }
 
     internal static void OnParameterChangedTrigger(CVRAnimatorManager animatorManager, string name) {
-        if (animatorManager != LocalPlayerAnimatorManager || !_triggersEnabled) return;
+        if (animatorManager != _localPlayerAnimatorManager || !_triggersEnabled) return;
         ParameterChangedTrigger?.Invoke(name);
     }
 
@@ -165,22 +159,19 @@ public static class Avatar {
     internal static void OnParameterSetFloat(string name, float value) {
         if (ParameterCacheOutFloat.ContainsKey(name) && Mathf.Approximately(ParameterCacheOutFloat[name], value)) return;
         ParameterCacheOutFloat[name] = value;
-        LocalPlayerAnimatorManager?.SetAnimatorParameterFloat(name, value);
-        ParameterSetFloat?.Invoke(name, value);
+        _localPlayerAnimatorManager?.SetAnimatorParameterFloat(name, value);
     }
 
     internal static void OnParameterSetInt(string name, int value) {
         if (ParameterCacheOutInt.ContainsKey(name) && ParameterCacheOutInt[name] == value) return;
         ParameterCacheOutInt[name] = value;
-        LocalPlayerAnimatorManager?.SetAnimatorParameterInt(name, value);
-        ParameterSetInt?.Invoke(name, value);
+        _localPlayerAnimatorManager?.SetAnimatorParameterInt(name, value);
     }
 
     internal static void OnParameterSetBool(string name, bool value) {
         if (ParameterCacheOutBool.ContainsKey(name) && ParameterCacheOutBool[name] == value) return;
         ParameterCacheOutBool[name] = value;
-        LocalPlayerAnimatorManager?.SetAnimatorParameterBool(name, value);
-        ParameterSetBool?.Invoke(name, value);
+        _localPlayerAnimatorManager?.SetAnimatorParameterBool(name, value);
     }
 
     internal static void OnParameterSetTrigger(string name) {
@@ -188,7 +179,6 @@ public static class Avatar {
             MelonLogger.Msg("[Info] Attempted to set a trigger parameter, but that option is disabled in the mod configuration.");
             return;
         }
-        LocalPlayerAnimatorManager?.SetAnimatorParameterTrigger(name);
-        ParameterSetTrigger?.Invoke(name);
+        _localPlayerAnimatorManager?.SetAnimatorParameterTrigger(name);
     }
 }

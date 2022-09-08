@@ -5,6 +5,38 @@ namespace OSC.Utils;
 
 public static class Parameters {
 
+    public static bool TryHardToParseFloat(object valueObj, out float result) {
+        switch (valueObj) {
+            // Pfft easy mode
+            case float floatValue:
+                result = floatValue;
+                return true;
+            case int intValue:
+                result = intValue;
+                return true;
+            case bool boolValue:
+                result = boolValue ? 1f : 0f;
+                return true;
+            // Attempt to parse from a string
+            case string valueStr when valueStr.ToLower().Equals("true"):
+                result = 1f;
+                return true;
+            case string valueStr when valueStr.ToLower().Equals("false"):
+                result = 0f;
+                return true;
+            case string valueStr when int.TryParse(valueStr, out var valueInt):
+                result = valueInt;
+                return true;
+            case string valueStr when float.TryParse(valueStr, out var valueFloat):
+                result = valueFloat;
+                return true;
+            // Give up
+            default:
+                result = float.NaN;
+                return false;
+        }
+    }
+
     public static AnimatorControllerParameterType? GetParameterType(object valueObj) {
 
         // Sort their types and call the correct handler

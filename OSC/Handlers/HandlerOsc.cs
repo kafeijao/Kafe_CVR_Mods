@@ -15,6 +15,16 @@ internal class HandlerOsc {
     private Input InputHandler;
     private Spawnable SpawnableHandler;
     private Tracking TrackingHandler;
+    private Config ConfigHandler;
+
+    private static bool _debugMode;
+
+    static HandlerOsc() {
+
+        // Handle config debug value and changes
+        _debugMode = OSC.Instance.meOSCDebug.Value;
+        OSC.Instance.meOSCDebug.OnValueChanged += (_, newValue) => _debugMode = newValue;
+    }
 
     public HandlerOsc() {
 
@@ -56,6 +66,7 @@ internal class HandlerOsc {
         InputHandler = new Input();
         SpawnableHandler = new Spawnable();
         TrackingHandler = new Tracking();
+        ConfigHandler = new Config();
 
         Instance = this;
     }
@@ -75,16 +86,24 @@ internal class HandlerOsc {
     private static void ReceiveMessageHandler(OscPacket packet) {
 
         // Ignore packets that had errors
-        if (packet == null) return;
+        if (packet == null) {
+            if (_debugMode) MelonLogger.Msg("[Debug] Received a malformed OSC msg, could not parse it. " +
+                                            "We're using SharpOSC which follows this spec: " +
+                                            "https://opensoundcontrol.stanford.edu/spec-1_0.html");
+            return;
+        }
 
         var oscMessage = (OscMessage) packet;
 
+        if (_debugMode) {
+            var debugMsg = $"[Debug] Received OSC Message -> Address: {oscMessage.Address}, Args:";
+            debugMsg = oscMessage.Arguments.Aggregate(debugMsg, (current, arg) => current + $"\n\t\t\t{arg} [{arg?.GetType()}]");
+            MelonLogger.Msg(debugMsg);
+        }
+
         try {
-
             var address = oscMessage.Address;
-
             var addressLower = oscMessage.Address.ToLower();
-
             switch (addressLower) {
                 case not null when addressLower.StartsWith(Avatar.AddressPrefixAvatar):
                     Instance.AvatarHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
@@ -97,6 +116,9 @@ internal class HandlerOsc {
                     break;
                 case not null when addressLower.StartsWith(Tracking.AddressPrefixTracking):
                     Instance.TrackingHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
+                    break;
+                case not null when addressLower.StartsWith(Config.AddressPrefixConfig):
+                    Instance.ConfigHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
                     break;
             }
         }

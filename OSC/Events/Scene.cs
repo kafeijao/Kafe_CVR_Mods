@@ -1,4 +1,6 @@
-﻿namespace OSC.Events;
+﻿using MelonLoader;
+
+namespace OSC.Events;
 
 public static class Scene {
 
@@ -12,5 +14,16 @@ public static class Scene {
 
     internal static void OnPlayerSetup() {
         PlayerSetup?.Invoke();
+    }
+
+    internal static void ResetAll() {
+        // Used when you want to get all the events when connecting after the game is already started.
+        // This should clear all the caches and perform all the initializations
+
+        // Re-initialize avatar
+        Avatar.Reset();
+
+        // Re-initialize spawnables
+        Spawnable.Reset();
     }
 }

@@ -42,7 +42,7 @@ public static class Tracking {
 
         // Set the play space transform when it loads
         Events.Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
-        Events.Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCameraRig.transform;
+        Events.Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
     public static void OnTrackingDataDeviceUpdated(VRTrackerManager trackerManager) {
@@ -52,8 +52,6 @@ public static class Tracking {
 
         if (Time.time >= _nextUpdate) {
             _nextUpdate = Time.time + _updateRate;
-
-            //MelonLogger.Msg($"---------------------------------- Tracker Debug ----------------------------------");
 
             // Handle trackers
             foreach (var vrTracker in trackerManager.trackers) {
@@ -72,13 +70,6 @@ public static class Tracking {
                     _ => TrackingDataSource.unknown
                 };
 
-                // MelonLogger.Msg($"Tracker: " +
-                //                 $"Active: {vrTracker.active}, " +
-                //                 $"name: {deviceName}, " +
-                //                 $"Role: {Enum.GetName(typeof(ETrackedControllerRole), vrTracker.role)}, " +
-                //                 $"battery: {vrTracker.batteryStatus}, " +
-                //                 $"local: {vrTracker.transform.localPosition.ToString("F3")}");
-
                 TrackingDataDeviceUpdated?.Invoke(source, index, vrTracker.deviceName, transform.position, transform.rotation.eulerAngles, vrTracker.batteryStatus);
             }
 
@@ -91,6 +82,9 @@ public static class Tracking {
             if (_playerSpaceTransform != null) {
                 TrackingDataPlaySpaceUpdated?.Invoke(_playerSpaceTransform.position, _playerSpaceTransform.rotation.eulerAngles);
             }
+
+            // Tell props to send their location as well
+            Spawnable.OnTrackingTick();
         }
     }
 }

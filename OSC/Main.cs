@@ -40,6 +40,9 @@ public class OSC : MelonMod {
     public MelonPreferences_Entry<bool> meOSCTrackingModule;
     public MelonPreferences_Entry<float> meOSCTrackingModuleUpdateInterval;
 
+    // Misc
+    public MelonPreferences_Entry<bool> meOSCDebug;
+
     private HandlerOsc _handlerOsc;
 
     public override void OnApplicationStart() {
@@ -121,6 +124,10 @@ public class OSC : MelonMod {
         meOSCTrackingModuleUpdateInterval = _mcOsc.CreateEntry("TrackingModuleUpdateInterval", 0f,
             description: "Minimum of seconds between each tracking data update. Default: 0 (will update every frame) " +
                          "Eg: 0.05 will update every 50 milliseconds.");
+
+        // Misc
+        meOSCDebug = _mcOsc.CreateEntry("Debug", false,
+            description: "Whether should spam the console with debug messages or not.");
 
 
         // Load env variables (may change the melon config)
