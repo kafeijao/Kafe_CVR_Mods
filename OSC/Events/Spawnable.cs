@@ -97,7 +97,6 @@ public static class Spawnable {
         }
     }
 
-
     // Events to the game
 
     internal static void OnSpawnableParameterSet(string spawnableInstanceId, string spawnableParamName, float spawnableParamValue) {
@@ -112,6 +111,9 @@ public static class Spawnable {
 
         //MelonLogger.Msg($"[Spawnable] Setting spawnable prop {spawnableInstanceId} {spawnableParamName} parameter to {spawnableParamValue}!");
 
+        // Value is already up to date -> Ignore
+        if (Mathf.Approximately(spawnable.syncValues[spawnableValueIndex].currentValue, spawnableParamValue)) return;
+
         if (!ShouldControl(spawnable, true)) return;
 
         spawnable.SetValue(spawnableValueIndex, spawnableParamValue);
@@ -120,22 +122,32 @@ public static class Spawnable {
     }
 
 
-    internal static void OnSpawnableLocationSet(string spawnableInstanceId, Vector3 pos, Vector3 rot) {
+    internal static void OnSpawnableLocationSet(string spawnableInstanceId, Vector3 pos, Vector3 rot, int? subIndex = null) {
         if (!PropCache.ContainsKey(spawnableInstanceId) || pos.IsAbsurd() || pos.IsBad() || rot.IsAbsurd() || rot.IsBad()) return;
         var spawnable = PropCache[spawnableInstanceId].Spawnable;
 
         // Prevent NullReferenceException when we're setting the location of a prop that was just deleted
         if (spawnable == null) return;
 
-        var spawnableTransform = spawnable.transform;
+        Transform transformToSet;
+        // The transform is a subSync of the spawnable
+        if (subIndex.HasValue) {
+            var index = subIndex.Value;
+            if (index < 0 || index >= spawnable.subSyncs.Count) return;
+            transformToSet = spawnable.subSyncs[index].transform;
+        }
+        // Use the spawnable transform
+        else {
+            transformToSet = spawnable.transform;
+        }
 
         //MelonLogger.Msg($"[Spawnable] Setting spawnable prop {spawnableInstanceId} {spawnableParamName} parameter to {spawnableParamValue}!");
 
         if (!ShouldControl(spawnable)) return;
 
         // Update location
-        spawnableTransform.position = pos;
-        spawnableTransform.eulerAngles = rot;
+        transformToSet.position = pos;
+        transformToSet.eulerAngles = rot;
         spawnable.ForceUpdate();
 
         //SpawnableLocationSet?.Invoke();

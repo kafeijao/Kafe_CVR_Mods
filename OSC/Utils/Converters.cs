@@ -3,7 +3,24 @@ using UnityEngine;
 
 namespace OSC.Utils;
 
-public static class Parameters {
+public static class Converters {
+
+    public static bool TryParseFloat(object valueObj, out float parsedFloat) {
+        switch (valueObj) {
+            case float floatValue:
+                parsedFloat = floatValue;
+                return true;
+            case int intValue:
+                parsedFloat = intValue;
+                return true;
+            case string valueStr when float.TryParse(valueStr, out var valueFloat):
+                parsedFloat = valueFloat;
+                return true;
+            default:
+                parsedFloat = default;
+                return false;
+        }
+    }
 
     public static bool TryHardToParseFloat(object valueObj, out float result) {
         switch (valueObj) {
@@ -32,7 +49,46 @@ public static class Parameters {
                 return true;
             // Give up
             default:
-                result = float.NaN;
+                result = default;
+                return false;
+        }
+    }
+
+    public static bool TryToParseInt(object valueObj, out int result) {
+        switch (valueObj) {
+            case int intValue:
+                result = intValue;
+                return true;
+            case string valueStr when int.TryParse(valueStr, out var valueInt):
+                result = valueInt;
+                return true;
+            default:
+                result = default;
+                return false;
+        }
+    }
+
+    public static bool TryHardToParseInt(object valueObj, out int result) {
+        switch (valueObj) {
+            case int intValue:
+                result = intValue;
+                return true;
+            case bool boolValue:
+                result = boolValue ? 1 : 0;
+                return true;
+            // Attempt to parse from a string
+            case string valueStr when valueStr.ToLower().Equals("true"):
+                result = 1;
+                return true;
+            case string valueStr when valueStr.ToLower().Equals("false"):
+                result = 0;
+                return true;
+            case string valueStr when int.TryParse(valueStr, out var valueInt):
+                result = valueInt;
+                return true;
+            // Give up
+            default:
+                result = default;
                 return false;
         }
     }

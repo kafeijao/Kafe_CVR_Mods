@@ -11,6 +11,7 @@ enum SpawnableOperation {
     available,
     parameters,
     location,
+    location_sub,
 }
 
 public class Spawnable : OscHandler {
@@ -32,7 +33,10 @@ public class Spawnable : OscHandler {
             var spawnable = propData.Spawnable;
 
             // Send the create event
-            HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.create)}", spawnable.guid, GetInstanceId(spawnable));
+            HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.create)}",
+                spawnable.guid,
+                GetInstanceId(spawnable),
+                spawnable.subSyncs.Count);
 
             // Send all parameter values when loads a new spawnable is created
             foreach (var syncedParams in spawnable.syncValues) {
@@ -60,12 +64,26 @@ public class Spawnable : OscHandler {
 
         // Send spawnable location change events
         _spawnableLocationChanged = spawnable => {
+
+            // Handle main spawnable transform
             var transform = spawnable.transform;
             var pos = transform.position;
             var rot = transform.rotation.eulerAngles;
             HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.location)}",
                 spawnable.guid, GetInstanceId(spawnable),
                 pos.x, pos.y, pos.z, rot.x, rot.y, rot.z);
+
+            // Handle sub_sync transforms
+            for (var index = 0; index < spawnable.subSyncs.Count; index++) {
+                var spawnableSubSync = spawnable.subSyncs[index];
+                var sTransform = spawnableSubSync.transform;
+                var sPos = sTransform.position;
+                var sRot = sTransform.rotation.eulerAngles;
+                HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.location_sub)}",
+                    spawnable.guid, GetInstanceId(spawnable),
+                    index,
+                    sPos.x, sPos.y, sPos.z, sRot.x, sRot.y, sRot.z);
+            }
         };
 
 
@@ -117,6 +135,9 @@ public class Spawnable : OscHandler {
                 return;
             case SpawnableOperation.location:
                 ReceivedLocationHandler(args);
+                return;
+            case SpawnableOperation.location_sub:
+                ReceivedLocationSubHandler(args);
                 return;
             case SpawnableOperation.delete:
                 ReceivedDeleteHandler(args);
@@ -179,7 +200,7 @@ public class Spawnable : OscHandler {
         }
 
         var possibleInstanceId = args[1];
-        if (!TryParseSpawnableGuid(possibleInstanceId, out var spawnableInstanceId)) {
+        if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to delete a prop, but provided an invalid Instance ID. " +
                             $"Prop Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
                             $"Example of a valid GUID: 8E143EA45EE8");
@@ -206,7 +227,7 @@ public class Spawnable : OscHandler {
         }
 
         var possibleInstanceId = args[1];
-        if (!TryParseSpawnableGuid(possibleInstanceId, out var spawnableInstanceId)) {
+        if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop synced param, but provided an invalid Instance ID. " +
                             $"Prop Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
                             $"Example of a valid GUID: 8E143EA45EE8");
@@ -222,7 +243,7 @@ public class Spawnable : OscHandler {
         }
 
         var possibleFloat = args[3];
-        if (!Utils.Parameters.TryHardToParseFloat(possibleFloat, out var parsedFloat)) {
+        if (!Utils.Converters.TryHardToParseFloat(possibleFloat, out var parsedFloat)) {
             MelonLogger.Msg(
                 $"[Error] Attempted to change a prop synced parameter {spawnableParameterName} to {possibleFloat}, " +
                 $"but we failed to parse whatever you sent to a float (we tried really hard I promise). " +
@@ -253,7 +274,7 @@ public class Spawnable : OscHandler {
         }
 
         var possibleInstanceId = args[1];
-        if (!TryParseSpawnableGuid(possibleInstanceId, out var spawnableInstanceId)) {
+        if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop location, but provided an invalid Instance ID. " +
                             $"Prop Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
                             $"Example of a valid GUID: 8E143EA45EE8");
@@ -272,6 +293,51 @@ public class Spawnable : OscHandler {
         Events.Spawnable.OnSpawnableLocationSet(spawnableFullId, position, rotation);
     }
 
+    private static void ReceivedLocationSubHandler(List<object> args) {
+
+        if (args.Count != 9) {
+            MelonLogger.Msg($"[Error] Attempted to set a prop location with an invalid number of arguments. " +
+                            $"Expected 8 arguments, for the prop GUID, and Instance ID, 3 floats for position, and 3" +
+                            $"floats for the rotation (euler angles).");
+            return;
+        }
+
+        var possibleGuid = args[0];
+        if (!TryParseSpawnableGuid(possibleGuid, out var spawnableGuid)) {
+            MelonLogger.Msg($"[Error] Attempted to set a prop sub-sync location, but provided an invalid GUID. " +
+                            $"GUID attempted: \"{possibleGuid}\" Type: {possibleGuid?.GetType()}" +
+                            $"Example of a valid GUID: 1aa10cac-36ba-4e01-b58d-a76dc35f61bb");
+            return;
+        }
+
+        var possibleInstanceId = args[1];
+        if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
+            MelonLogger.Msg($"[Error] Attempted to set a prop sub-sync location, with an invalid Instance ID. " +
+                            $"Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
+                            $"Example of a valid GUID: 8E143EA45EE8");
+            return;
+        }
+
+        // Validate index
+        var possibleIndex = args[2];
+        if (!Utils.Converters.TryToParseInt(possibleIndex, out var subIndex) || subIndex < 0) {
+            MelonLogger.Msg($"[Error] Attempted set the location of prop sub-sync with an invalid/negative index. " +
+                            $"Value attempted to parse: {possibleIndex} [{possibleIndex?.GetType()}]");
+            return;
+        }
+
+        // Validate position and rotation floats
+        if (!TryParseVector3(args[2], args[3], args[4], out var posFloats)) return;
+        if (!TryParseVector3(args[5], args[6], args[7], out var rotFloats)) return;
+
+        var spawnableFullId = $"p+{spawnableGuid}~{spawnableInstanceId}";
+
+        var position = new Vector3(posFloats.Item1, posFloats.Item2, posFloats.Item3);
+        var rotation = new Vector3(rotFloats.Item1, rotFloats.Item2, rotFloats.Item3);
+
+        Events.Spawnable.OnSpawnableLocationSet(spawnableFullId, position, rotation, subIndex);
+    }
+
     private static string GetInstanceId(CVRSpawnable spawnable) {
         // Spawnable instance id example: p+047576d5-e028-483a-9870-89e62f0ed3a4~FF00984F7C5A
         // p+<spawnable_id>~<instance_id>
@@ -280,31 +346,16 @@ public class Spawnable : OscHandler {
 
     private static bool TryParseVector3(object x, object y, object z, out (float, float, float) result) {
 
-        bool TryParseFloat(object valueObj, out float parsedFloat) {
-            switch (valueObj) {
-                case float floatValue:
-                    parsedFloat = floatValue;
-                    return true;
-                case int intValue:
-                    parsedFloat = intValue;
-                    return true;
-                case string valueStr when float.TryParse(valueStr, out var valueFloat):
-                    parsedFloat = valueFloat;
-                    return true;
-                default:
-                    parsedFloat = float.NaN;
-                    MelonLogger.Msg($"[Error] Attempted interact with a prop using an invalid position or rotation. " +
-                                    $"Value attempted to parse to a float: {valueObj} [{valueObj?.GetType()}]");
-                    return false;
-            }
+        if (!Utils.Converters.TryParseFloat(x, out var parsedX) ||
+            !Utils.Converters.TryParseFloat(y, out var parsedY) ||
+            !Utils.Converters.TryParseFloat(z, out var parsedZ)) {
+            MelonLogger.Msg($"[Error] Attempted interact with a prop using an invalid position or rotation. " +
+                            $"Values attempted to parse to a float: " +
+                            $"{x} [{x?.GetType()}], {y} [{y?.GetType()}], {z} [{z?.GetType()}]");
+            result = default;
+            return false;
         }
-
-        result = (0,0,0);
-        if (!TryParseFloat(x, out var parsedX)) return false;
-        if (!TryParseFloat(y, out var parsedY)) return false;
-        if (!TryParseFloat(z, out var parsedZ)) return false;
         result = (parsedX, parsedY, parsedZ);
-
         return true;
     }
 
@@ -319,16 +370,15 @@ public class Spawnable : OscHandler {
         return false;
     }
 
-    private static bool TryParseSpawnableInstanceId(string possibleInstanceId, out string instanceId) {
-        if (possibleInstanceId.Length != 12 ||
-            !long.TryParse(possibleInstanceId, System.Globalization.NumberStyles.HexNumber, null, out var hexValue)) {
-            MelonLogger.Msg($"[Error] Attempted to set a prop parameter but the prop instance id is not a valid prop instance id. " +
-                            $"It needs to be an hexadecimal value with a length of 12 characters. " +
-                            $"Provided prop instance id: {possibleInstanceId}");
-            instanceId = null;
-            return false;
+    private static bool TryParseSpawnableInstanceId(object possibleInstanceId, out string instanceId) {
+        if (possibleInstanceId is string { Length: 12 } possibleInstanceIdStr && long.TryParse(possibleInstanceIdStr, System.Globalization.NumberStyles.HexNumber, null, out var hexValue)) {
+            instanceId = hexValue.ToString("X");
+            return true;
         }
-        instanceId = hexValue.ToString("X");
-        return true;
+        MelonLogger.Msg($"[Error] Attempted to set a prop parameter but the prop instance id is not a valid prop instance id. " +
+                        $"It needs to be an hexadecimal value with a length of 12 characters. " +
+                        $"Provided prop instance id: {possibleInstanceId}");
+        instanceId = null;
+        return false;
     }
 }

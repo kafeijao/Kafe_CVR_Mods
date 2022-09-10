@@ -211,6 +211,7 @@ you're sending messages to spawn props.
 **Mod will send:**
 - `arg#1` - Prop GUID [*string*]
 - `arg#2` - Instance ID of the prop spawned [*string*]
+- `arg#3` - Count of sub-sync transforms [*int*], if count = 1 it means you can send location_sub to the index = 0
 
 **Mod is expecting to receive**
 - `arg#1` - Prop GUID [*string*]
@@ -305,6 +306,34 @@ their positions without any issue tho.
 - `arg#6` - rotation.x [*float*]
 - `arg#7` - rotation.y [*float*]
 - `arg#8` - rotation.z [*float*]
+
+
+
+### Location Sub
+You are also able to listen and set the location of a prop's sub-sync transforms. This is very powerful as you can for
+example link the tracking data you receive form the tracking module to a sub-sync so it's controlled by the tracker.
+
+**Note**: If you disable the Tracking Module, it will also disable the updates of the Location Sub. You can still set
+their positions without any issue tho.
+
+#### Limitations
+- You need to be the player that spawned the prop.
+- The prop **not** being controlled by **any** player (both remote and local) [*grabbed* | *telegrabbed* | *attached*]
+
+#### Address
+```/prop/location_sub```
+
+#### Arguments
+- `arg#1` - Prop GUID [*string*]
+- `arg#2` - Instance ID of the prop spawned [*string*]
+- `arg#3` - Index of the prop sub-sync transform [*int*], starts from 0 and increments following the order set in the 
+CVR Spawnable Component
+- `arg#4` - position.x [*float*]
+- `arg#5` - position.y [*float*]
+- `arg#6` - position.z [*float*]
+- `arg#7` - rotation.x [*float*]
+- `arg#8` - rotation.y [*float*]
+- `arg#9` - rotation.z [*float*]
 
 
 

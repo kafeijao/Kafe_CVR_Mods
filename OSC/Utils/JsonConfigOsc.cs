@@ -103,10 +103,10 @@ namespace OSC.Utils {
         }
 
         public static JsonConfigParameterEntry GetJsonConfigParameterEntry(string name, object value) {
-            if (Parameters.GetParameterType(value).HasValue) {
+            if (Converters.GetParameterType(value).HasValue) {
                 return new JsonConfigParameterEntry {
                     address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + name,
-                    type = Parameters.GetParameterType(value).Value,
+                    type = Converters.GetParameterType(value).Value,
                 };
             }
             return null;
