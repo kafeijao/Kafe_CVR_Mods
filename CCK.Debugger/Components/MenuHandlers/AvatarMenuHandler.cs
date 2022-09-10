@@ -13,6 +13,8 @@ public class AvatarMenuHandler : IMenuHandler {
 
     static AvatarMenuHandler() {
 
+        // Todo: Allow to inspect other people's avatars if they give permission
+        // Todo: Waiting for bios
         List<CVRPlayerEntity> players = new();
         //List<CVRPlayerEntity> players = CVRPlayerManager.Instance.NetworkPlayers;
 
@@ -76,8 +78,6 @@ public class AvatarMenuHandler : IMenuHandler {
 
         PlayerEntities.UpdateViaSource();
 
-        // Waiting for players to give permission to see their parameters, via some info on the bio or something
-        // Since it might come back (with a way to consent), I did a small hack to disable it instead of removing
         var playerCount = PlayerEntities.Count;
 
         var isLocal = PlayerEntities.CurrentObject == null;

@@ -113,9 +113,9 @@ public class SpawnableMenuHandler : IMenuHandler {
         // Update the menus if the spawnable changed
         if (PropsData.HasChanged) {
 
-            // Place the highlighter on the first collider found
+            // Place the highlighter on the first collider found (if present)
             var firstCollider = currentSpawnable.transform.GetComponentInChildren<Collider>();
-            Highlighter.SetTargetHighlight(firstCollider.gameObject);
+            if (firstCollider != null) Highlighter.SetTargetHighlight(firstCollider.gameObject);
 
             // Restore parameters
             menu.ClearCategory(_categorySyncedParameters);
