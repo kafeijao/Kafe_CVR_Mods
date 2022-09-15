@@ -15,8 +15,7 @@ public class AvatarMenuHandler : IMenuHandler {
 
         // Todo: Allow to inspect other people's avatars if they give permission
         // Todo: Waiting for bios
-        List<CVRPlayerEntity> players = new();
-        //List<CVRPlayerEntity> players = CVRPlayerManager.Instance.NetworkPlayers;
+        var players = CCKDebugger.TestMode ? CVRPlayerManager.Instance.NetworkPlayers : new List<CVRPlayerEntity>();
 
         bool IsValid(CVRPlayerEntity entity) {
             if (entity?.PuppetMaster == null) return false;
