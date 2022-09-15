@@ -1,4 +1,5 @@
 ﻿using MelonLoader;
+using Rug.Osc;
 
 namespace OSC.Handlers.OscModules;
 
@@ -10,25 +11,18 @@ public class Config : OscHandler {
 
     internal const string AddressPrefixConfig = "/config/";
 
-    private bool _enabled = true;
+    internal sealed override void Enable() {}
 
-    internal sealed override void Enable() {
-        _enabled = true;
-    }
+    internal sealed override void Disable() {}
 
-    internal sealed override void Disable() {
-        _enabled = false;
-    }
+    internal sealed override void ReceiveMessageHandler(OscMessage oscMsg) {
 
-    internal sealed override void ReceiveMessageHandler(string address, List<object> args) {
-        if (!_enabled) return;
-
-        var addressParts = address.Split('/');
+        var addressParts =oscMsg.Address.Split('/');
 
         // Validate Length
         if (addressParts.Length != 3) {
             MelonLogger.Msg($"[Error] Attempted to set a config but the address is invalid." +
-                            $"\n\t\t\tAddress attempted: \"{address}\"" +
+                            $"\n\t\t\tAddress attempted: \"{oscMsg.Address}\"" +
                             $"\n\t\t\tThe correct format should be: \"{AddressPrefixConfig}<op>\"" +
                             $"\n\t\t\tAnd the allowed ops are: {string.Join(", ", Enum.GetNames(typeof(ConfigOperation)))}");
             return;
@@ -43,7 +37,7 @@ public class Config : OscHandler {
             default:
                 MelonLogger.Msg(
                     "[Error] Attempted to set a config but the address is invalid." +
-                    $"\n\t\t\tAddress attempted: \"{address}\"" +
+                    $"\n\t\t\tAddress attempted: \"{oscMsg.Address}\"" +
                     $"\n\t\t\tThe correct format should be: \"{AddressPrefixConfig}<op>\"" +
                     $"\n\t\t\tAnd the allowed ops are: {string.Join(", ", Enum.GetNames(typeof(ConfigOperation)))}"
                 );

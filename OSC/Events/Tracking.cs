@@ -23,6 +23,9 @@ public static class Tracking {
     private static Transform _playerSpaceTransform;
     private static Transform _playerHmdTransform;
 
+    private static readonly Dictionary<VRTracker, bool> TrackerLastState = new();
+
+    public static event Action<bool, TrackingDataSource, int, string> TrackingDeviceConnected;
     public static event Action<TrackingDataSource, int, string, Vector3, Vector3, float> TrackingDataDeviceUpdated;
     public static event Action<Vector3, Vector3> TrackingDataPlaySpaceUpdated;
 
@@ -41,8 +44,8 @@ public static class Tracking {
         };
 
         // Set the play space transform when it loads
-        Events.Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
-        Events.Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
+        Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
+        Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
     public static void OnTrackingDataDeviceUpdated(VRTrackerManager trackerManager) {
@@ -56,21 +59,17 @@ public static class Tracking {
             // Handle trackers
             foreach (var vrTracker in trackerManager.trackers) {
 
+                // Manage Connected/Disconnected trackers
+                if ((!TrackerLastState.ContainsKey(vrTracker) && vrTracker.active) || (TrackerLastState.ContainsKey(vrTracker) && TrackerLastState[vrTracker] != vrTracker.active)) {
+                    TrackingDeviceConnected?.Invoke(vrTracker.active, GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName);
+                    TrackerLastState[vrTracker] = vrTracker.active;
+                }
+
                 // Ignore inactive trackers
                 if (!vrTracker.active) continue;
 
-                var index = (int) Traverse.Create(vrTracker).Field<SteamVR_TrackedObject>("_trackedObject").Value.index;
                 var transform = vrTracker.transform;
-
-                var source = vrTracker.role switch {
-                    ETrackedControllerRole.Invalid => vrTracker.deviceName == "" ? TrackingDataSource.base_station : TrackingDataSource.unknown,
-                    ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
-                    ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
-                    ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
-                    _ => TrackingDataSource.unknown
-                };
-
-                TrackingDataDeviceUpdated?.Invoke(source, index, vrTracker.deviceName, transform.position, transform.rotation.eulerAngles, vrTracker.batteryStatus);
+                TrackingDataDeviceUpdated?.Invoke(GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName, transform.position, transform.rotation.eulerAngles, vrTracker.batteryStatus);
             }
 
             // Handle HMD
@@ -86,5 +85,26 @@ public static class Tracking {
             // Tell props to send their location as well
             Spawnable.OnTrackingTick();
         }
+    }
+
+    internal static void Reset() {
+        // Clear the cache to force an update to the connected devices
+        TrackerLastState.Clear();
+    }
+
+    private static int GetIndex(VRTracker vrTracker) {
+        return (int)Traverse.Create(vrTracker).Field<SteamVR_TrackedObject>("_trackedObject").Value.index;
+    }
+
+    private static TrackingDataSource GetSource(VRTracker vrTracker) {
+        return vrTracker.role switch {
+            ETrackedControllerRole.Invalid => vrTracker.deviceName == ""
+                ? TrackingDataSource.base_station
+                : TrackingDataSource.unknown,
+            ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
+            ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
+            ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
+            _ => TrackingDataSource.unknown
+        };
     }
 }

@@ -21,7 +21,7 @@ namespace OSC.Utils {
             CurrentAvatarConfig = null;
         }
 
-        private static string GetConfigFilePath(string userUuid, string avatarUuid) {
+        internal static string GetConfigFilePath(string userUuid, string avatarUuid) {
             var basePath = Application.persistentDataPath;
 
             // Replace the base path with the override
@@ -40,11 +40,11 @@ namespace OSC.Utils {
                 List<JsonConfigParameter> parameters = new();
                 foreach (var parameter in animatorManager.animator.parameters) {
                     var input = new JsonConfigParameterEntry {
-                        address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + parameter.name,
+                        address = Handlers.OscModules.Avatar.AddressPrefixAvatarParametersLegacy + parameter.name,
                         type = parameter.type,
                     };
                     var output = new JsonConfigParameterEntry {
-                        address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + parameter.name,
+                        address = Handlers.OscModules.Avatar.AddressPrefixAvatarParametersLegacy + parameter.name,
                         type = parameter.type,
                     };
 
@@ -105,7 +105,7 @@ namespace OSC.Utils {
         public static JsonConfigParameterEntry GetJsonConfigParameterEntry(string name, object value) {
             if (Converters.GetParameterType(value).HasValue) {
                 return new JsonConfigParameterEntry {
-                    address = Handlers.OscModules.Avatar.AddressPrefixAvatarParameters + name,
+                    address = Handlers.OscModules.Avatar.AddressPrefixAvatarParametersLegacy + name,
                     type = Converters.GetParameterType(value).Value,
                 };
             }

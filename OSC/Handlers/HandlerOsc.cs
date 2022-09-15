@@ -1,6 +1,8 @@
-﻿using MelonLoader;
-using SharpOSC;
+﻿using System.Collections;
+using System.Net;
+using MelonLoader;
 using OSC.Handlers.OscModules;
+using Rug.Osc;
 
 namespace OSC.Handlers;
 
@@ -8,14 +10,14 @@ internal class HandlerOsc {
 
     private static HandlerOsc Instance;
 
-    private UDPListener _listener;
-    private UDPSender _sender;
+    private OscReceiver _receiver;
+    private OscSender _sender;
 
-    private Avatar AvatarHandler;
-    private Input InputHandler;
-    private Spawnable SpawnableHandler;
-    private Tracking TrackingHandler;
-    private Config ConfigHandler;
+    private readonly Avatar AvatarHandler;
+    private readonly Input InputHandler;
+    private readonly Spawnable SpawnableHandler;
+    private readonly Tracking TrackingHandler;
+    private readonly Config ConfigHandler;
 
     private static bool _debugMode;
 
@@ -28,17 +30,28 @@ internal class HandlerOsc {
 
     public HandlerOsc() {
 
-        // Start listener
-        _listener = new UDPListener(OSC.Instance.meOSCServerInPort.Value, ReceiveMessageHandler);
-        MelonLogger.Msg($"[Server] OSC Server started listening on the port {OSC.Instance.meOSCServerInPort.Value}.");
+        try {
+            // Start the osc msg receiver in a Coroutine
+            _receiver = new OscReceiver(OSC.Instance.meOSCServerInPort.Value);
+            _receiver.Connect();
+            MelonCoroutines.Start(HandleOscMessages());
+
+            MelonLogger.Msg($"[Server] OSC Server started listening on the port {OSC.Instance.meOSCServerInPort.Value}.");
+        }
+        catch (Exception e) {
+            MelonLogger.Error($"Failed initializing OSC receiver Coroutine!.");
+            MelonLogger.Error(e);
+            throw;
+        }
 
         // Handle config listener port changes
         OSC.Instance.meOSCServerInPort.OnValueChanged += (oldPort, newPort) => {
             if (oldPort == newPort) return;
             MelonLogger.Msg("[Server] OSC server port config has changed. Restarting server...");
             try {
-                _listener?.Close();
-                _listener = new UDPListener(newPort, ReceiveMessageHandler);
+                _receiver?.Close();
+                _receiver = new OscReceiver(newPort);
+                _receiver.Connect();
                 MelonLogger.Msg($"[Server] OSC Server started listening on the port {newPort}.");
             }
             catch (Exception e) {
@@ -72,9 +85,11 @@ internal class HandlerOsc {
     }
 
     private bool ConnectSender(string ip, int port) {
-        if (_sender != null && _sender.Port == port && _sender.Address == ip) return false;
+        var parsedIp = IPAddress.Parse(ip);
+        if (_sender != null && _sender.Port == port && Equals(_sender.RemoteAddress, parsedIp)) return false;
         var oldSender = _sender;
-        _sender = new UDPSender(ip, port);
+        _sender = new OscSender(parsedIp, port);
+        _sender.Connect();
         oldSender?.Close();
         return true;
     }
@@ -83,50 +98,70 @@ internal class HandlerOsc {
         Instance._sender.Send(new OscMessage(address, data));
     }
 
-    private static void ReceiveMessageHandler(OscPacket packet) {
+    private IEnumerator HandleOscMessages() {
 
-        // Ignore packets that had errors
-        if (packet == null) {
-            if (_debugMode) MelonLogger.Msg("[Debug] Received a malformed OSC msg, could not parse it. " +
-                                            "We're using SharpOSC which follows this spec: " +
-                                            "https://opensoundcontrol.stanford.edu/spec-1_0.html");
-            return;
-        }
+        while (_receiver.State != OscSocketState.Closed) {
+            if (_receiver.State != OscSocketState.Connected) yield return null;;
 
-        var oscMessage = (OscMessage) packet;
+            try {
+                // Execute while has messages
+                while (_receiver.TryReceive(out var packet)) {
 
-        if (_debugMode) {
-            var debugMsg = $"[Debug] Received OSC Message -> Address: {oscMessage.Address}, Args:";
-            debugMsg = oscMessage.Arguments.Aggregate(debugMsg, (current, arg) => current + $"\n\t\t\t{arg} [{arg?.GetType()}]");
-            MelonLogger.Msg(debugMsg);
-        }
+                    // Only check osc messages
+                    if (packet is not OscMessage oscMessage) continue;
 
-        try {
-            var address = oscMessage.Address;
-            var addressLower = oscMessage.Address.ToLower();
-            switch (addressLower) {
-                case not null when addressLower.StartsWith(Avatar.AddressPrefixAvatar):
-                    Instance.AvatarHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
-                    break;
-                case not null when addressLower.StartsWith(Input.AddressPrefixInput):
-                    Instance.InputHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
-                    break;
-                case not null when addressLower.StartsWith(Spawnable.AddressPrefixSpawnable):
-                    Instance.SpawnableHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
-                    break;
-                case not null when addressLower.StartsWith(Tracking.AddressPrefixTracking):
-                    Instance.TrackingHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
-                    break;
-                case not null when addressLower.StartsWith(Config.AddressPrefixConfig):
-                    Instance.ConfigHandler.ReceiveMessageHandler(address, oscMessage.Arguments);
-                    break;
+                    if (_debugMode) {
+                        var debugMsg = $"[Debug] Received OSC Message -> Address: {oscMessage.Address}, Args:";
+                        debugMsg = oscMessage.Aggregate(debugMsg,
+                            (current, arg) => current + $"\n\t\t\t{arg} [{arg?.GetType()}]");
+                        MelonLogger.Msg(debugMsg);
+                    }
+
+                    try {
+                        var addressLower = oscMessage.Address.ToLower();
+                        switch (addressLower) {
+                            case not null when addressLower.StartsWith(Avatar.AddressPrefixAvatar):
+                                AvatarHandler.ReceiveMessageHandler(oscMessage);
+                                break;
+                            case not null when addressLower.StartsWith(Input.AddressPrefixInput):
+                                InputHandler.ReceiveMessageHandler(oscMessage);
+                                break;
+                            case not null when addressLower.StartsWith(Spawnable.AddressPrefixSpawnable):
+                                SpawnableHandler.ReceiveMessageHandler(oscMessage);
+                                break;
+                            case not null when addressLower.StartsWith(Tracking.AddressPrefixTracking):
+                                TrackingHandler.ReceiveMessageHandler(oscMessage);
+                                break;
+                            case not null when addressLower.StartsWith(Config.AddressPrefixConfig):
+                                ConfigHandler.ReceiveMessageHandler(oscMessage);
+                                break;
+                        }
+                    }
+                    catch (Exception e) {
+                        var debugMsg = $"Failed executing the ReceiveMessageHandler from OSC." +
+                                       $"[Error] Received OSC Message -> Address: {oscMessage.Address}, Args:";
+                        debugMsg = oscMessage.Aggregate(debugMsg,
+                            (current, arg) => current + $"\n\t\t\t{arg} [{arg?.GetType()}]");
+                        MelonLogger.Error(debugMsg);
+                        MelonLogger.Error(e);
+                    }
+
+                }
             }
+            catch (Exception e) {
+                if (_receiver.State == OscSocketState.Connected) {
+                    MelonLogger.Error($"Failed executing the ReceiveMessageHandler from OSC.");
+                    MelonLogger.Error(e);
+                }
+            }
+
+            // Has no messages -> Wait for next frame
+            yield return null;
         }
-        catch (Exception e) {
-            MelonLogger.Error($"Failed executing the ReceiveMessageHandler from OSC. Contact the mod creator. " +
-                              $"Address: {oscMessage.Address} Args: {oscMessage.Arguments} Type: {oscMessage.Arguments.GetType()}");
-            MelonLogger.Error(e);
-            throw;
-        }
+    }
+
+    public void Close() {
+        _receiver.Close();
+        _sender.Close();
     }
 }

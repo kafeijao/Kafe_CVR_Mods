@@ -4,6 +4,7 @@ using ABI_RC.Core.Savior;
 using HarmonyLib;
 using MelonLoader;
 using OSC.Utils;
+using Rug.Osc;
 using UnityEngine;
 
 namespace OSC.Handlers.OscModules;
@@ -11,13 +12,15 @@ namespace OSC.Handlers.OscModules;
 public class Avatar : OscHandler {
 
     internal const string AddressPrefixAvatar = "/avatar/";
-    internal const string AddressPrefixAvatarParameters = $"{AddressPrefixAvatar}parameters/";
+    internal const string AddressPrefixAvatarParameters = $"{AddressPrefixAvatar}parameter";
+    internal const string AddressPrefixAvatarParametersLegacy = $"{AddressPrefixAvatar}parameters/";
     private const string AddressPrefixAvatarChange = $"{AddressPrefixAvatar}change";
 
     private static readonly HashSet<string> CoreParameters = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
 
     private bool _enabled;
     private bool _bypassJsonConfig;
+    private bool _debugConfigWarnings;
     private readonly Dictionary<string, JsonConfigParameterEntry> _parameterAddressCache = new();
 
     private readonly Action<CVRAnimatorManager> _animatorManagerUpdated;
@@ -29,7 +32,7 @@ public class Avatar : OscHandler {
     public Avatar() {
 
         // Execute actions on local avatar changed
-        _animatorManagerUpdated = InitializeNewAvatar;;
+        _animatorManagerUpdated = InitializeNewAvatar;
 
         // Send avatar float parameter change events
         _parameterChangedFloat = (parameter, value) => SendAvatarParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
@@ -60,6 +63,10 @@ public class Avatar : OscHandler {
             }
             _bypassJsonConfig = newValue;
         };
+
+        // Handle the warning when blocked osc command by config
+        _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
+        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
     }
 
     internal sealed override void Enable() {
@@ -80,22 +87,45 @@ public class Avatar : OscHandler {
         _enabled = false;
     }
 
-    internal sealed override void ReceiveMessageHandler(string address, List<object> args) {
-        if (!_enabled) return;
+    internal sealed override void ReceiveMessageHandler(OscMessage oscMsg) {
+        if (!_enabled) {
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg($"[Config] Sent an osc msg to {AddressPrefixAvatar}, but this module is disabled " +
+                                $"in the configuration file, so this will be ignored.");
+            }
+            return;
+        }
 
-        var addressLower = address.ToLower();
+        var addressLower= oscMsg.Address.ToLower();
 
         // Get only the first value and assume no values to be null
-        var valueObj = args.Count > 0 ? args[0] : null;
+        var valueObj = oscMsg.Count > 0 ? oscMsg[0] : null;
+        var valueObj2 = oscMsg.Count > 1 ? oscMsg[1] : null;
 
         // Handle the change parameter requests
-        if (addressLower.StartsWith(AddressPrefixAvatarParameters)) {
-            ParameterChangeHandler(address, valueObj);
+        if (addressLower.Equals(AddressPrefixAvatarParameters)) {
+            if (valueObj2 is not string paramName) {
+                MelonLogger.Msg($"[Error] Attempted to change an avatar parameter, but the parameter name " +
+                                $"provided is not a string :( you sent a {valueObj2?.GetType()} type argument.");
+                return;
+            }
+            ParameterChangeHandler(paramName, valueObj);
         }
 
         // Handle the change avtar requests
-        else if (addressLower.Equals(AddressPrefixAvatarChange) && valueObj is string valueStr) {
+        else if (addressLower.Equals(AddressPrefixAvatarChange)) {
+            if (valueObj is not string valueStr) {
+                MelonLogger.Msg($"[Error] Attempted to change the avatar, but the guid provided is not a string " +
+                                $":( you sent a {valueObj?.GetType()} type argument.");
+                return;
+            }
             Events.Avatar.OnAvatarSet(valueStr);
+        }
+
+        // Handle the change parameter requests [Deprecated]
+        else if (addressLower.StartsWith(AddressPrefixAvatarParametersLegacy)) {
+            var parameter = oscMsg.Address.Substring(AddressPrefixAvatarParametersLegacy.Length);
+            ParameterChangeHandler(parameter, valueObj);
         }
     }
 
@@ -105,7 +135,9 @@ public class Avatar : OscHandler {
         _parameterAddressCache.Clear();
 
         // Send change avatar event
-        HandlerOsc.SendMessage(AddressPrefixAvatarChange, MetaPort.Instance.currentAvatarGuid);
+        HandlerOsc.SendMessage(AddressPrefixAvatarChange,
+            MetaPort.Instance.currentAvatarGuid,
+            JsonConfigOsc.GetConfigFilePath(MetaPort.Instance.ownerId, MetaPort.Instance.currentAvatarGuid));
 
         // Send all parameter values when loads a new avatar
         foreach (var param in manager.animator.parameters) {
@@ -135,8 +167,7 @@ public class Avatar : OscHandler {
         }
     }
 
-    private void ParameterChangeHandler(string address, object valueObj) {
-        var parameter = address.Substring(AddressPrefixAvatarParameters.Length);
+    private void ParameterChangeHandler(string parameter, object valueObj) {
 
         // Reject core parameters
         if (CoreParameters.Contains(parameter)) {
@@ -148,7 +179,14 @@ public class Avatar : OscHandler {
         }
 
         // Reject non-config parameters
-        if (!_bypassJsonConfig && !_parameterAddressCache.ContainsKey(parameter)) return;
+        if (!_bypassJsonConfig && !_parameterAddressCache.ContainsKey(parameter)) {
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg($"[Config] Ignoring the {parameter} change because it's not present in the json " +
+                                $"config file, and you set on the configure file to not bypass checking if the " +
+                                $"address is present in the json config.");
+            }
+            return;
+        }
 
         // Sort their types and call the correct handler
         if (valueObj is float floatValue) Events.Avatar.OnParameterSetFloat(parameter, floatValue);
@@ -215,7 +253,9 @@ public class Avatar : OscHandler {
 
         // If there is no config OR is not in the config but we're bypassing -> revert to default behavior
         if (JsonConfigOsc.CurrentAvatarConfig == null || (_bypassJsonConfig && !_parameterAddressCache.ContainsKey(paramName))) {
-            HandlerOsc.SendMessage($"{AddressPrefixAvatarChange}{paramName}", data);
+            // Send to both endpoints to support vrc endpoint
+            HandlerOsc.SendMessage($"{AddressPrefixAvatarParameters}", data, paramName);
+            HandlerOsc.SendMessage($"{AddressPrefixAvatarParametersLegacy}{paramName}", data);
             return;
         }
 
@@ -224,6 +264,7 @@ public class Avatar : OscHandler {
         // Ignore non-mapped addresses in the config
         if (paramEntity == null) return;
 
-        HandlerOsc.SendMessage(paramEntity.address, data);
+        // Send the parameter name as the second argument so it is compatible with both legacy and new way
+        HandlerOsc.SendMessage(paramEntity.address, data, paramName);
     }
 }

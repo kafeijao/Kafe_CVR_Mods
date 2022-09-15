@@ -27,6 +27,7 @@ public static class Avatar {
     // Configs cache
     private static bool _triggersEnabled;
     private static bool _setAvatarEnabled;
+    private static bool _debugConfigWarnings;
 
     // Misc
     private static readonly Stopwatch AvatarSetStopwatch = new();
@@ -49,6 +50,10 @@ public static class Avatar {
         // Handle the set avatar enabled configuration
         _setAvatarEnabled = OSC.Instance.meOSCAvatarModuleSetAvatar.Value;
         OSC.Instance.meOSCAvatarModuleSetAvatar.OnValueChanged += (_, enabled) => _setAvatarEnabled = enabled;
+
+        // Handle the warning when blocked osc command by config
+        _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
+        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
     }
 
     // Callers
@@ -107,25 +112,29 @@ public static class Avatar {
         AnimatorManagerUpdated?.Invoke(animatorManager);
     }
 
-    internal static void OnAvatarSet(string uuid) {
+    internal static void OnAvatarSet(string guid) {
         if (!_setAvatarEnabled) {
-            MelonLogger.Msg("[Info] Attempted to set the avatar via OSC, but that option is disabled on the mod configuration.");
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg("[Config] Attempted to change the avatar via OSC, but that option is disabled on the mod configuration.");
+            }
             return;
         }
 
         // Ignore malformed guids
-        if (!Guid.TryParse(uuid, out _)) return;
+        if (!Guid.TryParse(guid, out var guidValue)) return;
+        var parsedGuid = guidValue.ToString("D");
 
         // Timer to prevent spamming this (since it's an API call
         if (!AvatarSetStopwatch.IsRunning) AvatarSetStopwatch.Start();
-        else if (AvatarSetStopwatch.Elapsed < TimeSpan.FromSeconds(30)) {
-            MelonLogger.Msg($"[Info] Attempted to change avatar to {uuid}, but changing avatar is still on cooldown (30 secs)...");
+        else if (AvatarSetStopwatch.Elapsed < TimeSpan.FromSeconds(10)) {
+            MelonLogger.Msg($"[Info] Attempted to change avatar to {parsedGuid}, but changing avatar is still on cooldown " +
+                            $"(10 secs)...");
             return;
         }
 
         AvatarSetStopwatch.Restart();
-        MelonLogger.Msg($"[Command] Received OSC command to change avatar to {uuid}. Changing...");
-        AssetManagement.Instance.LoadLocalAvatar(uuid);
+        MelonLogger.Msg($"[Command] Received OSC command to change avatar to {parsedGuid}. Changing...");
+        AssetManagement.Instance.LoadLocalAvatar(parsedGuid);
     }
 
     // Callers parameters changed
@@ -176,7 +185,10 @@ public static class Avatar {
 
     internal static void OnParameterSetTrigger(string name) {
         if (!_triggersEnabled) {
-            MelonLogger.Msg("[Info] Attempted to set a trigger parameter, but that option is disabled in the mod configuration.");
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg("[Config] Attempted to set a trigger parameter, but that option is disabled in " +
+                                "the mod configuration.");
+            }
             return;
         }
         _localPlayerAnimatorManager?.SetAnimatorParameterTrigger(name);

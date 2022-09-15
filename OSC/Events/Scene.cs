@@ -1,6 +1,4 @@
-﻿using MelonLoader;
-
-namespace OSC.Events;
+﻿namespace OSC.Events;
 
 public static class Scene {
 
@@ -25,5 +23,8 @@ public static class Scene {
 
         // Re-initialize spawnables
         Spawnable.Reset();
+
+        // Clear devices connection status
+        Tracking.Reset();
     }
 }

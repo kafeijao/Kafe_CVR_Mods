@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using MelonLoader;
+using Rug.Osc;
 using UnityEngine;
 
 namespace OSC.Handlers.OscModules;
@@ -9,7 +10,7 @@ enum SpawnableOperation {
     create,
     delete,
     available,
-    parameters,
+    parameter,
     location,
     location_sub,
 }
@@ -19,9 +20,10 @@ public class Spawnable : OscHandler {
     internal const string AddressPrefixSpawnable = "/prop/";
 
     private bool _enabled;
+    private bool _debugConfigWarnings;
 
     private readonly Action<CVRSyncHelper.PropData> _spawnableCreated;
-    private readonly Action<CVRSyncHelper.PropData> _spawnableDeleted;
+    private readonly Action<CVRSpawnable> _spawnableDeleted;
     private readonly Action<CVRSpawnable, bool> _spawnableAvailabilityChanged;
     private readonly Action<CVRSpawnable, CVRSpawnableValue> _spawnableParameterChanged;
     private readonly Action<CVRSpawnable> _spawnableLocationChanged;
@@ -45,11 +47,9 @@ public class Spawnable : OscHandler {
         };
 
         // Execute actions on spawnable deletion
-        _spawnableDeleted = propData => {
-            var spawnable = propData.Spawnable;
-
+        _spawnableDeleted = spawnable => {
             // Send the delete event
-            HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.delete)}", spawnable.guid, GetInstanceId(spawnable));
+            HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.delete)}", GetGuid(spawnable), GetInstanceId(spawnable));
         };
 
         // Send spawnable availability change events
@@ -59,7 +59,7 @@ public class Spawnable : OscHandler {
 
         // Send spawnable parameter change events
         _spawnableParameterChanged = (spawnable, spawnableValue) => {
-            HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.parameters)}", spawnable.guid, GetInstanceId(spawnable), spawnableValue.name, spawnableValue.currentValue);
+            HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.parameter)}", spawnable.guid, GetInstanceId(spawnable), spawnableValue.name, spawnableValue.currentValue);
         };
 
         // Send spawnable location change events
@@ -83,6 +83,7 @@ public class Spawnable : OscHandler {
                     spawnable.guid, GetInstanceId(spawnable),
                     index,
                     sPos.x, sPos.y, sPos.z, sRot.x, sRot.y, sRot.z);
+                    //sPos.x + pos.x, sPos.y + pos.y, sPos.z + pos.z, sRot.x + rot.x, sRot.y + rot.y, sRot.z + rot.z);
             }
         };
 
@@ -93,6 +94,10 @@ public class Spawnable : OscHandler {
             if (newValue && !oldValue) Enable();
             else if (!newValue && oldValue) Disable();
         };
+
+        // Handle the warning when blocked osc command by config
+        _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
+        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
     }
 
     internal sealed override void Enable() {
@@ -113,15 +118,21 @@ public class Spawnable : OscHandler {
         _enabled = false;
     }
 
-    internal sealed override void ReceiveMessageHandler(string address, List<object> args) {
-        if (!_enabled) return;
+    internal sealed override void ReceiveMessageHandler(OscMessage oscMsg) {
+        if (!_enabled) {
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg($"[Config] Sent an osc msg to {AddressPrefixSpawnable}, but this module is disabled " +
+                                $"in the configuration file, so this will be ignored.");
+            }
+            return;
+        }
 
-        var addressParts = address.Split('/');
+        var addressParts =oscMsg.Address.Split('/');
 
         // Validate Length
         if (addressParts.Length != 3) {
             MelonLogger.Msg($"[Error] Attempted to interact with a prop but the address is invalid." +
-                            $"\n\t\t\tAddress attempted: \"{address}\"" +
+                            $"\n\t\t\tAddress attempted: \"{oscMsg.Address}\"" +
                             $"\n\t\t\tThe correct format should be: \"{AddressPrefixSpawnable}<op>\"" +
                             $"\n\t\t\tAnd the allowed ops are: {string.Join(", ", Enum.GetNames(typeof(SpawnableOperation)))}");
             return;
@@ -130,20 +141,20 @@ public class Spawnable : OscHandler {
         Enum.TryParse<SpawnableOperation>(addressParts[2], true, out var spawnableOperation);
 
         switch (spawnableOperation) {
-            case SpawnableOperation.parameters:
-                ReceivedParameterHandler(args);
+            case SpawnableOperation.parameter:
+                ReceivedParameterHandler(oscMsg);
                 return;
             case SpawnableOperation.location:
-                ReceivedLocationHandler(args);
+                ReceivedLocationHandler(oscMsg);
                 return;
             case SpawnableOperation.location_sub:
-                ReceivedLocationSubHandler(args);
+                ReceivedLocationSubHandler(oscMsg);
                 return;
             case SpawnableOperation.delete:
-                ReceivedDeleteHandler(args);
+                ReceivedDeleteHandler(oscMsg);
                 return;
             case SpawnableOperation.create:
-                ReceivedCreateHandler(args);
+                ReceivedCreateHandler(oscMsg);
                 return;
             case SpawnableOperation.available:
                 MelonLogger.Msg($"[Error] Attempted set the availability for a prop, this is not allowed.");
@@ -151,7 +162,7 @@ public class Spawnable : OscHandler {
             default:
                 MelonLogger.Msg(
                     "[Error] Attempted to interact with a prop but the address is invalid." +
-                    $"\n\t\t\tAddress attempted: \"{address}\"" +
+                    $"\n\t\t\tAddress attempted: \"{oscMsg.Address}\"" +
                     $"\n\t\t\tThe correct format should be: \"{AddressPrefixSpawnable}<op>\"" +
                     $"\n\t\t\tAnd the allowed ops are: {string.Join(", ", Enum.GetNames(typeof(SpawnableOperation)))}"
                     );
@@ -159,15 +170,15 @@ public class Spawnable : OscHandler {
         }
     }
 
-    private static void ReceivedCreateHandler(List<object> args) {
+    private static void ReceivedCreateHandler(OscMessage oscMessage) {
 
-        if (args.Count is not (1 or 4)) {
+        if (oscMessage.Count is not (1 or 4)) {
             MelonLogger.Msg($"[Error] Attempted to create a prop, but provided an invalid number of arguments. " +
                             $"Expected either 1 or 4 arguments, for the guid and optionally position coordinates.");
             return;
         }
 
-        var possibleGuid = args[0];
+        var possibleGuid = oscMessage[0];
         if (!TryParseSpawnableGuid(possibleGuid, out var spawnableGuid)) {
             MelonLogger.Msg($"[Error] Attempted to create a prop, but provided an invalid GUID. " +
                             $"GUID attempted: \"{possibleGuid}\" Type: {possibleGuid?.GetType()}" +
@@ -175,7 +186,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        if (TryParseVector3(args[1], args[2], args[3], out var floats)) {
+        if (oscMessage.Count == 4 && TryParseVector3(oscMessage[1], oscMessage[2], oscMessage[3], out var floats)) {
             Events.Spawnable.OnSpawnableCreate(spawnableGuid, floats.Item1, floats.Item2, floats.Item3);
         }
         else {
@@ -183,15 +194,15 @@ public class Spawnable : OscHandler {
         }
     }
 
-    private static void ReceivedDeleteHandler(List<object> args) {
+    private static void ReceivedDeleteHandler(OscMessage oscMessage) {
 
-        if (args.Count != 2) {
+        if (oscMessage.Count != 2) {
             MelonLogger.Msg($"[Error] Attempted to delete a prop, but provided an invalid number of arguments. " +
                             $"Expected 2 arguments, for the prop GUID and Instance ID.");
             return;
         }
 
-        var possibleGuid = args[0];
+        var possibleGuid = oscMessage[0];
         if (!TryParseSpawnableGuid(possibleGuid, out var spawnableGuid)) {
             MelonLogger.Msg($"[Error] Attempted to delete a prop, but provided an invalid GUID. " +
                             $"GUID attempted: \"{possibleGuid}\" Type: {possibleGuid?.GetType()}" +
@@ -199,7 +210,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        var possibleInstanceId = args[1];
+        var possibleInstanceId = oscMessage[1];
         if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to delete a prop, but provided an invalid Instance ID. " +
                             $"Prop Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
@@ -210,15 +221,15 @@ public class Spawnable : OscHandler {
         Events.Spawnable.OnSpawnableDelete($"p+{spawnableGuid}~{spawnableInstanceId}");
     }
 
-    private static void ReceivedParameterHandler(List<object> args) {
+    private static void ReceivedParameterHandler(OscMessage oscMessage) {
 
-        if (args.Count != 4) {
+        if (oscMessage.Count != 4) {
             MelonLogger.Msg($"[Error] Attempted to set a prop synced param, but provided an invalid number of arguments. " +
                             $"Expected 4 arguments, for the prop GUID, and Instance ID, sync param name, and param value");
             return;
         }
 
-        var possibleGuid = args[0];
+        var possibleGuid = oscMessage[0];
         if (!TryParseSpawnableGuid(possibleGuid, out var spawnableGuid)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop synced param, but provided an invalid GUID. " +
                             $"GUID attempted: \"{possibleGuid}\" Type: {possibleGuid?.GetType()}" +
@@ -226,7 +237,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        var possibleInstanceId = args[1];
+        var possibleInstanceId = oscMessage[1];
         if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop synced param, but provided an invalid Instance ID. " +
                             $"Prop Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
@@ -234,7 +245,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        var possibleParamName = args[2];
+        var possibleParamName = oscMessage[2];
         if (possibleParamName is not string spawnableParameterName) {
             MelonLogger.Msg($"[Error] Attempted to set a prop synced param, but provided an invalid name. " +
                             $"Attempted: \"{possibleParamName}\" Type: {possibleParamName?.GetType()}" +
@@ -242,7 +253,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        var possibleFloat = args[3];
+        var possibleFloat = oscMessage[3];
         if (!Utils.Converters.TryHardToParseFloat(possibleFloat, out var parsedFloat)) {
             MelonLogger.Msg(
                 $"[Error] Attempted to change a prop synced parameter {spawnableParameterName} to {possibleFloat}, " +
@@ -256,16 +267,16 @@ public class Spawnable : OscHandler {
         Events.Spawnable.OnSpawnableParameterSet(spawnableFullId, spawnableParameterName, parsedFloat);
     }
 
-    private static void ReceivedLocationHandler(List<object> args) {
+    private static void ReceivedLocationHandler(OscMessage oscMessage) {
 
-        if (args.Count != 8) {
+        if (oscMessage.Count != 8) {
             MelonLogger.Msg($"[Error] Attempted to set a prop location, but provided an invalid number of arguments. " +
                             $"Expected 8 arguments, for the prop GUID, and Instance ID, 3 floats for position, and 3" +
                             $"floats for the rotation (euler angles).");
             return;
         }
 
-        var possibleGuid = args[0];
+        var possibleGuid = oscMessage[0];
         if (!TryParseSpawnableGuid(possibleGuid, out var spawnableGuid)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop location, but provided an invalid GUID. " +
                             $"GUID attempted: \"{possibleGuid}\" Type: {possibleGuid?.GetType()}" +
@@ -273,7 +284,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        var possibleInstanceId = args[1];
+        var possibleInstanceId = oscMessage[1];
         if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop location, but provided an invalid Instance ID. " +
                             $"Prop Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
@@ -282,8 +293,8 @@ public class Spawnable : OscHandler {
         }
 
         // Validate position and rotation floats
-        if (!TryParseVector3(args[2], args[3], args[4], out var posFloats)) return;
-        if (!TryParseVector3(args[5], args[6], args[7], out var rotFloats)) return;
+        if (!TryParseVector3(oscMessage[2], oscMessage[3], oscMessage[4], out var posFloats)) return;
+        if (!TryParseVector3(oscMessage[5], oscMessage[6], oscMessage[7], out var rotFloats)) return;
 
         var spawnableFullId = $"p+{spawnableGuid}~{spawnableInstanceId}";
 
@@ -293,16 +304,16 @@ public class Spawnable : OscHandler {
         Events.Spawnable.OnSpawnableLocationSet(spawnableFullId, position, rotation);
     }
 
-    private static void ReceivedLocationSubHandler(List<object> args) {
+    private static void ReceivedLocationSubHandler(OscMessage oscMessage) {
 
-        if (args.Count != 9) {
+        if (oscMessage.Count != 9) {
             MelonLogger.Msg($"[Error] Attempted to set a prop location with an invalid number of arguments. " +
                             $"Expected 8 arguments, for the prop GUID, and Instance ID, 3 floats for position, and 3" +
                             $"floats for the rotation (euler angles).");
             return;
         }
 
-        var possibleGuid = args[0];
+        var possibleGuid = oscMessage[0];
         if (!TryParseSpawnableGuid(possibleGuid, out var spawnableGuid)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop sub-sync location, but provided an invalid GUID. " +
                             $"GUID attempted: \"{possibleGuid}\" Type: {possibleGuid?.GetType()}" +
@@ -310,7 +321,7 @@ public class Spawnable : OscHandler {
             return;
         }
 
-        var possibleInstanceId = args[1];
+        var possibleInstanceId = oscMessage[1];
         if (!TryParseSpawnableInstanceId(possibleInstanceId, out var spawnableInstanceId)) {
             MelonLogger.Msg($"[Error] Attempted to set a prop sub-sync location, with an invalid Instance ID. " +
                             $"Instance ID attempted: \"{possibleInstanceId}\" Type: {possibleInstanceId?.GetType()}" +
@@ -319,7 +330,7 @@ public class Spawnable : OscHandler {
         }
 
         // Validate index
-        var possibleIndex = args[2];
+        var possibleIndex = oscMessage[2];
         if (!Utils.Converters.TryToParseInt(possibleIndex, out var subIndex) || subIndex < 0) {
             MelonLogger.Msg($"[Error] Attempted set the location of prop sub-sync with an invalid/negative index. " +
                             $"Value attempted to parse: {possibleIndex} [{possibleIndex?.GetType()}]");
@@ -327,8 +338,8 @@ public class Spawnable : OscHandler {
         }
 
         // Validate position and rotation floats
-        if (!TryParseVector3(args[2], args[3], args[4], out var posFloats)) return;
-        if (!TryParseVector3(args[5], args[6], args[7], out var rotFloats)) return;
+        if (!TryParseVector3(oscMessage[3], oscMessage[4], oscMessage[5], out var posFloats)) return;
+        if (!TryParseVector3(oscMessage[6], oscMessage[7], oscMessage[8], out var rotFloats)) return;
 
         var spawnableFullId = $"p+{spawnableGuid}~{spawnableInstanceId}";
 
@@ -336,6 +347,12 @@ public class Spawnable : OscHandler {
         var rotation = new Vector3(rotFloats.Item1, rotFloats.Item2, rotFloats.Item3);
 
         Events.Spawnable.OnSpawnableLocationSet(spawnableFullId, position, rotation, subIndex);
+    }
+
+    private static string GetGuid(CVRSpawnable spawnable) {
+        // Spawnable instance id example: p+047576d5-e028-483a-9870-89e62f0ed3a4~FF00984F7C5A
+        // p+<spawnable_id>~<instance_id>
+        return spawnable.instanceId.Substring(3, 36);
     }
 
     private static string GetInstanceId(CVRSpawnable spawnable) {

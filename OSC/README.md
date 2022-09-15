@@ -3,11 +3,10 @@
 This **Melon Loader** mod allows you to use OSC to interact with **ChilloutVR**. It tries to be compatible with other social VR 
 games that also use OSC. This way allows the usage of tools made for other games with relative ease.
 
-- [OSC Avatar Changes](#OSC-Avatar-Changes)
-- [OSC Avatar Parameters](#OSC-Avatar-Parameters)
+- [OSC Avatar](#OSC-Avatar)
 - [OSC Inputs](#OSC-Inputs)
 - [OSC Props](#OSC-Props)
-- [OSC Tracking Data](#OSC-Tracking-Data)
+- [OSC Tracking](#OSC-Tracking)
 - [Avatar Json Configurations](#Avatar-Json-Configurations)
 - [OSC Config](#OSC-Config)
 - [Debugging](#Debugging)
@@ -15,39 +14,85 @@ games that also use OSC. This way allows the usage of tools made for other games
 
 
 For now there are 6 categories of endpoints you can use:
-- [OSC Avatar Changes](#OSC-Avatar-Changes) for listening/triggering avatar changes.
-- [OSC Avatar Parameters](#OSC-Avatar-Parameters) for listening/triggering avatar parameter changes.
+- [OSC Avatar](#OSC-Avatar) for listening/triggering avatar changes, and also their parameters
 - [OSC Inputs](#OSC-Inputs) for triggering inputs/actions.
 - [OSC Props](#OSC-Props) for interacting with props.
-- [OSC Tracking data](#OSC-Tracking-Data) to fetch tracking information (headset, controllers, trackers, play space).
+- [OSC Tracking](#OSC-Tracking) to fetch tracking information (headset, controllers, trackers, play space).
 - [OSC Config](#OSC-Config) configuration/utilities via OSC.
 
+
+
+
 ---
-## OSC Avatar Changes
+## OSC Avatar
+The first module is the avatar module, where you are able to interface with avatar related stuff. You can
+change the current avatar you're using via OSC, and also listen to those changes (you'll get the event either way).
+
+Also you're able to change and listen to the avatar parameters. This part part has a lot of customization options
+because you're able to change the addresses and types via a config (not required).
+
+
+### OSC Avatar Change
 Whenever you load into an avatar the mod will send a message to `/avatar/change` containing as the first and only
 argument a string representing the avatar UUID.
 
-```console
-/avatar/change
-```
+#### Address
+```/avatar/change```
+
+**Mod will send:**
+#### Arguments
+- `arg#1` - Avatar GUID [*string*]
+- `arg#2` - Path to the avatar json config [*string*], this is new to this mod, but as it is an additional param it 
+won't break existing osc apps
+
+**Mod will receive:**
+#### Arguments
+- `arg#1` - Avatar GUID [*string*]
 
 **New:** The mod will also listen to the address `/avatar/change`, so if you send a UUID of an avatar (that you have 
 permission to use), it will change your avatar in-game. This is `enabled` by default, but you can go to the 
 configurations and disable it.
 
 
+
 ---
 ## OSC Avatar Parameters
 You can listen and trigger parameter changes on your avatar via OSC messages, by default the endpoint to change and 
-listen to parameter changes is:
-```console
-/avatar/parameters/<parameter_name>
-```
+listen to parameter changes as follow.
+
+#### Address [`deprecated`]
+```/avatar/parameters/<parameter_name>```
+
 Where `<parameter_name>` would be the name of your parameter. *The parameter name is case sensitive!*
 
-And then the value is sent as the first argument, this argument should be sent as the same type as the parameter is
-defined in the animator. But you can also send as a `string` or some other type that has a conversion implied. **Note:**
-Sending the correct type will require less code to run, making it more performant.
+#### Arguments [`deprecated`]
+- `arg#1` - Parameter value [ *float *|* int *|* bool | null* ], for triggers you can ignore sending a parameter, the
+value will be ignored either way.
+
+
+These are certain limitations using the endpoint above, because according to the OSC spec you can't have `#` in the
+last member of the OSC address. So some OSC clients will have issues setting local parameters (because in cvr they
+require a `#`). I had to hack my way to force my client to allow `#` on the address ;_;
+
+I marked it as deprecated but will still support it for compatibility reasons. Use the alternative ones bellow if you're
+implementing something new (please).
+
+As for sending I'll be sending on both endpoints so just pick one to listen to.
+
+
+#### Address [`preferred`]
+```/avatar/parameter```
+
+#### Arguments [`preferred`]
+- `arg#1` - Parameter value [ *float *|* int *|* bool | null* ], for triggers you can ignore sending a parameter, the
+value will be ignored either way.
+- `arg#2` - Parameter name [ *string* ], *The parameter name is case sensitive!*
+
+
+The Parameter value argument should be sent as the same type as the parameter is defined in the animator. But you can 
+also send as a `string` or some other type that has a conversion implied.
+
+**Note:** Sending the correct type will require less code to run, making it more performant.
 
 We support all animator parameter types, `Float`, `Int`, `Bool`, and `Trigger`([*](#Triggers))
 
@@ -68,17 +113,21 @@ apps. It uses the same parameter change address, but it sends just the address w
 And when listening
 the same thing, you will receive an OSC message to the parameter address, but there won't be a value.
 
+
+
+
 ---
 ## OSC Inputs
 Here is where you can interact with the game in a more generic ways, allow you to send controller inputs or triggering
 actions in the game.
 
-The endpoint for the inputs is:
-```console
-/input/<input_name>
-```
-Where the `<input_name>` is the actual name of the input you're trying to change, and then it takes as the first 
-argument the value.
+#### Address
+```/input/<input_name>```
+
+Where the `<input_name>` is the actual name of the input you're trying to change.
+
+#### Arguments
+- `arg#1` - Input value [ *float* | *int* | *bool* ]
 
 There are some inputs that are not present that exist in other VR Social platforms, this is due CVR not having those
 features implemented yet. Like rotating the object you're holding with keyboard inputs. And some others that are new,
@@ -89,11 +138,12 @@ will act the same as you holding down the key to Jump, and it will only be relea
 value `0`. So don't forget to reset them in your apps, otherwise you might end up jumping forever.
 
 There are 3 types of Inputs:
-- [Axes](#Axes)
-- [Buttons](#Buttons)
-- [Values](#Values)
+- [Axes](#OSC-Inputs-Axes)
+- [Buttons](#OSC-Inputs-Buttons)
+- [Values](#OSC-Inputs-Values)
 
-### Axes
+
+### OSC Inputs Axes
 Axes expecting a `float` value that ranges between `-1`/`0` and `1`. They are namely used for things that require a 
 range of values instead of a on/off, for example the Movement, where `Horizontal` can be set to `-0.5` which would be
 the same as having the thumbstick on your controller to the left (because it's a negative value) but only halfway 
@@ -107,7 +157,8 @@ the same as having the thumbstick on your controller to the left (because it's a
 - `/intput/GripLeftValue` - [*new*] Left hand trigger grip released `0` or pulled to max `1`
 - `/intput/GripRightValue` - [*new*] Right hand trigger grip released `0` or pulled to max `1`
 
-### Buttons
+
+### OSC Inputs Buttons
 Buttons are expecting `boolean` values, which can be represented by the boolean types `true` for button
 pressed and `false` for released. You can also send `integers` with the values `1` for pressed and `0` for released.
 
@@ -162,7 +213,7 @@ are on the blacklist (`Reload` at the time of writing was bugged and would crash
 You can also disable the whole input module on the configuration as well.
 
 
-### Values
+### OSC Inputs Values
 Values are similar to `Axes` but removes the restriction of being between `-1` and `1`, they are used to send values to
 certain properties of the game. The values are of the type `float` or `int` and their range is dependent on each entry.
 
@@ -173,7 +224,6 @@ default value otherwise they will remain the last value you sent.
 - `/intput/GestureLeft` - Sets which gesture to perform on the left hand. Default: `0`
 - `/intput/GestureRight` - Sets which gesture to perform on the right hand. Default: `0`
 - `/intput/Toggle` - Sets which toggle is active. Default: `0`
-
 
 
 
@@ -191,7 +241,7 @@ prop in an instance, and the best way to obtain it is by listening to the `Creat
 
 
 
-### Create
+### OSC Props Create
 You're able to spawn props by providing their GUID. Keep in mind that you can only spawn props you
 have access to and there is a limit of 20 props spawned by yourself.
 
@@ -224,7 +274,7 @@ space. If you want to provide a value, you need to provide all of them. If no va
 
 
 
-### Delete
+### OSC Props Delete
 As the name suggests you can delete props that you've spawned. You can do so by providing the GUID of the prop as well
 as their instance ID to uniquely identify them.
 
@@ -239,7 +289,8 @@ won't become available for interaction anymore.
 - `arg#2` - Instance ID of the prop spawned [*string*]
 
 
-### Availability
+
+### OSC Props Availability
 This address will be called every time a prop has their availability changed. What what I mean by availability is
 where you are able to control or not this prop. The props become available when no remote player is *grabbing*, 
 *telegrabbing*, nor has it *attached* to themselves. Also this **only** affects props spawned by yourself!
@@ -259,7 +310,7 @@ Obviously this is an address set by the game, so you can't send osc messages to 
 
 
 
-### Parameters
+### OSC Props Parameters
 Here you will be able to listen and write to the prop's synced parameters. You will need to provide the GUID of the prop
 and it's instance ID to do so.
 
@@ -268,7 +319,7 @@ and it's instance ID to do so.
 - The prop **not** being controlled by a remote player [*grabbed* | *telegrabbed* | *attached*]
 
 #### Address
-```/prop/parameters```
+```/prop/parameter```
 
 #### Arguments
 
@@ -283,7 +334,7 @@ the actual name of parameter inside of the animator. This name is **case sensiti
 
 
 
-### Location
+### OSC Props Location
 You are also able to listen and set the location of a prop. This is very powerful as you can for example link the
 tracking data you receive form the tracking module to a prop so it's controlled by the tracker.
 
@@ -309,7 +360,7 @@ their positions without any issue tho.
 
 
 
-### Location Sub
+### OSC Props Location Sub
 You are also able to listen and set the location of a prop's sub-sync transforms. This is very powerful as you can for
 example link the tracking data you receive form the tracking module to a sub-sync so it's controlled by the tracker.
 
@@ -338,14 +389,13 @@ CVR Spawnable Component
 
 
 ---
-## OSC Tracking Data
-
+## OSC Tracking
 This mod module allows to read tracking data from the game namely from tracked devices, and the play space. You can
 only listen to these, don't try messages to those (or else).
 
 
 
-### Play Space
+### OSC Tracking Play Space Data
 The mod will keep sending the current play space position and rotation. This is especially useful if you want to create
 avatar animations to drive the position of objects. Because the avatar origin is the play space origin. Meaning if you
 have world space coordinates you want to make local to the avatar, you can do it by using the play space location data
@@ -365,7 +415,23 @@ The values are sent as `float` type arguments, and the values order is the follo
 
 
 
-### Devices
+### OSC Tracking Device Status
+You can listen here for steam vr device connected change status. Every device starts assuming it is disconnected so you
+will always receive a connected = `True` as the first event from a device.
+
+#### Address
+```/tracking/device/status```
+
+#### Arguments
+- `arg#1` - Connected [*bool*], whether the device was connected `True` or disconnected `False`
+- `arg#2` - Device type [*string*], Possible values: `hmd`, `base_station`, `left_controller`, `right_controller`, `tracker`, and
+  `unknown`
+- `arg#3` - Steam tracked index [*int*], given by SteamVR, it's unique for each device (*see note bellow*)
+- `arg#4` - Device name [*string*], given by SteamVR, in some cases (like base stations) there is no name the string will be empty.
+
+
+
+### OSC Tracking Devices Data
 The mod also exposes the tracking information for tracked devices, like base stations, controllers, and trackers.
 
 Both the position and rotation are for world space, and the rotation is sent in euler angles.
@@ -407,7 +473,7 @@ defined in seconds.
 
 This mod module allows configure/interact with the mod via osc.
 
-### Reset
+### OSC Config Reset
 This endpoint will reset the caches for both avatar and props, and re-send the init events. It's useful if you
 start your osc application after the game is running and require those initial events. Since this mod doesn't
 keep spamming updates this is very useful sync the state with your app (if you need).
@@ -417,9 +483,7 @@ keep spamming updates this is very useful sync the state with your app (if you n
 ```/config/reset```
 
 #### Arguments
-- `arg#1` - Send literally anything, this shouldn't be needed (because OSC spec allows Nil as argument), but some osc
-libs don't have it implemented. So feel free to not send anything, but the lib you're using might fail. So you could
-just send something and call it a day, like an empty string.
+`N/A`
 
 
 

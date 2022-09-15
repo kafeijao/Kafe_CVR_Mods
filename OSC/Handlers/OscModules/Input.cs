@@ -1,5 +1,7 @@
 ﻿using MelonLoader;
 using OSC.Components;
+using Rug.Osc;
+using UnityEngine;
 
 namespace OSC.Handlers.OscModules;
 
@@ -9,6 +11,7 @@ public class Input : OscHandler {
 
     private bool _enabled;
     private List<string> _inputBlacklist;
+    private bool _debugConfigWarnings;
 
     public Input() {
 
@@ -22,6 +25,10 @@ public class Input : OscHandler {
         // Set the blacklist and listen for it's changes according to the config
         _inputBlacklist = OSC.Instance.meOSCInputModuleBlacklist.Value;
         OSC.Instance.meOSCInputModuleBlacklist.OnValueChanged += (_, newValue) => _inputBlacklist = newValue;
+
+        // Handle the warning when blocked osc command by config
+        _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
+        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
     }
 
     internal sealed override void Enable() {
@@ -32,17 +39,25 @@ public class Input : OscHandler {
         _enabled = false;
     }
 
-    internal sealed override void ReceiveMessageHandler(string address, List<object> args) {
-        if (!_enabled) return;
+    internal sealed override void ReceiveMessageHandler(OscMessage oscMsg) {
+        if (!_enabled) {
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg($"[Config] Sent an osc msg to {AddressPrefixInput}, but this module is disabled " +
+                                $"in the configuration file, so this will be ignored.");
+            }
+            return;
+        }
 
         // Get only the first value and assume no values to be null
-        var valueObj = args.Count > 0 ? args[0] : null;
+        var valueObj = oscMsg.Count > 0 ? oscMsg[0] : null;
 
-        var inputName = address.Substring(AddressPrefixInput.Length);
+        var inputName =oscMsg.Address.Substring(AddressPrefixInput.Length);
 
         // Reject blacklisted inputs (ignore case)
         if (_inputBlacklist.Contains(inputName, StringComparer.OrdinalIgnoreCase)) {
-            MelonLogger.Msg($"[Info] The OSC config has {inputName} blacklisted. Edit the config to allow.");
+            if (_debugConfigWarnings) {
+                MelonLogger.Msg($"[Config] The OSC config has {inputName} blacklisted. Edit the config to allow.");
+            }
             return;
         }
 
@@ -75,6 +90,7 @@ public class Input : OscHandler {
             }
             if (valueObj is bool boolValue) UpdateButtonValue(buttonName, boolValue);
             else if (valueObj is int intValue) UpdateButtonValue(buttonName, intValue == 1 ? true : intValue == 0 ? false : null);
+            else if (valueObj is float floatValue) UpdateButtonValue(buttonName, Mathf.Approximately(floatValue, 1f) ? true : Mathf.Approximately(floatValue, 0f) ? false : null);
             else if (valueObj is string valueStr) {
                 if (int.TryParse(valueStr, out var valueInt)) UpdateButtonValue(buttonName, valueInt == 1 ? true : valueInt == 0 ? false : null);
                 else if (bool.TryParse(valueStr, out var valueBool)) UpdateButtonValue(buttonName, valueBool);

@@ -6,11 +6,20 @@ using ABI_RC.Core.Util;
 using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
+using Rug.Osc;
 
 namespace OSC;
 
 [HarmonyPatch]
 internal class HarmonyPatches {
+
+    private static bool _performanceMode;
+
+    static HarmonyPatches() {
+        // Handle performance mod changes
+        _performanceMode = OSC.Instance.meOSCPerformanceMode.Value;
+        OSC.Instance.meOSCPerformanceMode.OnValueChanged += (_, enabled) => _performanceMode = enabled;
+    }
 
     // Avatar
     [HarmonyPrefix]
@@ -29,28 +38,28 @@ internal class HarmonyPatches {
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterFloat))]
     internal static void AfterSetAnimatorParameterFloat(string name, float value, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged) return;
+        if (!____parametersChanged || _performanceMode) return;
         Events.Avatar.OnParameterChangedFloat(__instance, name, value);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterInt))]
     internal static void AfterSetAnimatorParameterInt(string name, int value, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged) return;
+        if (!____parametersChanged || _performanceMode) return;
         Events.Avatar.OnParameterChangedInt(__instance, name, value);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterBool))]
     internal static void AfterSetAnimatorParameterBool(string name, bool value, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged) return;
+        if (!____parametersChanged || _performanceMode) return;
         Events.Avatar.OnParameterChangedBool(__instance, name, value);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterTrigger))]
     internal static void AfterSetAnimatorParameterTrigger(string name, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged) return;
+        if (!____parametersChanged || _performanceMode) return;
         Events.Avatar.OnParameterChangedTrigger(__instance, name);
     }
 
@@ -58,11 +67,13 @@ internal class HarmonyPatches {
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateMultiPurposeFloat), typeof(CVRSpawnableValue), typeof(float), typeof(int))]
     internal static void AfterUpdateMultiPurposeFloat(CVRSpawnableValue spawnableValue, CVRSpawnable __instance) {
+        if (_performanceMode) return;
         Events.Spawnable.OnSpawnableParameterChanged(__instance, spawnableValue);
     }
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateFromNetwork), typeof(CVRSyncHelper.PropData))]
     internal static void AfterSpawnableUpdateFromNetwork(CVRSyncHelper.PropData propData, CVRSpawnable __instance) {
+        if (_performanceMode) return;
         Events.Spawnable.OnSpawnableUpdateFromNetwork(propData, __instance);
     }
     [HarmonyPostfix]
@@ -71,15 +82,16 @@ internal class HarmonyPatches {
         Events.Spawnable.OnSpawnableCreated(propData);
     }
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(CVRSyncHelper.PropData), nameof(CVRSyncHelper.PropData.Recycle))]
-    internal static void BeforePropDataRecycle(CVRSyncHelper.PropData __instance) {
-        Events.Spawnable.OnSpawnableDeleted(__instance);
+    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.OnDestroy))]
+    internal static void BeforeSpawnableDestroy(CVRSpawnable __instance) {
+        Events.Spawnable.OnSpawnableDestroyed(__instance);
     }
 
     // Trackers
     [HarmonyPostfix]
     [HarmonyPatch(typeof(VRTrackerManager), nameof(VRTrackerManager.Update))]
     internal static void AfterVRTrackerManagerUpdate(VRTrackerManager __instance) {
+        if (_performanceMode) return;
         Events.Tracking.OnTrackingDataDeviceUpdated(__instance);
     }
 
@@ -94,5 +106,14 @@ internal class HarmonyPatches {
     [HarmonyPatch(typeof(CVRInputManager), "Start")]
     private static void AfterInputManagerCreated() {
         Events.Scene.OnInputManagerCreated();
+    }
+
+    // OSC Lib Actually following the spec ;_;
+    // Let's nuke the address validation so we can get the juicy #ParamName working in the address
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(OscAddress), nameof(OscAddress.IsValidAddressPattern))]
+    private static bool BeforeOscAddressIsValid(ref bool __result) {
+        __result = true;
+        return false;
     }
 }

@@ -42,6 +42,8 @@ public class OSC : MelonMod {
 
     // Misc
     public MelonPreferences_Entry<bool> meOSCDebug;
+    public MelonPreferences_Entry<bool> meOSCDebugConfigWarnings;
+    public MelonPreferences_Entry<bool> meOSCPerformanceMode;
 
     private HandlerOsc _handlerOsc;
 
@@ -123,11 +125,19 @@ public class OSC : MelonMod {
 
         meOSCTrackingModuleUpdateInterval = _mcOsc.CreateEntry("TrackingModuleUpdateInterval", 0f,
             description: "Minimum of seconds between each tracking data update. Default: 0 (will update every frame) " +
-                         "Eg: 0.05 will update every 50 milliseconds.");
+                         "Eg: 0.050 will update every 50 milliseconds.");
 
         // Misc
         meOSCDebug = _mcOsc.CreateEntry("Debug", false,
             description: "Whether should spam the console with debug messages or not.");
+        meOSCDebugConfigWarnings = _mcOsc.CreateEntry("DebugConfigWarnings", true,
+            description: "Whether it should warn everytime you send an osc msg  and it gets ignored because a config " +
+                         "setting. (for example sending a trigger parameter when triggers are disabled).");
+        meOSCPerformanceMode = _mcOsc.CreateEntry("PerformanceMode", false,
+            description: "If performance mode is activated the mod will stop listening to most game events. " +
+                         "This will result on a lot of the osc messages going out from our mod to not work. If you" +
+                         "only want the mod to listen to osc messages going into CVR you should have this option on! " +
+                         "As there's a lot of processing/msg sending when listening the all the game events.");
 
 
         // Load env variables (may change the melon config)
@@ -145,5 +155,9 @@ public class OSC : MelonMod {
 
         // Start OSC server
         _handlerOsc = new HandlerOsc();
+    }
+
+    public override void OnApplicationQuit() {
+        _handlerOsc.Close();
     }
 }
