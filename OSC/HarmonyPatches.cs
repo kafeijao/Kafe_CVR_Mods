@@ -74,7 +74,7 @@ internal class HarmonyPatches {
     [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateFromNetwork), typeof(CVRSyncHelper.PropData))]
     internal static void AfterSpawnableUpdateFromNetwork(CVRSyncHelper.PropData propData, CVRSpawnable __instance) {
         if (_performanceMode) return;
-        Events.Spawnable.OnSpawnableUpdateFromNetwork(propData, __instance);
+        Events.Spawnable.OnSpawnableUpdateFromNetwork(propData);
     }
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn), typeof(CVRSyncHelper.PropData))]

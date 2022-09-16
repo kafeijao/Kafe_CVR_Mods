@@ -24,13 +24,16 @@ For now there are 6 categories of endpoints you can use:
 
 
 ---
+
 ## OSC Avatar
+
 The first module is the avatar module, where you are able to interface with avatar related stuff. You can
 change the current avatar you're using via OSC, and also listen to those changes (you'll get the event either way).
 
 Also you're able to change and listen to the avatar parameters. This part part has a lot of customization options
 because you're able to change the addresses and types via a config (not required).
 
+---
 
 ### OSC Avatar Change
 Whenever you load into an avatar the mod will send a message to `/avatar/change` containing as the first and only
@@ -53,9 +56,8 @@ won't break existing osc apps
 permission to use), it will change your avatar in-game. This is `enabled` by default, but you can go to the 
 configurations and disable it.
 
-
-
 ---
+
 ## OSC Avatar Parameters
 You can listen and trigger parameter changes on your avatar via OSC messages, by default the endpoint to change and 
 listen to parameter changes as follow.
@@ -117,7 +119,9 @@ the same thing, you will receive an OSC message to the parameter address, but th
 
 
 ---
+
 ## OSC Inputs
+
 Here is where you can interact with the game in a more generic ways, allow you to send controller inputs or triggering
 actions in the game.
 
@@ -142,6 +146,7 @@ There are 3 types of Inputs:
 - [Buttons](#OSC-Inputs-Buttons)
 - [Values](#OSC-Inputs-Values)
 
+---
 
 ### OSC Inputs Axes
 Axes expecting a `float` value that ranges between `-1`/`0` and `1`. They are namely used for things that require a 
@@ -212,6 +217,7 @@ You can have certain inputs blacklisted, as some can be very annoying. By defaul
 are on the blacklist (`Reload` at the time of writing was bugged and would crash your game (same as spamming `F5`)).
 You can also disable the whole input module on the configuration as well.
 
+---
 
 ### OSC Inputs Values
 Values are similar to `Axes` but removes the restriction of being between `-1` and `1`, they are used to send values to
@@ -227,8 +233,11 @@ default value otherwise they will remain the last value you sent.
 
 
 
+
 ---
+
 ## OSC Props
+
 This mod module allows to interact with props. I've purposely added limitations to some interactions with props, you can
 check these on bellow. These limitations exist to prevent both abuse and some weird behavior that might happen. 
 
@@ -239,7 +248,7 @@ Some props require the Prop instance ID in their address (*<prop_instance_id>*):
 This value is a string with 12 characters corresponding to a Hexadecimal value. This value is created when you spawn a
 prop in an instance, and the best way to obtain it is by listening to the `Create` and `Availability` addresses.
 
-
+---
 
 ### OSC Props Create
 You're able to spawn props by providing their GUID. Keep in mind that you can only spawn props you
@@ -272,7 +281,7 @@ you're sending messages to spawn props.
 Those local position arguments are optional, they define where the prop should be spawned in relation to your play 
 space. If you want to provide a value, you need to provide all of them. If no values are provided they'll default to 0.
 
-
+---
 
 ### OSC Props Delete
 As the name suggests you can delete props that you've spawned. You can do so by providing the GUID of the prop as well
@@ -288,7 +297,7 @@ won't become available for interaction anymore.
 - `arg#1` - Prop GUID [*string*]
 - `arg#2` - Instance ID of the prop spawned [*string*]
 
-
+---
 
 ### OSC Props Availability
 This address will be called every time a prop has their availability changed. What what I mean by availability is
@@ -308,7 +317,7 @@ Obviously this is an address set by the game, so you can't send osc messages to 
 - `arg#2` - Instance ID of the prop spawned [*string*]
 - `arg#3` - Whether the prop interactions are available `true`, or not `false` [*bool*]
 
-
+---
 
 ### OSC Props Parameters
 Here you will be able to listen and write to the prop's synced parameters. You will need to provide the GUID of the prop
@@ -330,9 +339,10 @@ and it's instance ID to do so.
 
 Note: the Sync parameter name **is** the name you defined in the CVR Spawnable Component, and **not**
 the actual name of parameter inside of the animator. This name is **case sensitive**.
+
 ![](Resources/spawnable_sync_name.png)
 
-
+---
 
 ### OSC Props Location
 You are also able to listen and set the location of a prop. This is very powerful as you can for example link the
@@ -358,7 +368,7 @@ their positions without any issue tho.
 - `arg#7` - rotation.y [*float*]
 - `arg#8` - rotation.z [*float*]
 
-
+---
 
 ### OSC Props Location Sub
 You are also able to listen and set the location of a prop's sub-sync transforms. This is very powerful as you can for
@@ -388,12 +398,15 @@ CVR Spawnable Component
 
 
 
+
 ---
+
 ## OSC Tracking
+
 This mod module allows to read tracking data from the game namely from tracked devices, and the play space. You can
 only listen to these, don't try messages to those (or else).
 
-
+---
 
 ### OSC Tracking Play Space Data
 The mod will keep sending the current play space position and rotation. This is especially useful if you want to create
@@ -413,7 +426,7 @@ The values are sent as `float` type arguments, and the values order is the follo
 - `arg#5` - rotation.y [*float*]
 - `arg#6` - rotation.z [*float*]
 
-
+---
 
 ### OSC Tracking Device Status
 You can listen here for steam vr device connected change status. Every device starts assuming it is disconnected so you
@@ -429,7 +442,7 @@ will always receive a connected = `True` as the first event from a device.
 - `arg#3` - Steam tracked index [*int*], given by SteamVR, it's unique for each device (*see note bellow*)
 - `arg#4` - Device name [*string*], given by SteamVR, in some cases (like base stations) there is no name the string will be empty.
 
-
+---
 
 ### OSC Tracking Devices Data
 The mod also exposes the tracking information for tracked devices, like base stations, controllers, and trackers.
@@ -469,11 +482,15 @@ defined in seconds.
 
 
 ---
+
 ## OSC Config
 
 This mod module allows configure/interact with the mod via osc.
 
+---
+
 ### OSC Config Reset
+
 This endpoint will reset the caches for both avatar and props, and re-send the init events. It's useful if you
 start your osc application after the game is running and require those initial events. Since this mod doesn't
 keep spamming updates this is very useful sync the state with your app (if you need).
@@ -488,7 +505,9 @@ keep spamming updates this is very useful sync the state with your app (if you n
 
 
 ---
+
 ## Avatar Json Configurations
+
 When you load into an avatar you will trigger the generation of a json configuration file, this file will be located at:
 ```console
 "C:\Users\kafeijao\AppData\LocalLow\Alpha Blend Interactive\ChilloutVR\OSC\usr_4a0661f1-4eeb-426e-52ec-1b2f48e609b3\Avatars\avtr_5bf29e54-b3dd-4c15-ba72-c4dc6e410efb.json"
@@ -560,14 +579,21 @@ path uuids get prefixed with `usr_` for user ids, and `avtr_` for avatar ids (th
 ensure compatibility with other existent applications.
 
 
+
+
 ---
+
 ## Debugging
+
 Currently there is no easy way to debug. I would recommend using my other mod [CCK.Debugger](../README.md), among other
 things it allows you to see a menu with all your avatar parameters. Which will update realtime including the changes via
 OSC.
 
 
+
+
 ---
+
 ## General Configuration
 
 Most options to configure are on the Melon Loader configuration file. To access it install the mod, and run the
@@ -594,8 +620,12 @@ configuration. Note that the `Launch Options` will override your Melon Loader co
 *Note:* If you want to replicate the default settings you would use: `--osc=9000:127.0.0.1:9001`
 
 
+
+
 ---
+
 ## Disclosure
+
 > ___
 > ### ⚠️ **Notice!**
 >

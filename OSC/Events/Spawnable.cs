@@ -37,8 +37,15 @@ public static class Spawnable {
     // Events from the game
 
     internal static void Reset() {
-        foreach (var prop in PropCache) {
-            OnSpawnableCreated(prop.Value);
+        PropAvailabilityCache.Clear();
+        SpawnableParametersCacheOutFloat.Clear();
+        foreach (var prop in PropCache.Values) {
+            if (prop.Spawnable == null) return;
+            OnSpawnableCreated(prop);
+            OnSpawnableUpdateFromNetwork(prop);
+            foreach (var syncValue in prop.Spawnable.syncValues) {
+                OnSpawnableParameterChanged(prop.Spawnable, syncValue);
+            }
         }
     }
 
@@ -56,7 +63,7 @@ public static class Spawnable {
         SpawnableCreated?.Invoke(propData);
 
         // Update availability because spawning doesn't trigger UpdateFromNetwork
-        OnSpawnableUpdateFromNetwork(propData, propData.Spawnable);
+        OnSpawnableUpdateFromNetwork(propData);
     }
 
     internal static void OnSpawnableDestroyed(CVRSpawnable spawnable) {
@@ -87,8 +94,9 @@ public static class Spawnable {
         SpawnableParameterChanged?.Invoke(spawnable, spawnableValue);
     }
 
-    internal static void OnSpawnableUpdateFromNetwork(CVRSyncHelper.PropData propData, CVRSpawnable spawnable) {
-        if (!spawnable.IsMine()) return;
+    internal static void OnSpawnableUpdateFromNetwork(CVRSyncHelper.PropData propData) {
+        var spawnable = propData.Spawnable;
+        if (spawnable == null || !spawnable.IsMine()) return;
 
         var shouldControl = ShouldControl(spawnable);
 
