@@ -22,6 +22,22 @@ For now there are 6 categories of endpoints you can use:
 
 
 
+## Intro
+
+This is a long read ;_; Before you get discouraged if you only want to slap a mod that enables OSC just slap the mod in
+and it should work. And if all you want is to have it react to OSC messages you can turn on the `Performance Mode` in 
+the configuration. This will make it so the mod won't send OSC messages out with the tracking data etc, and I'd say that
+would be a decent basic setup.
+
+If you are interested in listening to events from the mod then you're in for a great time! As this allows to do a lot of
+fun things.
+
+### Easy API
+I have encapsulated this API into a [python library](https://github.com/kafeijao/cvr_osc_lib_py) with some examples, and
+you won't need to worry about endpoints, parameters OSC server/client, as everything is done with dataclasses and 
+methods to send and receive info. I will maintaining the library updated with the mod! The examples are especially
+interesting.
+
 
 ---
 
