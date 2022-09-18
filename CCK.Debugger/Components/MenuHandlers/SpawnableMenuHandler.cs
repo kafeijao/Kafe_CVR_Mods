@@ -14,6 +14,7 @@ public class SpawnableMenuHandler : IMenuHandler {
         PropsData = new LooseList<CVRSyncHelper.PropData>(CVRSyncHelper.Props, propData => propData != null && propData.Spawnable != null);
 
         SyncedParametersValues = new Dictionary<CVRSpawnableValue, TextMeshProUGUI>();
+        PickupsValues = new Dictionary<CVRPickupObject, TextMeshProUGUI>();
         AttachmentsValues = new Dictionary<CVRAttachment, TextMeshProUGUI>();
 
         SyncTypeDict = new() {
@@ -43,7 +44,7 @@ public class SpawnableMenuHandler : IMenuHandler {
 
     // Pickups
     private static GameObject _categoryPickups;
-    private static readonly Dictionary<CVRPickupObject, TextMeshProUGUI> PickupsValues = new();
+    private static readonly Dictionary<CVRPickupObject, TextMeshProUGUI> PickupsValues;
 
     // Attachments
     private static GameObject _categoryAttachments;

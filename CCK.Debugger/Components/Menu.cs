@@ -160,11 +160,22 @@ public class Menu : MonoBehaviour {
     }
 
     public TextMeshProUGUI AddCategoryEntry(GameObject category, string entryName) {
+        // Add category entry with fixed name
         var categoryEntries = category.transform.Find("Entries");
         GameObject newEntry = Instantiate(TemplateCategoryEntry, categoryEntries.transform);
         newEntry.SetActive(true);
         newEntry.transform.Find("Key").GetComponent<TextMeshProUGUI>().SetText(entryName);
         return newEntry.transform.Find("Value").GetComponent<TextMeshProUGUI>();
+    }
+
+    public (TextMeshProUGUI, TextMeshProUGUI) AddCategoryEntry(GameObject category) {
+        // Add category entry with variable name
+        var categoryEntries = category.transform.Find("Entries");
+        GameObject newEntry = Instantiate(TemplateCategoryEntry, categoryEntries.transform);
+        newEntry.SetActive(true);
+        var value = newEntry.transform.Find("Value").GetComponent<TextMeshProUGUI>();
+        value.text = "";
+        return (newEntry.transform.Find("Key").GetComponent<TextMeshProUGUI>(), value);
     }
 
     public void ClearCategory(GameObject category) {
