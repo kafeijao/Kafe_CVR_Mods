@@ -8,6 +8,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [CCK.Debugger](CCK.Debugger)
 - [LoginProfiles](LoginProfiles)
 - [PickupOverrides](PickupOverrides)
+- [FirstPersonHider](FirstPersonHider)
 
 ---
 ## Small Descriptions:
@@ -23,13 +24,17 @@ so most external applications should work without many (if any) changes.
 - Trigger special game features (like flight, mute, etc)
 - Configurable endpoints (parameters address & type conversion)
 - Change avatar by providing avatar id
+- Spawn and delete props
+- Interact with props (settings/reading their location and synced parameters)
+- Retrieving the tracking data and battery info from `trackers`, `hmd`, `controllers`, `base stations`, and `play space`
+- Resend all cached events (like all the current parameters) triggered via an endpoint
 
 More features can be added, exploring CVR possibilities to the max. Feel free to submit Feature Requests in the github.
-There is a in-depth **Readme** in the github page.
-
 
 Check [OSC In-Depth](OSC) for for info.
 
+There is also a [python library](https://github.com/kafeijao/cvr_osc_lib_py) that abstracts all the api provided by this
+mod.
 
 ---
 ### CCK.Debugger
@@ -59,6 +64,23 @@ You can change the config while the game is running and it will update as soon a
 The default setting for Auto-Hold is `false`.
 
 Check [PickupOverrides In-Dept](PickupOverrides) for more info.
+
+
+---
+### First Person Hider
+This mod enables hiding avatar game objects in the first person view. You will need to add the tag `[FPH]` to a game 
+object name (Eg: `HairRoot[FPH]69`), it will **also** hide its children game objects.
+
+Is uses the same mechanism as the head shrinking, so hidden game objects will still be visible for mirrors and cameras.
+
+You can customize the tags to hide in the config. Has to be via `MelonPreferences.cfg` since it's a list of strings.
+
+You can exclude single game objects from being hidden with the tag `[FPR]`, this is implemented in the base game and 
+doesn't need the mod to work (you can use this to reveal your hair in first person that's hidden by the head shrink for 
+example).
+
+Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FirstPersonHider) for more info.
+
 
 ---
 # Disclosure
