@@ -45,6 +45,33 @@ public class CCKDebugger : MelonMod {
             Events.Spawnable.OnSpawnableDetailsRecycled(__instance);
         }
 
+        // Spawnable Trigger Task
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnableTriggerTask), nameof(CVRSpawnableTriggerTask.ExecuteTrigger))]
+        static void AfterSpawnableTriggerExecuted(CVRSpawnableTriggerTask __instance) {
+            Events.Spawnable.OnSpawnableTriggerExecuted(__instance);
+        }
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnableTriggerTask), nameof(CVRSpawnableTriggerTask.Trigger))]
+        [HarmonyPatch(argumentTypes: new Type[]{})]
+        static void AfterSpawnableTriggerTriggeredByHelper(CVRSpawnableTriggerTask __instance) {
+            Events.Spawnable.OnSpawnableTriggerTriggered(__instance);
+        }
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnableTriggerTask), nameof(CVRSpawnableTriggerTask.Trigger))]
+        [HarmonyPatch( argumentTypes: new[] { typeof(CVRPointer), typeof(bool), typeof(float), typeof(bool) })]
+        static void AfterSpawnableTriggerTriggered(CVRSpawnableTriggerTask __instance, bool exit) {
+            // Ignore the exit events on the enterTasks
+            if (exit) return;
+            Events.Spawnable.OnSpawnableTriggerTriggered(__instance);
+        }
+        // Spawnable Trigger Task Stay
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnableTriggerTaskStay), nameof(CVRSpawnableTriggerTaskStay.trigger))]
+        static void AfterSpawnableStayTriggerTriggered(CVRSpawnableTriggerTaskStay __instance) {
+            Events.Spawnable.OnSpawnableStayTriggerTriggered(__instance);
+        }
+
         // Avatar
         [HarmonyPrefix]
         [HarmonyPatch(typeof(AvatarDetails_t), nameof(AvatarDetails_t.Recycle))]
@@ -72,7 +99,6 @@ public class CCKDebugger : MelonMod {
             if (exit) return;
             Events.Avatar.OnAasTriggerTriggered(__instance);
         }
-
         // Avatar AAS Trigger Task Stay
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRAdvancedAvatarSettingsTriggerTaskStay), nameof(CVRAdvancedAvatarSettingsTriggerTaskStay.trigger))]

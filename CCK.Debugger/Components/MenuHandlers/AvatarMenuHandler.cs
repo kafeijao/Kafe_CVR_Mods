@@ -70,10 +70,9 @@ public class AvatarMenuHandler : IMenuHandler {
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
 
     // Colors
+    private const string White = "<color=white>";
     private const string Blue = "<#00AFFF>";
     private const string Purple = "<#A000C8>";
-    private const string White = "<color=white>";
-    private const string Reset = "</color>";
 
     // Attributes
     private static TextMeshProUGUI _attributeUsername;
