@@ -1,6 +1,7 @@
 # OSC
 
-This **Melon Loader** mod allows you to use OSC to interact with **ChilloutVR**. It tries to be compatible with other social VR games that also use OSC. This way allows the usage of tools made for other games with relative ease.
+This **Melon Loader** mod allows you to use OSC to interact with **ChilloutVR**. It tries to be compatible with other
+social VR games that also use OSC. This way allows the usage of tools made for other games with relative ease.
 
 - [OSC Avatar](#OSC-Avatar)
 - [OSC Inputs](#OSC-Inputs)
@@ -22,7 +23,8 @@ For now there are 6 categories of endpoints you can use:
 ## Intro
 
 This is a long read ;_; Before you get discouraged if you only want to slap a mod that enables OSC just slap the mod in
-and it should work. And if all you want is to have it react to OSC messages you can turn on the `Performance Mode` in the configuration. This will make it so the mod won't send OSC messages out with the tracking data etc, and I'd say that
+and it should work. And if all you want is to have it react to OSC messages you can turn on the `Performance Mode` in
+the configuration. This will make it so the mod won't send OSC messages out with the tracking data etc, and I'd say that
 would be a decent basic setup.
 
 If you are interested in listening to events from the mod then you're in for a great time! As this allows to do a lot of
@@ -31,7 +33,8 @@ fun things.
 ### Easy API
 
 I have encapsulated this API into a [python library](https://github.com/kafeijao/cvr_osc_lib_py) with some examples, and
-you won't need to worry about endpoints, parameters OSC server/client, as everything is done with dataclasses and methods to send and receive info. I will maintaining the library updated with the mod! The examples are especially
+you won't need to worry about endpoints, parameters OSC server/client, as everything is done with dataclasses and
+methods to send and receive info. I will maintaining the library updated with the mod! The examples are especially
 interesting.
 
 ---
@@ -60,7 +63,8 @@ argument a string representing the avatar UUID.
 #### Arguments
 
 - `arg#1` - Avatar GUID [*string*]
-- `arg#2` - Path to the avatar json config [*string*], this is new to this mod, but as it is an additional param it won't break existing osc apps
+- `arg#2` - Path to the avatar json config [*string*], this is new to this mod, but as it is an additional param it
+won't break existing osc apps
 
 **Mod will receive:**
 
@@ -68,13 +72,16 @@ argument a string representing the avatar UUID.
 
 - `arg#1` - Avatar GUID [*string*]
 
-**New:** The mod will also listen to the address `/avatar/change`, so if you send a UUID of an avatar (that you have permission to use), it will change your avatar in-game. This is `enabled` by default, but you can go to the configurations and disable it.
+**New:** The mod will also listen to the address `/avatar/change`, so if you send a UUID of an avatar
+(that you have permission to use), it will change your avatar in-game. This is `enabled` by default, but you can go to
+the configurations and disable it.
 
 ---
 
 ## OSC Avatar Parameters
 
-You can listen and trigger parameter changes on your avatar via OSC messages, by default the endpoint to change and listen to parameter changes as follow.
+You can listen and trigger parameter changes on your avatar via OSC messages, by default the endpoint to change and
+listen to parameter changes as follow.
 
 #### Address [`deprecated`]
 
@@ -106,7 +113,8 @@ As for sending I'll be sending on both endpoints so just pick one to listen to.
 value will be ignored either way.
 - `arg#2` - Parameter name [ *string* ], *The parameter name is case sensitive!*
 
-The Parameter value argument should be sent as the same type as the parameter is defined in the animator. But you can also send as a `string` or some other type that has a conversion implied.
+The Parameter value argument should be sent as the same type as the parameter is defined in the animator. But you can
+also send as a `string` or some other type that has a conversion implied.
 
 **Note:** Sending the correct type will require less code to run, making it more performant.
 
@@ -115,7 +123,8 @@ We support all animator parameter types, `Float`, `Int`, `Bool`, and `Trigger`([
 You can listen for **All** the parameters changes present in the animator!
 
 As for sending parameter you can send parameter changes for all present in the animator **Except** for the **core
-parameters**. Those are the default parameters CVR modifies for you, Like `GestureRight`, `MovementX`, `Emote`, etc), and since they are set every frame we can't change them in this endpoint.
+parameters**. Those are the default parameters CVR modifies for you, Like `GestureRight`, `MovementX`, `Emote`, etc),
+and since they are set every frame we can't change them in this endpoint.
 
 If you wish to change those, check the [OSC Inputs](#OSC-Inputs) section, as
 it allows you to control the input that drives those parameters, for example setting the Input `GestureRight`
@@ -164,8 +173,10 @@ There are 3 types of Inputs:
 
 ### OSC Inputs Axes
 
-Axes expecting a `float` value that ranges between `-1`/`0` and `1`. They are namely used for things that require a range of values instead of a on/off, for example the Movement, where `Horizontal` can be set to `-0.5` which would be
-the same as having the thumbstick on your controller to the left (because it's a negative value) but only halfway (because it's -0.5, -1 would be all the way to the left).
+Axes expecting a `float` value that ranges between `-1`/`0` and `1`. They are namely used for things that require a
+range of values instead of a on/off, for example the Movement, where `Horizontal` can be set to `-0.5` which would be
+the same as having the thumbstick on your controller to the left (because it's a negative value) but only halfway
+(because it's -0.5, -1 would be all the way to the left).
 
 - `/input/Horizontal` - Move your avatar right `1` or left `-1`
 - `/input/Vertical` - Move your avatar forward `1` or backwards `-1`
@@ -298,7 +309,8 @@ you're sending messages to spawn props.
 - `arg#3` - local position y [*Optional*] [*float*]
 - `arg#4` - local position z [*Optional*] [*float*]
 
-Those local position arguments are optional, they define where the prop should be spawned in relation to your play space. If you want to provide a value, you need to provide all of them. If no values are provided they'll default to 0.
+Those local position arguments are optional, they define where the prop should be spawned in relation to your play
+space. If you want to provide a value, you need to provide all of them. If no values are provided they'll default to 0.
 
 ---
 
@@ -324,7 +336,8 @@ won't become available for interaction anymore.
 ### OSC Props Availability
 
 This address will be called every time a prop has their availability changed. What what I mean by availability is
-where you are able to control or not this prop. The props become available when no remote player is *grabbing*, *telegrabbing*, nor has it *attached* to themselves. Also this **only** affects props spawned by yourself!
+where you are able to control or not this prop. The props become available when no remote player is
+*grabbing*, *telegrabbing*, nor has it *attached* to themselves. Also this **only** affects props spawned by yourself!
 
 The only exception is it will say it is available but you won't be able to set the location if you (the local player)
 is *grabbing*, *telegrabbing*, or has it *attached*.
@@ -422,7 +435,8 @@ their positions without any issue tho.
 
 - `arg#1` - Prop GUID [*string*]
 - `arg#2` - Instance ID of the prop spawned [*string*]
-- `arg#3` - Index of the prop sub-sync transform [*int*], starts from 0 and increments following the order set in the CVR Spawnable Component
+- `arg#3` - Index of the prop sub-sync transform [*int*], starts from 0 and increments following the order set in
+the CVR Spawnable Component
 - `arg#4` - position.x [*float*]
 - `arg#5` - position.y [*float*]
 - `arg#6` - position.z [*float*]
@@ -473,10 +487,12 @@ will always receive a connected = `True` as the first event from a device.
 #### Arguments
 
 - `arg#1` - Connected [*bool*], whether the device was connected `True` or disconnected `False`
-- `arg#2` - Device type [*string*], Possible values: `hmd`, `base_station`, `left_controller`, `right_controller`, `tracker`, and
+- `arg#2` - Device type [*string*], Possible values: `hmd`, `base_station`, `left_controller`, `right_controller`,
+ `tracker`, and
   `unknown`
 - `arg#3` - Steam tracked index [*int*], given by SteamVR, it's unique for each device (*see note bellow*)
-- `arg#4` - Device name [*string*], given by SteamVR, in some cases (like base stations) there is no name the string will be empty.
+- `arg#4` - Device name [*string*], given by SteamVR, in some cases (like base stations) there is no name the string
+will be empty.
 
 ---
 
@@ -492,17 +508,20 @@ Both the position and rotation are for world space, and the rotation is sent in 
 
 #### Arguments
 
-- `arg#01` - Device type [*string*], Possible values: `hmd`, `base_station`, `left_controller`, `right_controller`, `tracker`, and
+- `arg#01` - Device type [*string*], Possible values: `hmd`, `base_station`, `left_controller`, `right_controller`,
+ `tracker`, and
 `unknown`
 - `arg#02` - Steam tracked index [*int*], given by SteamVR, it's unique for each device (*see note bellow*)
-- `arg#03` - Device name [*string*], given by SteamVR, in some cases (like base stations) there is no name the string will be empty.
+- `arg#03` - Device name [*string*], given by SteamVR, in some cases (like base stations) there is no name the string
+ will be empty.
 - `arg#04` - Position.x [*float*]
 - `arg#05` - Position.y [*float*]
 - `arg#06` - Position.z [*float*]
 - `arg#07` - Rotation.x [*float*]
 - `arg#08` - Rotation.y [*float*]
 - `arg#09` - Rotation.z [*float*]
-- `#arg10` - Battery percentage [*float*], from 0 to 1. If the devices is not reporting the battery info to SteamVR it will send 0 instead.
+- `#arg10` - Battery percentage [*float*], from 0 to 1. If the devices is not reporting the battery info to SteamVR it
+ will send 0 instead.
 
 This address will work if the game has started in `VR` mode.
 
@@ -512,7 +531,9 @@ of devices, and is assigned by SteamVR and seems to be incrementing from 0, it w
 ### Configuration
 
 There are configurations to disable/enable the tracking module and also define which update rate it should send the
-osc messages. The default value for the update rate is `0` which makes it sending at every frame of the game. Consider lowering this value if you don't need such update rates as it lowers the overhead performance impact. The value is
+osc messages. The default value for the update rate is `0` which makes it sending at every frame of the game.
+Consider lowering this value if you don't need such update rates as it lowers the overhead performance impact.
+The value is
 defined in seconds.  
 
 *Note*: This will also affect the updates on the prop location updates.
@@ -594,7 +615,8 @@ you need to enable Triggers parameter type on the mod configuration.
     - `type` - Expected type of the incoming data: `Int`, `Bool`, `Float`, `Trigger` [**ignored**]
   - `output`
     - `address` - Address [*string*] where the mod will **send** OSC messages [**working**]
-    - `type` - Expected type of the outgoing data: `Int`, `Bool`, `Float`, `Trigger` [**working**] This will actively convert the parameter to the type you specify. Even if it differs from the parameter type.
+    - `type` - Expected type of the outgoing data: `Int`, `Bool`, `Float`, `Trigger` [**working**] This will actively
+    convert the parameter to the type you specify. Even if it differs from the parameter type.
 
 **Todo**:
 
@@ -605,7 +627,8 @@ you want to customize those check the next section!
 
 ### Customize Addresses and Type conversion
 
-The mod will always use the json configurations `output` to decide where to send the parameter changes. Also will respect the type you chose on the output by converting before sending. **But** beware, if you want to use this feature
+The mod will always use the json configurations `output` to decide where to send the parameter changes. Also will
+respect the type you chose on the output by converting before sending. **But** beware, if you want to use this feature
 you need to disable the `replaceConfigIfExists` configuration, otherwise the game will overwrite your json config files
 when loading an avatar.
 
@@ -613,7 +636,9 @@ For now the `input` address/type of the json config is not used. Maybe will be i
 
 ### Compatibility Configuration
 
-You are able to overwrite the location of the mentioned json configs gets stored in the configurations. Also the file path uuids get prefixed with `usr_` for user ids, and `avtr_` for avatar ids (this is enabled by default). This is to ensure compatibility with other existent applications.
+You are able to overwrite the location of the mentioned json configs gets stored in the configurations. Also the file
+path uuids get prefixed with `usr_` for user ids, and `avtr_` for avatar ids (this is enabled by default).
+This is to ensure compatibility with other existent applications.
 
 ---
 
