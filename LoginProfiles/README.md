@@ -1,4 +1,5 @@
 # LoginProfiles
+
 This mod allows to use an argument when starting ChilloutVR in order to select a login profile. This enables
 swapping accounts without requiring to enter the credentials (if logged in on that profile previously). This is useful for me to deploy two clients on two different
 accounts to test avatars and worlds synchronization stuff.
@@ -14,22 +15,30 @@ that profile, it will re-use the profile credentials. To clear a profile you can
 or start the game with the profile you want to clear, and then use the in-game menu to logout (this also deletes the file).
 
 ---
+
 ## Example using via steam:
+
 ![login_profile_example.png](login_profile_example.png)
 
 ---
+
 ## Example using a bat file:
+
 Create a `random_name_123.bat` file next to where `ChilloutVR.exe` file is, with the following contents:
+
 ```bat
 ChilloutVR.exe --profile=kafeijao
 ```
+
 Then all you need is double click that file and should open ChilloutVR with the respective profile.
 
 ---
+
 ## Disclosure
 
-> ___
-> ### ⚠️ **Notice!**
+> ---
+> ⚠️ **Notice!**  
 >
 > This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
-> ___
+>
+> ---
