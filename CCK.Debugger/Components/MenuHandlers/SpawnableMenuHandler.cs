@@ -1,5 +1,7 @@
 ﻿using ABI_RC.Core.Util;
 using ABI.CCK.Components;
+using CCK.Debugger.Components.PointerVisualizers;
+using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Entities;
 using CCK.Debugger.Utils;
 using HarmonyLib;
@@ -8,7 +10,7 @@ using UnityEngine;
 
 namespace CCK.Debugger.Components.MenuHandlers;
 
-public class SpawnableMenuHandler : IMenuHandler {
+public class SpawnableMenuHandler : MenuHandler {
 
     static SpawnableMenuHandler() {
         PropsData = new LooseList<CVRSyncHelper.PropData>(CVRSyncHelper.Props, propData => propData != null && propData.Spawnable != null);
@@ -55,11 +57,6 @@ public class SpawnableMenuHandler : IMenuHandler {
         };
     }
 
-    // Colors
-    private const string White = "<color=white>";
-    private const string Blue = "<#00AFFF>";
-    private const string Purple = "<#A000C8>";
-
     private static readonly Dictionary<int, string> SyncTypeDict;
 
     private static readonly LooseList<CVRSyncHelper.PropData> PropsData;
@@ -98,7 +95,7 @@ public class SpawnableMenuHandler : IMenuHandler {
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggered;
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggeredValue;
 
-    public void Load(Menu menu) {
+    public override void Load(Menu menu) {
 
         menu.AddNewDebugger("Props");
 
@@ -124,11 +121,11 @@ public class SpawnableMenuHandler : IMenuHandler {
         PropsData.HasChanged = true;
     }
 
-    public void Unload() {
+    public override void Unload() {
         PropsData.ListenPageChangeEvents = false;
     }
 
-    public void Update(Menu menu) {
+    public override void Update(Menu menu) {
 
         PropsData.UpdateViaSource();
 
@@ -213,6 +210,9 @@ public class SpawnableMenuHandler : IMenuHandler {
             var spawnablePointers = currentSpawnable.GetComponentsInChildren<CVRPointer>(true);
             foreach (var pointer in spawnablePointers) {
                 PointerValues[pointer] = menu.AddCategoryEntry(_categoryPointers).Item1;
+                if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
+                    menu.CurrentEntityPointerList.Add(pointerVisualizer);
+                }
             }
 
             // Set up CVR Triggers
@@ -225,6 +225,9 @@ public class SpawnableMenuHandler : IMenuHandler {
             var spawnableTriggers = currentSpawnable.GetComponentsInChildren<CVRSpawnableTrigger>(true);
             foreach (var trigger in spawnableTriggers) {
                 TriggerValues[trigger] = menu.AddCategoryEntry(_categoryTriggers).Item1;
+                if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
+                    menu.CurrentEntityTriggerList.Add(triggerVisualizer);
+                }
             }
 
             // Consume the spawnable changed
@@ -266,11 +269,12 @@ public class SpawnableMenuHandler : IMenuHandler {
             pointerValue.Value.SetText(
                 $"{White}<b>{pointerGo.name}:</b>" +
                 $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
+                $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
                 $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
                 $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
                 $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
                 $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
-                $"\n\t{White}Type: {Blue}{pointer.type}");
+                $"\n\t{White}Type: {Purple}{pointer.type}");
         }
 
         // Update cvr trigger values
@@ -280,6 +284,7 @@ public class SpawnableMenuHandler : IMenuHandler {
             var triggerInfo =
                 $"{White}<b>{triggerGo.name}:</b>" +
                 $"\n\t{White}Active: {Blue}{(triggerGo.activeInHierarchy ? "yes" : "no")}" +
+                $"\n\t{White}Class: {Blue}{trigger.GetType().Name}" +
                 $"\n\t{White}Advanced Trigger: {Blue}{(trigger.useAdvancedTrigger ? "yes" : "no")}" +
                 $"\n\t{White}Particle Interactions: {Blue}{(trigger.allowParticleInteraction ? "yes" : "no")}" +
                 $"\n\t{White}Layer: {Blue}{triggerGo.layer}";

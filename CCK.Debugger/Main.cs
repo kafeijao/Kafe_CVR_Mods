@@ -16,8 +16,6 @@ public class CCKDebugger : MelonMod {
 
     internal static bool TestMode;
 
-    private const string _assetPath = "Assets/Prefabs/CCKDebuggerMenu.prefab";
-
     public override void OnApplicationStart() {
 
         // Check if it is in debug mode (to test functionalities that are waiting for bios to be enabled)
@@ -141,13 +139,10 @@ public class CCKDebugger : MelonMod {
         private static void AfterMenuCreated(ref CVR_MenuManager __instance) {
             var quickMenuTransform = __instance.quickMenu.transform;
 
-            // Load prefab from asset bundle
-            AssetBundle assetBundle = AssetBundle.LoadFromMemory(Resources.Resources.cckdebugger);
-            assetBundle.hideFlags |= HideFlags.DontUnloadUnusedAsset;
-            var prefab = assetBundle.LoadAsset<GameObject>(_assetPath);
-
             // Instantiate and add the controller script
-            var cckDebugger = UnityEngine.Object.Instantiate(prefab, quickMenuTransform);
+            var cckDebugger = UnityEngine.Object.Instantiate(
+                Resources.AssetBundleLoader.GetMenuGameObject(),
+                quickMenuTransform);
             cckDebugger.AddComponent<Menu>();
 
             // Add ourselves to the player list (why not here xd)

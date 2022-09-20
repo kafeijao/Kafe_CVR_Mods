@@ -2,6 +2,8 @@
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
+using CCK.Debugger.Components.PointerVisualizers;
+using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Entities;
 using CCK.Debugger.Utils;
 using HarmonyLib;
@@ -10,7 +12,7 @@ using UnityEngine;
 
 namespace CCK.Debugger.Components.MenuHandlers;
 
-public class AvatarMenuHandler : IMenuHandler {
+public class AvatarMenuHandler : MenuHandler {
 
     static AvatarMenuHandler() {
 
@@ -69,11 +71,6 @@ public class AvatarMenuHandler : IMenuHandler {
 
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
 
-    // Colors
-    private const string White = "<color=white>";
-    private const string Blue = "<#00AFFF>";
-    private const string Purple = "<#A000C8>";
-
     // Attributes
     private static TextMeshProUGUI _attributeUsername;
     private static TextMeshProUGUI _attributeAvatar;
@@ -102,7 +99,7 @@ public class AvatarMenuHandler : IMenuHandler {
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggeredValue;
 
-    public void Load(Menu menu) {
+    public override void Load(Menu menu) {
 
         menu.AddNewDebugger("Avatars");
 
@@ -122,11 +119,11 @@ public class AvatarMenuHandler : IMenuHandler {
         PlayerEntities.ListenPageChangeEvents = true;
         PlayerEntities.HasChanged = true;
     }
-    public void Unload() {
+    public override void Unload() {
         PlayerEntities.ListenPageChangeEvents = false;
     }
 
-    public void Update(Menu menu) {
+    public override void Update(Menu menu) {
 
         PlayerEntities.UpdateViaSource();
 
@@ -184,7 +181,11 @@ public class AvatarMenuHandler : IMenuHandler {
             var avatarPointers = avatarGo.GetComponentsInChildren<CVRPointer>(true);
             foreach (var pointer in avatarPointers) {
                 PointerValues[pointer] = menu.AddCategoryEntry(_categoryPointers).Item1;
+                if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
+                    menu.CurrentEntityPointerList.Add(pointerVisualizer);
+                }
             }
+
 
             // Set up CVR Triggers
             menu.ClearCategory(_categoryTriggers);
@@ -196,6 +197,9 @@ public class AvatarMenuHandler : IMenuHandler {
             var avatarTriggers = avatarGo.GetComponentsInChildren<CVRAdvancedAvatarSettingsTrigger>(true);
             foreach (var trigger in avatarTriggers) {
                 TriggerValues[trigger] = menu.AddCategoryEntry(_categoryTriggers).Item1;
+                if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
+                    menu.CurrentEntityTriggerList.Add(triggerVisualizer);
+                }
             }
 
             // Consume the spawnable changed
@@ -214,11 +218,12 @@ public class AvatarMenuHandler : IMenuHandler {
             pointerValue.Value.SetText(
                 $"{White}<b>{pointerGo.name}:</b>" +
                 $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
+                $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
                 $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
                 $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
                 $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
                 $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
-                $"\n\t{White}Type: {Blue}{pointer.type}");
+                $"\n\t{White}Type: {Purple}{pointer.type}");
         }
 
         // Update cvr trigger values
@@ -228,6 +233,7 @@ public class AvatarMenuHandler : IMenuHandler {
             var triggerInfo =
                 $"{White}<b>{triggerGo.name}:</b>" +
                 $"\n\t{White}Active: {Blue}{(triggerGo.activeInHierarchy ? "yes" : "no")}" +
+                $"\n\t{White}Class: {Blue}{trigger.GetType().Name}" +
                 $"\n\t{White}Advanced Trigger: {Blue}{(trigger.useAdvancedTrigger ? "yes" : "no")}" +
                 $"\n\t{White}Network Interactable: {Blue}{(trigger.isNetworkInteractable ? "yes" : "no")}" +
                 $"\n\t{White}Particle Interactions: {Blue}{(trigger.allowParticleInteraction ? "yes" : "no")}" +

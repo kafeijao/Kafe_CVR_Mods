@@ -6,7 +6,17 @@ public class LooseList<T> : List<T> {
 
     public T CurrentObject { get; private set; }
     public int CurrentObjectIndex { get; private set; }
-    public bool HasChanged;
+
+    private bool _hasChanged;
+    public bool HasChanged {
+        get => _hasChanged;
+        set {
+            // Ignore if it didn't change
+            //if (_hasChanged == value) return;
+            _hasChanged = value;
+            Events.DebuggerMenu.OnSwitchInspectedEntity(!_hasChanged);
+        }
+    }
 
     private readonly IEnumerable<T> _source;
     private readonly Func<T, bool> _sourceEntryIsValid;

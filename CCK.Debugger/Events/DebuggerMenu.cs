@@ -2,9 +2,10 @@
 
 internal static class DebuggerMenu {
 
-    public static bool IsPinned;
-
     public static event Action<bool> Pinned;
+    public static event Action<bool> PointerToggled;
+    public static event Action<bool> TriggerToggled;
+    public static event Action<bool> ResetToggled;
 
     public static event Action MainNextPage;
     public static event Action MainPreviousPage;
@@ -12,9 +13,19 @@ internal static class DebuggerMenu {
     public static event Action ControlsNextPage;
     public static event Action ControlsPreviousPage;
 
+    public static event Action<bool> SwitchedInspectedEntity;
+
     public static void OnPinned(bool pinned) {
-        IsPinned = pinned;
         Pinned?.Invoke(pinned);
+    }
+    public static void OnPointerToggle(bool pinned) {
+        PointerToggled?.Invoke(pinned);
+    }
+    public static void OnTriggerToggle(bool pinned) {
+        TriggerToggled?.Invoke(pinned);
+    }
+    public static void OnResetToggle(bool pinned) {
+        ResetToggled?.Invoke(pinned);
     }
 
     public static void OnMainNextPage() {
@@ -29,5 +40,9 @@ internal static class DebuggerMenu {
     }
     public static void OnControlsPrevious() {
         ControlsPreviousPage?.Invoke();
+    }
+
+    public static void OnSwitchInspectedEntity(bool finishedInitializing) {
+        SwitchedInspectedEntity?.Invoke(finishedInitializing);
     }
 }

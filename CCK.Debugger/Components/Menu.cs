@@ -1,11 +1,12 @@
 ﻿using CCK.Debugger.Components.MenuHandlers;
+using CCK.Debugger.Components.PointerVisualizers;
+using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace CCK.Debugger.Components;
-
 
 public class Menu : MonoBehaviour {
 
@@ -16,6 +17,18 @@ public class Menu : MonoBehaviour {
     // Pin Toggle
     private Toggle PinToggle;
     private Image PinImage;
+
+    // Pointer Toggle
+    internal Toggle PointerToggle;
+    private Image PointerImage;
+
+    // Trigger Toggle
+    internal Toggle TriggerToggle;
+    private Image TriggerImage;
+
+    // Reset Toggle
+    internal Toggle ResetToggle;
+    private Image ResetImage;
 
     // Title
     private TextMeshProUGUI TitleText;
@@ -35,7 +48,11 @@ public class Menu : MonoBehaviour {
     private GameObject TemplateCategory;
     private GameObject TemplateCategoryEntry;
 
-    void Awake() {
+    // Pointers
+    internal List<PointerVisualizer> CurrentEntityPointerList;
+    internal List<TriggerVisualizer> CurrentEntityTriggerList;
+
+    private void Awake() {
 
         // Main
         RootRectTransform = GetComponent<RectTransform>();
@@ -48,9 +65,31 @@ public class Menu : MonoBehaviour {
         MainNext.onClick.AddListener(Events.DebuggerMenu.OnMainNextPage);
 
         // Pin Toggle
-        PinToggle = RootRectTransform.Find("PinToggle").GetComponent<Toggle>();
-        PinImage = RootRectTransform.Find("PinToggle/Checkmark").GetComponent<Image>();
+        PinToggle = RootRectTransform.Find("TogglesView/Pin").GetComponent<Toggle>();
+        PinImage = RootRectTransform.Find("TogglesView/Pin/Checkmark").GetComponent<Image>();
         PinToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnPinned);
+        PinToggle.gameObject.SetActive(true);
+
+        // Pointer Toggle
+        PointerToggle = RootRectTransform.Find("TogglesView/Pointer").GetComponent<Toggle>();
+        PointerImage = RootRectTransform.Find("TogglesView/Pointer/Checkmark").GetComponent<Image>();
+        PointerToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnPointerToggle);
+        PointerToggle.gameObject.SetActive(false);
+        PointerImage.color = Color.gray;
+
+        // Trigger Toggle
+        TriggerToggle = RootRectTransform.Find("TogglesView/Trigger").GetComponent<Toggle>();
+        TriggerImage = RootRectTransform.Find("TogglesView/Trigger/Checkmark").GetComponent<Image>();
+        TriggerToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnTriggerToggle);
+        TriggerToggle.gameObject.SetActive(false);
+        TriggerImage.color = Color.gray;
+
+        // Reset Toggle
+        ResetToggle = RootRectTransform.Find("TogglesView/Reset").GetComponent<Toggle>();
+        ResetImage = RootRectTransform.Find("TogglesView/Reset/Checkmark").GetComponent<Image>();
+        ResetToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnResetToggle);
+        ResetToggle.gameObject.SetActive(false);
+        ResetImage.color = Color.gray;
 
         // Controls
         Controls = RootRectTransform.Find("Controls").gameObject;
@@ -66,11 +105,15 @@ public class Menu : MonoBehaviour {
         // Save templates
         TemplateCategory = RootRectTransform.Find("Templates/Template_Category").gameObject;
         TemplateCategoryEntry = RootRectTransform.Find("Templates/Template_CategoryEntry").gameObject;
+
+        // Visualizers
+        CurrentEntityPointerList = new List<PointerVisualizer>();
+        CurrentEntityTriggerList = new List<TriggerVisualizer>();
     }
 
     private static int _currentHandlerIndex;
-    private static IMenuHandler _currentHandler;
-    private static readonly List<IMenuHandler> Handlers = new();
+    private static MenuHandler _currentHandler;
+    private static readonly List<MenuHandler> Handlers = new();
 
     private void ResetToMenu() {
         RootRectTransform.SetParent(RootQuickMenu, true);
@@ -91,12 +134,56 @@ public class Menu : MonoBehaviour {
         ResetToMenu();
 
         Events.QuickMenu.QuickMenuIsShownChanged += isShown => {
-            if (!PinToggle.isOn) return;
+            if (PinToggle.isOn) return;
             gameObject.SetActive(isShown);
         };
 
+        void SwitchMenu(bool next) {
+
+            // We can't switch if we only have one handler
+            if (Handlers.Count <= 1) return;
+
+            _currentHandlerIndex = (_currentHandlerIndex + (next ? 1 : -1) + Handlers.Count) % Handlers.Count;
+            _currentHandler.Unload();
+
+            _currentHandler = Handlers[_currentHandlerIndex];
+            _currentHandler.Load(this);
+        }
+
+        Events.DebuggerMenu.MainNextPage += () => SwitchMenu(true);
+        Events.DebuggerMenu.MainPreviousPage += () => SwitchMenu(false);
+
+        // Add Toggle handlers
+        void UpdateResetToggle() {
+            // Check if has nothing to reset -> disable
+            if (ResetToggle.isOn && !PointerVisualizer.HasActive() && !TriggerVisualizer.HasActive()) {
+                ResetToggle.isOn = false;
+            }
+            // Check if has anything to reset -> enable
+            else if (!ResetToggle.isOn && (PointerVisualizer.HasActive() || TriggerVisualizer.HasActive())) {
+                ResetToggle.isOn = true;
+            }
+        }
+        void UpdatePointerToggle() {
+            var hasPointers = CurrentEntityPointerList.Count > 0;
+            // Hide icon if current entity has no pointers
+            PointerToggle.gameObject.SetActive(hasPointers);
+            // Check where has any pointer disabled -> disable
+            if (PointerToggle.isOn && CurrentEntityPointerList.Any(vis => !vis.enabled)) PointerToggle.isOn = false;
+            // Check if has nothing to reset -> disable
+            else if (!ResetToggle.isOn && hasPointers && CurrentEntityPointerList.All(vis => vis.enabled)) PointerToggle.isOn = true;
+        }
+        void UpdateTriggerToggle() {
+            var hasTriggers = CurrentEntityTriggerList.Count > 0;
+            // Hide icon if current entity has no triggers
+            TriggerToggle.gameObject.SetActive(hasTriggers);
+            // Check where has any trigger disabled hasTriggers disable
+            if (TriggerToggle.isOn && CurrentEntityTriggerList.Any(vis => !vis.enabled)) TriggerToggle.isOn = false;
+            // Check if has nothing to reset -> disable
+            else if (!ResetToggle.isOn && hasTriggers && CurrentEntityTriggerList.All(vis => vis.enabled)) TriggerToggle.isOn = true;
+        }
         Events.DebuggerMenu.Pinned += isPinned => {
-            if (!isPinned) {
+            if (isPinned) {
                 gameObject.SetActive(true);
                 var pos = transform.position;
                 var rot = transform.rotation;
@@ -108,19 +195,43 @@ public class Menu : MonoBehaviour {
                 ResetToMenu();
             }
         };
+        Events.DebuggerMenu.PointerToggled += isToggled => {
+            PointerImage.color = isToggled ? Misc.ColorBlue : Color.gray;
+            CurrentEntityPointerList.ForEach(vis => vis.enabled = isToggled);
+            UpdateResetToggle();
+        };
+        Events.DebuggerMenu.TriggerToggled += isToggled => {
+            TriggerImage.color = isToggled ? Misc.ColorYellow : Color.gray;
+            CurrentEntityTriggerList.ForEach(vis => vis.enabled = isToggled);
+            UpdateResetToggle();
+        };
+        Events.DebuggerMenu.ResetToggled += isToggled => {
+            ResetToggle.gameObject.SetActive(isToggled);
+            ResetImage.color = isToggled ? Misc.ColorOrange : Color.gray;
+            if (!isToggled) {
+                PointerVisualizer.DisableAll();
+                TriggerVisualizer.DisableAll();
+                if (PointerToggle.isOn) PointerToggle.isOn = false;
+                if (TriggerToggle.isOn) TriggerToggle.isOn = false;
+            }
+        };
 
-        void SwitchMenu(bool next) {
-            // We can't switch if we only have one handler
-            if (Handlers.Count <= 1) return;
+        // Handle entity switch events
+        Events.DebuggerMenu.SwitchedInspectedEntity += finishedInitializing => {
 
-            _currentHandlerIndex = (_currentHandlerIndex + (next ? 1 : -1) + Handlers.Count) % Handlers.Count;
-            _currentHandler.Unload();
-            _currentHandler = Handlers[_currentHandlerIndex];
-            _currentHandler.Load(this);
-        }
+            // Cleaning up caches, since started changing entity
+            if (!finishedInitializing) {
+                CurrentEntityPointerList.Clear();
+                CurrentEntityTriggerList.Clear();
+            }
 
-        Events.DebuggerMenu.MainNextPage += () => SwitchMenu(true);
-        Events.DebuggerMenu.MainPreviousPage += () => SwitchMenu(false);
+            // The change entity has finished, lets update the toggle states
+            else {
+                UpdateResetToggle();
+                UpdatePointerToggle();
+                UpdateTriggerToggle();
+            }
+        };
 
         // Add handlers
         var avatarMenuHandler = new AvatarMenuHandler();
