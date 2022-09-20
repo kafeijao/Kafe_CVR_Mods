@@ -1,4 +1,5 @@
 # CCK.Debugger
+
 This mod allows to debug content you upload to CVR, for now it allows debugging `Avatars` and `Props`. It does so by
 creating a menu with a bunch information for the selected object. You can also use to debug your friend's content because
 it allows to see the information about other people's avatars/props.
@@ -7,7 +8,9 @@ The menu will be attached to the left of your quick menu. There is a pin icon to
 prevent disappearing when you close the menu).
 
 ---
+
 ## Avatar Menu Features
+
 - Attributes
   - Avatar User Name
   - Avatar Name (partial avatar id for now)
@@ -16,7 +19,9 @@ prevent disappearing when you close the menu).
 - Default Parameters (parameters that cvr populates, eg: `GestureLeft`)
 
 ---
+
 ## Prop Menu Features
+
 - Attributes
   - Prop Name (partial spawnable id for now)
   - User Name of the person that spawned it
@@ -28,7 +33,9 @@ prevent disappearing when you close the menu).
 - Attachments (lists all attachment scripts, and what they are attached to)
 
 ---
+
 ## Menu
+
 ![cck_debugger_menu.png](cck_debugger_menu.png)
 
 - The `orange` marked buttons allows swapping between the `avatars` and `props` debug menu.
@@ -36,16 +43,20 @@ prevent disappearing when you close the menu).
 - The `deep pink` buttons allow you to iterate through avatars/props.
 
 ---
+
 ## Todo
+
 - [ ] Current playing animations by layer.
-- [ ] `CVR Pointer`, `CVR Avanced Avatar Settings Trigger`, and `CVR Spawnable Trigger` debug.
+- [ ] `CVR Pointer`, `CVR Advanced Avatar Settings Trigger`, and `CVR Spawnable Trigger` debug.
 - [ ] `Dynamic Bone` colliders and radius visualization.
 
 ---
+
 ## Disclosure
 
-> ___
-> ### ⚠️ **Notice!**
+> ---
+> ⚠️ **Notice!**  
 >
 > This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
-> ___
+>
+> ---
