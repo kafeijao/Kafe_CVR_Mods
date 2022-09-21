@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Util;
+﻿using System.Text;
+using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
@@ -204,6 +205,8 @@ public class SpawnableMenuHandler : MenuHandler {
                 AttachmentsValues[attachment] = tmpPickupValue;
             }
 
+            /*
+
             // Set up CVR Pointers
             menu.ClearCategory(_categoryPointers);
             PointerValues.Clear();
@@ -229,6 +232,8 @@ public class SpawnableMenuHandler : MenuHandler {
                     menu.CurrentEntityTriggerList.Add(triggerVisualizer);
                 }
             }
+
+            */
 
             // Consume the spawnable changed
             PropsData.HasChanged = false;
@@ -262,19 +267,36 @@ public class SpawnableMenuHandler : MenuHandler {
             attachmentsValue.Value.SetText($"Attached: {attachedStr}{attachedTransformName}");
         }
 
+        /*
+
         // Update cvr spawnable pointer values
+        var sb = new StringBuilder();
         foreach (var pointerValue in PointerValues) {
             var pointer = pointerValue.Key;
             var pointerGo = pointer.gameObject;
-            pointerValue.Value.SetText(
-                $"{White}<b>{pointerGo.name}:</b>" +
-                $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
-                $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
-                $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
-                $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
-                $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
-                $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
-                $"\n\t{White}Type: {Purple}{pointer.type}");
+
+            // pointerValue.Value.SetText(
+            //     $"{White}<b>{pointerGo.name}:</b>" +
+            //     $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
+            //     $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
+            //     $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
+            //     $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
+            //     $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
+            //     $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
+            //     $"\n\t{White}Type: {Purple}{pointer.type}");
+
+            // Attempt string build for more performance
+            sb.Clear();
+            sb.Append(White).Append("<b>").Append(pointerGo.name).Append(":</b>");
+            sb.Append("\n\t").Append(White).Append("Is Active: ").Append(Blue).Append(pointerGo.activeInHierarchy ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Class: ").Append(Blue).Append(pointer.GetType().Name);
+
+            sb.Append("\n\t").Append(White).Append("Is Internal: ").Append(Blue).Append(pointer.isInternalPointer ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Is Local: ").Append(Blue).Append(pointer.isLocalPointer ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Limit To Filtered Triggers: ").Append(Blue).Append(pointer.limitToFilteredTriggers ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Layer: ").Append(Blue).Append(pointerGo.layer);
+            sb.Append("\n\t").Append(White).Append("Type: ").Append(Purple).Append(pointer.type);
+            pointerValue.Value.SetText(sb);
         }
 
         // Update cvr trigger values
@@ -292,6 +314,15 @@ public class SpawnableMenuHandler : MenuHandler {
                 ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedTypes)}"
                 : "[None]";
             triggerInfo += $"\n\t{White}Allowed Types: {allowedTypes}";
+
+            // Attempt string build for more performance
+            // sb.Clear();
+            // sb.Append(White).Append("<b>").Append(triggerGo.name).Append(":</b>");
+            // sb.Append("\n\t").Append(White).Append("Is Active: ").Append(Blue).Append(triggerGo.activeInHierarchy ? "yes" : "no");
+            // sb.Append("\n\t").Append(White).Append("Class: ").Append(Blue).Append(trigger.GetType().Name);
+            // sb.Append("\n\t").Append(White).Append("Advanced Trigger: ").Append(Blue).Append(trigger.useAdvancedTrigger ? "yes" : "no");
+            // sb.Append("\n\t").Append(White).Append("Particle Interactions: ").Append(Blue).Append(trigger.allowParticleInteraction ? "yes" : "no");
+            // sb.Append("\n\t").Append(White).Append("Particle Interactions: ").Append(Blue).Append(trigger.allowParticleInteraction ? "yes" : "no");
 
             // OnEnter, OnExit, and OnStay Tasks
             triggerInfo += $"\n\t{White}Trigger Tasks:";
@@ -359,5 +390,6 @@ public class SpawnableMenuHandler : MenuHandler {
 
             triggerValue.Value.SetText(triggerInfo);
         }
+        */
     }
 }

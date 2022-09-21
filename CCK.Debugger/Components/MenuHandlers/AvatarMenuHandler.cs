@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core;
+﻿using System.Text;
+using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
@@ -9,6 +10,7 @@ using CCK.Debugger.Utils;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using Valve.VR;
 
 namespace CCK.Debugger.Components.MenuHandlers;
 
@@ -99,6 +101,10 @@ public class AvatarMenuHandler : MenuHandler {
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggeredValue;
 
+    // Finger Curls
+    private static GameObject _categoryFingerCurls;
+    private static Dictionary<Func<float>, TextMeshProUGUI> FingerCurlValues;
+
     public override void Load(Menu menu) {
 
         menu.AddNewDebugger("Avatars");
@@ -115,6 +121,36 @@ public class AvatarMenuHandler : MenuHandler {
         _categoryTriggers = menu.AddCategory("CVR AAS Triggers");
 
         menu.ToggleCategories(true);
+
+        // FingerCurls
+        var im = CVRInputManager.Instance;
+        if (Traverse.Create(CVRInputManager.Instance).Field<List<CVRInputModule>>("_inputModules").Value.Find(module => module is InputModuleSteamVR) is InputModuleSteamVR steamVrIm) {
+
+            _categoryFingerCurls = menu.AddCategory("Finger Curls 🦊");
+
+            var triggerValue = Traverse.Create(steamVrIm).Field<SteamVR_Action_Single>("vrTriggerValue").Value;
+            var gripValue = Traverse.Create(steamVrIm).Field<SteamVR_Action_Single>("vrGripValue").Value;
+
+            FingerCurlValues = new Dictionary<Func<float>, TextMeshProUGUI>() {
+                { () => triggerValue.GetAxis(SteamVR_Input_Sources.LeftHand), menu.AddCategoryEntry(_categoryFingerCurls, "LeftTrigger") },
+                { () => gripValue.GetAxis(SteamVR_Input_Sources.LeftHand), menu.AddCategoryEntry(_categoryFingerCurls, "LeftGrip") },
+                { () => im.fingerCurlLeftThumb, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftThumb)) },
+                { () => im.fingerCurlLeftIndex, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftIndex)) },
+                { () => im.fingerCurlLeftMiddle, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftMiddle)) },
+                { () => im.fingerCurlLeftRing, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftRing)) },
+                { () => im.fingerCurlLeftPinky, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftPinky)) },
+                { () => triggerValue.GetAxis(SteamVR_Input_Sources.RightHand), menu.AddCategoryEntry(_categoryFingerCurls, "RightTrigger") },
+                { () => gripValue.GetAxis(SteamVR_Input_Sources.RightHand), menu.AddCategoryEntry(_categoryFingerCurls, "RightGrip") },
+                { () => im.fingerCurlRightThumb, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightThumb)) },
+                { () => im.fingerCurlRightIndex, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightIndex)) },
+                { () => im.fingerCurlRightMiddle, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightMiddle)) },
+                { () => im.fingerCurlRightRing, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightRing)) },
+                { () => im.fingerCurlRightPinky, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightPinky)) },
+            };
+        }
+        else {
+            FingerCurlValues = new Dictionary<Func<float>, TextMeshProUGUI>();
+        }
 
         PlayerEntities.ListenPageChangeEvents = true;
         PlayerEntities.HasChanged = true;
@@ -173,6 +209,8 @@ public class AvatarMenuHandler : MenuHandler {
                 ParameterEntry.Add(_mainAnimator, parameter, tmpParamValue);
             }
 
+            /*
+
             var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
 
             // Set up CVR Pointers
@@ -201,6 +239,7 @@ public class AvatarMenuHandler : MenuHandler {
                     menu.CurrentEntityTriggerList.Add(triggerVisualizer);
                 }
             }
+            */
 
             // Consume the spawnable changed
             PlayerEntities.HasChanged = false;
@@ -211,19 +250,41 @@ public class AvatarMenuHandler : MenuHandler {
             foreach (var entry in ParameterEntry.Entries) entry.Update();
         }
 
+        // Update the finger curl values
+        foreach (var fingerCurlValue in FingerCurlValues) {
+            fingerCurlValue.Value.SetText(fingerCurlValue.Key().ToString());
+        }
+
+        /*
+
         // Update cvr pointer values
+        var sb = new StringBuilder();
         foreach (var pointerValue in PointerValues) {
             var pointer = pointerValue.Key;
             var pointerGo = pointer.gameObject;
-            pointerValue.Value.SetText(
-                $"{White}<b>{pointerGo.name}:</b>" +
-                $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
-                $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
-                $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
-                $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
-                $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
-                $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
-                $"\n\t{White}Type: {Purple}{pointer.type}");
+            // pointerValue.Value.SetText(
+            //     $"{White}<b>{pointerGo.name}:</b>" +
+            //     $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
+            //     $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
+            //     $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
+            //     $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
+            //     $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
+            //     $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
+            //     $"\n\t{White}Type: {Purple}{pointer.type}");
+
+
+            // Attempt string build for more performance
+            sb.Clear();
+            sb.Append(White).Append("<b>").Append(pointerGo.name).Append(":</b>");
+            sb.Append("\n\t").Append(White).Append("Is Active: ").Append(Blue).Append(pointerGo.activeInHierarchy ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Class: ").Append(Blue).Append(pointer.GetType().Name);
+
+            sb.Append("\n\t").Append(White).Append("Is Internal: ").Append(Blue).Append(pointer.isInternalPointer ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Is Local: ").Append(Blue).Append(pointer.isLocalPointer ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Limit To Filtered Triggers: ").Append(Blue).Append(pointer.limitToFilteredTriggers ? "yes" : "no");
+            sb.Append("\n\t").Append(White).Append("Layer: ").Append(Blue).Append(pointerGo.layer);
+            sb.Append("\n\t").Append(White).Append("Type: ").Append(Purple).Append(pointer.type);
+            pointerValue.Value.SetText(sb);
         }
 
         // Update cvr trigger values
@@ -304,5 +365,6 @@ public class AvatarMenuHandler : MenuHandler {
 
             triggerValue.Value.SetText(triggerInfo);
         }
+        */
     }
 }

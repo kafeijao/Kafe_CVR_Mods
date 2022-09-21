@@ -45,6 +45,9 @@
         <Reference Include="UnityEngine.PhysicsModule">
             <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
+        <Reference Include="SteamVR">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\SteamVR.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
