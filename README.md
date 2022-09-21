@@ -6,11 +6,12 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 
 ## In-Depth Mods info Links:
 
-- [OSC](OSC)
-- [CCK.Debugger](CCK.Debugger)
-- [LoginProfiles](LoginProfiles)
-- [PickupOverrides](PickupOverrides)
-- [FirstPersonHider](FirstPersonHider)
+- [OSC](OSC) *in-depth url*
+- [CCK.Debugge](CCK.Debugger) *in-depth url*
+- [LoginProfiles](LoginProfiles) *in-depth url*
+- [PickupOverrides](PickupOverrides) *in-depth url*
+- [FirstPersonHider](FirstPersonHider) *in-depth url*
+- [FreedomFingers](FreedomFingers) *in-depth url*
 
 ---
 
@@ -35,7 +36,7 @@ so most external applications should work without many (if any) changes.
 
 More features can be added, exploring CVR possibilities to the max. Feel free to submit Feature Requests in the github.
 
-Check [OSC In-Depth](OSC) for for info.
+Check [OSC In-Depth](OSC) for in-depth info.
 
 There is also a [python library](https://github.com/kafeijao/cvr_osc_lib_py) that abstracts all the api provided by this
 mod.
@@ -92,7 +93,16 @@ You can exclude single game objects from being hidden with the tag `[FPR]`, this
 doesn't need the mod to work (you can use this to reveal your hair in first person that's hidden by the head shrink for  
 example).
 
-Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FirstPersonHider) for more info.
+Check [First Person Hider In-Dept](FirstPersonHider) for more info.
+
+---
+
+### Freedom Fingers
+
+This removes the annoying index controller toggle to switch between finger tracking and animation. And replaces it with
+a gesture toggle. Where your fingers are tracked all the time but you can pick whether you want gestures or not.
+
+Check [Freedom Fingers In-Dept](FreedomFingers) for more info.
 
 ---
 

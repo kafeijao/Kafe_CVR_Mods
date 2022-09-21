@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSC", "OSC\OSC.csproj", "{8
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FirstPersonHider", "FirstPersonHider\FirstPersonHider.csproj", "{9E3C9429-D384-4855-992C-138AF0F9BF2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreedomFingers", "IndexNoFingerAnimations\FreedomFingers.csproj", "{C1F22034-FD3B-4C68-8812-F58BD9B3E912}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreedomFingers", "FreedomFingers\FreedomFingers.csproj", "{C1F22034-FD3B-4C68-8812-F58BD9B3E912}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
