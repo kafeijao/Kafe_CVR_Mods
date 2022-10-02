@@ -10,7 +10,6 @@ using CCK.Debugger.Utils;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
-using Valve.VR;
 
 namespace CCK.Debugger.Components.MenuHandlers;
 
@@ -34,10 +33,10 @@ public class AvatarMenuHandler : MenuHandler {
         CoreParameterNames = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
 
         // Pointers
-        PointerValues = new Dictionary<CVRPointer, TextMeshProUGUI>();
+        PointerValues = new Dictionary<TextMeshProUGUI, (CVRPointer, string)>();
 
         // Triggers
-        TriggerValues = new Dictionary<CVRAdvancedAvatarSettingsTrigger, TextMeshProUGUI>();
+        TriggerValues = new Dictionary<TextMeshProUGUI, (CVRAdvancedAvatarSettingsTrigger, string, List<Func<string>>)>();
         TriggerAasTaskLastTriggered = new Dictionary<CVRAdvancedAvatarSettingsTriggerTask, float>();
         TriggerAasTasksLastExecuted = new Dictionary<CVRAdvancedAvatarSettingsTriggerTask, float>();
         TriggerAasStayTasksLastTriggered = new Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float>();
@@ -45,20 +44,19 @@ public class AvatarMenuHandler : MenuHandler {
 
         // Triggers last time triggered/executed save
         Events.Avatar.AasTriggerTriggered += task => {
-            if (TriggerValues.Keys.Any(t => t.enterTasks.Contains(task)) ||
-                TriggerValues.Keys.Any(t => t.exitTasks.Contains(task))) {
+            if (TriggerValues.Values.Any(t => t.Item1.enterTasks.Contains(task)) ||
+                TriggerValues.Values.Any(t => t.Item1.exitTasks.Contains(task))) {
                 TriggerAasTaskLastTriggered[task] = Time.time;
             }
         };
         Events.Avatar.AasTriggerExecuted += task => {
-            if (TriggerValues.Keys.Any(t => t.enterTasks.Contains(task)) ||
-                TriggerValues.Keys.Any(t => t.exitTasks.Contains(task))) {
+            if (TriggerValues.Values.Any(t => t.Item1.enterTasks.Contains(task)) ||
+                TriggerValues.Values.Any(t => t.Item1.exitTasks.Contains(task))) {
                 TriggerAasTasksLastExecuted[task] = Time.time;
             }
         };
         Events.Avatar.AasStayTriggerTriggered += task => {
-            if (TriggerValues.Keys.Any(t => t.stayTasks.Contains(task)) ||
-                TriggerValues.Keys.Any(t => t.stayTasks.Contains(task))) {
+            if (TriggerValues.Values.Any(t => t.Item1.stayTasks.Contains(task))) {
                 TriggerAasStayTasksLastTriggered[task] = Time.time;
                 if (PlayerSetup.Instance == null) return;
                 TriggerAasStayTasksLastTriggeredValue[task] = PlayerSetup.Instance.GetAnimatorParam(task.settingName);
@@ -91,19 +89,15 @@ public class AvatarMenuHandler : MenuHandler {
 
     // Pointers
     private static GameObject _categoryPointers;
-    private static readonly Dictionary<CVRPointer, TextMeshProUGUI> PointerValues;
+    private static readonly Dictionary<TextMeshProUGUI, (CVRPointer, string)> PointerValues;
 
     // Triggers
     private static GameObject _categoryTriggers;
-    private static readonly Dictionary<CVRAdvancedAvatarSettingsTrigger, TextMeshProUGUI> TriggerValues;
+    private static readonly Dictionary<TextMeshProUGUI, (CVRAdvancedAvatarSettingsTrigger, string, List<Func<string>>)> TriggerValues;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTask, float> TriggerAasTaskLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTask, float> TriggerAasTasksLastExecuted;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggeredValue;
-
-    // Finger Curls
-    private static GameObject _categoryFingerCurls;
-    private static Dictionary<Func<float>, TextMeshProUGUI> FingerCurlValues;
 
     public override void Load(Menu menu) {
 
@@ -121,36 +115,6 @@ public class AvatarMenuHandler : MenuHandler {
         _categoryTriggers = menu.AddCategory("CVR AAS Triggers");
 
         menu.ToggleCategories(true);
-
-        // FingerCurls
-        var im = CVRInputManager.Instance;
-        if (Traverse.Create(CVRInputManager.Instance).Field<List<CVRInputModule>>("_inputModules").Value.Find(module => module is InputModuleSteamVR) is InputModuleSteamVR steamVrIm) {
-
-            _categoryFingerCurls = menu.AddCategory("Finger Curls 🦊");
-
-            var triggerValue = Traverse.Create(steamVrIm).Field<SteamVR_Action_Single>("vrTriggerValue").Value;
-            var gripValue = Traverse.Create(steamVrIm).Field<SteamVR_Action_Single>("vrGripValue").Value;
-
-            FingerCurlValues = new Dictionary<Func<float>, TextMeshProUGUI>() {
-                { () => triggerValue.GetAxis(SteamVR_Input_Sources.LeftHand), menu.AddCategoryEntry(_categoryFingerCurls, "LeftTrigger") },
-                { () => gripValue.GetAxis(SteamVR_Input_Sources.LeftHand), menu.AddCategoryEntry(_categoryFingerCurls, "LeftGrip") },
-                { () => im.fingerCurlLeftThumb, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftThumb)) },
-                { () => im.fingerCurlLeftIndex, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftIndex)) },
-                { () => im.fingerCurlLeftMiddle, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftMiddle)) },
-                { () => im.fingerCurlLeftRing, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftRing)) },
-                { () => im.fingerCurlLeftPinky, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlLeftPinky)) },
-                { () => triggerValue.GetAxis(SteamVR_Input_Sources.RightHand), menu.AddCategoryEntry(_categoryFingerCurls, "RightTrigger") },
-                { () => gripValue.GetAxis(SteamVR_Input_Sources.RightHand), menu.AddCategoryEntry(_categoryFingerCurls, "RightGrip") },
-                { () => im.fingerCurlRightThumb, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightThumb)) },
-                { () => im.fingerCurlRightIndex, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightIndex)) },
-                { () => im.fingerCurlRightMiddle, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightMiddle)) },
-                { () => im.fingerCurlRightRing, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightRing)) },
-                { () => im.fingerCurlRightPinky, menu.AddCategoryEntry(_categoryFingerCurls, nameof(im.fingerCurlRightPinky)) },
-            };
-        }
-        else {
-            FingerCurlValues = new Dictionary<Func<float>, TextMeshProUGUI>();
-        }
 
         PlayerEntities.ListenPageChangeEvents = true;
         PlayerEntities.HasChanged = true;
@@ -176,8 +140,8 @@ public class AvatarMenuHandler : MenuHandler {
         var playerAvatarName = menu.GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId);
 
         // Avatar Data Info
-        _attributeUsername.SetText(playerUserName);
-        _attributeAvatar.SetText(playerAvatarName);
+        if (Menu.HasValueChanged(_attributeUsername, playerUserName)) _attributeUsername.SetText(playerUserName);
+        if (Menu.HasValueChanged(_attributeAvatar, playerAvatarName)) _attributeAvatar.SetText(playerAvatarName);
 
         // Update the menus if the spawnable changed
         if (PlayerEntities.HasChanged) {
@@ -209,8 +173,6 @@ public class AvatarMenuHandler : MenuHandler {
                 ParameterEntry.Add(_mainAnimator, parameter, tmpParamValue);
             }
 
-            /*
-
             var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
 
             // Set up CVR Pointers
@@ -218,7 +180,23 @@ public class AvatarMenuHandler : MenuHandler {
             PointerValues.Clear();
             var avatarPointers = avatarGo.GetComponentsInChildren<CVRPointer>(true);
             foreach (var pointer in avatarPointers) {
-                PointerValues[pointer] = menu.AddCategoryEntry(_categoryPointers).Item1;
+
+                // Template items:
+                // {0} -> (pointerGo.activeInHierarchy ? "yes" : "no")
+                var pointerGo = pointer.gameObject;
+                var template =
+                    $"{White}<b>{pointerGo.name}:</b>" +
+                    $"\n\t{White}Is Active: {Blue}{{0}}" +
+                    $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
+                    $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
+                    $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
+                    $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
+                    $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
+                    $"\n\t{White}Type: {Purple}{pointer.type}";
+
+                PointerValues[menu.AddCategoryEntry(_categoryPointers).Item1] = (pointer, template);
+
+                // Add visualizer
                 if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
                     menu.CurrentEntityPointerList.Add(pointerVisualizer);
                 }
@@ -234,12 +212,101 @@ public class AvatarMenuHandler : MenuHandler {
             TriggerAasStayTasksLastTriggeredValue.Clear();
             var avatarTriggers = avatarGo.GetComponentsInChildren<CVRAdvancedAvatarSettingsTrigger>(true);
             foreach (var trigger in avatarTriggers) {
-                TriggerValues[trigger] = menu.AddCategoryEntry(_categoryTriggers).Item1;
+
+                 var triggerGo = trigger.gameObject;
+
+                // Generate the template with dynamic params
+                var templateArgs = new List<Func<string>>();
+                var argId = 0;
+
+                templateArgs.Add(() => triggerGo.activeInHierarchy ? "yes" : "no");
+                var template =
+                    $"{White}<b>{triggerGo.name}:</b>" +
+                    $"\n\t{White}Active: {Blue}{{{argId++}}}" +
+                    $"\n\t{White}Class: {Blue}{trigger.GetType().Name}" +
+                    $"\n\t{White}Advanced Trigger: {Blue}{(trigger.useAdvancedTrigger ? "yes" : "no")}" +
+                    $"\n\t{White}Network Interactable: {Blue}{(trigger.isNetworkInteractable ? "yes" : "no")}" +
+                    $"\n\t{White}Particle Interactions: {Blue}{(trigger.allowParticleInteraction ? "yes" : "no")}" +
+                    $"\n\t{White}Layer: {Blue}{triggerGo.layer}";
+
+                var allowedPointers = trigger.allowedPointer.Count != 0
+                    ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedPointer.Select(o => o.gameObject.name))}"
+                    : "[None]";
+                template += $"\n\t{White}Allowed Pointers: {allowedPointers}";
+
+                var allowedTypes = trigger.allowedTypes.Length != 0
+                    ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedTypes)}"
+                    : "[None]";
+                template += $"\n\t{White}Allowed Types: {allowedTypes}";
+
+                string GetTriggerTaskTemplate(CVRAdvancedAvatarSettingsTriggerTask task, string taskType) {
+                    string LastTriggered() => TriggerAasTaskLastTriggered.ContainsKey(task)
+                        ? Menu.GetTimeDifference(TriggerAasTaskLastTriggered[task])
+                        : "?";
+
+                    string LastExecuted() => TriggerAasTasksLastExecuted.ContainsKey(task)
+                        ? Menu.GetTimeDifference(TriggerAasTasksLastExecuted[task])
+                        : "?";
+
+                    templateArgs.Add(() => task.settingValue.ToString());
+                    templateArgs.Add(LastTriggered);
+                    templateArgs.Add(LastExecuted);
+                    return $"\n\t\t{Purple}[{taskType}]" +
+                           $"\n\t\t\t{White}Name: {Blue}{task.settingName}" +
+                           $"\n\t\t\t{White}Value: {Blue}{{{argId++}}}" +
+                           $"\n\t\t\t{White}Delay: {Blue}{task.delay}" +
+                           $"\n\t\t\t{White}Hold Time: {Blue}{task.holdTime}" +
+                           $"\n\t\t\t{White}Update Method: {Blue}{task.updateMethod.ToString()}" +
+                           $"\n\t\t\t{White}Last Triggered: {Blue}{{{argId++}}} secs ago" +
+                           $"\n\t\t\t{White}Last Executed: {Blue}{{{argId++}}} secs ago";
+                }
+
+                // OnEnter, OnExit, and OnStay Tasks
+                template += $"\n\t{White}Trigger Tasks:";
+                foreach (var enterTask in trigger.enterTasks) {
+                    template += GetTriggerTaskTemplate(enterTask, "OnEnter");
+                }
+                foreach (var exitTask in trigger.exitTasks) {
+                    template += GetTriggerTaskTemplate(exitTask, "OnExit");
+                }
+
+                foreach (var stayTask in trigger.stayTasks) {
+                    string LastTriggered() => TriggerAasStayTasksLastTriggered.ContainsKey(stayTask)
+                        ? Menu.GetTimeDifference(TriggerAasStayTasksLastTriggered[stayTask])
+                        : "?";
+
+                    string LastTriggeredValue() => TriggerAasStayTasksLastTriggeredValue.ContainsKey(stayTask)
+                        ? TriggerAasStayTasksLastTriggeredValue[stayTask].ToString()
+                        : "?";
+
+                    template += $"\n\t\t{Purple}[OnStay]" +
+                                $"\n\t\t\t{White}Name: {Blue}{stayTask.settingName}" +
+                                $"\n\t\t\t{White}Update Method: {Blue}{stayTask.updateMethod.ToString()}";
+                    if (stayTask.updateMethod == CVRAdvancedAvatarSettingsTriggerTaskStay.UpdateMethod.SetFromPosition) {
+                        templateArgs.Add(() => stayTask.minValue.ToString());
+                        templateArgs.Add(() => stayTask.maxValue.ToString());
+                        template += $"\n\t\t\t{White}Min Value: {Blue}{{{argId++}}}" +
+                                       $"\n\t\t\t{White}Max Value: {Blue}{{{argId++}}}";
+                    }
+                    else {
+                        templateArgs.Add(() => stayTask.minValue.ToString());
+                        template += $"\n\t\t\t{White}Change per sec: {Blue}{{{argId++}}}";
+                    }
+
+                    templateArgs.Add(LastTriggered);
+                    templateArgs.Add(LastTriggeredValue);
+                    template += $"\n\t\t\t{White}Sample direction: {Blue}{trigger.sampleDirection}";
+                    template += $"\n\t\t\t{White}Last Triggered: {Blue}{{{argId++}}} secs ago";
+                    template += $"\n\t\t\t{White}Last Triggered Value: {Blue}{{{argId++}}}";
+
+                    TriggerValues[menu.AddCategoryEntry(_categoryTriggers).Item1] = (trigger, template, templateArgs);
+                }
+
+                // Add the visualizer
                 if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
                     menu.CurrentEntityTriggerList.Add(triggerVisualizer);
                 }
             }
-            */
 
             // Consume the spawnable changed
             PlayerEntities.HasChanged = false;
@@ -250,121 +317,27 @@ public class AvatarMenuHandler : MenuHandler {
             foreach (var entry in ParameterEntry.Entries) entry.Update();
         }
 
-        // Update the finger curl values
-        foreach (var fingerCurlValue in FingerCurlValues) {
-            fingerCurlValue.Value.SetText(fingerCurlValue.Key().ToString());
-        }
-
-        /*
-
-        // Update cvr pointer values
-        var sb = new StringBuilder();
+        // Update cvr spawnable pointer values
         foreach (var pointerValue in PointerValues) {
-            var pointer = pointerValue.Key;
-            var pointerGo = pointer.gameObject;
-            // pointerValue.Value.SetText(
-            //     $"{White}<b>{pointerGo.name}:</b>" +
-            //     $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
-            //     $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
-            //     $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
-            //     $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
-            //     $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
-            //     $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
-            //     $"\n\t{White}Type: {Purple}{pointer.type}");
-
-
-            // Attempt string build for more performance
-            sb.Clear();
-            sb.Append(White).Append("<b>").Append(pointerGo.name).Append(":</b>");
-            sb.Append("\n\t").Append(White).Append("Is Active: ").Append(Blue).Append(pointerGo.activeInHierarchy ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Class: ").Append(Blue).Append(pointer.GetType().Name);
-
-            sb.Append("\n\t").Append(White).Append("Is Internal: ").Append(Blue).Append(pointer.isInternalPointer ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Is Local: ").Append(Blue).Append(pointer.isLocalPointer ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Limit To Filtered Triggers: ").Append(Blue).Append(pointer.limitToFilteredTriggers ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Layer: ").Append(Blue).Append(pointerGo.layer);
-            sb.Append("\n\t").Append(White).Append("Type: ").Append(Purple).Append(pointer.type);
-            pointerValue.Value.SetText(sb);
+            var value = pointerValue.Value.Item1.gameObject.activeInHierarchy;
+            var text = pointerValue.Key;
+            // Ignore if the value didn't change
+            if (!Menu.HasValueChanged(text, value)) continue;
+            text.SetText(string.Format(pointerValue.Value.Item2, value ? "yes" : "no"));
         }
 
         // Update cvr trigger values
         foreach (var triggerValue in TriggerValues) {
-            var trigger = triggerValue.Key;
-            var triggerGo = trigger.gameObject;
-            var triggerInfo =
-                $"{White}<b>{triggerGo.name}:</b>" +
-                $"\n\t{White}Active: {Blue}{(triggerGo.activeInHierarchy ? "yes" : "no")}" +
-                $"\n\t{White}Class: {Blue}{trigger.GetType().Name}" +
-                $"\n\t{White}Advanced Trigger: {Blue}{(trigger.useAdvancedTrigger ? "yes" : "no")}" +
-                $"\n\t{White}Network Interactable: {Blue}{(trigger.isNetworkInteractable ? "yes" : "no")}" +
-                $"\n\t{White}Particle Interactions: {Blue}{(trigger.allowParticleInteraction ? "yes" : "no")}" +
-                $"\n\t{White}Layer: {Blue}{triggerGo.layer}";
-            var allowedPointers = trigger.allowedPointer.Count != 0
-                ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedPointer.Select(o => o.gameObject.name))}"
-                : "[None]";
-            triggerInfo += $"\n\t{White}Allowed Pointers: {allowedPointers}";
-            var allowedTypes = trigger.allowedTypes.Length != 0
-                ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedTypes)}"
-                : "[None]";
-            triggerInfo += $"\n\t{White}Allowed Types: {allowedTypes}";
 
-            // OnEnter, OnExit, and OnStay Tasks
-            triggerInfo += $"\n\t{White}Trigger Tasks:";
-            foreach (var enterTask in trigger.enterTasks) {
-                var lastTriggered = TriggerAasTaskLastTriggered.ContainsKey(enterTask)
-                    ? (Time.time - TriggerAasTaskLastTriggered[enterTask]).ToString("0.00")
-                    : "?";
-                var lastExecuted = TriggerAasTasksLastExecuted.ContainsKey(enterTask)
-                    ? (Time.time - TriggerAasTasksLastExecuted[enterTask]).ToString("0.00")
-                    : "?";
-                    triggerInfo += $"\n\t\t{Purple}[OnEnter]" +
-                                   $"\n\t\t\t{White}Name: {Blue}{enterTask.settingName}" +
-                                   $"\n\t\t\t{White}Value: {Blue}{enterTask.settingValue}" +
-                                   $"\n\t\t\t{White}Delay: {Blue}{enterTask.delay}" +
-                                   $"\n\t\t\t{White}Hold Time: {Blue}{enterTask.holdTime}" +
-                                   $"\n\t\t\t{White}Update Method: {Blue}{enterTask.updateMethod.ToString()}" +
-                                   $"\n\t\t\t{White}Last Triggered: {Blue}{lastTriggered} secs ago" +
-                                   $"\n\t\t\t{White}Last Executed: {Blue}{lastExecuted} secs ago";
-            }
-            foreach (var exitTask in trigger.exitTasks) {
-                var lastTriggered = TriggerAasTaskLastTriggered.ContainsKey(exitTask)
-                    ? (Time.time - TriggerAasTaskLastTriggered[exitTask]).ToString("0.00")
-                    : "?";
-                var lastExecuted = TriggerAasTasksLastExecuted.ContainsKey(exitTask)
-                    ? (Time.time - TriggerAasTasksLastExecuted[exitTask]).ToString("0.00")
-                    : "?";
-                triggerInfo += $"\n\t\t{Purple}[OnExit]" +
-                               $"\n\t\t\t{White}Name: {Blue}{exitTask.settingName}" +
-                               $"\n\t\t\t{White}Value: {Blue}{exitTask.settingValue}" +
-                               $"\n\t\t\t{White}Delay: {Blue}{exitTask.delay}" +
-                               $"\n\t\t\t{White}Update Method: {Blue}{exitTask.updateMethod.ToString()}" +
-                               $"\n\t\t\t{White}Last Triggered: {Blue}{lastTriggered} secs ago" +
-                               $"\n\t\t\t{White}Last Executed: {Blue}{lastExecuted} secs ago";
-            }
-            foreach (var stayTask in trigger.stayTasks) {
-                var lastTriggered = TriggerAasStayTasksLastTriggered.ContainsKey(stayTask)
-                    ? (Time.time - TriggerAasStayTasksLastTriggered[stayTask]).ToString("0.00")
-                    : "?";
-                var lastTriggeredValue = TriggerAasStayTasksLastTriggeredValue.ContainsKey(stayTask)
-                    ? TriggerAasStayTasksLastTriggeredValue[stayTask].ToString()
-                    : "?";
-                triggerInfo += $"\n\t\t{Purple}[OnStay]" +
-                               $"\n\t\t\t{White}Name: {Blue}{stayTask.settingName}" +
-                               $"\n\t\t\t{White}Update Method: {Blue}{stayTask.updateMethod.ToString()}";
-                if (stayTask.updateMethod == CVRAdvancedAvatarSettingsTriggerTaskStay.UpdateMethod.SetFromPosition) {
-                    triggerInfo += $"\n\t\t\t{White}Min Value: {Blue}{stayTask.minValue}" +
-                                   $"\n\t\t\t{White}Max Value: {Blue}{stayTask.maxValue}";
-                }
-                else {
-                    triggerInfo += $"\n\t\t\t{White}Change per sec: {Blue}{stayTask.minValue}";
-                }
-                triggerInfo += $"\n\t\t\t{White}Sample direction: {Blue}{trigger.sampleDirection}";
-                triggerInfo += $"\n\t\t\t{White}Last Triggered: {Blue}{lastTriggered} secs ago";
-                triggerInfo += $"\n\t\t\t{White}Last Triggered Value: {Blue}{lastTriggeredValue}";
-            }
+            var text = triggerValue.Key;
 
-            triggerValue.Value.SetText(triggerInfo);
+            // Execute to get the values
+            var templateArgs = triggerValue.Value.Item3.Select(arg => arg()).ToArray();
+
+            // Check if the param values are all the same as the previous frame
+            if (!Menu.HasValueChanged(text, templateArgs)) continue;
+
+            text.SetText(string.Format(triggerValue.Value.Item2, templateArgs));
         }
-        */
     }
 }

@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using CCK.Debugger.Components;
+using JetBrains.Annotations;
 using MelonLoader;
 using TMPro;
 using UnityEngine;
@@ -47,7 +48,9 @@ internal class ParameterEntry<T> : ParameterEntry {
     }
 
     public override void Update() {
-        Display.text = GetParameterFunc.Invoke(Hash).ToString();
+        var value = GetParameterFunc.Invoke(Hash);
+        if (!Menu.HasValueChanged(Display, value)) return;
+        Display.text = value.ToString();
 
         // Trigger delay to fade implementation
         // Removed because people might think their animator is broken because the triggers last for so long

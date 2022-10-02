@@ -21,10 +21,10 @@ public class SpawnableMenuHandler : MenuHandler {
         AttachmentsValues = new Dictionary<CVRAttachment, TextMeshProUGUI>();
 
         // Pointers
-        PointerValues = new Dictionary<CVRPointer, TextMeshProUGUI>();
+        PointerValues = new Dictionary<TextMeshProUGUI, (CVRPointer, string)>();
 
         // Triggers
-        TriggerValues = new Dictionary<CVRSpawnableTrigger, TextMeshProUGUI>();
+        TriggerValues = new Dictionary<TextMeshProUGUI, (CVRSpawnableTrigger, string, List<Func<string>>)>();
         TriggerSpawnableTaskLastTriggered = new Dictionary<CVRSpawnableTriggerTask, float>();
         TriggerSpawnableTasksLastExecuted = new Dictionary<CVRSpawnableTriggerTask, float>();
         TriggerSpawnableStayTasksLastTriggered = new Dictionary<CVRSpawnableTriggerTaskStay, float>();
@@ -32,20 +32,20 @@ public class SpawnableMenuHandler : MenuHandler {
 
         // Triggers last time triggered/executed save
         Events.Spawnable.SpawnableTriggerTriggered += task => {
-            if (TriggerValues.Keys.Any(t => t.enterTasks.Contains(task)) ||
-                TriggerValues.Keys.Any(t => t.exitTasks.Contains(task))) {
+            if (TriggerValues.Values.Any(t => t.Item1.enterTasks.Contains(task)) ||
+                TriggerValues.Values.Any(t => t.Item1.exitTasks.Contains(task))) {
                 TriggerSpawnableTaskLastTriggered[task] = Time.time;
             }
         };
         Events.Spawnable.SpawnableTriggerExecuted += task => {
-            if (TriggerValues.Keys.Any(t => t.enterTasks.Contains(task)) ||
-                TriggerValues.Keys.Any(t => t.exitTasks.Contains(task))) {
+            if (TriggerValues.Values.Any(t => t.Item1.enterTasks.Contains(task)) ||
+                TriggerValues.Values.Any(t => t.Item1.exitTasks.Contains(task))) {
                 TriggerSpawnableTasksLastExecuted[task] = Time.time;
             }
         };
         Events.Spawnable.SpawnableStayTriggerTriggered += task => {
-            if (TriggerValues.Keys.Any(t => t.stayTasks.Contains(task)) ||
-                TriggerValues.Keys.Any(t => t.stayTasks.Contains(task))) {
+            if (TriggerValues.Values.Any(t => t.Item1.stayTasks.Contains(task)) ||
+                TriggerValues.Values.Any(t => t.Item1.stayTasks.Contains(task))) {
                 TriggerSpawnableStayTasksLastTriggered[task] = Time.time;
                 TriggerSpawnableStayTasksLastTriggeredValue[task] = task.spawnable.GetValue(task.settingIndex);
             }
@@ -86,11 +86,11 @@ public class SpawnableMenuHandler : MenuHandler {
 
     // Pointers
     private static GameObject _categoryPointers;
-    private static readonly Dictionary<CVRPointer, TextMeshProUGUI> PointerValues;
+    private static readonly Dictionary<TextMeshProUGUI, (CVRPointer, string)> PointerValues;
 
     // Triggers
     private static GameObject _categoryTriggers;
-    private static readonly Dictionary<CVRSpawnableTrigger, TextMeshProUGUI> TriggerValues;
+    private static readonly Dictionary<TextMeshProUGUI, (CVRSpawnableTrigger, string, List<Func<string>>)> TriggerValues;
     private static readonly Dictionary<CVRSpawnableTriggerTask, float> TriggerSpawnableTaskLastTriggered;
     private static readonly Dictionary<CVRSpawnableTriggerTask, float> TriggerSpawnableTasksLastExecuted;
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggered;
@@ -144,9 +144,9 @@ public class SpawnableMenuHandler : MenuHandler {
         var currentSpawnable = currentSpawnablePropData.Spawnable;
 
         // Prop Data Info
-        _attributeId.SetText(menu.GetSpawnableName(currentSpawnablePropData?.ObjectId));
-        _attributeSpawnedByValue.SetText(menu.GetUsername(currentSpawnablePropData?.SpawnedBy));
-        _attributeSyncedByValue.SetText(menu.GetUsername(currentSpawnablePropData?.syncedBy));
+        if (Menu.HasValueChanged(_attributeId, currentSpawnablePropData?.ObjectId)) _attributeId.SetText(menu.GetSpawnableName(currentSpawnablePropData?.ObjectId));
+        if (Menu.HasValueChanged(_attributeSpawnedByValue, currentSpawnablePropData?.SpawnedBy)) _attributeSpawnedByValue.SetText(menu.GetUsername(currentSpawnablePropData?.SpawnedBy));
+        if (Menu.HasValueChanged(_attributeSyncedByValue, currentSpawnablePropData?.syncedBy)) _attributeSyncedByValue.SetText(menu.GetUsername(currentSpawnablePropData?.syncedBy));
         var syncType = currentSpawnablePropData?.syncType;
         string syncTypeString = "N/A";
         string syncTypeValue = "N/A";
@@ -159,7 +159,8 @@ public class SpawnableMenuHandler : MenuHandler {
                 syncTypeString = currentSpawnable.isPhysicsSynced ? "Physics" : "None";
             }
         }
-        _attributeSyncTypeValue.SetText($"{syncTypeValue} [{syncTypeString}?]");
+        var syncTypeValueFull = $"{syncTypeValue} [{syncTypeString}?]";
+        if (Menu.HasValueChanged(_attributeSyncTypeValue, syncTypeValueFull)) _attributeSyncTypeValue.SetText(syncTypeValueFull);
 
         // Update the menus if the spawnable changed
         if (PropsData.HasChanged) {
@@ -205,14 +206,28 @@ public class SpawnableMenuHandler : MenuHandler {
                 AttachmentsValues[attachment] = tmpPickupValue;
             }
 
-            /*
-
             // Set up CVR Pointers
             menu.ClearCategory(_categoryPointers);
             PointerValues.Clear();
             var spawnablePointers = currentSpawnable.GetComponentsInChildren<CVRPointer>(true);
             foreach (var pointer in spawnablePointers) {
-                PointerValues[pointer] = menu.AddCategoryEntry(_categoryPointers).Item1;
+
+                // Template items:
+                // {0} -> (pointerGo.activeInHierarchy ? "yes" : "no")
+                var pointerGo = pointer.gameObject;
+                var template =
+                    $"{White}<b>{pointerGo.name}:</b>" +
+                    $"\n\t{White}Is Active: {Blue}{{0}}" +
+                    $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
+                    $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
+                    $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
+                    $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
+                    $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
+                    $"\n\t{White}Type: {Purple}{pointer.type}";
+
+                PointerValues[menu.AddCategoryEntry(_categoryPointers).Item1] = (pointer, template);
+
+                // Add the visualizer
                 if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
                     menu.CurrentEntityPointerList.Add(pointerVisualizer);
                 }
@@ -227,13 +242,99 @@ public class SpawnableMenuHandler : MenuHandler {
             TriggerSpawnableStayTasksLastTriggeredValue.Clear();
             var spawnableTriggers = currentSpawnable.GetComponentsInChildren<CVRSpawnableTrigger>(true);
             foreach (var trigger in spawnableTriggers) {
-                TriggerValues[trigger] = menu.AddCategoryEntry(_categoryTriggers).Item1;
+
+                var triggerGo = trigger.gameObject;
+
+                // Generate the template with dynamic params
+                var templateArgs = new List<Func<string>>();
+                var argId = 0;
+
+                templateArgs.Add(() => triggerGo.activeInHierarchy ? "yes" : "no");
+                var template =
+                    $"{White}<b>{triggerGo.name}:</b>" +
+                    $"\n\t{White}Active: {Blue}{{{argId++}}}" +
+                    $"\n\t{White}Class: {Blue}{trigger.GetType().Name}" +
+                    $"\n\t{White}Advanced Trigger: {Blue}{(trigger.useAdvancedTrigger ? "yes" : "no")}" +
+                    $"\n\t{White}Particle Interactions: {Blue}{(trigger.allowParticleInteraction ? "yes" : "no")}" +
+                    $"\n\t{White}Layer: {Blue}{triggerGo.layer}";
+
+                var allowedTypes = trigger.allowedTypes.Length != 0
+                    ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedTypes)}"
+                    : "[None]";
+                template += $"\n\t{White}Allowed Types: {allowedTypes}";
+
+                string GetTriggerTaskTemplate(CVRSpawnableTriggerTask task, string taskType) {
+                    var name = task.spawnable.syncValues.ElementAtOrDefault(task.settingIndex) != null
+                        ? task.spawnable.syncValues[task.settingIndex].name
+                        : "-none-";
+                    string LastTriggered() => TriggerSpawnableTaskLastTriggered.ContainsKey(task)
+                        ? Menu.GetTimeDifference(TriggerSpawnableTaskLastTriggered[task])
+                        : "?";
+                    string LastExecuted() => TriggerSpawnableTasksLastExecuted.ContainsKey(task)
+                        ? Menu.GetTimeDifference(TriggerSpawnableTasksLastExecuted[task])
+                        : "?";
+
+                    templateArgs.Add(() => task.settingValue.ToString());
+                    templateArgs.Add(LastTriggered);
+                    templateArgs.Add(LastExecuted);
+                    return $"\n\t\t{Purple}[{taskType}]" +
+                           $"\n\t\t\t{White}Name: {Blue}{name}" +
+                           $"\n\t\t\t{White}Value: {Blue}{{{argId++}}}" +
+                           $"\n\t\t\t{White}Delay: {Blue}{task.delay}" +
+                           $"\n\t\t\t{White}Hold Time: {Blue}{task.holdTime}" +
+                           $"\n\t\t\t{White}Update Method: {Blue}{task.updateMethod.ToString()}" +
+                           $"\n\t\t\t{White}Last Triggered: {Blue}{{{argId++}}} secs ago" +
+                           $"\n\t\t\t{White}Last Executed: {Blue}{{{argId++}}} secs ago";
+                }
+
+                // OnEnter, OnExit, and OnStay Tasks
+                template += $"\n\t{White}Trigger Tasks:";
+                foreach (var enterTask in trigger.enterTasks) {
+                    template += GetTriggerTaskTemplate(enterTask, "OnEnter");
+                }
+                foreach (var exitTask in trigger.exitTasks) {
+                    template += GetTriggerTaskTemplate(exitTask, "OnExit");
+                }
+
+                foreach (var stayTask in trigger.stayTasks) {
+                    var name = stayTask.spawnable.syncValues.ElementAtOrDefault(stayTask.settingIndex) != null
+                        ? stayTask.spawnable.syncValues[stayTask.settingIndex].name
+                        : "-none-";
+                    string LastTriggered() => TriggerSpawnableStayTasksLastTriggered.ContainsKey(stayTask)
+                        ? Menu.GetTimeDifference(TriggerSpawnableStayTasksLastTriggered[stayTask])
+                        : "?";
+                    string LastTriggeredValue() => TriggerSpawnableStayTasksLastTriggeredValue.ContainsKey(stayTask)
+                        ? TriggerSpawnableStayTasksLastTriggeredValue[stayTask].ToString()
+                        : "?";
+
+                    template += $"\n\t\t{Purple}[OnStay]" +
+                                $"\n\t\t\t{White}Name: {Blue}{name}" +
+                                $"\n\t\t\t{White}Update Method: {Blue}{stayTask.updateMethod.ToString()}";
+                    if (stayTask.updateMethod == CVRSpawnableTriggerTaskStay.UpdateMethod.SetFromPosition) {
+                        templateArgs.Add(() => stayTask.minValue.ToString());
+                        templateArgs.Add(() => stayTask.maxValue.ToString());
+                        template += $"\n\t\t\t{White}Min Value: {Blue}{{{argId++}}}" +
+                                       $"\n\t\t\t{White}Max Value: {Blue}{{{argId++}}}";
+                    }
+                    else {
+                        templateArgs.Add(() => stayTask.minValue.ToString());
+                        template += $"\n\t\t\t{White}Change per sec: {Blue}{{{argId++}}}";
+                    }
+
+                    templateArgs.Add(LastTriggered);
+                    templateArgs.Add(LastTriggeredValue);
+                    template += $"\n\t\t\t{White}Sample direction: {Blue}{trigger.sampleDirection}";
+                    template += $"\n\t\t\t{White}Last Triggered: {Blue}{{{argId++}}} secs ago";
+                    template += $"\n\t\t\t{White}Last Triggered Value: {Blue}{{{argId++}}}";
+
+                    TriggerValues[menu.AddCategoryEntry(_categoryTriggers).Item1] = (trigger, template, templateArgs);
+                }
+
+                // Add the visualizer
                 if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
                     menu.CurrentEntityTriggerList.Add(triggerVisualizer);
                 }
             }
-
-            */
 
             // Consume the spawnable changed
             PropsData.HasChanged = false;
@@ -241,6 +342,8 @@ public class SpawnableMenuHandler : MenuHandler {
 
         // Update sync parameter values
         foreach (var syncedParametersValue in SyncedParametersValues) {
+            // Ignore if the value didn't change
+            if (!Menu.HasValueChanged(syncedParametersValue.Value, syncedParametersValue.Key.currentValue)) continue;
             syncedParametersValue.Value.SetText(syncedParametersValue.Key.currentValue.ToString());
         }
 
@@ -251,145 +354,49 @@ public class SpawnableMenuHandler : MenuHandler {
 
         // Update pickup values
         foreach (var pickupValue in PickupsValues) {
+            // Ignore if the value didn't change
+            if (!Menu.HasValueChanged(pickupValue.Value, pickupValue.Key.grabbedBy)) continue;
             pickupValue.Value.SetText($" GrabbedBy: {menu.GetUsername(pickupValue.Key.grabbedBy)}");
         }
 
         // Update attachment values
         foreach (var attachmentsValue in AttachmentsValues) {
             var attachedTransformName = "";
-            if (attachmentsValue.Key.IsAttached()) {
+            var isAttached = attachmentsValue.Key.IsAttached();
+            if (isAttached) {
                 var attTrns = Traverse.Create(attachmentsValue.Key).Field("_attachedTransform").GetValue<Transform>();
                 if (attTrns != null) {
                     attachedTransformName = $" [{attTrns.gameObject.name}]";
                 }
             }
-            var attachedStr = attachmentsValue.Key.IsAttached() ? "yes" : "no";
-            attachmentsValue.Value.SetText($"Attached: {attachedStr}{attachedTransformName}");
+
+            var text = attachmentsValue.Value;
+            // If no values have changed -> ignore
+            if (!Menu.HasValueChanged(text, attachedTransformName) &&
+                !Menu.HasValueChanged(text, isAttached)) continue;
+            text.SetText($"Attached: {(isAttached ? "yes" : "no")}{attachedTransformName}");
         }
 
-        /*
-
         // Update cvr spawnable pointer values
-        var sb = new StringBuilder();
         foreach (var pointerValue in PointerValues) {
-            var pointer = pointerValue.Key;
-            var pointerGo = pointer.gameObject;
-
-            // pointerValue.Value.SetText(
-            //     $"{White}<b>{pointerGo.name}:</b>" +
-            //     $"\n\t{White}Is Active: {Blue}{(pointerGo.activeInHierarchy ? "yes" : "no")}" +
-            //     $"\n\t{White}Class: {Blue}{pointer.GetType().Name}" +
-            //     $"\n\t{White}Is Internal: {Blue}{(pointer.isInternalPointer ? "yes" : "no")}" +
-            //     $"\n\t{White}Is Local: {Blue}{(pointer.isLocalPointer ? "yes" : "no")}" +
-            //     $"\n\t{White}Limit To Filtered Triggers: {Blue}{(pointer.limitToFilteredTriggers ? "yes" : "no")}" +
-            //     $"\n\t{White}Layer: {Blue}{pointerGo.layer}" +
-            //     $"\n\t{White}Type: {Purple}{pointer.type}");
-
-            // Attempt string build for more performance
-            sb.Clear();
-            sb.Append(White).Append("<b>").Append(pointerGo.name).Append(":</b>");
-            sb.Append("\n\t").Append(White).Append("Is Active: ").Append(Blue).Append(pointerGo.activeInHierarchy ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Class: ").Append(Blue).Append(pointer.GetType().Name);
-
-            sb.Append("\n\t").Append(White).Append("Is Internal: ").Append(Blue).Append(pointer.isInternalPointer ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Is Local: ").Append(Blue).Append(pointer.isLocalPointer ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Limit To Filtered Triggers: ").Append(Blue).Append(pointer.limitToFilteredTriggers ? "yes" : "no");
-            sb.Append("\n\t").Append(White).Append("Layer: ").Append(Blue).Append(pointerGo.layer);
-            sb.Append("\n\t").Append(White).Append("Type: ").Append(Purple).Append(pointer.type);
-            pointerValue.Value.SetText(sb);
+            var value = pointerValue.Value.Item1.gameObject.activeInHierarchy;
+            var text = pointerValue.Key;
+            // Ignore if the value didn't change
+            if (!Menu.HasValueChanged(text, value)) continue;
+            text.SetText(string.Format(pointerValue.Value.Item2, value ? "yes" : "no"));
         }
 
         // Update cvr trigger values
         foreach (var triggerValue in TriggerValues) {
-            var trigger = triggerValue.Key;
-            var triggerGo = trigger.gameObject;
-            var triggerInfo =
-                $"{White}<b>{triggerGo.name}:</b>" +
-                $"\n\t{White}Active: {Blue}{(triggerGo.activeInHierarchy ? "yes" : "no")}" +
-                $"\n\t{White}Class: {Blue}{trigger.GetType().Name}" +
-                $"\n\t{White}Advanced Trigger: {Blue}{(trigger.useAdvancedTrigger ? "yes" : "no")}" +
-                $"\n\t{White}Particle Interactions: {Blue}{(trigger.allowParticleInteraction ? "yes" : "no")}" +
-                $"\n\t{White}Layer: {Blue}{triggerGo.layer}";
-            var allowedTypes = trigger.allowedTypes.Length != 0
-                ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedTypes)}"
-                : "[None]";
-            triggerInfo += $"\n\t{White}Allowed Types: {allowedTypes}";
+            var text = triggerValue.Key;
 
-            // Attempt string build for more performance
-            // sb.Clear();
-            // sb.Append(White).Append("<b>").Append(triggerGo.name).Append(":</b>");
-            // sb.Append("\n\t").Append(White).Append("Is Active: ").Append(Blue).Append(triggerGo.activeInHierarchy ? "yes" : "no");
-            // sb.Append("\n\t").Append(White).Append("Class: ").Append(Blue).Append(trigger.GetType().Name);
-            // sb.Append("\n\t").Append(White).Append("Advanced Trigger: ").Append(Blue).Append(trigger.useAdvancedTrigger ? "yes" : "no");
-            // sb.Append("\n\t").Append(White).Append("Particle Interactions: ").Append(Blue).Append(trigger.allowParticleInteraction ? "yes" : "no");
-            // sb.Append("\n\t").Append(White).Append("Particle Interactions: ").Append(Blue).Append(trigger.allowParticleInteraction ? "yes" : "no");
+            // Execute to get the values
+            var templateArgs = triggerValue.Value.Item3.Select(arg => arg()).ToArray();
 
-            // OnEnter, OnExit, and OnStay Tasks
-            triggerInfo += $"\n\t{White}Trigger Tasks:";
-            foreach (var enterTask in trigger.enterTasks) {
-                var name = enterTask.spawnable.syncValues.ElementAtOrDefault(enterTask.settingIndex) != null
-                    ? enterTask.spawnable.syncValues[enterTask.settingIndex].name
-                    : "-none-";
-                var lastTriggered = TriggerSpawnableTaskLastTriggered.ContainsKey(enterTask)
-                    ? (Time.time - TriggerSpawnableTaskLastTriggered[enterTask]).ToString("0.00")
-                    : "?";
-                var lastExecuted = TriggerSpawnableTasksLastExecuted.ContainsKey(enterTask)
-                    ? (Time.time - TriggerSpawnableTasksLastExecuted[enterTask]).ToString("0.00")
-                    : "?";
-                    triggerInfo += $"\n\t\t{Purple}[OnEnter]" +
-                                   $"\n\t\t\t{White}Name: {Blue}{name}" +
-                                   $"\n\t\t\t{White}Value: {Blue}{enterTask.settingValue}" +
-                                   $"\n\t\t\t{White}Delay: {Blue}{enterTask.delay}" +
-                                   $"\n\t\t\t{White}Hold Time: {Blue}{enterTask.holdTime}" +
-                                   $"\n\t\t\t{White}Update Method: {Blue}{enterTask.updateMethod.ToString()}" +
-                                   $"\n\t\t\t{White}Last Triggered: {Blue}{lastTriggered} secs ago" +
-                                   $"\n\t\t\t{White}Last Executed: {Blue}{lastExecuted} secs ago";
-            }
-            foreach (var exitTask in trigger.exitTasks) {
-                var name = exitTask.spawnable.syncValues.ElementAtOrDefault(exitTask.settingIndex) != null
-                    ? exitTask.spawnable.syncValues[exitTask.settingIndex].name
-                    : "-none-";
-                var lastTriggered = TriggerSpawnableTaskLastTriggered.ContainsKey(exitTask)
-                    ? (Time.time - TriggerSpawnableTaskLastTriggered[exitTask]).ToString("0.00")
-                    : "?";
-                var lastExecuted = TriggerSpawnableTasksLastExecuted.ContainsKey(exitTask)
-                    ? (Time.time - TriggerSpawnableTasksLastExecuted[exitTask]).ToString("0.00")
-                    : "?";
-                triggerInfo += $"\n\t\t{Purple}[OnExit]" +
-                               $"\n\t\t\t{White}Name: {Blue}{name}" +
-                               $"\n\t\t\t{White}Value: {Blue}{exitTask.settingValue}" +
-                               $"\n\t\t\t{White}Delay: {Blue}{exitTask.delay}" +
-                               $"\n\t\t\t{White}Update Method: {Blue}{exitTask.updateMethod.ToString()}" +
-                               $"\n\t\t\t{White}Last Triggered: {Blue}{lastTriggered} secs ago" +
-                               $"\n\t\t\t{White}Last Executed: {Blue}{lastExecuted} secs ago";
-            }
-            foreach (var stayTask in trigger.stayTasks) {
-                var name = stayTask.spawnable.syncValues.ElementAtOrDefault(stayTask.settingIndex) != null
-                    ? stayTask.spawnable.syncValues[stayTask.settingIndex].name
-                    : "-none-";
-                var lastTriggered = TriggerSpawnableStayTasksLastTriggered.ContainsKey(stayTask)
-                    ? (Time.time - TriggerSpawnableStayTasksLastTriggered[stayTask]).ToString("0.00")
-                    : "?";
-                var lastTriggeredValue = TriggerSpawnableStayTasksLastTriggeredValue.ContainsKey(stayTask)
-                    ? TriggerSpawnableStayTasksLastTriggeredValue[stayTask].ToString()
-                    : "?";
-                triggerInfo += $"\n\t\t{Purple}[OnStay]" +
-                               $"\n\t\t\t{White}Name: {Blue}{name}" +
-                               $"\n\t\t\t{White}Update Method: {Blue}{stayTask.updateMethod.ToString()}";
-                if (stayTask.updateMethod == CVRSpawnableTriggerTaskStay.UpdateMethod.SetFromPosition) {
-                    triggerInfo += $"\n\t\t\t{White}Min Value: {Blue}{stayTask.minValue}" +
-                                   $"\n\t\t\t{White}Max Value: {Blue}{stayTask.maxValue}";
-                }
-                else {
-                    triggerInfo += $"\n\t\t\t{White}Change per sec: {Blue}{stayTask.minValue}";
-                }
-                triggerInfo += $"\n\t\t\t{White}Sample direction: {Blue}{trigger.sampleDirection}";
-                triggerInfo += $"\n\t\t\t{White}Last Triggered: {Blue}{lastTriggered} secs ago";
-                triggerInfo += $"\n\t\t\t{White}Last Triggered Value: {Blue}{lastTriggeredValue}";
-            }
+            // Check if the param values are all the same as the previous frame
+            if (!Menu.HasValueChanged(text, templateArgs)) continue;
 
-            triggerValue.Value.SetText(triggerInfo);
+            text.SetText(string.Format(triggerValue.Value.Item2, templateArgs));
         }
-        */
     }
 }

@@ -8,6 +8,7 @@ using ABI.CCK.Components;
 using CCK.Debugger.Components;
 using HarmonyLib;
 using MelonLoader;
+using TMPro;
 using UnityEngine;
 
 namespace CCK.Debugger;
@@ -34,8 +35,15 @@ public class CCKDebugger : MelonMod {
     }
 
     [HarmonyPatch]
-    private class HarmonyPatches
-    {
+    private class HarmonyPatches {
+
+        // TMP Text
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TextMeshProUGUI), "OnDestroy")]
+        static void AfterTextMeshProUGUIDestroyed(TextMeshProUGUI __instance) {
+            Events.DebuggerMenu.OnTextMeshProUGUIDestroyed(__instance);
+        }
+
         // Spawnables
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Spawnable_t), nameof(Spawnable_t.Recycle))]

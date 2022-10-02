@@ -1,4 +1,6 @@
-﻿namespace CCK.Debugger.Events;
+﻿using TMPro;
+
+namespace CCK.Debugger.Events;
 
 internal static class DebuggerMenu {
 
@@ -14,6 +16,8 @@ internal static class DebuggerMenu {
     public static event Action ControlsPreviousPage;
 
     public static event Action<bool> SwitchedInspectedEntity;
+
+    public static event Action<TextMeshProUGUI> TextMeshProUGUIDestroyed;
 
     public static void OnPinned(bool pinned) {
         Pinned?.Invoke(pinned);
@@ -44,5 +48,9 @@ internal static class DebuggerMenu {
 
     public static void OnSwitchInspectedEntity(bool finishedInitializing) {
         SwitchedInspectedEntity?.Invoke(finishedInitializing);
+    }
+
+    public static void OnTextMeshProUGUIDestroyed(TextMeshProUGUI tmpText) {
+        TextMeshProUGUIDestroyed?.Invoke(tmpText);
     }
 }

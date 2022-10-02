@@ -2,6 +2,7 @@
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Utils;
+using MelonLoader;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -51,6 +52,10 @@ public class Menu : MonoBehaviour {
     // Pointers
     internal List<PointerVisualizer> CurrentEntityPointerList;
     internal List<TriggerVisualizer> CurrentEntityTriggerList;
+
+    // TMPTextProCaches
+    private static Dictionary<TextMeshProUGUI, object> TextMeshProUGUIParam = new();
+    private static Dictionary<TextMeshProUGUI, object[]> TextMeshProUGUIParams = new();
 
     private void Awake() {
 
@@ -132,6 +137,12 @@ public class Menu : MonoBehaviour {
     private void Start() {
         RootQuickMenu = transform.parent;
         ResetToMenu();
+
+        Events.DebuggerMenu.TextMeshProUGUIDestroyed += tmpText => {
+            // Remove destroyed tmp texts from our caches
+            TextMeshProUGUIParam.Remove(tmpText);
+            TextMeshProUGUIParams.Remove(tmpText);
+        };
 
         Events.QuickMenu.QuickMenuIsShownChanged += isShown => {
             if (PinToggle.isOn) return;
@@ -237,6 +248,7 @@ public class Menu : MonoBehaviour {
         var avatarMenuHandler = new AvatarMenuHandler();
         Handlers.Add(avatarMenuHandler);
         Handlers.Add(new SpawnableMenuHandler());
+        Handlers.Add(new MiscHandler());
 
         // Initialize Avatar Handler
         avatarMenuHandler.Load(this);
@@ -319,5 +331,77 @@ public class Menu : MonoBehaviour {
         if (string.IsNullOrEmpty(guid)) return "N/A";
         var croppedGuid = guid.Length == 36 ? guid.Substring(guid.Length - 12) : guid;
         return Events.Avatar.AvatarsNamesCache.ContainsKey(guid) ? Events.Avatar.AvatarsNamesCache[guid] : $"Unknown [{croppedGuid}]";
+    }
+
+    public static string GetTimeDifference(float time) {
+        var timeDiff = Time.time - time;
+        return timeDiff > 10f ? "10.00+" : timeDiff.ToString("0.00");
+    }
+
+    private static bool _warnedMissingTypeValueChange;
+    private static bool HasValueChanged(object value, object cached) {
+
+        switch (cached) {
+            case float cachedFloat when value is float floatValue:
+                if (Mathf.Approximately(cachedFloat, floatValue)) {
+                    // MelonLogger.Msg($"\t[HAS NOT CHANGED] [Floats] {cachedFloat} +/- {floatValue}");
+                    return false;
+                }
+                break;
+            case bool cachedBool when value is bool boolValue:
+                if (cachedBool == boolValue) {
+                    // MelonLogger.Msg($"\t[HAS NOT CHANGED] [Booleans] {cachedBool} == {boolValue}");
+                    return false;
+                }
+                break;
+            case int cachedInt when value is int intValue:
+                if (cachedInt == intValue) {
+                    // MelonLogger.Msg($"\t[HAS NOT CHANGED] [Ints] {cachedInt} == {intValue}");
+                    return false;
+                }
+                break;
+            case string cachedString when value is string stringValue:
+                if (cachedString == stringValue) {
+                    // MelonLogger.Msg($"\t[HAS NOT CHANGED] [Strings] {cachedString} == {stringValue}");
+                    return false;
+                }
+                break;
+            default: {
+                if (!_warnedMissingTypeValueChange) {
+                    MelonLogger.Error($"Attempted to check if a value changed between unsupported values...\n\t\t" +
+                                      $"Values compared: {cached} ({cached.GetType()}) == {value} ({value.GetType()}");
+                    _warnedMissingTypeValueChange = true;
+                }
+                break;
+            }
+        }
+        // MelonLogger.Msg($"\t[HAS CHANGED] {cached} ({cached.GetType()}) != {value} ({value.GetType()})");
+        return true;
+    }
+
+    internal static bool HasValueChanged(TextMeshProUGUI tmpText, object value) {
+        if (TextMeshProUGUIParam.ContainsKey(tmpText) && !HasValueChanged(value, TextMeshProUGUIParam[tmpText])) {
+            // MelonLogger.Msg($"[Single] [HAS NOT CHANGED]:");
+            return false;
+        }
+        TextMeshProUGUIParam[tmpText] = value;
+        // MelonLogger.Msg($"[Single] [HAS CHANGED]:");
+        return true;
+    }
+
+    internal static bool HasValueChanged(TextMeshProUGUI tmpText, object[] values) {
+        if (TextMeshProUGUIParams.ContainsKey(tmpText)) {
+            var cachedValues = TextMeshProUGUIParams[tmpText];
+            if (cachedValues.Length == values.Length) {
+                // If there are no parameters that changed -> return false
+                if (!values.Where((t, i) => HasValueChanged(t, cachedValues[i])).Any()) {
+                    // MelonLogger.Msg($"[Multi] [HAS NOT CHANGED]:");
+                    return false;
+                }
+            }
+        }
+        TextMeshProUGUIParams[tmpText] = values;
+        // MelonLogger.Msg($"[Multi] [HAS CHANGED]:");
+        return true;
     }
 }
