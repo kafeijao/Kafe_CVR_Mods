@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
+using FreedomFingers.Properties;
 using HarmonyLib;
 using MelonLoader;
 
@@ -10,7 +11,7 @@ namespace FreedomFingers;
 public class FreedomFingers : MelonMod {
 
     private static MelonPreferences_Category melonCategoryFreedomFingers;
-    private static MelonPreferences_Entry<bool> melonEntryEnableNotification;
+    internal static MelonPreferences_Entry<bool> melonEntryEnableNotification;
 
     public override void OnApplicationStart() {
 
@@ -19,8 +20,16 @@ public class FreedomFingers : MelonMod {
         melonEntryEnableNotification = melonCategoryFreedomFingers.CreateEntry("EnableNotifications", false,
             description: "Whether the mod should send notifications when toggling gestures.");
 
-        melonCategoryFreedomFingers.SaveToFile(false);
+        // Create action menu entry
+        if (MelonHandler.Mods.Exists(m => m.Assembly?.GetName().Name == AssemblyInfoParams.OptionalDependencyActionMenu)) {
+			MelonLogger.Msg($"Action Menu mod found! Initializing integration.");
+			ActionMenuEntryCreator.Create();
+        }
+        else {
+	        MelonLogger.Msg($"Action Menu mod NOT found! Skipping integration...");
+        }
     }
+
 
     [HarmonyPatch]
     private static class HarmonyPatches {
@@ -47,9 +56,7 @@ public class FreedomFingers : MelonMod {
 	    private static readonly MethodInfo GestureToggleFunc = SymbolExtensions.GetMethodInfo((bool b) => OnGestureToggle(b));
 
 	    private static void OnGestureToggle(bool gestureToggleValue) {
-		    if (melonEntryEnableNotification.Value) {
-				CohtmlHud.Instance.ViewDropTextImmediate("", "", $"Gestures {(gestureToggleValue ? "Enabled" : "Disabled")}");
-		    }
+		    Api.OnGestureToggleByGame(gestureToggleValue);
 	    }
 
 	    [HarmonyTranspiler]

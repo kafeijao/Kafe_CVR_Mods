@@ -23,9 +23,12 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 
+[assembly: MelonOptionalDependencies(AssemblyInfoParams.OptionalDependencyActionMenu)]
+
 namespace FreedomFingers.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "1.0.0";
     public const string Author = "kafeijao";
+    public const string OptionalDependencyActionMenu = "ActionMenu";
 }
 
