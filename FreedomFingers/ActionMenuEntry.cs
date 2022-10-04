@@ -19,16 +19,17 @@ public static class ActionMenuEntryCreator {
 
         protected override List<MenuItem> modMenuItems() {
 
-            // Build a normal toggle item
+            // Build a toggle item action to update the toggle when we change the gesture toggle
             var itemAction = BuildToggleItem("toggle_item", v => Api.ToggleGestures());
 
-            // Make our toggle to in-game changes while the menu is opened
+            // Make our toggle listen to in-game gesture toggle events
             Api.GestureToggledByGame += isActive => {
                 itemAction.value = isActive;
                 ActionMenuMod.UpdateItemState(itemAction);
             };
 
-            return new List<MenuItem> { new MenuItem(GestureToggle, itemAction) };
+            // Create the menu item defaulting to whether the gestures are enabled or not
+            return new List<MenuItem> { new (GestureToggle, itemAction, Api.AreGesturesActive()) };
         }
     }
 }
