@@ -102,7 +102,7 @@ public abstract class TriggerVisualizer : MonoBehaviour {
         VisualizerGo.SetActive(false);
     }
 
-    private void Start() {
+    protected virtual void Start() {
         VisualizersAll[TriggerBehavior] = this;
     }
 
@@ -133,8 +133,8 @@ public abstract class TriggerVisualizer : MonoBehaviour {
 
     internal static void DisableAll() {
         // Iterate over a copy of the values because they're going to be removed when disabled
-        foreach (var pointerVisualizer in VisualizersAll.Values.ToList()) {
-            pointerVisualizer.enabled = false;
+        foreach (var visualizer in VisualizersAll.Values.ToList()) {
+            visualizer.enabled = false;
         }
     }
 }

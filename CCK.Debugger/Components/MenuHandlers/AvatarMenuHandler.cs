@@ -8,6 +8,7 @@ using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Entities;
 using CCK.Debugger.Utils;
 using HarmonyLib;
+using MelonLoader;
 using TMPro;
 using UnityEngine;
 
@@ -213,7 +214,7 @@ public class AvatarMenuHandler : MenuHandler {
             var avatarTriggers = avatarGo.GetComponentsInChildren<CVRAdvancedAvatarSettingsTrigger>(true);
             foreach (var trigger in avatarTriggers) {
 
-                 var triggerGo = trigger.gameObject;
+                var triggerGo = trigger.gameObject;
 
                 // Generate the template with dynamic params
                 var templateArgs = new List<Func<string>>();
@@ -299,8 +300,10 @@ public class AvatarMenuHandler : MenuHandler {
                     template += $"\n\t\t\t{White}Last Triggered: {Blue}{{{argId++}}} secs ago";
                     template += $"\n\t\t\t{White}Last Triggered Value: {Blue}{{{argId++}}}";
 
-                    TriggerValues[menu.AddCategoryEntry(_categoryTriggers).Item1] = (trigger, template, templateArgs);
                 }
+
+                // Associate the trigger template and values to the TMP Text
+                TriggerValues[menu.AddCategoryEntry(_categoryTriggers).Item1] = (trigger, template, templateArgs);
 
                 // Add the visualizer
                 if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {

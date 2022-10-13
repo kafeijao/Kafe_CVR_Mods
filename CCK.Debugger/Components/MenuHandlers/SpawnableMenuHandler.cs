@@ -327,8 +327,10 @@ public class SpawnableMenuHandler : MenuHandler {
                     template += $"\n\t\t\t{White}Last Triggered: {Blue}{{{argId++}}} secs ago";
                     template += $"\n\t\t\t{White}Last Triggered Value: {Blue}{{{argId++}}}";
 
-                    TriggerValues[menu.AddCategoryEntry(_categoryTriggers).Item1] = (trigger, template, templateArgs);
                 }
+
+                // Associate the trigger template and values to the TMP Text
+                TriggerValues[menu.AddCategoryEntry(_categoryTriggers).Item1] = (trigger, template, templateArgs);
 
                 // Add the visualizer
                 if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {

@@ -1,6 +1,7 @@
 ﻿using ABI.CCK.Components;
 using CCK.Debugger.Resources;
 using CCK.Debugger.Utils;
+using MelonLoader;
 using UnityEngine;
 
 namespace CCK.Debugger.Components.PointerVisualizers;
@@ -111,7 +112,7 @@ public abstract class PointerVisualizer : MonoBehaviour {
         VisualizerGo.SetActive(false);
     }
 
-    private void Start() {
+    protected virtual void Start() {
         VisualizersAll[_pointer] = this;
     }
 
@@ -136,8 +137,8 @@ public abstract class PointerVisualizer : MonoBehaviour {
 
     internal static void DisableAll() {
         // Iterate over a copy of the values because they're going to be removed when disabled
-        foreach (var pointerVisualizer in VisualizersAll.Values.ToList()) {
-            pointerVisualizer.enabled = false;
+        foreach (var visualizer in VisualizersAll.Values.ToList()) {
+            visualizer.enabled = false;
         }
     }
 }

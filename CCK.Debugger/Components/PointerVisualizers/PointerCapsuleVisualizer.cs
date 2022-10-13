@@ -6,7 +6,9 @@ public class PointerCapsuleVisualizer : PointerVisualizer {
 
     protected internal CapsuleCollider PointerCollider { private get; set; }
 
-    private void Start() {
+    protected override void Start() {
+        base.Start();
+
         VisualizerGo.transform.localScale = Vector3.zero;
     }
 

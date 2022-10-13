@@ -150,12 +150,18 @@ public class Menu : MonoBehaviour {
         };
 
         void SwitchMenu(bool next) {
-
             // We can't switch if we only have one handler
             if (Handlers.Count <= 1) return;
 
             _currentHandlerIndex = (_currentHandlerIndex + (next ? 1 : -1) + Handlers.Count) % Handlers.Count;
             _currentHandler.Unload();
+
+            // Reset inspected entity (since we're changing menu)
+            Events.DebuggerMenu.OnSwitchInspectedEntity(false);
+            Events.DebuggerMenu.OnSwitchInspectedEntity(true);
+
+            // Hide the controls (they'll be shown in the handler if they need
+            ShowControls(false);
 
             _currentHandler = Handlers[_currentHandlerIndex];
             _currentHandler.Load(this);
@@ -238,9 +244,9 @@ public class Menu : MonoBehaviour {
 
             // The change entity has finished, lets update the toggle states
             else {
-                UpdateResetToggle();
                 UpdatePointerToggle();
                 UpdateTriggerToggle();
+                UpdateResetToggle();
             }
         };
 
@@ -367,7 +373,8 @@ public class Menu : MonoBehaviour {
                 }
                 break;
             default: {
-                if (!_warnedMissingTypeValueChange) {
+                // If the type hasn't changed, warn one time. This should never happen.
+                if (!_warnedMissingTypeValueChange && cached.GetType() == value.GetType()) {
                     MelonLogger.Error($"Attempted to check if a value changed between unsupported values...\n\t\t" +
                                       $"Values compared: {cached} ({cached.GetType()}) == {value} ({value.GetType()}");
                     _warnedMissingTypeValueChange = true;
@@ -385,7 +392,7 @@ public class Menu : MonoBehaviour {
             return false;
         }
         TextMeshProUGUIParam[tmpText] = value;
-        // MelonLogger.Msg($"[Single] [HAS CHANGED]:");
+        //MelonLogger.Msg($"[Single] [HAS CHANGED]: [{TextMeshProUGUIParam[tmpText].GetType()}]{TextMeshProUGUIParam[tmpText]} -> [{value}]{value}");
         return true;
     }
 
@@ -401,7 +408,7 @@ public class Menu : MonoBehaviour {
             }
         }
         TextMeshProUGUIParams[tmpText] = values;
-        // MelonLogger.Msg($"[Multi] [HAS CHANGED]:");
+        //MelonLogger.Msg($"[Single] [HAS CHANGED]");
         return true;
     }
 }

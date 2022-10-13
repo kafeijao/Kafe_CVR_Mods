@@ -15,7 +15,9 @@ public class TriggerAvatarVisualizer : TriggerVisualizer {
     private float _timer;
     private Color _triggerColor;
 
-    private void Start() {
+    protected override void Start() {
+        base.Start();
+
         _trigger = (CVRAdvancedAvatarSettingsTrigger) TriggerBehavior;
         VisualizerGo.transform.localScale = Vector3.zero;
 
