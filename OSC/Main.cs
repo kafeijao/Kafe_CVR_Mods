@@ -44,6 +44,7 @@ public class OSC : MelonMod {
     public MelonPreferences_Entry<bool> meOSCDebug;
     public MelonPreferences_Entry<bool> meOSCDebugConfigWarnings;
     public MelonPreferences_Entry<bool> meOSCPerformanceMode;
+    public MelonPreferences_Entry<bool> meOSCCompatibilityVRCFaceTracking;
 
     private HandlerOsc _handlerOsc;
 
@@ -97,11 +98,11 @@ public class OSC : MelonMod {
             description: "Whether the mode should use the override path to store/read OSC configs.",
             oldIdentifier: "enableOverridePath");
 
-        var defaultOverrideFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "LocalLow", "VRChat", "VRChat");
-        meOSCJsonConfigOverridePath = _mcOsc.CreateEntry("JsonConfigOverridePath", defaultOverrideFolder,
-            description: "The override path to store/read configs. Note: Only used if JsonConfigOverridePathEnable = true",
-            oldIdentifier: "overridePath");
+        var defaultVrcFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).Replace("Roaming", "LocalLow"),
+            "VRChat", "VRChat");
+        meOSCJsonConfigOverridePath = _mcOsc.CreateEntry("JsonConfigOverrideFolder", defaultVrcFolder,
+            description: "The override path to store/read configs. Note: Only used if JsonConfigOverridePathEnable = true");
 
 
         // Input Module
@@ -138,10 +139,29 @@ public class OSC : MelonMod {
                          "This will result on a lot of the osc messages going out from our mod to not work. If you" +
                          "only want the mod to listen to osc messages going into CVR you should have this option on! " +
                          "As there's a lot of processing/msg sending when listening the all the game events.");
+        meOSCCompatibilityVRCFaceTracking = _mcOsc.CreateEntry("VRCFaceTrackingCompatibility", false,
+            description: "Whether should configure the mod to be compatible with VRCFaceTracking or not. Keep " +
+                         "in mind that a lot of features this mod provide will be disabled, because VRCFaceTracking " +
+                         "was implemented specifically for VRChat and breaks very easily. This will enable uuid " +
+                         "prefixes, enable the override path, disable trigger parameters, and change the override " +
+                         "path to VRC's folder");
 
 
         // Load env variables (may change the melon config)
         EnvVariables.Load();
+
+        // Set all options required for VRCFaceTracking
+        void SetVrcFaceTrackingCompatibility() {
+            if (!meOSCCompatibilityVRCFaceTracking.Value) return;
+            // Enable the uuid prefixes, enable the override folder, disable trigger parameters, and set the override
+            // folder to vrc
+            meOSCJsonConfigUuidPrefixes.Value = true;
+            meOSCJsonConfigOverridePathEnabled.Value = true;
+            meOSCAvatarModuleTriggers.Value = false;
+            meOSCJsonConfigOverridePath.Value = defaultVrcFolder;
+        }
+        meOSCCompatibilityVRCFaceTracking.OnValueChangedUntyped += SetVrcFaceTrackingCompatibility;
+        SetVrcFaceTrackingCompatibility();
 
         _mcOsc.SaveToFile(false);
 

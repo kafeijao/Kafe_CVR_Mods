@@ -44,7 +44,7 @@ public class Avatar : OscHandler {
         _parameterChangedBool = (parameter, value) => SendAvatarParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
 
         // Send avatar trigger parameter change events
-        _parameterChangedTrigger = parameter => SendAvatarParamToConfigAddress(parameter);
+        _parameterChangedTrigger = parameter => SendAvatarParamToConfigAddress(parameter, null);
 
         // Enable according to the config and setup the config listeners
         if (OSC.Instance.meOSCAvatarModule.Value) Enable();
@@ -119,6 +119,10 @@ public class Avatar : OscHandler {
                                 $":( you sent a {valueObj?.GetType()} type argument.");
                 return;
             }
+            // Get rid of the optional avtr_ prefix
+            if (valueStr.StartsWith("avtr_", StringComparison.InvariantCultureIgnoreCase)) {
+                valueStr = valueStr.Substring("avtr_".Length);
+            }
             Events.Avatar.OnAvatarSet(valueStr);
         }
 
@@ -134,10 +138,13 @@ public class Avatar : OscHandler {
         // Clear address cache
         _parameterAddressCache.Clear();
 
+        var userGuid = MetaPort.Instance.ownerId;
+        var avatarGuid = MetaPort.Instance.currentAvatarGuid;
+        JsonConfigOsc.ProcessUserAndAvatarGuids(ref userGuid, ref avatarGuid);
+
         // Send change avatar event
-        HandlerOsc.SendMessage(AddressPrefixAvatarChange,
-            MetaPort.Instance.currentAvatarGuid,
-            JsonConfigOsc.GetConfigFilePath(MetaPort.Instance.ownerId, MetaPort.Instance.currentAvatarGuid));
+        HandlerOsc.SendMessage(AddressPrefixAvatarChange, avatarGuid,
+            JsonConfigOsc.GetConfigFilePath(userGuid, avatarGuid));
 
         // Send all parameter values when loads a new avatar
         foreach (var param in manager.animator.parameters) {
@@ -249,7 +256,7 @@ public class Avatar : OscHandler {
         }
     }
 
-    private void SendAvatarParamToConfigAddress(string paramName, params object[] data) {
+    private void SendAvatarParamToConfigAddress(string paramName, object data) {
 
         // If there is no config OR is not in the config but we're bypassing -> revert to default behavior
         if (JsonConfigOsc.CurrentAvatarConfig == null || (_bypassJsonConfig && !_parameterAddressCache.ContainsKey(paramName))) {

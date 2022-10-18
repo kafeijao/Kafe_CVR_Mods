@@ -17,7 +17,7 @@ public class Config : OscHandler {
 
     internal sealed override void ReceiveMessageHandler(OscMessage oscMsg) {
 
-        var addressParts =oscMsg.Address.Split('/');
+        var addressParts = oscMsg.Address.Split('/');
 
         // Validate Length
         if (addressParts.Length != 3) {

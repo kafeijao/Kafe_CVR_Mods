@@ -29,16 +29,24 @@ namespace OSC.Utils {
                 basePath = OSC.Instance.meOSCJsonConfigOverridePath.Value;
             }
 
-            var usePrefix = OSC.Instance.meOSCJsonConfigUuidPrefixes.Value;
-            userUuid = usePrefix ? $"usr_{userUuid}" : userUuid;
-            avatarUuid = usePrefix ? $"avtr_{avatarUuid}" : avatarUuid;
             return Path.Combine(basePath, "OSC", userUuid, "Avatars", avatarUuid + ".json");
+        }
+
+        public static void ProcessUserAndAvatarGuids(ref string userGuid, ref string avatarGuid) {
+            var usePrefix = OSC.Instance.meOSCJsonConfigUuidPrefixes.Value;
+            userGuid = usePrefix ? $"usr_{userGuid}" : userGuid;
+            avatarGuid = usePrefix ? $"avtr_{avatarGuid}" : avatarGuid;
         }
 
         public static void CreateConfig(string userGuid, string avatarGuid, string avatarName, CVRAnimatorManager animatorManager) {
             try {
                 List<JsonConfigParameter> parameters = new();
                 foreach (var parameter in animatorManager.animator.parameters) {
+
+                    // Ignore triggers if the triggers module is disabled
+                    if (!OSC.Instance.meOSCAvatarModuleTriggers.Value &&
+                        parameter.type == AnimatorControllerParameterType.Trigger) continue;
+
                     var input = new JsonConfigParameterEntry {
                         address = Handlers.OscModules.Avatar.AddressPrefixAvatarParametersLegacy + parameter.name,
                         type = parameter.type,
@@ -56,6 +64,8 @@ namespace OSC.Utils {
 
                     parameters.Add(jsonParameter);
                 }
+
+                ProcessUserAndAvatarGuids(ref userGuid, ref avatarGuid);
 
                 var avatarConfig = new JsonConfigAvatar {
                     id = avatarGuid,
