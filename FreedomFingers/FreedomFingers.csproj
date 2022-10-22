@@ -1,9 +1,2 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <Target Name="Deploy" AfterTargets="Build">
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\"/>
-        <Message Text="Copied $(TargetPath) to C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\" Importance="high"/>
-    </Target>
-
-</Project>
+<Project Sdk="Microsoft.NET.Sdk"/>
