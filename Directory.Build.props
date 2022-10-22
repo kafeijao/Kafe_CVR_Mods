@@ -4,6 +4,9 @@
         <OutputPath>$(CVRPATH)\Mods\</OutputPath>
         <LangVersion>preview</LangVersion>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <TargetFramework>net472</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 	
 
