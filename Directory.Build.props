@@ -1,0 +1,785 @@
+<Project>
+
+    <PropertyGroup>
+        <!-- Put your Chillout vr path in a new environnment variable CVRPATH in Windows -->
+        <OutputPath>$(CVRPATH)\Mods\</OutputPath>
+        <LangVersion>preview</LangVersion>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <TargetFramework>net472</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <DebugType>none</DebugType>
+        <Optimize>true</Optimize>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="0Harmony">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\0Harmony.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="MelonLoader">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\MelonLoader.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Accessibility">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Accessibility.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp-firstpass">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Assembly-CSharp-firstpass.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Assembly-CSharp.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Aura2_Core">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Aura2_Core.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AVProVideo.Demos">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AVProVideo.Demos.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AVProVideo.Extensions.Timeline">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AVProVideo.Extensions.Timeline.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AVProVideo.Extensions.UnityUI">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AVProVideo.Extensions.UnityUI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AVProVideo.Extensions.VisualEffectGraph">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AVProVideo.Extensions.VisualEffectGraph.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AVProVideo.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AVProVideo.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AwesomeTechnologies.TouchReactSystemPro.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AwesomeTechnologies.TouchReactSystemPro.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="AwesomeTechnologies.VegetationStudioPro.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\AwesomeTechnologies.VegetationStudioPro.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Bhaptics.Tact">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Bhaptics.Tact.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Boxophobic.TheVehetationEngine.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Boxophobic.TheVehetationEngine.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Boxophobic.Utils.Scripts">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Boxophobic.Utils.Scripts.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Cinemachine">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Cinemachine.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="cohtml.Net">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\cohtml.Net.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Cohtml.RenderingBackend">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Cohtml.RenderingBackend.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Cohtml.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Cohtml.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Crc32.NET">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Crc32.NET.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="DarkRift.Client">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\DarkRift.Client.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="DarkRift">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\DarkRift.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="DarkRift.Server">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\DarkRift.Server.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="DissonanceVoip">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\DissonanceVoip.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="endel.nativewebsocket">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\endel.nativewebsocket.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ICSharpCode.SharpZipLib">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\ICSharpCode.SharpZipLib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="MagicaCloth">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\MagicaCloth.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="MeshBakerCore">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\MeshBakerCore.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Mono.Data.Sqlite">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Mono.Data.Sqlite.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Mono.Posix">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Mono.Posix.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Mono.Security">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Mono.Security.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Mono.WebBrowser">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Mono.WebBrowser.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="MPUIKit">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\MPUIKit.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="mscorlib">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\mscorlib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="netstandard">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\netstandard.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Newtonsoft.Json">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="NicoKuroKusagi">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\NicoKuroKusagi.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Novell.Directory.Ldap">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Novell.Directory.Ldap.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PWCommon3DLL">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\PWCommon3DLL.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="QHierarchyNullable">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\QHierarchyNullable.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="QHierarchyRuntime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\QHierarchyRuntime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SALSA-LipSync">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\SALSA-LipSync.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SALSA">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\SALSA.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ShapesRuntime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\ShapesRuntime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SteamAudioUnity">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\SteamAudioUnity.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SteamVR">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\SteamVR.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SteamVR_Actions">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\SteamVR_Actions.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.ComponentModel.Composition">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.ComponentModel.Composition.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.ComponentModel.DataAnnotations">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.ComponentModel.DataAnnotations.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Configuration">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Configuration.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Core">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Core.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Data">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Data.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Design">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Design.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Diagnostics.StackTrace">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Diagnostics.StackTrace.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.DirectoryServices">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.DirectoryServices.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Drawing.Design">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Drawing.Design.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Drawing">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Drawing.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.EnterpriseServices">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.EnterpriseServices.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Globalization.Extensions">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Globalization.Extensions.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.IO.Compression">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.IO.Compression.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.IO.Compression.FileSystem">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.IO.Compression.FileSystem.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Net.Http">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Net.Http.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Numerics">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Numerics.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Runtime.CompilerServices.Unsafe">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Runtime.Serialization">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Runtime.Serialization.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Runtime.Serialization.Formatters.Soap">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Runtime.Serialization.Formatters.Soap.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Runtime.Serialization.Xml">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Runtime.Serialization.Xml.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Security">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Security.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.ServiceModel.Internals">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.ServiceModel.Internals.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Transactions">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Transactions.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Web.ApplicationServices">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Web.ApplicationServices.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Web">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Web.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Web.Services">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Web.Services.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Windows.Forms">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Windows.Forms.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Xml">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Xml.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Xml.Linq">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Xml.Linq.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Xml.XPath.XDocument">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\System.Xml.XPath.XDocument.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Tobii.GameIntegration.Net">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Tobii.GameIntegration.Net.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="TobiiXRCore">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\TobiiXRCore.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="TobiiXRDevTools">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\TobiiXRDevTools.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="TobiiXRG2OM">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\TobiiXRG2OM.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="TobiiXRSDK">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\TobiiXRSDK.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UniTask.Addressables">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UniTask.Addressables.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UniTask">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UniTask.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UniTask.DOTween">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UniTask.DOTween.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UniTask.Linq">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UniTask.Linq.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UniTask.TextMeshPro">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UniTask.TextMeshPro.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Analytics.DataPrivacy">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Analytics.DataPrivacy.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Build.SlimPlayerRuntime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Build.SlimPlayerRuntime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Burst">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Burst.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Burst.Unsafe">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Burst.Unsafe.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Collections">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Collections.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Deformations">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Deformations.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Entities">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Entities.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Entities.Hybrid">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Entities.Hybrid.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.InternalAPIEngineBridge.003">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.InternalAPIEngineBridge.003.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Jobs">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Jobs.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Mathematics">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Mathematics.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Mathematics.Extensions">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Mathematics.Extensions.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Mathematics.Extensions.Hybrid">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Mathematics.Extensions.Hybrid.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Platforms.Common">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Platforms.Common.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Polybrush">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Polybrush.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Postprocessing.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Postprocessing.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.ProBuilder">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.ProBuilder.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.ProBuilder.KdTree">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.ProBuilder.KdTree.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.ProBuilder.Poly2Tri">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.ProBuilder.Poly2Tri.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.ProBuilder.Stl">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.ProBuilder.Stl.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Properties">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Properties.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Properties.Reflection">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Properties.Reflection.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Properties.UI">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Properties.UI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.RenderPipelines.Core.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Scenes.Hybrid">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Scenes.Hybrid.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.ScriptableBuildPipeline">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.ScriptableBuildPipeline.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Serialization">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Serialization.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.TextMeshPro.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Timeline">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Timeline.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Transforms">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Transforms.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Transforms.Hybrid">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Transforms.Hybrid.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.VectorGraphics">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.VectorGraphics.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AccessibilityModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.AccessibilityModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.Advertisements">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.Advertisements.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AIModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.AIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AndroidJNIModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.AndroidJNIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AnimationModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.AnimationModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ARModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ARModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.AssetBundleModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AudioModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.AudioModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ClothModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ClothModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ClusterInputModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ClusterInputModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ClusterRendererModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ClusterRendererModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.CoreModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.CrashReportingModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.CrashReportingModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.DirectorModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.DirectorModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.DSPGraphModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.DSPGraphModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.GameCenterModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.GameCenterModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.GridModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.GridModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.HotReloadModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.HotReloadModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ImageConversionModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ImageConversionModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.IMGUIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.InputLegacyModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.InputModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.InputModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.JSONSerializeModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.JSONSerializeModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.LocalizationModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.LocalizationModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.Monetization">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.Monetization.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ParticleSystemModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ParticleSystemModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.PerformanceReportingModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.PerformanceReportingModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.Physics2DModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.Physics2DModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.PhysicsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ProfilerModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ProfilerModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.ScreenCaptureModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.ScreenCaptureModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.SharedInternalsModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.SharedInternalsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.SpriteMaskModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.SpriteMaskModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.SpriteShapeModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.SpriteShapeModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.StreamingModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.StreamingModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.SubstanceModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.SubstanceModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.SubsystemsModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.SubsystemsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TerrainModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.TerrainModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TerrainPhysicsModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.TerrainPhysicsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TextCoreModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.TextCoreModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.TextRenderingModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TilemapModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.TilemapModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TLSModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.TLSModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UIElementsModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UIElementsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UIModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UmbraModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UmbraModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UNETModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UNETModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityAnalyticsModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityConnectModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityConnectModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityTestProtocolModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityTestProtocolModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityWebRequestAssetBundleModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityWebRequestAudioModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityWebRequestModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityWebRequestModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityWebRequestTextureModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UnityWebRequestWWWModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.VehiclesModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.VehiclesModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.VFXModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.VFXModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.VideoModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.VideoModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.VRModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.VRModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.WindModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.WindModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.XRModule">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\UnityEngine.XRModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Valve.Newtonsoft.Json">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+</Project>
