@@ -35,29 +35,25 @@ public class Avatar : OscHandler {
         _animatorManagerUpdated = InitializeNewAvatar;
 
         // Send avatar float parameter change events
-        _parameterChangedFloat = (parameter, value) =>
-        {
+        _parameterChangedFloat = (parameter, value) => {
             if (!_parameterAddressCache.ContainsKey(parameter)) return;
             SendAvatarParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
         };
 
         // Send avatar int parameter change events
-        _parameterChangedInt = (parameter, value) =>
-        {
+        _parameterChangedInt = (parameter, value) => {
             if (!_parameterAddressCache.ContainsKey(parameter)) return;
             SendAvatarParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
         };
 
         // Send avatar bool parameter change events
-        _parameterChangedBool = (parameter, value) =>
-        {
+        _parameterChangedBool = (parameter, value) => {
             if (!_parameterAddressCache.ContainsKey(parameter)) return;
             SendAvatarParamToConfigAddress(parameter, ConvertToConfigType(parameter, value));
         };
 
         // Send avatar trigger parameter change events
-        _parameterChangedTrigger = parameter =>
-        {
+        _parameterChangedTrigger = parameter => {
             if (!_parameterAddressCache.ContainsKey(parameter)) return;
             SendAvatarParamToConfigAddress(parameter, null);
         };
