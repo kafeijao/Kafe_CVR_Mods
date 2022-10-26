@@ -101,6 +101,11 @@ internal class HarmonyPatches {
     internal static void AfterPlayerSetup() {
         Events.Scene.OnPlayerSetup();
     }
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(PlayerSetup), "LateUpdate")]
+    internal static void AfterPlayerSetupLateUpdate() {
+        Events.Scene.OnPlayerSetupLateUpdate();
+    }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CVRInputManager), "Start")]

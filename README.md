@@ -7,7 +7,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 ## In-Depth Mods info Links:
 
 - [OSC](OSC) *in-depth url*
-- [CCK.Debugge](CCK.Debugger) *in-depth url*
+- [CCK.Debugger](CCK.Debugger) *in-depth url*
 - [LoginProfiles](LoginProfiles) *in-depth url*
 - [PickupOverrides](PickupOverrides) *in-depth url*
 - [FirstPersonHider](FirstPersonHider) *in-depth url*

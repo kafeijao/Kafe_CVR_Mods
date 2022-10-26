@@ -22,18 +22,40 @@ internal class HandlerOsc {
     private static bool _debugMode;
     private static bool _compatibilityVRCFaceTracking;
 
+    private static readonly Queue<OscPacket> _frameOscPacketsBuffer = new();
+    private static readonly Action _playerSetupLateUpdate;
+    private static bool _useOscBundles;
+
+    private const int MessageBufferSize = 600;
+    private const int MaxPacketSize = 2*1048;
+    private const int MaxMessagesPerBundle = 10;
+
     static HandlerOsc() {
 
         // Handle config debug value and changes
         _debugMode = OSC.Instance.meOSCDebug.Value;
         OSC.Instance.meOSCDebug.OnValueChanged += (_, newValue) => _debugMode = newValue;
+
+        // Setup the late update tick to send the current osc packets buffer as a bundle
+        _playerSetupLateUpdate = LateUpdateTick;
+
+        if (OSC.Instance.meOSCServerOutUseBundles.Value) {
+            Events.Scene.PlayerSetupLateUpdateTicked += _playerSetupLateUpdate;
+            _useOscBundles = true;
+        }
+        OSC.Instance.meOSCServerOutUseBundles.OnValueChanged += (oldUseBundles, newUseBundles) => {
+            if (oldUseBundles == newUseBundles) return;
+            if (newUseBundles) Events.Scene.PlayerSetupLateUpdateTicked += _playerSetupLateUpdate;
+            else Events.Scene.PlayerSetupLateUpdateTicked -= _playerSetupLateUpdate;
+            _useOscBundles = newUseBundles;
+        };
     }
 
     public HandlerOsc() {
 
         try {
             // Start the osc msg receiver in a Coroutine
-            _receiver = new OscReceiver(OSC.Instance.meOSCServerInPort.Value);
+            _receiver = new OscReceiver(OSC.Instance.meOSCServerInPort.Value, MessageBufferSize, MaxPacketSize);
             _receiver.Connect();
             MelonCoroutines.Start(OscReceiverHandler());
 
@@ -93,7 +115,7 @@ internal class HandlerOsc {
         var parsedIp = IPAddress.Parse(ip);
         if (_sender != null && _sender.Port == port && Equals(_sender.RemoteAddress, parsedIp)) return false;
         var oldSender = _sender;
-        _sender = new OscSender(parsedIp, port);
+        _sender = new OscSender(parsedIp, port, MessageBufferSize, MaxPacketSize);
         _sender.Connect();
         oldSender?.Close();
         return true;
@@ -104,11 +126,39 @@ internal class HandlerOsc {
         // VRCFaceTracking explodes when sending arrays for some reason (this will break a lot of features of this mod
         if (_compatibilityVRCFaceTracking) {
             if (data.Length == 0) return;
-            Instance._sender.Send(new OscMessage(address, data[0]));
+            var compMsg = new OscMessage(address, data[0]);
+            if (_useOscBundles) lock (_frameOscPacketsBuffer) _frameOscPacketsBuffer.Enqueue(compMsg);
+            else Instance._sender.Send(compMsg);
             return;
         }
 
-        Instance._sender.Send(new OscMessage(address, data));
+        var msg = new OscMessage(address, data);
+        if (_useOscBundles) lock (_frameOscPacketsBuffer) _frameOscPacketsBuffer.Enqueue(msg);
+        else Instance._sender.Send(msg);
+    }
+
+    private static void LateUpdateTick() {
+        lock (_frameOscPacketsBuffer) {
+            if (_frameOscPacketsBuffer.Count == 0) return;
+
+            var bundle = _frameOscPacketsBuffer.ToArray();
+            var current = DateTime.UtcNow;
+
+            // Bundle a max of 10 messages together (so we don't hit the 2048 limit)
+            for (var i = 0; i < bundle.Length; i += MaxMessagesPerBundle) {
+                var bundlePart = bundle.Skip(i).Take(MaxMessagesPerBundle).ToArray();
+                try {
+                    Instance._sender.Send(new OscBundle(current, bundlePart));
+                }
+                catch (NotSupportedException e) {
+                    MelonLogger.Error(e);
+                    MelonLogger.Error($"This error most likely means that we're trying to send a bundle of OSC " +
+                                      $"messages, but it exceeds the maximum packet size.");
+                    throw;
+                }
+            }
+            _frameOscPacketsBuffer.Clear();
+        }
     }
 
     private void OscPacketHandler(OscPacket packet) {

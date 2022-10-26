@@ -6,12 +6,18 @@ public static class Scene {
 
     public static event Action PlayerSetup;
 
+    public static event Action PlayerSetupLateUpdateTicked;
+
     internal static void OnInputManagerCreated() {
         InputManagerCreated?.Invoke();
     }
 
     internal static void OnPlayerSetup() {
         PlayerSetup?.Invoke();
+    }
+
+    internal static void OnPlayerSetupLateUpdate() {
+        PlayerSetupLateUpdateTicked?.Invoke();
     }
 
     internal static void ResetAll() {

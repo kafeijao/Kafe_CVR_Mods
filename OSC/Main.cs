@@ -16,6 +16,7 @@ public class OSC : MelonMod {
     public MelonPreferences_Entry<int> meOSCServerInPort;
     public MelonPreferences_Entry<string> meOSCServerOutIp;
     public MelonPreferences_Entry<int> meOSCServerOutPort;
+    public MelonPreferences_Entry<bool> meOSCServerOutUseBundles;
 
     // Avatar Module
     public MelonPreferences_Entry<bool> meOSCAvatarModule;
@@ -68,6 +69,14 @@ public class OSC : MelonMod {
         meOSCServerOutPort = _mcOsc.CreateEntry("ServerOutPort", 9001,
             description: "Port that external programs should use listen to messages from CVR.",
             oldIdentifier: "outPort");
+
+        meOSCServerOutUseBundles = _mcOsc.CreateEntry("ServerOutUseBundles", false,
+            description: "Whether the OSC Messages should be sent in Bundles (OSC Spec) or not. Bundles are limited " +
+                         "to 10 OSC messages at a time (to avoid hitting the max packet size limit). This should " +
+                         "improve the performance as results in less network requests, but some OSC apps might not " +
+                         "work.");
+
+
 
 
         // Avatar Module
@@ -143,8 +152,8 @@ public class OSC : MelonMod {
             description: "Whether should configure the mod to be compatible with VRCFaceTracking or not. Keep " +
                          "in mind that a lot of features this mod provide will be disabled, because VRCFaceTracking " +
                          "was implemented specifically for VRChat and breaks very easily. This will enable uuid " +
-                         "prefixes, enable the override path, disable trigger parameters, and change the override " +
-                         "path to VRC's folder");
+                         "prefixes, enable the override path, disable trigger parameters, change the override " +
+                         "path to VRC's folder, disable prop interactions, and the tracking info endpoints.");
 
 
         // Load env variables (may change the melon config)
@@ -154,11 +163,17 @@ public class OSC : MelonMod {
         void SetVrcFaceTrackingCompatibility() {
             if (!meOSCCompatibilityVRCFaceTracking.Value) return;
             // Enable the uuid prefixes, enable the override folder, disable trigger parameters, and set the override
-            // folder to vrc
+            // folder to vrc, props interactions, and tracking info
             meOSCJsonConfigUuidPrefixes.Value = true;
             meOSCJsonConfigOverridePathEnabled.Value = true;
             meOSCAvatarModuleTriggers.Value = false;
             meOSCJsonConfigOverridePath.Value = defaultVrcFolder;
+            meOSCTrackingModule.Value = false;
+            meOSCSpawnableModule.Value = false;
+            MelonLogger.Msg("[Config] Enabled VRCFaceTracking compatibility! The following features will be disabled:");
+            MelonLogger.Msg("[Config] \t- Parameters of the trigger type");
+            MelonLogger.Msg("[Config] \t- All props interactions");
+            MelonLogger.Msg("[Config] \t- All tracking info endpoints");
         }
         meOSCCompatibilityVRCFaceTracking.OnValueChangedUntyped += SetVrcFaceTrackingCompatibility;
         SetVrcFaceTrackingCompatibility();
