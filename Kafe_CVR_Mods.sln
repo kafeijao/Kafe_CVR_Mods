@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FirstPersonHider", "FirstPe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreedomFingers", "FreedomFingers\FreedomFingers.csproj", "{C1F22034-FD3B-4C68-8812-F58BD9B3E912}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProfilesExtended", "ProfilesExtended\ProfilesExtended.csproj", "{F1535614-5C57-4B03-B790-9A692951AE0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{C1F22034-FD3B-4C68-8812-F58BD9B3E912}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1F22034-FD3B-4C68-8812-F58BD9B3E912}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1F22034-FD3B-4C68-8812-F58BD9B3E912}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1535614-5C57-4B03-B790-9A692951AE0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1535614-5C57-4B03-B790-9A692951AE0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1535614-5C57-4B03-B790-9A692951AE0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1535614-5C57-4B03-B790-9A692951AE0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
