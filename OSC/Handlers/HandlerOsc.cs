@@ -3,6 +3,7 @@ using System.Net;
 using MelonLoader;
 using OSC.Handlers.OscModules;
 using Rug.Osc;
+using OSC.Utils;
 
 namespace OSC.Handlers;
 
@@ -23,7 +24,6 @@ internal class HandlerOsc {
     private static bool _compatibilityVRCFaceTracking;
 
     private static readonly Queue<OscPacket> _frameOscPacketsBuffer = new();
-    private static readonly Action _playerSetupLateUpdate;
     private static bool _useOscBundles;
 
     private const int MessageBufferSize = 600;
@@ -37,16 +37,14 @@ internal class HandlerOsc {
         OSC.Instance.meOSCDebug.OnValueChanged += (_, newValue) => _debugMode = newValue;
 
         // Setup the late update tick to send the current osc packets buffer as a bundle
-        _playerSetupLateUpdate = LateUpdateTick;
-
         if (OSC.Instance.meOSCServerOutUseBundles.Value) {
-            Events.Scene.PlayerSetupLateUpdateTicked += _playerSetupLateUpdate;
+            Events.Scene.PlayerSetupLateUpdateTicked += LateUpdateTick;
             _useOscBundles = true;
         }
         OSC.Instance.meOSCServerOutUseBundles.OnValueChanged += (oldUseBundles, newUseBundles) => {
             if (oldUseBundles == newUseBundles) return;
-            if (newUseBundles) Events.Scene.PlayerSetupLateUpdateTicked += _playerSetupLateUpdate;
-            else Events.Scene.PlayerSetupLateUpdateTicked -= _playerSetupLateUpdate;
+            if (newUseBundles) Events.Scene.PlayerSetupLateUpdateTicked += LateUpdateTick;
+            else Events.Scene.PlayerSetupLateUpdateTicked -= LateUpdateTick;
             _useOscBundles = newUseBundles;
         };
     }
@@ -141,12 +139,11 @@ internal class HandlerOsc {
         lock (_frameOscPacketsBuffer) {
             if (_frameOscPacketsBuffer.Count == 0) return;
 
-            var bundle = _frameOscPacketsBuffer.ToArray();
             var current = DateTime.UtcNow;
 
-            // Bundle a max of 10 messages together (so we don't hit the 2048 limit)
-            for (var i = 0; i < bundle.Length; i += MaxMessagesPerBundle) {
-                var bundlePart = bundle.Skip(i).Take(MaxMessagesPerBundle).ToArray();
+            do {
+                // Bundle a max of 10 messages together (so we don't hit the 2048 limit)
+                var bundlePart = _frameOscPacketsBuffer.DequeueChunk(MaxMessagesPerBundle).ToArray();
                 try {
                     Instance._sender.Send(new OscBundle(current, bundlePart));
                 }
@@ -156,8 +153,7 @@ internal class HandlerOsc {
                                       $"messages, but it exceeds the maximum packet size.");
                     throw;
                 }
-            }
-            _frameOscPacketsBuffer.Clear();
+            } while (_frameOscPacketsBuffer.Count > 0);
         }
     }
 
