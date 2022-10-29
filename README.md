@@ -116,9 +116,10 @@ In order to build this project follow the instructions (thanks [@Daky](https://g
   where `ChilloutVR.exe` resides). In Windows, look for Settings > Advanced system settings > Advanced > Environment
   Variables, add a new one there, it should point to something
   like `C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR` or similar.
-- (3) Run `copy_and_nstrip_dll.bat` this will copy the game + MelonLoader .dll into this project and run NStrip.exe to
-  make them public (easier developers).  
-*note*: ensure you run in a CMD not a PS shell, echo "%CVRPATH%" will not respond as expected in PS
+- (3) Run `copy_and_nstrip_dll.bat` (cmd prompt only) or `copy_and_nstrip_dll.ps1` (Powershell only) this will copy the
+game + MelonLoader .dll into this project and run NStrip.exe to make them public (easier developers).  
+
+
 ---
 
 # Disclosure  
