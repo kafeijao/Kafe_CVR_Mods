@@ -12,6 +12,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [PickupOverrides](PickupOverrides) *in-depth url*
 - [FirstPersonHider](FirstPersonHider) *in-depth url*
 - [FreedomFingers](FreedomFingers) *in-depth url*
+- [ProfilesExtended](ProfilesExtended) *in-depth url*
 
 ---
 
@@ -103,6 +104,15 @@ This removes the annoying index controller toggle to switch between finger track
 a gesture toggle. Where your fingers are tracked all the time but you can pick whether you want gestures or not.
 
 Check [Freedom Fingers In-Dept](FreedomFingers) for more info.
+
+---
+
+### Profiles Extended
+
+Mod to extend the functionality of the avatar parameter profile system. It allows you to exclude parameters from being
+changed via the profiles, and remember the current parameters across avatar changes and game restarts.
+
+Check [Profiles Extended In-Dept](ProfilesExtended) for more info.
 
 ---
 
