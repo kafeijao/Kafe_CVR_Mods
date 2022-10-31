@@ -9,7 +9,6 @@ using CCK.Debugger.Components;
 using HarmonyLib;
 using MelonLoader;
 using TMPro;
-using UnityEngine;
 
 namespace CCK.Debugger;
 
@@ -151,7 +150,13 @@ public class CCKDebugger : MelonMod {
             var cckDebugger = UnityEngine.Object.Instantiate(
                 Resources.AssetBundleLoader.GetMenuGameObject(),
                 quickMenuTransform);
-            cckDebugger.AddComponent<Menu>();
+            var menu = cckDebugger.AddComponent<Menu>();
+
+            // Add aux menu to be able to reset the menu if lost
+            var cckDebuggerPins = UnityEngine.Object.Instantiate(
+                Resources.AssetBundleLoader.GetMenuPinGameObject(),
+                quickMenuTransform);
+            menu.AddMenuAux(cckDebuggerPins);
 
             // Add ourselves to the player list (why not here xd)
             Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, MetaPort.Instance.username);

@@ -1,4 +1,6 @@
-﻿using CCK.Debugger.Components.MenuHandlers;
+﻿using ABI_RC.Core.Player;
+using ABI.CCK.Components;
+using CCK.Debugger.Components.MenuHandlers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Utils;
@@ -18,6 +20,16 @@ public class Menu : MonoBehaviour {
     // Pin Toggle
     private Toggle PinToggle;
     private Image PinImage;
+
+    // Hud Toggle
+    private Toggle HudToggle;
+    private Image HudImage;
+
+    // Grab Toggle
+    private Toggle GrabToggle;
+    private Image GrabImage;
+    private BoxCollider GrabPickupCollider;
+    private CVRPickupObject GrabPickupScript;
 
     // Pointer Toggle
     internal Toggle PointerToggle;
@@ -57,6 +69,41 @@ public class Menu : MonoBehaviour {
     private static Dictionary<TextMeshProUGUI, object> TextMeshProUGUIParam = new();
     private static Dictionary<TextMeshProUGUI, object[]> TextMeshProUGUIParams = new();
 
+    // Secondary Menu Pins
+    private GameObject AuxMenuGameObject;
+    private RectTransform AuxMenuRootRectTransform;
+    private Button AuxMenuPinButton;
+    private Button AuxMenuHudButton;
+
+    public void AddMenuAux(GameObject menuPins) {
+        AuxMenuGameObject = menuPins;
+        AuxMenuRootRectTransform = menuPins.GetComponent<RectTransform>();
+        AuxMenuPinButton = AuxMenuRootRectTransform.Find("TogglesView/Pin").GetComponent<Button>();
+        AuxMenuPinButton.onClick.AddListener(() => PinToggle.isOn = false);
+        AuxMenuPinButton.gameObject.SetActive(false);
+        AuxMenuHudButton = AuxMenuRootRectTransform.Find("TogglesView/Hud").GetComponent<Button>();
+        AuxMenuHudButton.onClick.AddListener(() => HudToggle.isOn = false);
+        AuxMenuHudButton.gameObject.SetActive(false);
+    }
+
+    private void StartMenuAux() {
+        // Setup aux menu
+        AuxMenuRootRectTransform.SetParent(RootQuickMenu, true);
+        AuxMenuRootRectTransform.transform.localPosition = Vector3.zero;
+        AuxMenuRootRectTransform.transform.localRotation = Quaternion.identity;
+        AuxMenuRootRectTransform.transform.localScale = new Vector3(0.0004f, 0.0004f, 0.0004f);
+        AuxMenuRootRectTransform.anchoredPosition = new Vector2(-0.5f - (AuxMenuRootRectTransform.rect.width*0.0004f/2), 0);
+
+        UpdateAuxMenu();
+    }
+
+    private void UpdateAuxMenu() {
+        AuxMenuPinButton.gameObject.SetActive(PinToggle.isOn);
+        AuxMenuHudButton.gameObject.SetActive(HudToggle.isOn);
+        var menuDistance = Vector3.Distance(RootRectTransform.position, AuxMenuRootRectTransform.position);
+        AuxMenuGameObject.SetActive(menuDistance > .5f && Events.QuickMenu.IsQuickMenuOpened && (PinToggle.isOn || HudToggle.isOn));
+    }
+
     private void Awake() {
 
         // Main
@@ -74,6 +121,21 @@ public class Menu : MonoBehaviour {
         PinImage = RootRectTransform.Find("TogglesView/Pin/Checkmark").GetComponent<Image>();
         PinToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnPinned);
         PinToggle.gameObject.SetActive(true);
+
+        // Hud Toggle
+        HudToggle = RootRectTransform.Find("TogglesView/Hud").GetComponent<Toggle>();
+        HudImage = RootRectTransform.Find("TogglesView/Hud/Checkmark").GetComponent<Image>();
+        HudToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnHudToggled);
+        HudToggle.gameObject.SetActive(true);
+
+        // Grab Toggle
+        GrabToggle = RootRectTransform.Find("TogglesView/Grab").GetComponent<Toggle>();
+        GrabImage = RootRectTransform.Find("TogglesView/Grab/Checkmark").GetComponent<Image>();
+        GrabToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnGrabToggle);
+        GrabToggle.gameObject.SetActive(false);
+        GrabPickupScript = RootRectTransform.GetComponent<CVRPickupObject>();
+        GrabPickupCollider = RootRectTransform.GetComponent<BoxCollider>();
+        GrabPickupCollider.enabled = false;
 
         // Pointer Toggle
         PointerToggle = RootRectTransform.Find("TogglesView/Pointer").GetComponent<Toggle>();
@@ -127,7 +189,6 @@ public class Menu : MonoBehaviour {
         RootRectTransform.transform.localScale = new Vector3(0.0004f, 0.0004f, 0.0004f);
         RootRectTransform.anchoredPosition = new Vector2(-0.5f - (RootRectTransform.rect.width*0.0004f/2), 0);
         gameObject.SetActive(Events.QuickMenu.IsQuickMenuOpened);
-        PinImage.color = Color.white;
     }
 
     private void OnDisable() {
@@ -137,6 +198,7 @@ public class Menu : MonoBehaviour {
     private void Start() {
         RootQuickMenu = transform.parent;
         ResetToMenu();
+        StartMenuAux();
 
         Events.DebuggerMenu.TextMeshProUGUIDestroyed += tmpText => {
             // Remove destroyed tmp texts from our caches
@@ -145,7 +207,9 @@ public class Menu : MonoBehaviour {
         };
 
         Events.QuickMenu.QuickMenuIsShownChanged += isShown => {
-            if (PinToggle.isOn) return;
+            UpdateAuxMenu();
+
+            if (PinToggle.isOn || HudToggle.isOn) return;
             gameObject.SetActive(isShown);
         };
 
@@ -171,6 +235,30 @@ public class Menu : MonoBehaviour {
         Events.DebuggerMenu.MainPreviousPage += () => SwitchMenu(false);
 
         // Add Toggle handlers
+        void UpdatePinAndHud() {
+            if (PinToggle.isOn) {
+                gameObject.SetActive(true);
+                var pos = transform.position;
+                var rot = transform.rotation;
+                RootRectTransform.transform.SetParent(null, true);
+                RootRectTransform.transform.SetPositionAndRotation(pos, rot);
+            }
+            else if (HudToggle.isOn) {
+                gameObject.SetActive(true);
+                var target = PlayerSetup.Instance._inVr
+                    ? PlayerSetup.Instance.vrCamera
+                    : PlayerSetup.Instance.desktopCamera;
+                RootRectTransform.transform.SetParent(target.transform, true);
+            }
+            else {
+                ResetToMenu();
+            }
+            UpdateAuxMenu();
+        }
+        void UpdateGrabToggle() {
+            GrabToggle.gameObject.SetActive(PinToggle.isOn);
+            GrabPickupCollider.enabled = GrabToggle.isOn && PinToggle.isOn;
+        }
         void UpdateResetToggle() {
             // Check if has nothing to reset -> disable
             if (ResetToggle.isOn && !PointerVisualizer.HasActive() && !TriggerVisualizer.HasActive()) {
@@ -200,17 +288,19 @@ public class Menu : MonoBehaviour {
             else if (!ResetToggle.isOn && hasTriggers && CurrentEntityTriggerList.All(vis => vis.enabled)) TriggerToggle.isOn = true;
         }
         Events.DebuggerMenu.Pinned += isPinned => {
-            if (isPinned) {
-                gameObject.SetActive(true);
-                var pos = transform.position;
-                var rot = transform.rotation;
-                RootRectTransform.transform.SetParent(null, true);
-                RootRectTransform.transform.SetPositionAndRotation(pos, rot);
-                PinImage.color = Color.green;
-            }
-            else {
-                ResetToMenu();
-            }
+            PinImage.color = isPinned ? Color.green : Color.white;
+            if (isPinned) HudToggle.isOn = false;
+            UpdatePinAndHud();
+            UpdateGrabToggle();
+        };
+        Events.DebuggerMenu.HudToggled += isHudToggled => {
+            HudImage.color = isHudToggled ? Color.green : Color.white;
+            if (isHudToggled) PinToggle.isOn = false;
+            UpdatePinAndHud();
+        };
+        Events.DebuggerMenu.GrabToggled += isGrabToggled => {
+            GrabImage.color = isGrabToggled ? Color.green : Color.gray;
+            UpdateGrabToggle();
         };
         Events.DebuggerMenu.PointerToggled += isToggled => {
             PointerImage.color = isToggled ? Misc.ColorBlue : Color.gray;
@@ -263,6 +353,9 @@ public class Menu : MonoBehaviour {
 
     private void Update() {
         _currentHandler?.Update(this);
+
+        // Update aux menu pins state (to allow call the menu back)
+        if (Events.QuickMenu.IsQuickMenuOpened && (PinToggle.isOn || HudToggle.isOn)) UpdateAuxMenu();
     }
 
     public void AddNewDebugger(string debuggerName) {

@@ -5,6 +5,8 @@ namespace CCK.Debugger.Events;
 internal static class DebuggerMenu {
 
     public static event Action<bool> Pinned;
+    public static event Action<bool> HudToggled;
+    public static event Action<bool> GrabToggled;
     public static event Action<bool> PointerToggled;
     public static event Action<bool> TriggerToggled;
     public static event Action<bool> ResetToggled;
@@ -22,14 +24,20 @@ internal static class DebuggerMenu {
     public static void OnPinned(bool pinned) {
         Pinned?.Invoke(pinned);
     }
-    public static void OnPointerToggle(bool pinned) {
-        PointerToggled?.Invoke(pinned);
+    public static void OnHudToggled(bool hudToggled) {
+        HudToggled?.Invoke(hudToggled);
     }
-    public static void OnTriggerToggle(bool pinned) {
-        TriggerToggled?.Invoke(pinned);
+    public static void OnGrabToggle(bool grabToggled) {
+        GrabToggled?.Invoke(grabToggled);
     }
-    public static void OnResetToggle(bool pinned) {
-        ResetToggled?.Invoke(pinned);
+    public static void OnPointerToggle(bool pointerToggled) {
+        PointerToggled?.Invoke(pointerToggled);
+    }
+    public static void OnTriggerToggle(bool triggerToggled) {
+        TriggerToggled?.Invoke(triggerToggled);
+    }
+    public static void OnResetToggle(bool resetToggled) {
+        ResetToggled?.Invoke(resetToggled);
     }
 
     public static void OnMainNextPage() {
