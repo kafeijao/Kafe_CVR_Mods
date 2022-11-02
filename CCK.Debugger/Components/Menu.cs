@@ -13,6 +13,9 @@ namespace CCK.Debugger.Components;
 
 public class Menu : MonoBehaviour {
 
+    // Genera
+    private bool crashed;
+
     // Main
     private RectTransform RootRectTransform;
     private Transform RootQuickMenu;
@@ -352,10 +355,23 @@ public class Menu : MonoBehaviour {
     }
 
     private void Update() {
-        _currentHandler?.Update(this);
+        if (crashed) return;
 
-        // Update aux menu pins state (to allow call the menu back)
-        if (Events.QuickMenu.IsQuickMenuOpened && (PinToggle.isOn || HudToggle.isOn)) UpdateAuxMenu();
+        // Crash wrapper to avoid giga lag
+        try {
+            _currentHandler?.Update(this);
+
+            // Update aux menu pins state (to allow call the menu back)
+            if (Events.QuickMenu.IsQuickMenuOpened && (PinToggle.isOn || HudToggle.isOn)) UpdateAuxMenu();
+
+        }
+        catch (Exception e) {
+            MelonLogger.Error(e);
+            MelonLogger.Error($"Something BORKED really bad, and to prevent lagging we're going to stop the debugger menu updates.");
+            MelonLogger.Error($"Feel free to ping kafeijao#8342 in the #bug-reports channel of ChilloutVR Modding Group discord with the error message.");
+            crashed = true;
+            throw;
+        }
     }
 
     public void AddNewDebugger(string debuggerName) {

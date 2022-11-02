@@ -231,7 +231,7 @@ public class AvatarMenuHandler : MenuHandler {
                     $"\n\t{White}Layer: {Blue}{triggerGo.layer}";
 
                 var allowedPointers = trigger.allowedPointer.Count != 0
-                    ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedPointer.Select(o => o.gameObject.name))}"
+                    ? $"\n\t\t{Blue}{string.Join("\n\t\t", trigger.allowedPointer.Select(o => o == null ? "<Missing Pointer Reference>" : o.gameObject.name))}"
                     : "[None]";
                 template += $"\n\t{White}Allowed Pointers: {allowedPointers}";
 
