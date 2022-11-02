@@ -79,19 +79,22 @@ internal class HandlerOsc {
                 MelonLogger.Error(e);
                 throw;
             }
+            // Restarting the sender as well because it needs the source port
+            ConnectSender(OSC.Instance.meOSCServerOutIp.Value, OSC.Instance.meOSCServerOutPort.Value,
+                OSC.Instance.meOSCServerInPort.Value);
         };
 
         // Start sender
         MelonLogger.Msg($"[Server] OSC Server started sending to {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
-        ConnectSender(OSC.Instance.meOSCServerOutIp.Value, OSC.Instance.meOSCServerOutPort.Value);
+        ConnectSender(OSC.Instance.meOSCServerOutIp.Value, OSC.Instance.meOSCServerOutPort.Value, OSC.Instance.meOSCServerInPort.Value);
 
         // Handle config sender ip/port changes
         OSC.Instance.meOSCServerOutIp.OnValueChanged += (_, newIp) => {
-            if (!ConnectSender(newIp, OSC.Instance.meOSCServerOutPort.Value)) return;
+            if (!ConnectSender(newIp, OSC.Instance.meOSCServerOutPort.Value, OSC.Instance.meOSCServerInPort.Value)) return;
             MelonLogger.Msg($"[Server] OSC out IP has changed, new messages will be sent to: {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
         };
         OSC.Instance.meOSCServerOutPort.OnValueChanged += (_, newPort) => {
-            if (!ConnectSender(OSC.Instance.meOSCServerOutIp.Value, newPort)) return;
+            if (!ConnectSender(OSC.Instance.meOSCServerOutIp.Value, newPort, OSC.Instance.meOSCServerInPort.Value)) return;
             MelonLogger.Msg($"[Server] OSC out Port has changed, new messages will be sent to: {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
         };
 
@@ -109,11 +112,15 @@ internal class HandlerOsc {
         Instance = this;
     }
 
-    private bool ConnectSender(string ip, int port) {
+    private bool ConnectSender(string ip, int destinationPort, int sourcePort) {
         var parsedIp = IPAddress.Parse(ip);
-        if (_sender != null && _sender.Port == port && Equals(_sender.RemoteAddress, parsedIp)) return false;
+        // Ignore re-initializations if nothing changed
+        if (_sender != null
+            && _sender.Port == destinationPort
+            && Equals(_sender.RemoteAddress, parsedIp)
+            && _sender.LocalPort == sourcePort) return false;
         var oldSender = _sender;
-        _sender = new OscSender(parsedIp, port, MessageBufferSize, MaxPacketSize);
+        _sender = new OscSender(parsedIp, sourcePort, destinationPort, MessageBufferSize, MaxPacketSize);
         _sender.Connect();
         oldSender?.Close();
         return true;
