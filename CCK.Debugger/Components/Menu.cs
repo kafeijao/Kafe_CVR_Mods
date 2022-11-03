@@ -483,9 +483,9 @@ public class Menu : MonoBehaviour {
                 break;
             default: {
                 // If the type hasn't changed, warn one time. This should never happen.
-                if (!_warnedMissingTypeValueChange && cached.GetType() == value.GetType()) {
+                if (!_warnedMissingTypeValueChange && cached?.GetType() == value?.GetType()) {
                     MelonLogger.Error($"Attempted to check if a value changed between unsupported values...\n\t\t" +
-                                      $"Values compared: {cached} ({cached.GetType()}) == {value} ({value.GetType()}");
+                                      $"Values compared: {cached} ({cached?.GetType()}) == {value} ({value?.GetType()}");
                     _warnedMissingTypeValueChange = true;
                 }
                 break;

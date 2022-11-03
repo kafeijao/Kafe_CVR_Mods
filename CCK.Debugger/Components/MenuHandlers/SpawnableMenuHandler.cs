@@ -1,5 +1,4 @@
-﻿using System.Text;
-using ABI_RC.Core.Util;
+﻿using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
@@ -264,7 +263,7 @@ public class SpawnableMenuHandler : MenuHandler {
                 template += $"\n\t{White}Allowed Types: {allowedTypes}";
 
                 string GetTriggerTaskTemplate(CVRSpawnableTriggerTask task, string taskType) {
-                    var name = task.spawnable.syncValues.ElementAtOrDefault(task.settingIndex) != null
+                    var name = task.spawnable?.syncValues.ElementAtOrDefault(task.settingIndex) != null
                         ? task.spawnable.syncValues[task.settingIndex].name
                         : "-none-";
                     string LastTriggered() => TriggerSpawnableTaskLastTriggered.ContainsKey(task)
@@ -297,7 +296,7 @@ public class SpawnableMenuHandler : MenuHandler {
                 }
 
                 foreach (var stayTask in trigger.stayTasks) {
-                    var name = stayTask.spawnable.syncValues.ElementAtOrDefault(stayTask.settingIndex) != null
+                    var name = stayTask.spawnable?.syncValues.ElementAtOrDefault(stayTask.settingIndex) != null
                         ? stayTask.spawnable.syncValues[stayTask.settingIndex].name
                         : "-none-";
                     string LastTriggered() => TriggerSpawnableStayTasksLastTriggered.ContainsKey(stayTask)
