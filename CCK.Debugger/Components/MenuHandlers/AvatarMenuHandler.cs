@@ -1,14 +1,13 @@
-﻿using System.Text;
-using ABI_RC.Core;
+﻿using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
+using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Entities;
 using CCK.Debugger.Utils;
 using HarmonyLib;
-using MelonLoader;
 using TMPro;
 using UnityEngine;
 
@@ -124,13 +123,17 @@ public class AvatarMenuHandler : MenuHandler {
         PlayerEntities.ListenPageChangeEvents = false;
     }
 
+    internal bool IsLocalAvatar() {
+        return PlayerEntities.CurrentObject == null;
+    }
+
     public override void Update(Menu menu) {
 
         PlayerEntities.UpdateViaSource();
 
         var playerCount = PlayerEntities.Count;
 
-        var isLocal = PlayerEntities.CurrentObject == null;
+        var isLocal = IsLocalAvatar();
         var currentPlayer = PlayerEntities.CurrentObject;
 
         menu.SetControlsExtra($"({PlayerEntities.CurrentObjectIndex+1}/{playerCount})");
@@ -311,7 +314,20 @@ public class AvatarMenuHandler : MenuHandler {
                 }
             }
 
-            // Consume the spawnable changed
+            var avatarHeight = Traverse.Create(isLocal ? PlayerSetup.Instance : currentPlayer.PuppetMaster)
+                .Field("_avatarHeight").GetValue<float>();
+
+            // Set up the Humanoid Bones
+            menu.CurrentEntityBoneList.Clear();
+            if (_mainAnimator.isHuman) {
+                foreach (var target in BoneVisualizer.GetAvailableBones(_mainAnimator)) {
+                    if (BoneVisualizer.Create(target, out var boneVisualizer, avatarHeight)) {
+                        menu.CurrentEntityBoneList.Add(boneVisualizer);
+                    }
+                }
+            }
+
+            // Consume the avatar changed
             PlayerEntities.HasChanged = false;
         }
 
@@ -321,26 +337,23 @@ public class AvatarMenuHandler : MenuHandler {
         }
 
         // Update cvr spawnable pointer values
-        foreach (var pointerValue in PointerValues) {
-            var value = pointerValue.Value.Item1.gameObject.activeInHierarchy;
-            var text = pointerValue.Key;
+        foreach (var (text, (pointer, template)) in PointerValues) {
+            if (pointer == null) continue;
+            var value = pointer.gameObject.activeInHierarchy;
             // Ignore if the value didn't change
             if (!Menu.HasValueChanged(text, value)) continue;
-            text.SetText(string.Format(pointerValue.Value.Item2, value ? "yes" : "no"));
+            text.SetText(string.Format(template, value ? "yes" : "no"));
         }
 
         // Update cvr trigger values
-        foreach (var triggerValue in TriggerValues) {
-
-            var text = triggerValue.Key;
-
+        foreach (var (text, (_, template, templateArgGetters)) in TriggerValues) {
             // Execute to get the values
-            var templateArgs = triggerValue.Value.Item3.Select(arg => arg()).ToArray();
+            var templateArgs = templateArgGetters.Select(arg => arg()).ToArray();
 
             // Check if the param values are all the same as the previous frame
             if (!Menu.HasValueChanged(text, templateArgs)) continue;
 
-            text.SetText(string.Format(triggerValue.Value.Item2, templateArgs));
+            text.SetText(string.Format(template, templateArgs));
         }
     }
 }

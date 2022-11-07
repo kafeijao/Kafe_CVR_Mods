@@ -263,9 +263,12 @@ public class SpawnableMenuHandler : MenuHandler {
                 template += $"\n\t{White}Allowed Types: {allowedTypes}";
 
                 string GetTriggerTaskTemplate(CVRSpawnableTriggerTask task, string taskType) {
-                    var name = task.spawnable?.syncValues.ElementAtOrDefault(task.settingIndex) != null
-                        ? task.spawnable.syncValues[task.settingIndex].name
-                        : "-none-";
+                    var name = "-none-";
+                    if (task.spawnable != null) {
+                        name = task.spawnable.syncValues.ElementAtOrDefault(task.settingIndex) != null
+                            ? task.spawnable.syncValues[task.settingIndex].name
+                            : "-none-";
+                    }
                     string LastTriggered() => TriggerSpawnableTaskLastTriggered.ContainsKey(task)
                         ? Menu.GetTimeDifference(TriggerSpawnableTaskLastTriggered[task])
                         : "?";
@@ -296,9 +299,12 @@ public class SpawnableMenuHandler : MenuHandler {
                 }
 
                 foreach (var stayTask in trigger.stayTasks) {
-                    var name = stayTask.spawnable?.syncValues.ElementAtOrDefault(stayTask.settingIndex) != null
-                        ? stayTask.spawnable.syncValues[stayTask.settingIndex].name
-                        : "-none-";
+                    var name = "-none-";
+                    if (stayTask.spawnable != null) {
+                        name = stayTask.spawnable.syncValues.ElementAtOrDefault(stayTask.settingIndex) != null
+                            ? stayTask.spawnable.syncValues[stayTask.settingIndex].name
+                            : "-none-";
+                    }
                     string LastTriggered() => TriggerSpawnableStayTasksLastTriggered.ContainsKey(stayTask)
                         ? Menu.GetTimeDifference(TriggerSpawnableStayTasksLastTriggered[stayTask])
                         : "?";

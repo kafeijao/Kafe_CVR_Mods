@@ -12,6 +12,7 @@ public static class Misc {
     public static readonly Color ColorYellow = new Color(1f, .95f, 0f);
     public static readonly Color ColorYellowFade = new Color(1f, .95f, 0f, 0.35f);
     public static readonly Color ColorOrange = new Color(.9882f, .4157f, .0118f);
+    public static readonly Color ColorIvory = new Color(.9023f, .8398f, .5664f);
 
     // Material Properties - Standard
     public static readonly Shader ShaderStandard = Shader.Find("Standard");
@@ -49,4 +50,11 @@ public static class Misc {
         return mesh;
     }
 
+    public static Vector3 GetScaleFromAbsolute(Transform source, float multiplier = 1.0f) {
+        return new Vector3(
+            source.lossyScale.x == 0 ? 0 : multiplier / source.lossyScale.x,
+            source.lossyScale.x == 0 ? 0 : multiplier / source.lossyScale.y,
+            source.lossyScale.x == 0 ? 0 : multiplier / source.lossyScale.z
+        );
+    }
 }

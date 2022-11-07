@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <None Include="Resources\cckdebugger.assetbundle"/>
+        <None Include="Resources\AssetBundles\cckdebugger"/>
     </ItemGroup>
 
     <ItemGroup>

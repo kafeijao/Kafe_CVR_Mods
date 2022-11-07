@@ -9,6 +9,8 @@ internal static class DebuggerMenu {
     public static event Action<bool> GrabToggled;
     public static event Action<bool> PointerToggled;
     public static event Action<bool> TriggerToggled;
+    public static event Action<bool> BoneToggled;
+    public static event Action<bool> TrackerToggled;
     public static event Action<bool> ResetToggled;
 
     public static event Action MainNextPage;
@@ -35,6 +37,12 @@ internal static class DebuggerMenu {
     }
     public static void OnTriggerToggle(bool triggerToggled) {
         TriggerToggled?.Invoke(triggerToggled);
+    }
+    public static void OnBoneToggle(bool boneToggled) {
+        BoneToggled?.Invoke(boneToggled);
+    }
+    public static void OnTrackerToggle(bool trackerToggled) {
+        TrackerToggled?.Invoke(trackerToggled);
     }
     public static void OnResetToggle(bool resetToggled) {
         ResetToggled?.Invoke(resetToggled);

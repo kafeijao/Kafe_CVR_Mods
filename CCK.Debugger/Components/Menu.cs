@@ -1,9 +1,12 @@
 ﻿using ABI_RC.Core.Player;
+using ABI_RC.Systems.IK;
 using ABI.CCK.Components;
+using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.MenuHandlers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
 using CCK.Debugger.Utils;
+using HarmonyLib;
 using MelonLoader;
 using TMPro;
 using UnityEngine;
@@ -42,6 +45,14 @@ public class Menu : MonoBehaviour {
     internal Toggle TriggerToggle;
     private Image TriggerImage;
 
+    // Bone Toggle
+    internal Toggle BoneToggle;
+    private Image BoneImage;
+
+    // Tracker Toggle
+    internal Toggle TrackerToggle;
+    private Image TrackerImage;
+
     // Reset Toggle
     internal Toggle ResetToggle;
     private Image ResetImage;
@@ -64,9 +75,11 @@ public class Menu : MonoBehaviour {
     private GameObject TemplateCategory;
     private GameObject TemplateCategoryEntry;
 
-    // Pointers
+    // Pointers, Triggers, Bones, and Trackers
     internal List<PointerVisualizer> CurrentEntityPointerList;
     internal List<TriggerVisualizer> CurrentEntityTriggerList;
+    internal List<GameObjectVisualizer> CurrentEntityBoneList;
+    internal List<GameObjectVisualizer> CurrentEntityTrackerList;
 
     // TMPTextProCaches
     private static Dictionary<TextMeshProUGUI, object> TextMeshProUGUIParam = new();
@@ -161,6 +174,20 @@ public class Menu : MonoBehaviour {
         ResetToggle.gameObject.SetActive(false);
         ResetImage.color = Color.gray;
 
+        // Bone Toggle
+        BoneToggle = RootRectTransform.Find("TogglesView/Bone").GetComponent<Toggle>();
+        BoneImage = RootRectTransform.Find("TogglesView/Bone/Checkmark").GetComponent<Image>();
+        BoneToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnBoneToggle);
+        BoneToggle.gameObject.SetActive(false);
+        BoneImage.color = Color.gray;
+
+        // Tracker Toggle
+        TrackerToggle = RootRectTransform.Find("TogglesView/Tracker").GetComponent<Toggle>();
+        TrackerImage = RootRectTransform.Find("TogglesView/Tracker/Checkmark").GetComponent<Image>();
+        TrackerToggle.onValueChanged.AddListener(Events.DebuggerMenu.OnTrackerToggle);
+        TrackerToggle.gameObject.SetActive(false);
+        TrackerImage.color = Color.gray;
+
         // Controls
         Controls = RootRectTransform.Find("Controls").gameObject;
         ControlsExtra = RootRectTransform.Find("Controls/Extra").GetComponent<TextMeshProUGUI>();
@@ -179,6 +206,8 @@ public class Menu : MonoBehaviour {
         // Visualizers
         CurrentEntityPointerList = new List<PointerVisualizer>();
         CurrentEntityTriggerList = new List<TriggerVisualizer>();
+        CurrentEntityBoneList = new List<GameObjectVisualizer>();
+        CurrentEntityTrackerList = new List<GameObjectVisualizer>();
     }
 
     private static int _currentHandlerIndex;
@@ -232,10 +261,17 @@ public class Menu : MonoBehaviour {
 
             _currentHandler = Handlers[_currentHandlerIndex];
             _currentHandler.Load(this);
+
+            // Recover from a crash
+            crashed = false;
         }
 
         Events.DebuggerMenu.MainNextPage += () => SwitchMenu(true);
         Events.DebuggerMenu.MainPreviousPage += () => SwitchMenu(false);
+
+        // Recover from a crash
+        Events.DebuggerMenu.ControlsNextPage += () => crashed = false;
+        Events.DebuggerMenu.ControlsPreviousPage += () => crashed = false;
 
         // Add Toggle handlers
         void UpdatePinAndHud() {
@@ -264,11 +300,19 @@ public class Menu : MonoBehaviour {
         }
         void UpdateResetToggle() {
             // Check if has nothing to reset -> disable
-            if (ResetToggle.isOn && !PointerVisualizer.HasActive() && !TriggerVisualizer.HasActive()) {
+            if (ResetToggle.isOn
+                && !PointerVisualizer.HasActive()
+                && !TriggerVisualizer.HasActive()
+                && !GameObjectVisualizer.HasActive()
+                && !TrackerToggle.isOn) {
                 ResetToggle.isOn = false;
             }
             // Check if has anything to reset -> enable
-            else if (!ResetToggle.isOn && (PointerVisualizer.HasActive() || TriggerVisualizer.HasActive())) {
+            else if (!ResetToggle.isOn && (
+                         PointerVisualizer.HasActive() ||
+                         TriggerVisualizer.HasActive() ||
+                         GameObjectVisualizer.HasActive() ||
+                         TrackerToggle.isOn)) {
                 ResetToggle.isOn = true;
             }
         }
@@ -278,7 +322,7 @@ public class Menu : MonoBehaviour {
             PointerToggle.gameObject.SetActive(hasPointers);
             // Check where has any pointer disabled -> disable
             if (PointerToggle.isOn && CurrentEntityPointerList.Any(vis => !vis.enabled)) PointerToggle.isOn = false;
-            // Check if has nothing to reset -> disable
+            // Check if has nothing to reset -> enable
             else if (!ResetToggle.isOn && hasPointers && CurrentEntityPointerList.All(vis => vis.enabled)) PointerToggle.isOn = true;
         }
         void UpdateTriggerToggle() {
@@ -287,8 +331,24 @@ public class Menu : MonoBehaviour {
             TriggerToggle.gameObject.SetActive(hasTriggers);
             // Check where has any trigger disabled hasTriggers disable
             if (TriggerToggle.isOn && CurrentEntityTriggerList.Any(vis => !vis.enabled)) TriggerToggle.isOn = false;
-            // Check if has nothing to reset -> disable
+            // Check if has nothing to reset -> enable
             else if (!ResetToggle.isOn && hasTriggers && CurrentEntityTriggerList.All(vis => vis.enabled)) TriggerToggle.isOn = true;
+        }
+        void UpdateBoneToggle() {
+            var hasBones = CurrentEntityBoneList.Count > 0;
+            // Hide icon if current entity has no bones
+            BoneToggle.gameObject.SetActive(hasBones);
+            // Check where has any bone disabled hasTriggers disable
+            if (BoneToggle.isOn && CurrentEntityBoneList.Any(vis => !vis.enabled)) BoneToggle.isOn = false;
+            // Check if has nothing to reset -> enable
+            else if (!ResetToggle.isOn && hasBones && CurrentEntityBoneList.All(vis => vis.enabled)) BoneToggle.isOn = true;
+        }
+        void UpdateTrackerToggle() {
+            var displayToggle = PlayerSetup.Instance._inVr
+                && ((_currentHandler.GetType() == typeof(AvatarMenuHandler) && ((AvatarMenuHandler)_currentHandler).IsLocalAvatar())
+                    || _currentHandler.GetType() == typeof(MiscHandler));
+            // Hide icon if current entity has no trackers
+            TrackerToggle.gameObject.SetActive(displayToggle);
         }
         Events.DebuggerMenu.Pinned += isPinned => {
             PinImage.color = isPinned ? Color.green : Color.white;
@@ -315,14 +375,42 @@ public class Menu : MonoBehaviour {
             CurrentEntityTriggerList.ForEach(vis => vis.enabled = isToggled);
             UpdateResetToggle();
         };
+        Events.DebuggerMenu.BoneToggled += isToggled => {
+            BoneImage.color = isToggled ? Misc.ColorIvory : Color.gray;
+            CurrentEntityBoneList.ForEach(vis => vis.enabled = isToggled);
+            UpdateResetToggle();
+        };
+        Events.DebuggerMenu.TrackerToggled += isToggled => {
+            TrackerImage.color = isToggled ? Misc.ColorBlue : Color.gray;
+
+            // If is toggled -> Setup trackers and show the models
+            if (isToggled) {
+                var avatarHeight = Traverse.Create(PlayerSetup.Instance).Field("_avatarHeight").GetValue<float>();
+                foreach (var tracker in VRTrackerManager.Instance.trackers) {
+                    if (TrackerVisualizer.Create(tracker, out var trackerVisualizer, avatarHeight)) {
+                        CurrentEntityTrackerList.Add(trackerVisualizer);
+                    }
+                }
+            }
+
+            // Enable controller models
+            IKSystem.Instance.leftHandModel.SetActive(isToggled);
+            IKSystem.Instance.rightHandModel.SetActive(isToggled);
+
+            CurrentEntityTrackerList.ForEach(vis => vis.enabled = isToggled);
+            UpdateResetToggle();
+        };
         Events.DebuggerMenu.ResetToggled += isToggled => {
             ResetToggle.gameObject.SetActive(isToggled);
             ResetImage.color = isToggled ? Misc.ColorOrange : Color.gray;
             if (!isToggled) {
                 PointerVisualizer.DisableAll();
                 TriggerVisualizer.DisableAll();
+                GameObjectVisualizer.DisableAll();
                 if (PointerToggle.isOn) PointerToggle.isOn = false;
                 if (TriggerToggle.isOn) TriggerToggle.isOn = false;
+                if (BoneToggle.isOn) BoneToggle.isOn = false;
+                if (TrackerToggle.isOn) TrackerToggle.isOn = false;
             }
         };
 
@@ -333,12 +421,15 @@ public class Menu : MonoBehaviour {
             if (!finishedInitializing) {
                 CurrentEntityPointerList.Clear();
                 CurrentEntityTriggerList.Clear();
+                CurrentEntityBoneList.Clear();
             }
 
             // The change entity has finished, lets update the toggle states
             else {
                 UpdatePointerToggle();
                 UpdateTriggerToggle();
+                UpdateBoneToggle();
+                UpdateTrackerToggle();
                 UpdateResetToggle();
             }
         };
@@ -355,22 +446,22 @@ public class Menu : MonoBehaviour {
     }
 
     private void Update() {
+
+        // Update aux menu pins state (to allow call the menu back)
+        if (Events.QuickMenu.IsQuickMenuOpened && (PinToggle.isOn || HudToggle.isOn)) UpdateAuxMenu();
+
+        // Prevent updates until we swap entity
         if (crashed) return;
 
         // Crash wrapper to avoid giga lag
         try {
             _currentHandler?.Update(this);
-
-            // Update aux menu pins state (to allow call the menu back)
-            if (Events.QuickMenu.IsQuickMenuOpened && (PinToggle.isOn || HudToggle.isOn)) UpdateAuxMenu();
-
         }
         catch (Exception e) {
             MelonLogger.Error(e);
-            MelonLogger.Error($"Something BORKED really bad, and to prevent lagging we're going to stop the debugger menu updates.");
+            MelonLogger.Error($"Something BORKED really bad, and to prevent lagging we're going to stop the debugger menu updates until you swap entity.");
             MelonLogger.Error($"Feel free to ping kafeijao#8342 in the #bug-reports channel of ChilloutVR Modding Group discord with the error message.");
             crashed = true;
-            throw;
         }
     }
 

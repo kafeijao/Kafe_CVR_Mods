@@ -17,8 +17,14 @@ public static class AssetBundleLoader {
     private static GameObject _menuPinCache;
     private const string DebuggerMenuPinAssetPath = "Assets/Prefabs/CCKDebuggerMenu_Pin.prefab";
 
+    private static GameObject _boneVisualizerCache;
+    private const string DebuggerMenuBoneVisualizerPath = "Assets/Prefabs/CCKDebuggerVisualizer_Bone.prefab";
+
+    private static GameObject _trackerVisualizerCache;
+    private const string DebuggerMenuTrackerVisualizerPath = "Assets/Prefabs/CCKDebuggerVisualizer_ViveTracker3.prefab";
+
     private static readonly Dictionary<ShaderType, Shader> _shaderCache = new();
-    private const string ShaderAssetPath = "Assets/Neitri-Unity-Shaders-master/Distance Fade Outline.shader";
+    private const string ShaderAssetPath = "Assets/Neitri-Unity-Shaders-master/Distance Fade Outline Texture.shader";
 
     private static AssetBundle GetCckDebuggerAssetBundle() {
         if (_assetBundleCache != null) return _assetBundleCache;
@@ -42,6 +48,22 @@ public static class AssetBundleLoader {
 
         var prefab = GetCckDebuggerAssetBundle().LoadAsset<GameObject>(DebuggerMenuPinAssetPath);
         _menuPinCache = prefab;
+        return prefab;
+    }
+
+    public static GameObject GetBoneVisualizerObject() {
+        if (_boneVisualizerCache != null) return _boneVisualizerCache;
+
+        var prefab = GetCckDebuggerAssetBundle().LoadAsset<GameObject>(DebuggerMenuBoneVisualizerPath);
+        _boneVisualizerCache = prefab;
+        return prefab;
+    }
+
+    public static GameObject GetTrackerVisualizerObject() {
+        if (_trackerVisualizerCache != null) return _trackerVisualizerCache;
+
+        var prefab = GetCckDebuggerAssetBundle().LoadAsset<GameObject>(DebuggerMenuTrackerVisualizerPath);
+        _trackerVisualizerCache = prefab;
         return prefab;
     }
 
