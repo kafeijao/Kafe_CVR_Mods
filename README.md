@@ -13,6 +13,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [FirstPersonHider](FirstPersonHider) *in-depth url*
 - [FreedomFingers](FreedomFingers) *in-depth url*
 - [ProfilesExtended](ProfilesExtended) *in-depth url*
+- [HorizonAdjust](HorizonAdjust) *in-depth url*
 
 ---
 
@@ -113,6 +114,14 @@ Mod to extend the functionality of the avatar parameter profile system. It allow
 changed via the profiles, and remember the current parameters across avatar changes and game restarts.
 
 Check [Profiles Extended In-Dept](ProfilesExtended) for more info.
+
+---
+
+### Horizon Adjust
+
+Mod that adds a sub-menu to [Daky's Action Menu](https://github.com/dakyneko/DakyModsCVR) that enables player rotation.
+
+Check [Horizon Adjust In-Dept](HorizonAdjust) for more info.
 
 ---
 
