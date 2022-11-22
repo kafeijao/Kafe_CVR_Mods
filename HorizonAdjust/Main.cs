@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-using System.Reflection.Emit;
-using ABI_RC.Core.Base;
-using ABI_RC.Core.Player;
+﻿using ABI_RC.Core.Player;
 using ABI_RC.Systems.MovementSystem;
 using ActionMenu;
 using HarmonyLib;
@@ -14,13 +11,15 @@ public class HorizonAdjust : MelonMod {
 
     private Menu _lib;
 
+    private static bool _initialized;
+    
     private static Quaternion _targetQuaternion;
     private static bool _isRotating;
     private static bool _isResetting;
     private static bool _groundPosChanged;
     private static Vector3 _groundPos;
 
-    private static bool _created;
+    private static bool _created = true;
 
     private static float _degreesPerSecond = 180f;
     private static float _angleIncrement = 90f;
@@ -30,23 +29,16 @@ public class HorizonAdjust : MelonMod {
     }
 
     public override void OnUpdate() {
-
-        var playerTransform = PlayerSetup.Instance.transform;
+	    if (!_initialized) return;
 
         // MelonLogger.Msg($"Rotating {playerTransform.localRotation.eulerAngles.ToString()} to {_targetQuaternion.eulerAngles.ToString()}");
 
         var groundCheck = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem.groundCheck)).GetValue<Transform>();
-        var groundDistance = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem.groundDistance)).GetValue<float>();
         //var colliderCenter = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem._colliderCenter)).GetValue<Vector3>();
 
-
-        // Apply previous frame global position if available
-        if (_groundPosChanged) {
-	        groundCheck.position = _groundPos;
-	        _groundPosChanged = false;
-        }
-
+        // Create a sphere on the ground check game object location, with the radius of which the ground is checked
         if (!_created && MovementSystem.Instance != null && groundCheck != null) {
+			var groundDistance = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem.groundDistance)).GetValue<float>();
 	        var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 	        sphere.transform.SetParent(groundCheck);
 	        sphere.transform.localScale = Vector3.one * groundDistance;
@@ -55,19 +47,22 @@ public class HorizonAdjust : MelonMod {
 	        _created = true;
         }
 
+        var playerTransform = PlayerSetup.Instance.transform;
+
         if (!_isRotating) return;
 
         // Ignore if we reached the target angle
 	    if (Mathf.Approximately(Quaternion.Angle(playerTransform.localRotation, _targetQuaternion), 0f)) {
 
-		    // Consume Reset (and reset the ground check position)
+		    // Consume Reset (and reset the ground check position (it's done after calling UpdateCollider (postfix)))
 		    if (_isResetting) {
 			    // Execute MovementSystem.UpdateCollider() to reset the collider
 			    Traverse.Create(MovementSystem.Instance).Method(nameof(MovementSystem.UpdateCollider)).GetValue();
-			    _isResetting = false;
 		    }
 
+		    // Consume Rotation
 		    _isRotating = false;
+
 		    return;
 	    }
 
@@ -76,12 +71,60 @@ public class HorizonAdjust : MelonMod {
 	    _groundPosChanged = true;
 
         // Rotate player
-        playerTransform.localRotation = Quaternion.RotateTowards(playerTransform.localRotation, _targetQuaternion, _degreesPerSecond * Time.deltaTime);
+
+        var isVr = Traverse.Create(PlayerSetup.Instance).Field(nameof(PlayerSetup._inVr)).GetValue<bool>();
+	    var rotation = Quaternion.RotateTowards(playerTransform.localRotation, _targetQuaternion, _degreesPerSecond * Time.deltaTime);
+	    playerTransform.localRotation = rotation;
+
+   //      if (isVr) {
+	  //       var pivot = playerTransform.position;
+	  //       var avatarHeight = Traverse.Create(PlayerSetup.Instance).Field(nameof(PlayerSetup._avatarHeight)).GetValue<float>();
+	  //       pivot.y += avatarHeight / 2;
+	  //       RotateAroundPivot(playerTransform, rotation, pivot);
+   //      }
+   //      else {
+			// playerTransform.localRotation = rotation;
+   //      }
+
+        //RotateAround(playerTransform, pivot, _targetQuaternion);
+
         //playerTransform.localRotation = Quaternion.RotateTowards(playerTransform.localRotation, _targetQuaternion, 50000);
-
         //var groundTraverse = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem.groundCheck));
-
         //groundTraverse.GetValue<Transform>().position = playerTransform.position;
+    }
+
+    public override void OnLateUpdate() {
+	    if (!_initialized) return;
+
+	    // Apply Update's global position after player transform rotated if available
+	    if (_groundPosChanged) UpdateGroundPosition(_groundPos.y);
+    }
+
+    private static void UpdateGroundPosition(float globalPositionY) {
+
+	    Vector3 rootPositionGlobal;
+	    // Use hips when in full body
+	    if (PlayerSetup.Instance.fullBodyActive) {
+		    var animator = Traverse.Create(PlayerSetup.Instance).Field(nameof(PlayerSetup._animator)).GetValue<Animator>();
+		    rootPositionGlobal = animator.GetBoneTransform(HumanBodyBones.Hips).position;
+	    }
+	    // Use head otherwise
+	    else {
+		    Traverse.Create(PlayerSetup.Instance).Field(nameof(PlayerSetup.GetActiveCamera)).GetValue<Transform>();
+		    rootPositionGlobal = PlayerSetup.Instance.GetActiveCamera().transform.position;
+	    }
+
+	    var groundCheck = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem.groundCheck)).GetValue<Transform>();
+	    groundCheck.position = new Vector3(rootPositionGlobal.x, globalPositionY, rootPositionGlobal.z);
+	    _groundPosChanged = false;
+    }
+
+    private static void RotateAroundPivot(Transform transform, Quaternion rotation, Vector3 pivot) {
+	    MelonLogger.Msg($"Rotating Around Pivot: {pivot.ToString()}, Current: {transform.rotation.eulerAngles.ToString()}, Target: {rotation.eulerAngles.ToString()}");
+	    var pivotedPosition = transform.position - pivot;
+	    transform.rotation = rotation * transform.rotation;
+	    var pivotedRotatedPosition = rotation * pivotedPosition;
+	    transform.position = pivot + pivotedRotatedPosition;
     }
 
     private static void SetRotateTarget(Vector3 rotationDirection) {
@@ -91,10 +134,15 @@ public class HorizonAdjust : MelonMod {
 
     private static void SetRotation(Quaternion localRotation, bool reset = false) {
 	    // Finish rotating before accepting another
-	    if (_isRotating || _isResetting) return;
+	    if (_isRotating) return;
 	    _targetQuaternion = localRotation;
 	    _isRotating = true;
 	    if (reset) _isResetting = true;
+    }
+
+    private static Vector3 GetDirection(Vector3 axis) {
+	    var inVr = Traverse.Create(PlayerSetup.Instance).Field(nameof(PlayerSetup._inVr)).GetValue<bool>();
+	    return inVr ? axis : new Vector3(axis.z, axis.y, -axis.x);
     }
 
     private class Menu : ActionMenuMod.Lib {
@@ -104,63 +152,122 @@ public class HorizonAdjust : MelonMod {
         protected override List<MenuItem> modMenuItems() {
 
 	        return new List<MenuItem>() {
-                new MenuItem("Back", BuildButtonItem("Back", () => SetRotateTarget(Vector3.left))),
+                new MenuItem("Back", BuildButtonItem("Back", () => SetRotateTarget(GetDirection(Vector3.back)))),
                 new MenuItem("Reset", BuildButtonItem("Reset", () => {
 	                SetRotation(Quaternion.Euler(0f, PlayerSetup.Instance.transform.localRotation.eulerAngles.y, 0f), true);
                 })),
-                new MenuItem("Left", BuildButtonItem("Left", () => SetRotateTarget(Vector3.forward))),
+                new MenuItem("Left", BuildButtonItem("Left", () => SetRotateTarget(GetDirection(Vector3.left)))),
                 new MenuItem("Rotation Speed", BuildRadialItem("Rotation Speed", v => _degreesPerSecond = v, minValue: 1f, maxValue: 360f, defaultValue: _degreesPerSecond)),
-                new MenuItem("Front", BuildButtonItem("Front", () => SetRotateTarget(Vector3.right))),
+                new MenuItem("Front", BuildButtonItem("Front", () => SetRotateTarget(GetDirection(Vector3.forward)))),
                 new MenuItem("Rotation Increments", BuildRadialItem("Rotation Increments", v => _angleIncrement = v, minValue: 1f, maxValue: 180f, defaultValue: _angleIncrement)),
-                new MenuItem("Right", BuildButtonItem("Right", () => SetRotateTarget(Vector3.back))),
+                new MenuItem("Right", BuildButtonItem("Right", () => SetRotateTarget(GetDirection(Vector3.right)))),
                 new MenuItem("Set Horizon", BuildButtonItem("Set Horizon", () => {
-	                SetRotation(Quaternion.Euler(PlayerSetup.Instance.GetActiveCamera().transform.rotation.eulerAngles));
+	                var cameraPos = PlayerSetup.Instance.GetActiveCamera().transform.rotation.eulerAngles;
+	                SetRotation(Quaternion.Euler(GetDirection(cameraPos * -1)));
                 })),
             };
         }
     }
 
-   // [HarmonyPatch]
-   // private static class HarmonyPatches {
-	  //  //
-	  //  // [HarmonyPostfix]
-	  //  // [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateCollider))]
-	  //  // private static void After_MovementSystem_UpdateCollider(MovementSystem __instance) {
-		 //  //  var _colliderCenter = Traverse.Create(__instance).Field(nameof(MovementSystem._colliderCenter)).GetValue<Vector3>();
-		 //  //  __instance.groundCheck.localPosition = _colliderCenter;
-		 //  //  MelonLogger.Msg(_colliderCenter.ToString());
-	  //  // }
+    [HarmonyPatch]
+   private static class HarmonyPatches {
+
+	   [HarmonyPrefix]
+	   [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateCollider))]
+	   private static void Before_MovementSystem_UpdateCollider(MovementSystem __instance, out Vector3 __state) {
+		   var groundCheckTransform = Traverse.Create(__instance).Field(nameof(MovementSystem.groundCheck)).GetValue<Transform>();
+		   // Save ground check local position value
+		   __state = groundCheckTransform.localPosition;
+	   }
+
+	   [HarmonyPostfix]
+	   [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateCollider))]
+	   private static void After_MovementSystem_UpdateCollider(MovementSystem __instance, Vector3 __state) {
+		   if (!_initialized) return;
+
+		   // If resetting don't load previous position, and consume the reset
+		   if (_isResetting) {
+			   var colliderCenter = Traverse.Create(__instance).Field(nameof(MovementSystem._colliderCenter)).GetValue<Vector3>();
+			   var groundCheck = Traverse.Create(MovementSystem.Instance).Field(nameof(MovementSystem.groundCheck)).GetValue<Transform>();
+			   // Convert the collider center to global position and send the y
+			   UpdateGroundPosition(groundCheck.TransformPoint(colliderCenter).y);
+			   _isResetting = false;
+			   return;
+		   }
+
+		   var groundCheckTransform = Traverse.Create(__instance).Field(nameof(MovementSystem.groundCheck)).GetValue<Transform>();
+		   // Restore ground check local position value
+		   groundCheckTransform.localPosition = __state;
+	   }
+
+	   [HarmonyPrefix]
+	   [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateAvatarHeightFactor))]
+	   private static void Before_MovementSystem_UpdateAvatarHeightFactor() {
+		   if (!_initialized) return;
+		   _isResetting = true;
+	   }
+
+	   [HarmonyPrefix]
+	   [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateAvatarHeight))]
+	   private static void Before_MovementSystem_UpdateAvatarHeight() {
+		   if (!_initialized) return;
+		   _isResetting = true;
+	   }
+
+	   [HarmonyPostfix]
+	   [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.Start))]
+	   private static void After_PlayerSetup_Start() => _initialized = true;
+
+	   //
+	   // [HarmonyPrefix]
+	   // [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
+	   // private static void Before_PlayerSetup_LateUpdate(PlayerSetup __instance, out Vector3 __state) {
+		  //  var avatar = Traverse.Create(__instance).Field(nameof(__instance._avatar)).GetValue<GameObject>();
+		  //  // Save avatar position position value
+		  //  __state = avatar.transform.position;
+	   // }
+	   //
+	   // [HarmonyPostfix]
+	   // [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
+	   // private static void After_PlayerSetup_LateUpdate(PlayerSetup __instance, Vector3 __state) {
+		  //  var avatar = Traverse.Create(__instance).Field(nameof(__instance._avatar)).GetValue<GameObject>();
+		  //  // Load avatar position position value
+		  //  // avatar.transform.position = __state;
+		  //  var pos = avatar.transform.localPosition;
+		  //  pos.y = 0;
+		  //  avatar.transform.localPosition = pos;
+	   // }
+
+	  //   private static readonly FieldInfo _isGroundedRaw = AccessTools.Field(typeof(MovementSystem), nameof(MovementSystem._isGroundedRaw));
    //
-	  // //   private static readonly FieldInfo _isGroundedRaw = AccessTools.Field(typeof(MovementSystem), nameof(MovementSystem._isGroundedRaw));
-   // //
-	  // //   [HarmonyTranspiler]
-   // //      [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.Update))]
-   // //      private static IEnumerable<CodeInstruction> Transpiler_MovementSystem_Update(IEnumerable<CodeInstruction> instructions) {
-   // //
-	  // //       var _isGroundedRawPatchCount = 0;
-   // //
-	  // //       foreach (var instruction in instructions) {
-   // //
-		 // //        // Always overwrite _isGroundedRaw to true
-		 // //        if (instruction.opcode == OpCodes.Stfld && instruction.operand is FieldInfo { Name: "_isGroundedRaw" }) {
-			// //         yield return instruction;
-   // //
-			// //         // Push this.
-			// //         yield return new CodeInstruction(OpCodes.Ldarg_0);
-			// //         // Push the value true
-			// //         yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-			// //         // Set field _isGroundedRaw to true
-			// //         yield return new CodeInstruction(OpCodes.Stfld, _isGroundedRaw);
-   // //
-			// //         _isGroundedRawPatchCount++;
-   // //
-			// //         continue;
-		 // //        }
-   // //
-		 // //        yield return instruction;
-   // //          }
-   // //
-			// // MelonLogger.Msg($"[Transpiler] Patched MovementSystem._isGroundedRaw {_isGroundedRawPatchCount} times.");
-   // //      }
-   // }
+	  //   [HarmonyTranspiler]
+   //      [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.Update))]
+   //      private static IEnumerable<CodeInstruction> Transpiler_MovementSystem_Update(IEnumerable<CodeInstruction> instructions) {
+   //
+	  //       var _isGroundedRawPatchCount = 0;
+   //
+	  //       foreach (var instruction in instructions) {
+   //
+		 //        // Always overwrite _isGroundedRaw to true
+		 //        if (instruction.opcode == OpCodes.Stfld && instruction.operand is FieldInfo { Name: "_isGroundedRaw" }) {
+			//         yield return instruction;
+   //
+			//         // Push this.
+			//         yield return new CodeInstruction(OpCodes.Ldarg_0);
+			//         // Push the value true
+			//         yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+			//         // Set field _isGroundedRaw to true
+			//         yield return new CodeInstruction(OpCodes.Stfld, _isGroundedRaw);
+   //
+			//         _isGroundedRawPatchCount++;
+   //
+			//         continue;
+		 //        }
+   //
+		 //        yield return instruction;
+   //          }
+   //
+			// MelonLogger.Msg($"[Transpiler] Patched MovementSystem._isGroundedRaw {_isGroundedRawPatchCount} times.");
+   //      }
+   }
 }
