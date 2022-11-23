@@ -1,7 +1,7 @@
-using System.Reflection;
-using System.Reflection.Emit;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
+using ABI_RC.Systems.IK;
 using HarmonyLib;
 using MelonLoader;
 
@@ -9,138 +9,71 @@ namespace FreedomFingers;
 
 public class FreedomFingers : MelonMod {
 
-    private static MelonPreferences_Category melonCategoryFreedomFingers;
-    private static MelonPreferences_Entry<bool> melonEntryEnableNotification;
+    private static MelonPreferences_Category _melonCategoryFreedomFingers;
+    private static MelonPreferences_Entry<bool> _melonEntryEnableNotification;
+    private static MelonPreferences_Entry<bool> _melonEntryStartWithGesturesEnabled;
 
     public override void OnApplicationStart() {
 
         // Melon Config
-        melonCategoryFreedomFingers = MelonPreferences.CreateCategory(nameof(FreedomFingers));
-        melonEntryEnableNotification = melonCategoryFreedomFingers.CreateEntry("EnableNotifications", false,
+        _melonCategoryFreedomFingers = MelonPreferences.CreateCategory(nameof(FreedomFingers));
+
+        _melonEntryEnableNotification = _melonCategoryFreedomFingers.CreateEntry("EnableNotifications", false,
             description: "Whether the mod should send notifications when toggling gestures.");
 
-        melonCategoryFreedomFingers.SaveToFile(false);
+        _melonEntryStartWithGesturesEnabled = _melonCategoryFreedomFingers.CreateEntry("StartWithGesturesEnabled", true,
+            description: "Whether the gestures start enabled or disabled when starting the game.");
     }
 
     [HarmonyPatch]
     private static class HarmonyPatches {
 
-	    // Prevent the setting from working (yes it could be prettier xD)
+	    private static bool _isDefaultGestureSet;
+
+	    [HarmonyPostfix]
+	    [HarmonyPatch(typeof(PlayerSetup), "SetFingerTracking")]
+	    private static void After_PlayerSetup_SetFingerTracking(bool status) {
+
+		    // On the first time ran, set the gesture toggle to our default value
+		    if (!_isDefaultGestureSet) {
+			    var inputModuleSteamVR = Traverse.Create(typeof(InputModuleSteamVR)).Field("Instance").GetValue<InputModuleSteamVR>();
+			    Traverse.Create(inputModuleSteamVR).Field("_steamVrIndexGestureToggleValue").SetValue(_melonEntryStartWithGesturesEnabled.Value);
+			    _isDefaultGestureSet = true;
+		    }
+
+		    // Keep finger tracking always active
+		    CVRInputManager.Instance.individualFingerTracking = true;
+		    IKSystem.Instance.FingerSystem.controlActive = true;
+
+		    // Send the notification when toggling gestures
+		    if (_melonEntryEnableNotification.Value && CohtmlHud.Instance != null) {
+			    CohtmlHud.Instance.ViewDropTextImmediate("", "", $"Gestures {(!status ? "Enabled" : "Disabled")}");
+		    }
+	    }
+
 	    [HarmonyPostfix]
 	    [HarmonyPatch(typeof(InputModuleSteamVR), nameof(InputModuleSteamVR.Start))]
-	    private static void AfterInputModuleSteamVRStart(InputModuleSteamVR __instance) {
+	    private static void After_InputModuleSteamVR_Start(InputModuleSteamVR __instance) {
+
+			// Prevent the setting from working, we want to have finger tracking always on
 		    Traverse.Create(__instance).Field("_gestureAnimationsDuringFingerTracking").SetValue(false);
 	    }
 
-	    // Prevent the setting from working
 	    [HarmonyPostfix]
 	    [HarmonyPatch(typeof(InputModuleSteamVR), "SettingsBoolChanged")]
-	    private static void AfterInputModuleSteamVRSettingBoolChanged(InputModuleSteamVR __instance, string name) {
+	    private static void After_InputModuleSteamVR_SettingBoolChanged(InputModuleSteamVR __instance, string name) {
+
+		    // Prevent the setting from working, we want to have finger tracking always on
 		    if (name != "ControlEnableGesturesWhileFingerTracking") return;
 		    Traverse.Create(__instance).Field("_gestureAnimationsDuringFingerTracking").SetValue(false);
 	    }
 
-	    private static readonly FieldInfo InputManager = AccessTools.Field(typeof(InputModuleSteamVR), "_inputManager");
-	    private static readonly FieldInfo IndividualFingerTracking = AccessTools.Field(typeof(CVRInputManager), "individualFingerTracking");
-	    private static readonly FieldInfo SteamVrGestureToggleValue = AccessTools.Field(typeof(InputModuleSteamVR), "_steamVrIndexGestureToggleValue");
+	    [HarmonyPrefix]
+	    [HarmonyPatch(typeof(CohtmlHud), nameof(CohtmlHud.ViewDropTextImmediate))]
+	    private static bool After_PlayerSetup_SetFingerTracking(string cat, string headline, string small) {
 
-	    private static readonly MethodInfo GestureToggleFunc = SymbolExtensions.GetMethodInfo((bool b) => OnGestureToggle(b));
-
-	    private static void OnGestureToggle(bool gestureToggleValue) {
-		    if (melonEntryEnableNotification.Value) {
-				CohtmlHud.Instance.ViewDropTextImmediate("", "", $"Gestures {(gestureToggleValue ? "Enabled" : "Disabled")}");
-		    }
+		    // Skip the execution of the message if it's the Skeletal Input changed.
+		    return headline != "Skeletal Input changed ";
 	    }
-
-	    [HarmonyTranspiler]
-        [HarmonyPatch(typeof(InputModuleSteamVR), nameof(InputModuleSteamVR.UpdateInput))]
-        private static IEnumerable<CodeInstruction> Transpiler_InputModuleSteamVR_UpdateInput(IEnumerable<CodeInstruction> instructions) {
-
-	        var success = false;
-
-            var patchPhase = 0;
-
-            foreach (var instruction in instructions) {
-
-	            if (!success) {
-
-		            // Wait to enter knuckles IF statement
-	                if (patchPhase == 0 && instruction.opcode == OpCodes.Ldstr && instruction.operand is string opStr) {
-		                if (opStr == "knuckles") {
-			                patchPhase = 1;
-		                }
-	                }
-
-	                // When reaching the GestureToggle.stateDown IF statement
-	                else if (patchPhase == 1 && instruction.opcode == OpCodes.Brfalse) {
-
-		                // Before entering the GestureToggle.stateDown if statement
-
-		                // Lets add here setting this._inputManager._steamVrIndexGestureToggleValue = true;
-
-		                // Push this.
-		                yield return new CodeInstruction(OpCodes.Ldarg_0);
-		                // Push the field _inputManager
-		                yield return new CodeInstruction(OpCodes.Ldfld, InputManager);
-		                // Push the value true
-		                yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-		                // Set field individualFingerTracking with
-		                yield return new CodeInstruction(OpCodes.Stfld, IndividualFingerTracking);
-
-
-		                // Enter the if statement
-		                yield return instruction;
-
-		                patchPhase = 2;
-		                continue;
-	                }
-
-	                // Wait until we set the _steamVrIndexGestureToggleValue
-	                else if (patchPhase == 2 && instruction.opcode == OpCodes.Stfld &&
-	                    instruction.operand is FieldInfo { Name: "_steamVrIndexGestureToggleValue" }) {
-		                patchPhase = 3;
-	                }
-
-	                // Skip setting the individualFingerTracking
-	                else if (patchPhase == 3) {
-		                // Found the last instruction for setting the individualFingerTracking, lets move to next phase
-		                if (instruction.opcode == OpCodes.Stfld && instruction.operand is FieldInfo { Name: "individualFingerTracking" }) {
-							patchPhase = 4;
-		                }
-		                // Skip the instructions
-		                continue;
-	                }
-
-	                // Skip sending the notification for the skeletal input changed
-	                else if (patchPhase == 4 && instruction.opcode == OpCodes.Ldsfld && instruction.operand is FieldInfo { Name: nameof(CohtmlHud.Instance) } fi && fi.FieldType == typeof(CohtmlHud)) {
-		                patchPhase = 5;
-		                continue;
-	                }
-
-	                // Skip until we reach the end of the notification code
-	                else if (patchPhase == 5) {
-		                if (instruction.opcode == OpCodes.Callvirt && instruction.operand is MethodInfo { Name: nameof(CohtmlHud.ViewDropTextImmediate) }) {
-
-			                // Add our own method to tell when the button was pressed
-
-			                // Push .this
-			                yield return new CodeInstruction(OpCodes.Ldarg_0);
-			                // Push the field _steamVrIndexGestureToggleValue
-			                yield return new CodeInstruction(OpCodes.Ldfld, SteamVrGestureToggleValue);
-			                // Call our function
-			                yield return new CodeInstruction(OpCodes.Call, GestureToggleFunc);
-							patchPhase = 6;
-							success = true;
-		                }
-		                // Skip all instructions
-		                continue;
-	                }
-	            }
-
-	            yield return instruction;
-            }
-
-            if (!success) MelonLogger.Error("We failed to inject our stuff :( Contact the mod author.");
-        }
     }
 }
