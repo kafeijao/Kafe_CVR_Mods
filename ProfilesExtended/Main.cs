@@ -108,7 +108,7 @@ public class ProfilesExtended : MelonMod {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.RegisterEvents))]
+        [HarmonyPatch(typeof(ViewManager), "RegisterEvents")]
         private static void BeforeViewManagerRegisterEvents(ViewManager __instance) {
             // We're detecting the Main Menu change parameter events here
             // Lets bind this before the game binds it, otherwise we can't overwrite it later
