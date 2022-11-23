@@ -1,4 +1,4 @@
-﻿using ABI_RC.Core.Player;
+﻿using ABI_RC.Systems.IK;
 using CCK.Debugger.Utils;
 using UnityEngine;
 
@@ -6,17 +6,15 @@ namespace CCK.Debugger.Components.GameObjectVisualizers;
 
 public class TrackerVisualizer : GameObjectVisualizer {
 
-    public static bool Create(VRTracker tracker, out TrackerVisualizer visualizer, float scale = 1f) {
+    public static bool Create(TrackingPoint tracker, out TrackerVisualizer visualizer, float scale = 1f) {
 
-        // Ignore trackers not part of FBT
-        if (tracker != VRTrackerManager.Instance.hipCandidate
-            && tracker != VRTrackerManager.Instance.leftFootCandidate
-            && tracker != VRTrackerManager.Instance.rightFootCandidate) {
+        // Ignore invalid trackers
+        if (tracker.assignedRole == TrackingPoint.TrackingRole.Invalid) {
             visualizer = default;
             return false;
         }
 
-        var target = tracker.gameObject;
+        var target = tracker.referenceGameObject;
 
         // Check if the component already exists, if so ignore the creation request but enable it
         if (target.TryGetComponent(out visualizer)) {

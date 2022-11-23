@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using ABI_RC.Systems.IK;
 using ABI.CCK.Components;
 using CCK.Debugger.Components.GameObjectVisualizers;
@@ -284,7 +285,7 @@ public class Menu : MonoBehaviour {
             }
             else if (HudToggle.isOn) {
                 gameObject.SetActive(true);
-                var target = PlayerSetup.Instance._inVr
+                var target = MetaPort.Instance.isUsingVr
                     ? PlayerSetup.Instance.vrCamera
                     : PlayerSetup.Instance.desktopCamera;
                 RootRectTransform.transform.SetParent(target.transform, true);
@@ -344,7 +345,7 @@ public class Menu : MonoBehaviour {
             else if (!ResetToggle.isOn && hasBones && CurrentEntityBoneList.All(vis => vis.enabled)) BoneToggle.isOn = true;
         }
         void UpdateTrackerToggle() {
-            var displayToggle = PlayerSetup.Instance._inVr
+            var displayToggle = MetaPort.Instance.isUsingVr
                 && ((_currentHandler.GetType() == typeof(AvatarMenuHandler) && ((AvatarMenuHandler)_currentHandler).IsLocalAvatar())
                     || _currentHandler.GetType() == typeof(MiscHandler));
             // Hide icon if current entity has no trackers
@@ -386,7 +387,8 @@ public class Menu : MonoBehaviour {
             // If is toggled -> Setup trackers and show the models
             if (isToggled) {
                 var avatarHeight = Traverse.Create(PlayerSetup.Instance).Field("_avatarHeight").GetValue<float>();
-                foreach (var tracker in VRTrackerManager.Instance.trackers) {
+                var trackers = IKSystem.Instance.AllTrackingPoints.FindAll((t) => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
+                foreach (var tracker in trackers) {
                     if (TrackerVisualizer.Create(tracker, out var trackerVisualizer, avatarHeight)) {
                         CurrentEntityTrackerList.Add(trackerVisualizer);
                     }
