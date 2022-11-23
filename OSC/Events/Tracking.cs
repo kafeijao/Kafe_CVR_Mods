@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using HarmonyLib;
 using UnityEngine;
 using Valve.VR;
@@ -73,7 +74,7 @@ public static class Tracking {
             }
 
             // Handle HMD
-            if (PlayerSetup.Instance._inVr && _playerHmdTransform != null) {
+            if (MetaPort.Instance.isUsingVr && _playerHmdTransform != null) {
                 TrackingDataDeviceUpdated?.Invoke(TrackingDataSource.hmd, 0, "hmd", _playerHmdTransform.position, _playerHmdTransform.rotation.eulerAngles, 0);
             }
 
