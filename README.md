@@ -13,6 +13,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [FirstPersonHider](FirstPersonHider) *in-depth url*
 - [FreedomFingers](FreedomFingers) *in-depth url*
 - [ProfilesExtended](ProfilesExtended) *in-depth url*
+- [BetterLipsync](BetterLipsync) *in-depth url*
 
 ---
 
@@ -113,6 +114,16 @@ Mod to extend the functionality of the avatar parameter profile system. It allow
 changed via the profiles, and remember the current parameters across avatar changes and game restarts.
 
 Check [Profiles Extended In-Dept](ProfilesExtended) for more info.
+
+---
+
+### Better Lipsync
+
+Mod to replace the viseme controller with the
+[oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).
+Might be a bit heaby on the CPU performance, so beware.
+
+Check [Better Lipsync In-Dept](BetterLipsync) for more info.
 
 ---
 

@@ -1,16 +1,18 @@
 # BetterLipsync
 
-Refactor the viseme controller use the [oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).
+Refactor the viseme controller use the 
+[oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).
 
-This might be a bit heavy on the CPU, I've added some settings to experiment. It needs heavy performance improvements (I think) to
-make it reliable. Feel free to contribute if you have ideas/implementations!
+This might be a bit heavy on the CPU, I've added some settings to experiment. It needs heavy performance improvements (
+I think) to make it reliable. Feel free to contribute if you have ideas/implementations!
 
 ## Configuration
 
 You have a few options to mess with:
 
-```console
-# How smooth should the viseme transitions be [0, 100] where 100 is maximum smoothing. Requires EnhancedMode activated to work.
+```python
+# How smooth should the viseme transitions be [0, 100] where 100 is maximum smoothing. Requires EnhancedMode activated
+to work.
 VisemeSmoothing = 70
 # How many frames to skip between viseme checks [1,25], skipping more = more performance.
 CalculateVisemesEveryXFrame = 1
