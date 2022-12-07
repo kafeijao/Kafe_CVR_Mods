@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreedomFingers", "FreedomFi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProfilesExtended", "ProfilesExtended\ProfilesExtended.csproj", "{F1535614-5C57-4B03-B790-9A692951AE0D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterLipsync", "BetterLipsync\BetterLipsync.csproj", "{40BC9975-4F25-428C-A6DF-D88F2BB3BBB4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{F1535614-5C57-4B03-B790-9A692951AE0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1535614-5C57-4B03-B790-9A692951AE0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1535614-5C57-4B03-B790-9A692951AE0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40BC9975-4F25-428C-A6DF-D88F2BB3BBB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40BC9975-4F25-428C-A6DF-D88F2BB3BBB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40BC9975-4F25-428C-A6DF-D88F2BB3BBB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40BC9975-4F25-428C-A6DF-D88F2BB3BBB4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
