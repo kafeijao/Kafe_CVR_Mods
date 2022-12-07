@@ -6,6 +6,8 @@ Refactor the viseme controller use the
 This might be a bit heavy on the CPU, I've added some settings to experiment. It needs heavy performance improvements (
 I think) to make it reliable. Feel free to contribute if you have ideas/implementations!
 
+This mod will only work locally, it calculates the visemes for your own avatar, and everyone else's.
+
 ## Configuration
 
 You have a few options to mess with:
@@ -21,10 +23,6 @@ EnhancedMode = false
 # Whether this mod will be changing the visemes or not.
 Enabled = true
 ```
-
-You have always two menu settings per override, the first one says whether it should override or not  the value (if it's
-false it will revert to the pickup's default value), the second one is the value you want to set. You can edit the
-configs in-game without any issues as it updates for all existing props in the scene.",
 
 You can use the `UI Expansion Kit` (very recommended), or by editing the the config config file located at
 `<game_folder>\UserData\MelonPreferences.cfg`. You can change the configs while the game and it will take effect as soon
