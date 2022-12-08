@@ -11,7 +11,6 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
 
     // Config
     public bool Enabled = true;
-    public int UpdateVisemeFrameSkip = 1;
 
     // Internal
     private bool _errored;
@@ -39,6 +38,11 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     // Performance internals
     private static int _lastInstanceId = 0;
     private int _instanceId;
+
+    // Threading
+    private Task<OVRLipSync.Result> _lastProcessFrameTask;
+    private int _skippedAudioData = 0;
+    private bool _consumedProcessedFrame = true;
 
     internal void Initialize(CVRVisemeController visemeController, GameObject target, bool isLocalPlayer, string playerGuid) {
 
@@ -107,10 +111,12 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
                 return;
             }
 
-            // If it's not our instance's frame -> Ignore
-            if (_instanceId % UpdateVisemeFrameSkip != Time.frameCount % UpdateVisemeFrameSkip) {
+            // If there is nothing to consume, skip getting visemes
+            if (_consumedProcessedFrame) {
+                // Todo: We could add some smoothing since the frame rate can be faster than the audio sample ticks
                 return;
             }
+            _consumedProcessedFrame = true;
 
             // Fetch the viseme values from oculus lip sync
             var (visemes, viseme, visemeLoudness) = GetViseme();
@@ -212,17 +218,31 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         // Ignore sending audio data if we shouldn't be computing
         if (!ShouldComputeVisemes()) return;
 
-        // If it's not our instance's frame -> Ignore
-        if (_instanceId % UpdateVisemeFrameSkip != Time.frameCount % UpdateVisemeFrameSkip) {
-            return;
-        }
-
         // Send data into Phoneme context for processing (if context is not 0)
         lock (this) {
             if (Context == 0 || OVRLipSync.IsInitialized() != OVRLipSync.Result.Success) return;
 
-            // Actual process frame
-            OVRLipSync.ProcessFrame(Context, data, Frame, channels == 2);
+            // Wait for the LateUpdate to consume the processed frame
+            if (!_consumedProcessedFrame) {
+                return;
+            }
+
+            // Wait for last frame process to end (if still processing)
+            if (_lastProcessFrameTask is { IsCompleted: false }) {
+                _skippedAudioData++;
+                return;
+            }
+
+            if (_skippedAudioData > 1) {
+                MelonLogger.Msg($"Fell behind on the ProcessAudioSamples task by {_skippedAudioData} ticks...");
+            }
+
+            // Actual process frame in a task
+            _lastProcessFrameTask = Task<OVRLipSync.Result>.Factory.StartNew(() =>
+                OVRLipSync.ProcessFrame(Context, data, Frame, channels == 2));
+
+            _skippedAudioData = 0;
+            _consumedProcessedFrame = false;
         }
     }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using ABI_RC.Core;
+﻿using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using HarmonyLib;
@@ -14,7 +13,6 @@ public class BetterLipsync : MelonMod {
     private static MelonPreferences_Category _melonCategory;
     private static MelonPreferences_Entry<bool> _melonEntryEnabled;
     private static MelonPreferences_Entry<int> _melonEntrySmoothing;
-    private static MelonPreferences_Entry<int> _melonEntrySkipFrames;
     private static MelonPreferences_Entry<bool> _melonEntryEnhancedMode;
 
     private static Dictionary<string, GameObject> _playbackGameObjects = new();
@@ -32,10 +30,6 @@ public class BetterLipsync : MelonMod {
             description: "How smooth should the viseme transitions be [0, 100] where 100 is maximum smoothing. " +
                          "Requires EnhancedMode activated to work.",
             validator: new IntValidator(0, 100));
-
-        _melonEntrySkipFrames = _melonCategory.CreateEntry("CalculateVisemesEveryXFrame", 1,
-            description: "How many frames to skip between viseme checks [1,25], skipping more = more performance.",
-            validator: new IntValidator(1, 25));
 
         _melonEntryEnhancedMode = _melonCategory.CreateEntry("EnhancedMode", true,
             description: "Where to use enhanced mode or original, original doesn't have smoothing but is more performant.");
@@ -94,10 +88,6 @@ public class BetterLipsync : MelonMod {
         // Update smoothing value
         context.Smoothing = _melonEntrySmoothing.Value;
         _melonEntrySmoothing.OnValueChangedUntyped += () => context.Smoothing = _melonEntrySmoothing.Value;
-
-        // Update skip frame value
-        context.UpdateVisemeFrameSkip = _melonEntrySkipFrames.Value;
-        _melonEntrySkipFrames.OnValueChangedUntyped += () => context.UpdateVisemeFrameSkip = _melonEntrySkipFrames.Value;
 
         // Update the mode settings
         context.provider = _melonEntryEnhancedMode.Value
