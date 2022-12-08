@@ -8,6 +8,17 @@ I think) to make it reliable. Feel free to contribute if you have ideas/implemen
 
 This mod will only work locally, it calculates the visemes for your own avatar, and everyone else's.
 
+## Comparison
+
+
+https://user-images.githubusercontent.com/4409693/206328155-dec1e425-9ed3-468e-b961-19fa313af9eb.mp4
+
+---
+
+
+https://user-images.githubusercontent.com/4409693/206328174-68288464-3383-428e-b982-be8dd5dfecfe.mp4
+
+
 ## Configuration
 
 You have a few options to mess with:
