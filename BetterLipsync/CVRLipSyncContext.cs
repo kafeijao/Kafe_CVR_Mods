@@ -11,6 +11,7 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
 
     // Config
     public bool Enabled = true;
+    public bool SingleViseme = true;
 
     // Internal
     private bool _errored;
@@ -171,8 +172,14 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
                 // Ignore visemes set to none
                 if (_visemeController.avatar.visemeBlendshapes[visemeIdx] == "-none-") continue;
 
-                // Set the picked viseme to the loudness or 0 if not the current viseme
-                _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemeIdx == viseme ? Mathf.Clamp(visemeLoudness * 100f * 1.25f, 0, 100f) : 0f);
+                if (SingleViseme) {
+                    // Set the picked viseme to the loudness or 0 if not the current viseme
+                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemeIdx == viseme ? Mathf.Clamp(visemeLoudness * 100f * 1.25f, 0, 100f) : 0f);
+                }
+                else {
+                    // Set all visemes for their corresponding weight
+                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemes[visemeIdx] * 100f);
+                }
             }
         }
 

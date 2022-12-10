@@ -14,6 +14,7 @@ public class BetterLipsync : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntryEnabled;
     private static MelonPreferences_Entry<int> _melonEntrySmoothing;
     private static MelonPreferences_Entry<bool> _melonEntryEnhancedMode;
+    private static MelonPreferences_Entry<bool> _melonEntrySingleViseme;
 
     private static Dictionary<string, GameObject> _playbackGameObjects = new();
     private static Dictionary<string, CVRVisemeController> _visemeControllers = new();
@@ -33,6 +34,12 @@ public class BetterLipsync : MelonMod {
 
         _melonEntryEnhancedMode = _melonCategory.CreateEntry("EnhancedMode", true,
             description: "Where to use enhanced mode or original, original doesn't have smoothing but is more performant.");
+
+        _melonEntrySingleViseme = _melonCategory.CreateEntry("SingleViseme", true,
+            description: "Whether to set the viseme closest to the current phoneme to the max weight (true), or set " +
+                         "all the visemes for their corresponding weight (false). Having this set to false might " +
+                         "lead to less performance, as it will result in several visemes active at the same time, " +
+                         "it might look better...");
 
 
         // Extract the native binary to the plugins folder
@@ -100,6 +107,10 @@ public class BetterLipsync : MelonMod {
         // Update whether is enabled or not
         context.Enabled = _melonEntryEnabled.Value;
         _melonEntryEnabled.OnValueChangedUntyped += () => context.Enabled = _melonEntryEnabled.Value;
+
+        // Update whether a single viseme should be used or not
+        context.SingleViseme = _melonEntrySingleViseme.Value;
+        _melonEntrySingleViseme.OnValueChangedUntyped += () => context.SingleViseme = _melonEntrySingleViseme.Value;
 
         // Add the dissonance lip sync subscriber to the local player
         if (isLocalPlayer) {
