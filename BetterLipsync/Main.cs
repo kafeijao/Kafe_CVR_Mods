@@ -15,6 +15,7 @@ public class BetterLipsync : MelonMod {
     private static MelonPreferences_Entry<int> _melonEntrySmoothing;
     private static MelonPreferences_Entry<bool> _melonEntryEnhancedMode;
     private static MelonPreferences_Entry<bool> _melonEntrySingleViseme;
+    private static MelonPreferences_Entry<bool> _melonEntrySingleVisemeOriginalVolume;
 
     private static Dictionary<string, GameObject> _playbackGameObjects = new();
     private static Dictionary<string, CVRVisemeController> _visemeControllers = new();
@@ -27,7 +28,7 @@ public class BetterLipsync : MelonMod {
         _melonEntryEnabled = _melonCategory.CreateEntry("Enabled", true,
             description: "Whether this mod will be changing the visemes or not.");
 
-        _melonEntrySmoothing = _melonCategory.CreateEntry("VisemeSmoothing", 70,
+        _melonEntrySmoothing = _melonCategory.CreateEntry("VisemeSmoothing", 50,
             description: "How smooth should the viseme transitions be [0, 100] where 100 is maximum smoothing. " +
                          "Requires EnhancedMode activated to work.",
             validator: new IntValidator(0, 100));
@@ -35,11 +36,15 @@ public class BetterLipsync : MelonMod {
         _melonEntryEnhancedMode = _melonCategory.CreateEntry("EnhancedMode", true,
             description: "Where to use enhanced mode or original, original doesn't have smoothing but is more performant.");
 
-        _melonEntrySingleViseme = _melonCategory.CreateEntry("SingleViseme", true,
+        _melonEntrySingleViseme = _melonCategory.CreateEntry("SingleViseme", false,
             description: "Whether to set the viseme closest to the current phoneme to the max weight (true), or set " +
                          "all the visemes for their corresponding weight (false). Having this set to false might " +
                          "lead to less performance, as it will result in several visemes active at the same time, " +
                          "it might look better...");
+
+        _melonEntrySingleVisemeOriginalVolume = _melonCategory.CreateEntry("SingleVisemeOriginalVolume", false,
+            description: "Whether to use the original CVR viseme volume detection (how much the mouth opens) when " +
+                         "talking (true), or use the Oculus Lipsync highest viseme level (false).");
 
 
         // Extract the native binary to the plugins folder
@@ -83,8 +88,6 @@ public class BetterLipsync : MelonMod {
         // Create context if doesn't exist
         if (!target.TryGetComponent(out CVRLipSyncContext context)) {
             context = target.AddComponent<CVRLipSyncContext>();
-            // The original provider seems to be more optimized
-            // context.provider = OVRLipSync.ContextProviders.Original;
         }
 
         // Initialize context
@@ -112,13 +115,31 @@ public class BetterLipsync : MelonMod {
         context.SingleViseme = _melonEntrySingleViseme.Value;
         _melonEntrySingleViseme.OnValueChangedUntyped += () => context.SingleViseme = _melonEntrySingleViseme.Value;
 
-        // Add the dissonance lip sync subscriber to the local player
+        // Update whether a single viseme original volume or the oculus loudest viseme
+        context.SingleVisemeOriginalVolume = _melonEntrySingleVisemeOriginalVolume.Value;
+        _melonEntrySingleVisemeOriginalVolume.OnValueChangedUntyped += () => context.SingleVisemeOriginalVolume = _melonEntrySingleVisemeOriginalVolume.Value;
+
+        // Handle local player specifics
         if (isLocalPlayer) {
+            // Add the dissonance lip sync subscriber to the local player
             if (!target.TryGetComponent(out CVRMicLipsyncSubscriber lipsyncSubscriber)) {
+                if (RootLogic.Instance.comms.MicrophoneCapture == null) {
+                    MelonLogger.Error("Attempted to initialize the microphone subscriber, but the MicrophoneCapture" +
+                                      "was null...");
+                    return;
+                }
                 lipsyncSubscriber = target.AddComponent<CVRMicLipsyncSubscriber>();
                 RootLogic.Instance.comms.MicrophoneCapture.Subscribe(lipsyncSubscriber);
             }
             lipsyncSubscriber.Initialize(context);
+
+            // Fetch the local player voice state, remote voice player states will be fetched when they speak
+            var localPlayerVoiceState = RootLogic.Instance.comms.Players.FirstOrDefault(state => state.IsLocalPlayer);
+            if (localPlayerVoiceState == null) {
+                MelonLogger.Error("Attempted to fetch local player voice state, but it was null?");
+                return;
+            }
+            context.CurrentVoicePlayerState = localPlayerVoiceState;
         }
     }
 

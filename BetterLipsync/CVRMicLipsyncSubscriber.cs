@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Base;
+﻿using ABI_RC.Core;
+using ABI_RC.Core.Base;
 using Dissonance;
 using HarmonyLib;
 using NAudio.Wave;
@@ -25,6 +26,11 @@ public class CVRMicLipsyncSubscriber : BaseMicrophoneSubscriber {
 
     protected override void ResetAudioStream(WaveFormat waveFormat) {
         _channels = waveFormat.Channels;
+    }
+
+    private void OnDestroy() {
+        if (RootLogic.Instance.comms.MicrophoneCapture == null) return;
+        RootLogic.Instance.comms.MicrophoneCapture.Unsubscribe(this);
     }
 
     [HarmonyPatch]

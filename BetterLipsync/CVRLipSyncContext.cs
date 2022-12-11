@@ -12,6 +12,7 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     // Config
     public bool Enabled = true;
     public bool SingleViseme = true;
+    public bool SingleVisemeOriginalVolume = false;
 
     // Internal
     private bool _errored;
@@ -36,14 +37,17 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     private int _previousViseme;
     private float _previousVisemeLoudness;
 
-    // Performance internals
-    private static int _lastInstanceId = 0;
-    private int _instanceId;
-
     // Threading
     private Task<OVRLipSync.Result> _lastProcessFrameTask;
     private int _skippedAudioData = 0;
     private bool _consumedProcessedFrame = true;
+
+    // Voice
+    public VoicePlayerState CurrentVoicePlayerState;
+    private float _detectedMaxVolume = 1f;
+
+    // private bool newCsv = false;
+    // private StringBuilder csvStringBuilder;
 
     internal void Initialize(CVRVisemeController visemeController, GameObject target, bool isLocalPlayer, string playerGuid) {
 
@@ -61,18 +65,17 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         _distance = visemeControllerTraverse.Field<float>("_distance");
         _visemeBlendShapes = visemeControllerTraverse.Field<int[]>("visemeBlendShapes");
 
-        // Assign and increment instance id
-        _instanceId = _lastInstanceId++;
-
         // Initialize first values
         _previousVisemes = new float[15];
         _previousViseme = 0;
-        _previousVisemeLoudness = 1f;
+        _previousVisemeLoudness = 0f;
 
         // Talking state handlers
         if (!isLocalPlayer) {
             _playerStartedSpeaking = (voicePlayerState) => {
-                if (voicePlayerState.Name == playerGuid) Muted = false;
+                if (voicePlayerState.Name != playerGuid) return;
+                CurrentVoicePlayerState = voicePlayerState;
+                Muted = false;
             };
             _playerStoppedSpeaking = (voicePlayerState) => {
                 if (voicePlayerState.Name == playerGuid) Muted = true;
@@ -106,6 +109,18 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
 
         try {
 
+            // if (!Muted && !newCsv) {
+            //     newCsv = true;
+            //     csvStringBuilder = new StringBuilder();
+            //     csvStringBuilder.AppendLine($"Frame,CVR,OculusLoudest,CVRlamped");
+            //     MelonLogger.Msg("Reset file");
+            // }
+            // else if (Muted && newCsv) {
+            //     newCsv = false;
+            //     File.WriteAllText("ChilloutVR_Data/data.csv", csvStringBuilder.ToString());
+            //     MelonLogger.Msg("Wrote file to ChilloutVR_Data/data.csv");
+            // }
+
             // Check whether should do the heavy lifting or not
             if (!ShouldComputeVisemes()) {
                 ResetVisemes();
@@ -136,30 +151,44 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         // Grab viseme and viseme loudness from the oculus lip sync
         var frame = GetCurrentPhonemeFrame();
 
-        var visemeLoudness = 0f;
         var viseme = 0;
-        var foundViseme = false;
+        var visemeHighestLoudness = 0f;
 
-        // Iterate all visemes (skip sil)
-        for (var visemeIdx = 1; visemeIdx < frame.Visemes.Length; visemeIdx++) {
+        for (var visemeIdx = 0; visemeIdx < frame.Visemes.Length; visemeIdx++) {
             var currVisemeLoudness = frame.Visemes[visemeIdx];
-            // Ignore lower values
-            if (currVisemeLoudness <= visemeLoudness) continue;
+
+            // Ignore visemes that have lower loudness than the highest
+            if (currVisemeLoudness <= visemeHighestLoudness) continue;
+
+            // Otherwise set as the highest viseme
             viseme = visemeIdx;
-            visemeLoudness = currVisemeLoudness;
-            foundViseme = true;
+            visemeHighestLoudness = currVisemeLoudness;
         }
 
-        // If no viseme was found, use sil
-        if (!foundViseme) {
-            viseme = 0;
-            visemeLoudness = 1f;
+        // If the viseme is SIL, set the loudness to zero
+        if (viseme == (int) OVRLipSync.Viseme.sil) {
+            visemeHighestLoudness = 0f;
+        }
+
+        // If we want to use the original viseme loudness from CVR
+        // if (true) {
+        //     var voiceAmplitude = CurrentVoicePlayerState.Amplitude * _visemeController.amplifyMultipleExperimental;
+        //     var justClamped = Mathd.Clamp(voiceAmplitude, 0f, 1f);
+        //     _detectedMaxVolume = voiceAmplitude <= _detectedMaxVolume ? Mathf.Max(1f, _detectedMaxVolume * 0.999f) : voiceAmplitude;
+        //     var cvrLoudness = voiceAmplitude / _detectedMaxVolume;
+        //     csvStringBuilder.AppendLine($"{Time.frameCount},{cvrLoudness:0.00},{visemeHighestLoudness:0.00},{justClamped:0.00}");
+        // }
+
+        if (SingleVisemeOriginalVolume) {
+            var voiceAmplitude = CurrentVoicePlayerState.Amplitude * _visemeController.amplifyMultipleExperimental;
+            _detectedMaxVolume = voiceAmplitude <= _detectedMaxVolume ? Mathf.Max(1f, _detectedMaxVolume * 0.999f) : voiceAmplitude;
+            visemeHighestLoudness = voiceAmplitude / _detectedMaxVolume;
         }
 
         // Update the loudness on the viseme controller (to keep things working properly)
-        _visemeController.visemeLoudness = visemeLoudness;
+        _visemeController.visemeLoudness = visemeHighestLoudness;
 
-        return (frame.Visemes, viseme, visemeLoudness);
+        return (frame.Visemes, viseme, visemeHighestLoudness);
     }
 
     private void UpdateVisemes(float[] visemes, int viseme, float visemeLoudness) {
@@ -173,8 +202,10 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
                 if (_visemeController.avatar.visemeBlendshapes[visemeIdx] == "-none-") continue;
 
                 if (SingleViseme) {
+                    var clampedLoudness = Mathf.Clamp(visemeLoudness * 100f, 0, 100f);
+
                     // Set the picked viseme to the loudness or 0 if not the current viseme
-                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemeIdx == viseme ? Mathf.Clamp(visemeLoudness * 100f * 1.25f, 0, 100f) : 0f);
+                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemeIdx == viseme ? clampedLoudness : 0f);
                 }
                 else {
                     // Set all visemes for their corresponding weight
