@@ -2,7 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <None Include="Resources\AssetBundles\cckdebugger"/>
+        <EmbeddedResource Include="Resources\UIResources\**" />
+        <EmbeddedResource Include="Resources\AssetBundles\cckdebugger" />
     </ItemGroup>
 
     <ItemGroup>
@@ -18,6 +19,10 @@
             <AutoGen>True</AutoGen>
             <DependentUpon>Resources.resx</DependentUpon>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Resources\UIResources\Images\Buttons" />
     </ItemGroup>
 
 </Project>

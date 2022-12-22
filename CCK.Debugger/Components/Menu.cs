@@ -60,14 +60,14 @@ public class Menu : MonoBehaviour {
 
     // Title
     private TextMeshProUGUI TitleText;
-    private Button MainPrevious;
-    private Button MainNext;
+    private UnityEngine.UI.Button MainPrevious;
+    private UnityEngine.UI.Button MainNext;
 
     // Controls
     private GameObject Controls;
     private TextMeshProUGUI ControlsExtra;
-    private Button ControlPrevious;
-    private Button ControlNext;
+    private UnityEngine.UI.Button ControlPrevious;
+    private UnityEngine.UI.Button ControlNext;
 
     // Content
     private RectTransform ContentRectTransform;
@@ -89,16 +89,16 @@ public class Menu : MonoBehaviour {
     // Secondary Menu Pins
     private GameObject AuxMenuGameObject;
     private RectTransform AuxMenuRootRectTransform;
-    private Button AuxMenuPinButton;
-    private Button AuxMenuHudButton;
+    private UnityEngine.UI.Button AuxMenuPinButton;
+    private UnityEngine.UI.Button AuxMenuHudButton;
 
     public void AddMenuAux(GameObject menuPins) {
         AuxMenuGameObject = menuPins;
         AuxMenuRootRectTransform = menuPins.GetComponent<RectTransform>();
-        AuxMenuPinButton = AuxMenuRootRectTransform.Find("TogglesView/Pin").GetComponent<Button>();
+        AuxMenuPinButton = AuxMenuRootRectTransform.Find("TogglesView/Pin").GetComponent<UnityEngine.UI.Button>();
         AuxMenuPinButton.onClick.AddListener(() => PinToggle.isOn = false);
         AuxMenuPinButton.gameObject.SetActive(false);
-        AuxMenuHudButton = AuxMenuRootRectTransform.Find("TogglesView/Hud").GetComponent<Button>();
+        AuxMenuHudButton = AuxMenuRootRectTransform.Find("TogglesView/Hud").GetComponent<UnityEngine.UI.Button>();
         AuxMenuHudButton.onClick.AddListener(() => HudToggle.isOn = false);
         AuxMenuHudButton.gameObject.SetActive(false);
     }
@@ -126,10 +126,10 @@ public class Menu : MonoBehaviour {
         // Main
         RootRectTransform = GetComponent<RectTransform>();
         TitleText = RootRectTransform.Find("Header/Title").GetComponent<TextMeshProUGUI>();
-        MainPrevious = RootRectTransform.Find("Header/Previous").GetComponent<Button>();
+        MainPrevious = RootRectTransform.Find("Header/Previous").GetComponent<UnityEngine.UI.Button>();
         MainPrevious.gameObject.SetActive(true);
         MainPrevious.onClick.AddListener(Events.DebuggerMenu.OnMainPrevious);
-        MainNext = RootRectTransform.Find("Header/Next").GetComponent<Button>();
+        MainNext = RootRectTransform.Find("Header/Next").GetComponent<UnityEngine.UI.Button>();
         MainNext.gameObject.SetActive(true);
         MainNext.onClick.AddListener(Events.DebuggerMenu.OnMainNextPage);
 
@@ -192,10 +192,10 @@ public class Menu : MonoBehaviour {
         // Controls
         Controls = RootRectTransform.Find("Controls").gameObject;
         ControlsExtra = RootRectTransform.Find("Controls/Extra").GetComponent<TextMeshProUGUI>();
-        ControlPrevious = RootRectTransform.Find("Controls/Previous").GetComponent<Button>();
+        ControlPrevious = RootRectTransform.Find("Controls/Previous").GetComponent<UnityEngine.UI.Button>();
         ControlPrevious.onClick.AddListener(Events.DebuggerMenu.OnControlsPrevious);
-        ControlNext = RootRectTransform.Find("Controls/Next").GetComponent<Button>();
-        ControlNext.onClick.AddListener(Events.DebuggerMenu.OnControlsNextPage);
+        ControlNext = RootRectTransform.Find("Controls/Next").GetComponent<UnityEngine.UI.Button>();
+        ControlNext.onClick.AddListener(Events.DebuggerMenu.OnControlsNext);
 
         // Content
         ContentRectTransform = RootRectTransform.Find("Scroll View/Viewport/Content").GetComponent<RectTransform>();

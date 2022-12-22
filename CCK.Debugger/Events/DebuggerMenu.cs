@@ -55,7 +55,7 @@ internal static class DebuggerMenu {
         MainPreviousPage?.Invoke();
     }
 
-    public static void OnControlsNextPage() {
+    public static void OnControlsNext() {
         ControlsNextPage?.Invoke();
     }
     public static void OnControlsPrevious() {

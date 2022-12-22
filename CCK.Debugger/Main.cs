@@ -9,6 +9,7 @@ using CCK.Debugger.Components;
 using HarmonyLib;
 using MelonLoader;
 using TMPro;
+using UnityEngine;
 
 namespace CCK.Debugger;
 
@@ -16,7 +17,18 @@ public class CCKDebugger : MelonMod {
 
     internal static bool TestMode;
 
+    private const string CouiPath = @"ChilloutVR_Data\StreamingAssets\Cohtml\UIResources\CCKDebugger";
+    private const string CouiManifestResourcePrefix = @"CCK.Debugger.Resources.UIResources.";
+
+    private static MelonPreferences_Category _melonCategory;
+    private static MelonPreferences_Entry<bool> _melonEntryOverwriteUIResources;
+
     public override void OnApplicationStart() {
+
+        // Melon Config
+        _melonCategory = MelonPreferences.CreateCategory(nameof(CCKDebugger));
+        _melonEntryOverwriteUIResources = _melonCategory.CreateEntry("OverwriteUIResources", true,
+            description: "Whether the mod should overwrite all Cohtml UI resources when loading or not.");
 
         // Check if it is in debug mode (to test functionalities that are waiting for bios to be enabled)
         // Keeping it hard-ish to enable so people don't abuse it
@@ -31,6 +43,44 @@ public class CCKDebugger : MelonMod {
             TestMode = sb.ToString().Equals("738A9A4AD5E2F8AB10E702D44C189FA8");
             if (TestMode) MelonLogger.Msg("Test Mode is ENABLED!");
         }
+
+        if (_melonEntryOverwriteUIResources.Value) {
+            // Copy the UI Resources from the assembly to the CVR Cohtml UI folder
+            // Warning: The file and folder names inside of UIResources cannot contain dot characters "." nor "-" (except on
+            // the extensions that must include a dot ".", and always require an extension, example "index.js"
+            var fileNames = new List<string>();
+            foreach (var manifestResourceName in MelonAssembly.Assembly.GetManifestResourceNames()) {
+                if (!manifestResourceName.StartsWith(CouiManifestResourcePrefix)) continue;
+
+                // Convert assembly resource namespace into a path
+                var resourceName = manifestResourceName.Remove(0, CouiManifestResourcePrefix.Length);
+                var resourceExtension = Path.GetExtension(manifestResourceName);
+                var resourcePath = Path.GetFileNameWithoutExtension(resourceName).Replace('.', Path.DirectorySeparatorChar) + resourceExtension;
+                fileNames.Add(resourcePath);
+                var resourceFullPath = Path.Combine(CouiPath, resourcePath);
+
+                // Create folder if doesn't exist and save into a file
+                var directoryPath = Path.GetDirectoryName(resourceFullPath);
+                Directory.CreateDirectory(directoryPath);
+                var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(manifestResourceName);
+                if (resourceStream == null) {
+                    var ex = $"Failed to find the Resource {manifestResourceName} in the Assembly.";
+                    MelonLogger.Error($"Failed to find the Resource {manifestResourceName} in the Assembly.");
+                    throw new Exception(ex);
+                }
+                using var resourceOutputFile = new FileStream(resourceFullPath, FileMode.Create);
+                resourceStream.CopyTo(resourceOutputFile);
+            }
+            MelonLogger.Msg($"Loaded and saved all UI Resource files: {string.Join(", ", fileNames.ToArray())}");
+        }
+        else {
+            MelonLogger.Msg("Skipping copying the Cohtml resources as define in the configuration... You should " +
+                            "only see this message if you are manually editing the Cohtml UI Resources!");
+        }
+    }
+
+    public override void OnLateUpdate() {
+        if (Input.GetKeyDown(KeyCode.F5)) Events.DebuggerMenuCohtml.OnCohtmlMenuReload();
     }
 
     [HarmonyPatch]
@@ -144,22 +194,33 @@ public class CCKDebugger : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), "Start")]
         private static void AfterMenuCreated(ref CVR_MenuManager __instance) {
-            var quickMenuTransform = __instance.quickMenu.transform;
+            // var quickMenuTransform = __instance.quickMenu.transform;
+            //
+            // // Instantiate and add the controller script
+            // var cckDebugger = UnityEngine.Object.Instantiate(
+            //     Resources.AssetBundleLoader.GetMenuGameObject(),
+            //     quickMenuTransform);
+            // var menu = cckDebugger.AddComponent<Menu>();
+            //
+            // // Add aux menu to be able to reset the menu if lost
+            // var cckDebuggerPins = UnityEngine.Object.Instantiate(
+            //     Resources.AssetBundleLoader.GetMenuPinGameObject(),
+            //     quickMenuTransform);
+            // menu.AddMenuAux(cckDebuggerPins);
 
-            // Instantiate and add the controller script
-            var cckDebugger = UnityEngine.Object.Instantiate(
-                Resources.AssetBundleLoader.GetMenuGameObject(),
-                quickMenuTransform);
-            var menu = cckDebugger.AddComponent<Menu>();
-
-            // Add aux menu to be able to reset the menu if lost
-            var cckDebuggerPins = UnityEngine.Object.Instantiate(
-                Resources.AssetBundleLoader.GetMenuPinGameObject(),
-                quickMenuTransform);
-            menu.AddMenuAux(cckDebuggerPins);
+            try {
+                // Initialize the CCK Debugger Cohtml menu
+                CohtmlMenuController.Create(__instance.quickMenu.gameObject);
+            }
+            catch (Exception e) {
+                MelonLogger.Error("Error executing After_CVR_MenuManager_InitializeQuickMenu Postfix...");
+                MelonLogger.Error(e);
+                throw;
+            }
 
             // Add ourselves to the player list (why not here xd)
             Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, MetaPort.Instance.username);
         }
+
     }
 }

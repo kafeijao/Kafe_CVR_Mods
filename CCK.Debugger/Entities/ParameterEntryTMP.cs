@@ -6,22 +6,22 @@ using UnityEngine;
 
 namespace CCK.Debugger.Entities;
 
-public abstract class ParameterEntry {
+public abstract class ParameterEntryTMP {
     public abstract void Update();
 
-    public static readonly LinkedList<ParameterEntry> Entries = new();
+    public static readonly LinkedList<ParameterEntryTMP> Entries = new();
 
     public static void Add(Animator animator, AnimatorControllerParameter param, TextMeshProUGUI display) {
         switch (param.type) {
             case AnimatorControllerParameterType.Float:
-                Entries.AddLast(new ParameterEntry<float>(param, display, animator.GetFloat));
+                Entries.AddLast(new ParameterEntryTMP<float>(param, display, animator.GetFloat));
                 return;
             case AnimatorControllerParameterType.Int:
-                Entries.AddLast(new ParameterEntry<int>(param, display, animator.GetInteger));
+                Entries.AddLast(new ParameterEntryTMP<int>(param, display, animator.GetInteger));
                 return;
             case AnimatorControllerParameterType.Bool:
             case AnimatorControllerParameterType.Trigger:
-                Entries.AddLast(new ParameterEntry<bool>(param, display, animator.GetBool));
+                Entries.AddLast(new ParameterEntryTMP<bool>(param, display, animator.GetBool));
                 return;
                 //Entries.AddLast(new ParameterEntry<bool>(param, display, animator.GetBool, true));
                 //return;
@@ -29,7 +29,7 @@ public abstract class ParameterEntry {
     }
 }
 
-internal class ParameterEntry<T> : ParameterEntry {
+internal class ParameterEntryTMP<T> : ParameterEntryTMP {
 
     private int Hash;
     private TextMeshProUGUI Display;
@@ -40,7 +40,7 @@ internal class ParameterEntry<T> : ParameterEntry {
     // private bool WasTriggered;
     // private float TriggerCooldown;
 
-    public ParameterEntry(AnimatorControllerParameter param, TextMeshProUGUI display, Func<int, T> getParameterFunc, bool isTrigger = false) {
+    public ParameterEntryTMP(AnimatorControllerParameter param, TextMeshProUGUI display, Func<int, T> getParameterFunc, bool isTrigger = false) {
         Hash = param.nameHash;
         Display = display;
         GetParameterFunc = getParameterFunc;

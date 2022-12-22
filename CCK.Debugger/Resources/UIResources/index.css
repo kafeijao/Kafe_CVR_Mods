@@ -1,0 +1,112 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+#cck-debugger {
+
+    width: 100%;
+    height: 100%;
+
+    font-size: 3.5vw;
+
+    overflow-y: auto;
+
+    background: rgba(0, 0, 0, 0.75);
+
+    color: white;
+
+    display: block;
+}
+
+#cck-debugger-header {
+    font-size: 8vw;
+    display: flex;
+    justify-content: center;
+}
+
+#cck-debugger-controls {
+    font-size: 6vw;
+    justify-content: center;
+    display: flex;
+}
+
+.cck-debugger-section {
+    margin-left: 5vw;
+    filter: hue-rotate(45deg);
+}
+
+.cck-debugger-section-key {
+    color: deepskyblue;
+}
+
+.cck-debugger-section-value {
+    color: lightgrey;
+}
+
+.cck-debugger-section-info {
+    display: flex;
+}
+
+.cck-debugger-button:hover {
+    filter: drop-shadow(2px 2px 6px white) drop-shadow(-2px -2px 6px white);
+}
+.cck-debugger-button.on:hover {
+    filter: drop-shadow(2px 2px 6px palevioletred) drop-shadow(-2px -2px 6px palevioletred);
+}
+
+#cck-debugger-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.cck-debugger-button {
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 100px;
+    height: 100px;
+    background-position: center;
+    text-align: center;
+}
+
+.cck-debugger-button.on {
+    filter: drop-shadow(5px 5px 5px deeppink) drop-shadow(-5px -5px 5px deeppink);
+}
+
+#cck-debugger-button-bone {
+    background-image: url("Images/Buttons/Bone.png");
+}
+#cck-debugger-button-grab {
+    background-image: url("Images/Buttons/Grab.png");
+}
+#cck-debugger-button-hud {
+    background-image: url("Images/Buttons/Hud.png");
+}
+#cck-debugger-button-pin {
+    background-image: url("Images/Buttons/Pin.svg");
+}
+#cck-debugger-button-pointer {
+    background-image: url("Images/Buttons/Pointer.svg");
+}
+#cck-debugger-button-reset {
+    background-image: url("Images/Buttons/Reset.svg");
+}
+#cck-debugger-button-tracker {
+    background-image: url("Images/Buttons/Tracker.png");
+}
+#cck-debugger-button-trigger {
+    background-image: url("Images/Buttons/Trigger.svg");
+}
+
+.hidden {
+    display: none;
+}
+
+.cck-debugger-section-key-button:hover {
+    filter: hue-rotate(45deg);
+}

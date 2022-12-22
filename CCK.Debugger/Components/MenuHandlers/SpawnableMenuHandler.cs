@@ -178,12 +178,12 @@ public class SpawnableMenuHandler : MenuHandler {
 
             // Restore Main Animator Parameters
             menu.ClearCategory(_categoryMainAnimatorParameters);
-            ParameterEntry.Entries.Clear();
+            ParameterEntryTMP.Entries.Clear();
             _mainAnimator = currentSpawnable.gameObject.GetComponent<Animator>();
             if (_mainAnimator != null) {
                 foreach (var parameter in _mainAnimator.parameters) {
                     var tmpPickupValue = menu.AddCategoryEntry(_categoryMainAnimatorParameters, parameter.name);
-                    ParameterEntry.Add(_mainAnimator, parameter, tmpPickupValue);
+                    ParameterEntryTMP.Add(_mainAnimator, parameter, tmpPickupValue);
                 }
             }
 
@@ -356,7 +356,7 @@ public class SpawnableMenuHandler : MenuHandler {
 
         // Update main animator parameter values
         if (_mainAnimator != null) {
-            foreach (var entry in ParameterEntry.Entries) entry.Update();
+            foreach (var entry in ParameterEntryTMP.Entries) entry.Update();
         }
 
         // Update pickup values

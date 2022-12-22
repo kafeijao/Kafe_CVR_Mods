@@ -164,7 +164,7 @@ public class AvatarMenuHandler : MenuHandler {
             menu.ClearCategory(_categorySyncedParameters);
             menu.ClearCategory(_categoryLocalParameters);
             menu.ClearCategory(_coreParameters);
-            ParameterEntry.Entries.Clear();
+            ParameterEntryTMP.Entries.Clear();
             foreach (var parameter in _mainAnimator.parameters) {
 
                 // Generate the text mesh pro for the proper category
@@ -174,7 +174,7 @@ public class AvatarMenuHandler : MenuHandler {
                 else tmpParamValue = menu.AddCategoryEntry(_categorySyncedParameters, parameter.name);
 
                 // Create a parameter entry linked to the TextMeshPro
-                ParameterEntry.Add(_mainAnimator, parameter, tmpParamValue);
+                ParameterEntryTMP.Add(_mainAnimator, parameter, tmpParamValue);
             }
 
             var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
@@ -333,7 +333,7 @@ public class AvatarMenuHandler : MenuHandler {
 
         // Iterate the parameter entries and update their values
         if (_mainAnimator != null && _mainAnimator.isInitialized) {
-            foreach (var entry in ParameterEntry.Entries) entry.Update();
+            foreach (var entry in ParameterEntryTMP.Entries) entry.Update();
         }
 
         // Update cvr spawnable pointer values
