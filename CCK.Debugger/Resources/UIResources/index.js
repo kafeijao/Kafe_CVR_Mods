@@ -19,10 +19,10 @@ let cckDebugger = {
         cckDebugger.systemCall("handVibrate", delay.toString(), duration.toString(), frequency.toString(), amplitude.toString());
     },
     mouseHoverButton: function(e) {
-        // Find if we're hovering an element with the class cck-debugger-button, and perform proper feedback
+        // Find if we're hovering an element with the class cck-debugger-hover-feedback, and perform proper feedback
         let hoverTarget = null;
 
-        if (e.target.classList.contains("cck-debugger-button")) {
+        if (e.target.hasAttribute("cck-debugger-feedback")) {
             hoverTarget = e.target;
         }
         else {
@@ -30,7 +30,7 @@ let cckDebugger = {
             while (element.parentNode) {
                 element = element.parentNode;
                 if (element === document) break;
-                if (element.classList.contains("cck-debugger-button")) {
+                if (element.hasAttribute("cck-debugger-feedback")) {
                     hoverTarget = element;
                     break;
                 }
@@ -38,13 +38,13 @@ let cckDebugger = {
         }
 
         if (hoverTarget && hoverTarget !== cckDebugger.lastHoverTarget) {
-            cckDebugger.hoverFeedback();
+            cckDebugger.hoverFeedback(hoverTarget.getAttribute("cck-debugger-feedback"));
         }
 
         cckDebugger.lastHoverTarget = hoverTarget;
     },
-    hoverFeedback: function() {
-        cckDebugger.playSoundCore("Hover");
+    hoverFeedback: function(sound = "Hover") {
+        cckDebugger.playSoundCore(sound);
         cckDebugger.vibrateHand(0, 0.1, 10, 1);
     },
     // Menu navigation controls
@@ -53,64 +53,74 @@ let cckDebugger = {
     nextControls: () => engine.trigger('CCKDebuggerControlsNext'),
     previousControls: () => engine.trigger('CCKDebuggerControlsPrevious'),
     // Button click events
-    onButtonClick: (buttonId) => engine.call("CCKDebuggerButtonClick", buttonId),
+    onButtonClick: (buttonType) => engine.call("CCKDebuggerButtonClick", buttonType),
     // Object Handlers
     onCoreInfoHandler: function(coreInfo) {
         cckDebugger.menuName.textContent = coreInfo['MenuName'];
         cckDebugger.controlsInfo.textContent = coreInfo['ControlsInfo'];
-        cckDebugger.menuRoot.style.visibility = coreInfo['ShowSections'] ? "visible" : "hidden";
-        cckDebugger.controlsPrevious.style.visibility = coreInfo['ShowControls'] ? "visible" : "hidden";
-        cckDebugger.controlsNext.style.visibility = coreInfo['ShowControls'] ? "visible" : "hidden";
+        cckDebugger.menuRoot.classList.toggle("hidden", !coreInfo['ShowSections']);
+        cckDebugger.controlsPrevious.classList.toggle("invisible", !coreInfo['ShowControls']);
+        cckDebugger.controlsNext.classList.toggle("invisible", !coreInfo['ShowControls']);
     },
     onButtonHandler: function(button) {
-        // Properties: Id [int], Type [string], IsOn [bool], IsVisible [bool]
-        const buttonId = button['Id'];
+        // Properties: Type [string], IsOn [bool], IsVisible [bool]
+        const buttonType = button['Type'];
         let buttonNode;
         // If the button already exists, lets just grab from the cache
-        if (buttonId in cckDebugger.buttonsCache) {
-            buttonNode = cckDebugger.buttonsCache[buttonId];
+        if (buttonType in cckDebugger.buttonsCache) {
+            buttonNode = cckDebugger.buttonsCache[buttonType];
         }
         // Otherwise, create new button element
         else {
             buttonNode = document.createElement('div');
             buttonNode.id = `cck-debugger-button-${button['Type'].toLowerCase()}`
             buttonNode.classList.add("cck-debugger-button");
-            buttonNode.addEventListener('mousedown', () => cckDebugger.onButtonClick(buttonId));
+            buttonNode.setAttribute("cck-debugger-feedback", "Hover")
+            buttonNode.addEventListener('click', () => cckDebugger.onButtonClick(buttonType));
             cckDebugger.buttonsRoot.appendChild(buttonNode);
-            cckDebugger.buttonsCache[buttonId] = buttonNode;
+            cckDebugger.buttonsCache[buttonType] = buttonNode;
         }
         // Now actually update the properties of the button
-        buttonNode.style.visibility = button['IsVisible'] ? "visible" : "hidden";
+        buttonNode.classList.toggle("hidden", !button['IsVisible']);
         buttonNode.classList.toggle('on', button['IsOn']);
     },
     onSectionCreation: function(parent, section) {
-        // Properties: Id [int], Title [string], Value [string], SubSections [Section[]]
+        // Properties: Id [int], Title [string], Value [string], Collapsable [bool], SubSections [Section[]]
 
         // Create the section on the parent provided
         const sectionNode = cckDebugger.onSectionHandler(parent, section);
+        const hasSubsections = section['SubSections'].length > 0;
+        const isCollapsable = section['Collapsable'];
+
+        // Add class to do the vertical margin
+        if (hasSubsections) sectionNode.classList.add("cck-debugger-section-has-children");
 
         // Iterate the children and handle them recursively
         const subSectionNodes = []
         for (let button of section['SubSections']) {
             const subSectionNode = cckDebugger.onSectionCreation(sectionNode, button);
+
+            if (!isCollapsable) continue;
+
+            // Add the handlers for the collapsible stuff
             subSectionNode.classList.add("hidden");
             subSectionNodes.push(subSectionNode);
         }
 
         // If has children, add behavior for them
-        if (subSectionNodes.length > 0) {
+        if (hasSubsections && isCollapsable) {
 
             // Since it has hidden children, it's remove the hidden class from the prefix
             const { prefixClosed, prefixOpened, key } = cckDebugger.sectionCache[section['Id']];
             prefixClosed.classList.remove("hidden");
             prefixOpened.classList.add("hidden");
             key.classList.add("cck-debugger-section-key-button");
+            key.setAttribute("cck-debugger-feedback", "Hover")
 
             // Add the click event to the section to show/hide the prefix on the section key, and hide/show the children
-            sectionNode.addEventListener("mousedown", (event) => {
+            sectionNode.addEventListener("click", (event) => {
                 prefixClosed.classList.toggle("hidden");
                 prefixOpened.classList.toggle("hidden");
-                key.classList.toggle("cck-debugger-section-key-button");
                 sectionNode.classList.toggle('has-hidden-children');
                 for (const subSectionNode of subSectionNodes) {
                     subSectionNode.classList.toggle('hidden');
@@ -122,7 +132,7 @@ let cckDebugger = {
         return sectionNode;
     },
     onSectionHandler: function(parent, section) {
-        // Properties: Id [int], Title [string], Value [string]
+        // Properties: Id [int], Title [string], Collapsable [bool], Value [string]
         const sectionId = section['Id'];
         let root, prefixClosed, prefixOpened, key, separator, value, sectionInfo;
         // If the section already exists, lets just grab from the cache
@@ -256,10 +266,10 @@ engine.on('CCKDebuggerModReady', () => {
     document.addEventListener("mousemove", cckDebugger.mouseHoverButton)
 
     // Setup the navigation elements
-    document.getElementById('cck-debugger-menu-next').addEventListener("mousedown", cckDebugger.nextMenu)
-    document.getElementById('cck-debugger-menu-previous').addEventListener("mousedown", cckDebugger.previousMenu)
-    document.getElementById('cck-debugger-controls-next').addEventListener("mousedown", cckDebugger.nextControls)
-    document.getElementById('cck-debugger-controls-previous').addEventListener("mousedown", cckDebugger.previousControls)
+    document.getElementById('cck-debugger-menu-next').addEventListener("click", cckDebugger.nextMenu)
+    document.getElementById('cck-debugger-menu-previous').addEventListener("click", cckDebugger.previousMenu)
+    document.getElementById('cck-debugger-controls-next').addEventListener("click", cckDebugger.nextControls)
+    document.getElementById('cck-debugger-controls-previous').addEventListener("click", cckDebugger.previousControls)
 
     // Mark the cohtml view as initialized
     cckDebugger.initialized = true;

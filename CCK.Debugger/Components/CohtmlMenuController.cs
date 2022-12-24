@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI.CCK.Components;
 using CCK.Debugger.Components.CohtmlMenuHandlers;
 using cohtml;
 using cohtml.Net;
@@ -29,11 +31,26 @@ public class CohtmlMenuController : MonoBehaviour {
     // Internal
     private const string CouiUrl = "coui://UIResources/CCKDebugger";
     internal static CohtmlMenuController Instance;
+
+    private static bool _errored;
+
+    // MenuController References
     private Animator _animator;
-    private GameObject _cohtmlGo;
+    private CVRPickupObject _pickup;
     private CohtmlView _cohtmlView;
     private Collider _cohtmlViewCollider;
-    private static bool _errored;
+
+    // MenuController Parent References
+    private GameObject _quickMenuGo;
+
+    // Menu Current Settings
+    private MenuTarget _currentMenuParent;
+    private float _scaleX, _scaleY;
+
+    // Hashed IDs
+    private static readonly int AnimatorIdOpen = Animator.StringToHash("Open");
+    private static readonly int ShaderIdDissolvePattern = Shader.PropertyToID("_DesolvePattern");
+    private static readonly int ShaderIdDissolveTiming = Shader.PropertyToID("_DesolveTiming");
 
     internal static void Create(GameObject targetGo) {
 
@@ -43,7 +60,7 @@ public class CohtmlMenuController : MonoBehaviour {
 
         // Create and initialize
         var cohtmlMenuController = cohtmlGo.AddComponent<CohtmlMenuController>();
-        cohtmlMenuController.InitializeMenu(targetGo, cohtmlGo);
+        cohtmlMenuController.InitializeMenu(targetGo);
 
         // Add handlers
         var avatarMenuHandler = new AvatarCohtmlHandler();
@@ -53,6 +70,43 @@ public class CohtmlMenuController : MonoBehaviour {
 
         Events.DebuggerMenu.MainNextPage += () => ICohtmlHandler.SwitchMenu(cohtmlMenuController, true);
         Events.DebuggerMenu.MainPreviousPage += () => ICohtmlHandler.SwitchMenu(cohtmlMenuController, false);
+    }
+
+    private enum MenuTarget {
+        QuickMenu,
+        World,
+        HUD,
+    }
+
+    private void ParentTo(MenuTarget targetType) {
+
+        var menuControllerTransform = transform;
+
+        switch (targetType) {
+            case MenuTarget.QuickMenu:
+                menuControllerTransform.SetParent(_quickMenuGo.transform, true);
+                menuControllerTransform.localPosition = new Vector3(-0.7f, 0, 0);
+                menuControllerTransform.localRotation = Quaternion.identity;
+                menuControllerTransform.localScale = new Vector3(_scaleX, _scaleY, 1f);
+                break;
+
+            case MenuTarget.World:
+                var pos = menuControllerTransform.position;
+                var rot = menuControllerTransform.rotation;
+                menuControllerTransform.SetParent(null, true);
+                menuControllerTransform.SetPositionAndRotation(pos, rot);
+                break;
+
+            case MenuTarget.HUD:
+                var target = MetaPort.Instance.isUsingVr
+                    ? PlayerSetup.Instance.vrCamera
+                    : PlayerSetup.Instance.desktopCamera;
+                menuControllerTransform.SetParent(target.transform, true);
+                break;
+        }
+
+        _currentMenuParent = targetType;
+        UpdateMenuState();
     }
 
     private void Update() {
@@ -80,9 +134,9 @@ public class CohtmlMenuController : MonoBehaviour {
         }
     }
 
-    private void InitializeMenu(GameObject targetGo, GameObject cohtmlGo) {
+    private void InitializeMenu(GameObject targetGo) {
 
-        _cohtmlGo = cohtmlGo;
+        _quickMenuGo = targetGo;
 
         SetupListeners();
 
@@ -105,6 +159,9 @@ public class CohtmlMenuController : MonoBehaviour {
 
         // Handle the quick menu reloads and reload CCK Debugger with it
         Events.DebuggerMenuCohtml.CohtmlMenuReloaded += FullReload;
+
+        // Handle button presses
+        Events.DebuggerMenuCohtml.CohtmlMenuButtonClicked += OnButtonClick;
     }
 
     private void FullReload() {
@@ -127,10 +184,75 @@ public class CohtmlMenuController : MonoBehaviour {
 
         if (!Initialized) return;
 
-        var isOpen =  Events.QuickMenu.IsQuickMenuOpened;
-        _cohtmlView.enabled = isOpen;
-        _animator.SetBool("Open", isOpen);
+        // Menu should not be running if set to the quick menu and the menu is not opened
+        var isMenuEnabled = _currentMenuParent != MenuTarget.QuickMenu || Events.QuickMenu.IsQuickMenuOpened;
+
+        enabled = isMenuEnabled;
+        _cohtmlView.enabled = isMenuEnabled;
+        _animator.SetBool(AnimatorIdOpen, isMenuEnabled);
     }
+
+    private void OnButtonClick(Button button) {
+        switch (button.Type) {
+
+            case Button.ButtonType.Bone:
+                break;
+
+            case Button.ButtonType.Grab:
+                // Either the pickup script is enabled or not
+                button.IsOn = !button.IsOn;
+                _pickup.enabled = button.IsOn;
+                Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(button);
+                break;
+
+            case Button.ButtonType.Hud:
+                // Either parent to the world or not, and toggle the hud and pin buttons respectively
+                button.IsOn = !button.IsOn;
+                if (Core.GetButton(Button.ButtonType.Pin, out var pin) && pin.IsOn) {
+                    pin.IsOn = false;
+                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(pin);
+                }
+                // Also enables/disables the visibility for grabbing the menu
+                if (Core.GetButton(Button.ButtonType.Grab, out var hudGrab)) {
+                    hudGrab.IsOn = false;
+                    _pickup.enabled = false;
+                    hudGrab.IsVisible = false;
+                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(hudGrab);
+                }
+                ParentTo(button.IsOn ? MenuTarget.HUD : MenuTarget.QuickMenu);
+                Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(button);
+                break;
+
+            case Button.ButtonType.Pin:
+                // Either parent to the hud or not
+                button.IsOn = !button.IsOn;
+                // Disables the HUD button
+                if (Core.GetButton(Button.ButtonType.Hud, out var hud) && hud.IsOn) {
+                    hud.IsOn = false;
+                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(hud);
+                }
+                // Also enables/disables the visibility for grabbing the menu
+                if (Core.GetButton(Button.ButtonType.Grab, out var pingGrab)) {
+                    pingGrab.IsOn = false;
+                    _pickup.enabled = false;
+                    pingGrab.IsVisible = button.IsOn;
+                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(pingGrab);
+                }
+                ParentTo(button.IsOn ? MenuTarget.World : MenuTarget.QuickMenu);
+                Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(button);
+                break;
+
+            case Button.ButtonType.Pointer:
+                break;
+            case Button.ButtonType.Reset:
+                break;
+            case Button.ButtonType.Tracker:
+                break;
+            case Button.ButtonType.Trigger:
+                break;
+        }
+    }
+
 
     private void RegisterMenuViewEvents() {
 
@@ -138,15 +260,21 @@ public class CohtmlMenuController : MonoBehaviour {
         var menuManager = CVR_MenuManager.Instance;
 
         // Update cohtml material
-        var material = _cohtmlGo.GetComponent<MeshRenderer>().materials[0];
-        material.SetTexture("_DesolvePattern", menuManager.pattern);
-        material.SetTexture("_DesolveTiming", menuManager.timing);
-        material.SetTextureScale("_DesolvePattern", new Vector2(1f, 1f));
+        var material = gameObject.GetComponent<MeshRenderer>().materials[0];
+        material.SetTexture(ShaderIdDissolvePattern, menuManager.pattern);
+        material.SetTexture(ShaderIdDissolveTiming, menuManager.timing);
+        material.SetTextureScale(ShaderIdDissolvePattern, new Vector2(1f, 1f));
 
         view.BindCall("CVRAppCallSystemCall", new Action<string, string, string, string, string>(menuManager.HandleSystemCall));
 
         // Button Click
-        view.BindCall("CCKDebuggerButtonClick", new Action<int>(Core.ClickButton));
+        view.BindCall("CCKDebuggerButtonClick", new Action<string>(typeStr => {
+            if (!Enum.TryParse<Button.ButtonType>(typeStr, out var buttonType)) {
+                MelonLogger.Error($"Tried to parse a non-existing type of button: {typeStr}");
+                return;
+            }
+            Core.ClickButton(buttonType);
+        }));
 
         // Menu navigation controls
         view.RegisterForEvent("CCKDebuggerMenuNext", Events.DebuggerMenu.OnMainNextPage);
@@ -184,37 +312,38 @@ public class CohtmlMenuController : MonoBehaviour {
         try {
 
             // Copy the quick menu layer, last time I checked was UI Internal
-            _cohtmlGo.layer = targetGo.layer;
-
-            // Parent and position our game object
-            var transform = _cohtmlGo.transform;
-            transform.SetParent(targetGo.transform, false);
-            transform.localPosition = new Vector3(-0.7f, 0, 0);
-            transform.localRotation = Quaternion.identity;
+            gameObject.layer = targetGo.layer;
 
             // Set the dimensions of the quad (menu size)
-            const float scaleX = 0.5f, scaleY = 0.6f;
-            transform.localScale = new Vector3(scaleX, scaleY, 1f);
+            _scaleX = 0.5f;
+            _scaleY = 0.6f;
+
+            // Parent and position our game object
+            ParentTo(MenuTarget.QuickMenu);
 
             // Setup mesh renderer
-            var meshRenderer = transform.GetComponent<MeshRenderer>();
+            var meshRenderer = gameObject.GetComponent<MeshRenderer>();
             meshRenderer.sortingLayerID = 0;
             meshRenderer.sortingOrder = 10;
 
             // Setup the animator
-            _animator = _cohtmlGo.AddComponent<Animator>();
+            _animator = gameObject.AddComponent<Animator>();
             _animator.runtimeAnimatorController = cohtmlWorldViewAnimator;
 
+            // Setup pickup script
+            _pickup = gameObject.AddComponent<CVRPickupObject>();
+            _pickup.enabled = false;
+
             // Save collider
-            _cohtmlViewCollider = _cohtmlGo.GetComponent<Collider>();
+            _cohtmlViewCollider = gameObject.GetComponent<Collider>();
 
             // Create and set up the Cohtml view
-            _cohtmlView = _cohtmlGo.AddComponent<CohtmlView>();
+            _cohtmlView = gameObject.AddComponent<CohtmlView>();
             _cohtmlView.Listener.ReadyForBindings += RegisterMenuViewEvents;
 
             // Calculate the resolution
-            const int resolutionX = (int)(scaleX * 2500);
-            const int resolutionY = (int)(scaleY * 2500);
+            var resolutionX = (int)(_scaleX * 2500);
+            var resolutionY = (int)(_scaleY * 2500);
 
             _cohtmlView.CohtmlUISystem = cohtmlUISystem;
             _cohtmlView.AutoFocus = false;
@@ -284,6 +413,9 @@ public class CohtmlMenuController : MonoBehaviour {
 
             // Check if the raycast intercepts the menu
             if (RaycastCohtmlPlane(Instance._cohtmlView, ray, out var distance, out var viewCoords)) {
+
+                // Mark as pointing the menu
+                CVRInputManager.Instance.controllerPointingMenu = true;
 
                 if (!controllerRay.uiActive) return;
 
@@ -371,6 +503,7 @@ public class CohtmlMenuController : MonoBehaviour {
             if (!Initialized) return;
 
             var cckView = Instance._cohtmlView;
+            var isCursorLocked = Cursor.lockState == CursorLockMode.Locked;
 
             var menuManagerTraverse = Traverse.Create(menuManager);
             var camera = menuManagerTraverse.Field("_camera").GetValue<Camera>();
@@ -378,12 +511,33 @@ public class CohtmlMenuController : MonoBehaviour {
 
             if (!cckView.enabled || !desktopMouseMode || MetaPort.Instance.isUsingVr || camera == null) return;
 
-            if (Instance._cohtmlViewCollider.Raycast(camera.ScreenPointToRay(Input.mousePosition), out var hitInfo, 1000f)) {
+            int x = -1, y = -1;
+            bool hasHit;
+
+            // Calculate menu raycast using the camera as a raycast source point (when the menu is in world space)
+            if (isCursorLocked) {
+                var ray = new Ray(camera.transform.position, camera.transform.TransformDirection(Vector3.forward));
+                hasHit = RaycastCohtmlPlane(cckView, ray, out var hitInfoCamera, out var viewCoords);
+                if (hasHit) {
+                    x = (int)(viewCoords.x * cckView.Width);
+                    y = (int)((1.0 - viewCoords.y) * cckView.Height);
+                }
+            }
+            // Calculate menu raycast using the cursor as the raycast source point (when menu is on quick menu or hud)
+            else {
+                var ray = camera.ScreenPointToRay(Input.mousePosition);
+                hasHit = Instance._cohtmlViewCollider.Raycast(ray, out var hitInfoCursor, 1000f);
+                if (hasHit) {
+                    x = (int) (hitInfoCursor.textureCoord.x * cckView.Width);
+                    y = (int) ((1.0 - hitInfoCursor.textureCoord.y) * cckView.Height);
+                }
+            }
+
+            if (hasHit)  {
+                // Mark as pointing the menu
+                CVRInputManager.Instance.controllerPointingMenu = true;
 
                 // Grab the x and y positions
-                var x = (int) (hitInfo.textureCoord.x * cckView.Width);
-                var y = (int) ((1.0 - hitInfo.textureCoord.y) * cckView.Height);
-
                 _desktopQuickMenuLastCoords.x = x;
                 _desktopQuickMenuLastCoords.y = y;
 

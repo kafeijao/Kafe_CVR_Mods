@@ -41,6 +41,10 @@ html, body {
     filter: hue-rotate(45deg);
 }
 
+.cck-debugger-section-has-children {
+    margin-bottom: 2vw;
+}
+
 .cck-debugger-section-key {
     color: deepskyblue;
 }
@@ -88,23 +92,27 @@ html, body {
     background-image: url("Images/Buttons/Hud.png");
 }
 #cck-debugger-button-pin {
-    background-image: url("Images/Buttons/Pin.svg");
+    background-image: url("Images/Buttons/Pin.png");
 }
 #cck-debugger-button-pointer {
-    background-image: url("Images/Buttons/Pointer.svg");
+    background-image: url("Images/Buttons/Pointer.png");
 }
 #cck-debugger-button-reset {
-    background-image: url("Images/Buttons/Reset.svg");
+    background-image: url("Images/Buttons/Reset.png");
 }
 #cck-debugger-button-tracker {
     background-image: url("Images/Buttons/Tracker.png");
 }
 #cck-debugger-button-trigger {
-    background-image: url("Images/Buttons/Trigger.svg");
+    background-image: url("Images/Buttons/Trigger.png");
 }
 
 .hidden {
     display: none;
+}
+
+.invisible {
+    visibility: hidden;
 }
 
 .cck-debugger-section-key-button:hover {

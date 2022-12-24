@@ -129,19 +129,19 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
             _core = new Core("Props");
 
             // Static sections
-            var attributesSection = _core.AddSection("Attributes");
+            var attributesSection = _core.AddSection("Attributes", false);
             _attributeId = attributesSection.AddSection("Name/ID");
             _attributeSpawnedByValue = attributesSection.AddSection("Spawned By");
             _attributeSyncedByValue = attributesSection.AddSection("Synced By");
             _attributeSyncTypeValue = attributesSection.AddSection("Sync By");
 
             // Dynamic sections
-            _categorySyncedParameters = _core.AddSection("Synced Parameters");
-            _categoryMainAnimatorParameters = _core.AddSection("Main Animator Parameters");
-            _categoryPickups = _core.AddSection("Pickups");
-            _categoryAttachments = _core.AddSection("Attachments");
-            _categoryPointers = _core.AddSection("CVR Spawnable Pointers");
-            _categoryTriggers = _core.AddSection("CVR Spawnable Triggers");
+            _categorySyncedParameters = _core.AddSection("Synced Parameters", true);
+            _categoryMainAnimatorParameters = _core.AddSection("Main Animator Parameters", true);
+            _categoryPickups = _core.AddSection("Pickups", true);
+            _categoryAttachments = _core.AddSection("Attachments", true);
+            _categoryPointers = _core.AddSection("CVR Spawnable Pointers", true);
+            _categoryTriggers = _core.AddSection("CVR Spawnable Triggers", true);
 
             // Restore parameters
             foreach (var syncValue in currentSpawnable.syncValues) {
@@ -184,7 +184,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                 var pointerGo = pointer.gameObject;
 
                 // Create all pointer sections and sub-sections
-                var pointerSubSection = _categoryPointers.AddSection(pointerGo.name);
+                var pointerSubSection = _categoryPointers.AddSection(pointerGo.name, "", true);
                 pointerSubSection.AddSection("Is Active").AddValueGetter(() => ToString(pointer.gameObject.activeInHierarchy));
                 pointerSubSection.AddSection("Class", pointer.GetType().Name);
                 pointerSubSection.AddSection("Is Internal", ToString(pointer.isInternalPointer));
@@ -212,7 +212,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                 TrackedTriggers.Add(trigger);
 
                 // Create all spawnable sections and sub-sections
-                var spawnableSection = _categoryTriggers.AddSection(triggerGo.name);
+                var spawnableSection = _categoryTriggers.AddSection(triggerGo.name, "", true);
 
                 spawnableSection.AddSection("Is Active").AddValueGetter(() => ToString(triggerGo.gameObject.activeInHierarchy));
                 spawnableSection.AddSection("Class", trigger.GetType().Name);

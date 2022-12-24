@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.ObjectModel;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using UnityEngine;
 
 namespace CCK.Debugger.Components;
@@ -22,15 +24,15 @@ public class Core {
             ShowSections = showSections,
         };
 
-        // Create temp buttons
-        var boneButton = AddButton(new Button { Type = "Bone", IsOn = false, IsVisible = true });
-        var grabButton = AddButton(new Button { Type = "Grab", IsOn = false, IsVisible = true });
-        var hudButton = AddButton(new Button { Type = "Hud", IsOn = false, IsVisible = true });
-        var pinButton = AddButton(new Button { Type = "Pin", IsOn = false, IsVisible = true });
-        var pointerButton = AddButton(new Button { Type = "Pointer", IsOn = false, IsVisible = true });
-        var resetButton = AddButton(new Button { Type = "Reset", IsOn = true, IsVisible = false });
-        var trackerButton = AddButton(new Button { Type = "Tracker", IsOn = false, IsVisible = true });
-        var triggerButton = AddButton(new Button { Type = "Trigger", IsOn = false, IsVisible = true });
+        // Create buttons
+        AddButton(new Button { Type = Button.ButtonType.Bone, IsOn = false, IsVisible = true });
+        AddButton(new Button { Type = Button.ButtonType.Grab, IsOn = false, IsVisible = false });
+        AddButton(new Button { Type = Button.ButtonType.Hud, IsOn = false, IsVisible = true });
+        AddButton(new Button { Type = Button.ButtonType.Pin, IsOn = false, IsVisible = true });
+        AddButton(new Button { Type = Button.ButtonType.Pointer, IsOn = false, IsVisible = true });
+        AddButton(new Button { Type = Button.ButtonType.Reset, IsOn = true, IsVisible = false });
+        AddButton(new Button { Type = Button.ButtonType.Tracker, IsOn = false, IsVisible = true });
+        AddButton(new Button { Type = Button.ButtonType.Trigger, IsOn = false, IsVisible = true });
 
         _instance = this;
     }
@@ -38,21 +40,21 @@ public class Core {
     [JsonProperty("Sections")] private List<Section> Sections { get; } = new();
     [JsonProperty("Buttons")] private List<Button> Buttons { get; } = new();
 
-    public Section AddSection(string title) {
-        var section = new Section(this) { Title = title };
+    public Section AddSection(string title, bool collapsable = false) {
+        var section = new Section(this) { Title = title, Collapsable = collapsable };
         Sections.Add(CacheSection(section));
         return section;
     }
 
-    public Button AddButton(Button button) {
-        Buttons.Add(CacheButton(button));
-        return button;
-    }
+    private void AddButton(Button button) => Buttons.Add(CacheButton(button));
 
-    public static bool GetButton(string name, out Button button) {
-        button = _instance.Buttons.FirstOrDefault(button => button.Type == name);
+    public static bool GetButton(Button.ButtonType type, out Button button) {
+        button = _instance?._buttons[type];
         return button != null;
     }
+    public static Button GetButton(Button.ButtonType type) => _instance?._buttons[type];
+    public static ReadOnlyCollection<Button> GetButtons() => _instance?.Buttons.AsReadOnly();
+
 
     public void UpdateCore(bool showControls, string controlsInfo, bool showSections) {
         if (showControls == _info.ShowControls && controlsInfo.Equals(_info.ControlsInfo) && showSections == _info.ShowSections) return;
@@ -62,24 +64,8 @@ public class Core {
         Events.DebuggerMenuCohtml.OnCohtmlMenuCoreInfoUpdate(_info);
     }
 
-    // public void UpdateSection(int id, string value) {
-    //     lock (_sections) {
-    //         if (!_sections.ContainsKey(id)) return;
-    //         _sections[id].Value = value;
-    //     }
-    // }
-    //
-    // public void UpdateButton(int id, bool isOn, bool isVisible) {
-    //     lock (_buttons) {
-    //         if (!_buttons.ContainsKey(id)) return;
-    //         var button = _buttons[id];
-    //         button.IsOn = isOn;
-    //         button.IsVisible = isVisible;
-    //     }
-    // }
-
-    public static void ClickButton(int buttonId) {
-        _instance?.Buttons.FirstOrDefault(button => button.Id == buttonId)?.Click();
+    public static void ClickButton(Button.ButtonType buttonType) {
+        _instance?._buttons[buttonType]?.Click();
     }
 
     // Internal
@@ -91,11 +77,10 @@ public class Core {
             return section;
         }
     }
-    [JsonIgnore] private readonly Dictionary<int, Button> _buttons = new();
-    public Button CacheButton(Button button) {
+    [JsonIgnore] private readonly Dictionary<Button.ButtonType, Button> _buttons = new();
+    private Button CacheButton(Button button) {
         lock (_buttons) {
-            button.Id = _buttons.Count;
-            _buttons[button.Id] = button;
+            _buttons[button.Type] = button;
             return button;
         }
     }
@@ -108,6 +93,7 @@ public class Section {
     public int Id { get; set; }
     public string Title { get; set; }
     public string Value { get; set; }
+    public bool Collapsable { get; set; }
     [JsonProperty("SubSections")] public List<Section> SubSections { get; } = new();
 
 
@@ -116,8 +102,8 @@ public class Section {
     public Section(Core core) {
         _core = core;
     }
-    public Section AddSection(string title, string value = "") {
-        var section = new Section(_core) { Title = title, Value = value};
+    public Section AddSection(string title, string value = "", bool collapsable = false) {
+        var section = new Section(_core) { Title = title, Collapsable = collapsable, Value = value};
         SubSections.Add(_core.CacheSection(section));
         return section;
     }
@@ -149,10 +135,21 @@ public class Section {
 }
 
 public class Button {
-    public int Id { get; set; }
-    public string Type { get; set; }
+    public ButtonType Type { get; set; }
     public bool IsOn { get; set; }
     public bool IsVisible { get; set; }
+
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum ButtonType {
+        Bone,
+        Grab,
+        Hud,
+        Pin,
+        Pointer,
+        Reset,
+        Tracker,
+        Trigger,
+    }
 
     public void Click() {
         Events.DebuggerMenuCohtml.OnCohtmlMenuButtonClick(this);

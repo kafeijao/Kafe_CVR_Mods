@@ -66,6 +66,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
     }
 
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
+    private static bool _wasHidden;
 
     private Core _core;
 
@@ -113,22 +114,18 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         var isLocal = PlayerEntities.CurrentObject == null;
         var currentPlayer = PlayerEntities.CurrentObject;
+        var isHidden = false;
+        if (!isLocal) isHidden = Traverse.Create(currentPlayer).Field<bool>("_isHidden").Value;
+
+        // Reset the hidden when changing avatars
+        if (PlayerEntities.HasChanged) _wasHidden = false;
+        // Handle player avatar visibility changes
+        else if (!isLocal && isHidden != _wasHidden) PlayerEntities.HasChanged = true;
 
         _core?.UpdateCore(playerCount > 1, $"({PlayerEntities.CurrentObjectIndex+1}/{playerCount})", true);
 
         // Update the menus if the spawnable changed
         if (PlayerEntities.HasChanged) {
-
-            _mainAnimator = isLocal
-                ? Events.Avatar.LocalPlayerAnimatorManager?.animator
-                : Traverse.Create(currentPlayer.PuppetMaster).Field("_animatorManager").GetValue<CVRAnimatorManager>().animator;
-
-            // Wait for the animator to start
-            if (_mainAnimator == null || !_mainAnimator.isInitialized || _mainAnimator.parameters == null) return;
-
-            // Highlight on local player makes us lag for some reason
-            if (isLocal) Highlighter.ClearTargetHighlight();
-            else Highlighter.SetTargetHighlight(_mainAnimator.gameObject);
 
             // Recreate the core menu
             _core = new Core("Avatars");
@@ -137,147 +134,163 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             var attributesSection = _core.AddSection("Attributes");
             _attributeUsername = attributesSection.AddSection("User Name");
             _attributeAvatar = attributesSection.AddSection("Avatar Name/ID");
+            attributesSection.AddSection("Is Hidden").Value = ToString(isHidden);
 
-            _sectionSyncedParameters = _core.AddSection("Avatar Synced Parameters");
-            _sectionLocalParameters = _core.AddSection("Avatar Local Parameters");
-            _sectionCoreParameters = _core.AddSection("Avatar Default Parameters");
+            if (!isHidden) {
 
-            _sectionPointers = _core.AddSection("CVR Pointers");
-            _sectionTriggers = _core.AddSection("CVR AAS Triggers");
+                _mainAnimator = isLocal
+                    ? Events.Avatar.LocalPlayerAnimatorManager?.animator
+                    : Traverse.Create(currentPlayer.PuppetMaster).Field("_animatorManager").GetValue<CVRAnimatorManager>().animator;
+
+                // Wait for the animator to start
+                if (_mainAnimator == null || !_mainAnimator.isInitialized || _mainAnimator.parameters == null) return;
+
+                // Highlight on local player makes us lag for some reason
+                if (isLocal) Highlighter.ClearTargetHighlight();
+                else Highlighter.SetTargetHighlight(_mainAnimator.gameObject);
+
+                _sectionSyncedParameters = _core.AddSection("Avatar Synced Parameters", true);
+                _sectionLocalParameters = _core.AddSection("Avatar Local Parameters", true);
+                _sectionCoreParameters = _core.AddSection("Avatar Default Parameters", true);
+
+                _sectionPointers = _core.AddSection("CVR Pointers", true);
+                _sectionTriggers = _core.AddSection("CVR AAS Triggers", true);
 
 
-            // Restore Main Animator Parameters
-            foreach (var parameter in _mainAnimator.parameters) {
-                var parameterEntry = ParameterEntrySection.Get(_mainAnimator, parameter);
+                // Restore Main Animator Parameters
+                foreach (var parameter in _mainAnimator.parameters) {
+                    var parameterEntry = ParameterEntrySection.Get(_mainAnimator, parameter);
 
-                // Add the parameter to the proper category
-                if (parameter.name.StartsWith("#")) _sectionLocalParameters.AddSection(parameter.name).AddValueGetter(() => parameterEntry.GetValue());
-                else if (CoreParameterNames.Contains(parameter.name)) _sectionCoreParameters.AddSection(parameter.name).AddValueGetter(() => parameterEntry.GetValue());
-                else _sectionSyncedParameters.AddSection(parameter.name).AddValueGetter(() => parameterEntry.GetValue());
-            }
-
-            var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
-
-            // Set up CVR Pointers
-            var avatarPointers = avatarGo.GetComponentsInChildren<CVRPointer>(true);
-            foreach (var pointer in avatarPointers) {
-
-                var pointerGo = pointer.gameObject;
-
-                // Create all pointer sections and sub-sections
-                var pointerSubSection = _sectionPointers.AddSection(pointerGo.name);
-                pointerSubSection.AddSection("Is Active").AddValueGetter(() => ToString(pointer.gameObject.activeInHierarchy));
-                pointerSubSection.AddSection("Class", pointer.GetType().Name);
-                pointerSubSection.AddSection("Is Internal", ToString(pointer.isInternalPointer));
-                pointerSubSection.AddSection("Is Local", ToString(pointer.isLocalPointer));
-                pointerSubSection.AddSection("Limit To Filtered Triggers", ToString(pointer.limitToFilteredTriggers));
-                pointerSubSection.AddSection("Layer", pointerGo.layer.ToString());
-                pointerSubSection.AddSection("Type", pointer.type);
-
-                // Add the visualizer
-                if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
-                    CurrentEntityPointerList.Add(pointerVisualizer);
-                }
-            }
-
-            // Set up CVR Triggers
-            TrackedTriggers.Clear();
-            TriggerAasTaskLastTriggered.Clear();
-            TriggerAasTasksLastExecuted.Clear();
-            TriggerAasStayTasksLastTriggered.Clear();
-            TriggerAasStayTasksLastTriggeredValue.Clear();
-            var avatarTriggers = avatarGo.GetComponentsInChildren<CVRAdvancedAvatarSettingsTrigger>(true);
-            foreach (var trigger in avatarTriggers) {
-
-                var triggerGo = trigger.gameObject;
-                TrackedTriggers.Add(trigger);
-
-                // Create all spawnable sections and sub-sections
-                var spawnableSection = _sectionTriggers.AddSection(triggerGo.name);
-
-                spawnableSection.AddSection("Is Active").AddValueGetter(() => ToString(triggerGo.gameObject.activeInHierarchy));
-                spawnableSection.AddSection("Class", trigger.GetType().Name);
-                spawnableSection.AddSection("Advanced Trigger", ToString(trigger.useAdvancedTrigger));
-                spawnableSection.AddSection("Particle Interactions", ToString(trigger.allowParticleInteraction));
-                spawnableSection.AddSection("Layer", triggerGo.layer.ToString());
-
-                var allowedTypesSection = spawnableSection.AddSection("Allowed Types", trigger.allowedTypes.Length == 0 ? Na : "");
-                foreach (var triggerAllowedType in trigger.allowedTypes) {
-                    allowedTypesSection.AddSection(triggerAllowedType);
+                    // Add the parameter to the proper category
+                    if (parameter.name.StartsWith("#")) _sectionLocalParameters.AddSection(parameter.name).AddValueGetter(() => parameterEntry.GetValue());
+                    else if (CoreParameterNames.Contains(parameter.name)) _sectionCoreParameters.AddSection(parameter.name).AddValueGetter(() => parameterEntry.GetValue());
+                    else _sectionSyncedParameters.AddSection(parameter.name).AddValueGetter(() => parameterEntry.GetValue());
                 }
 
-                void GetTriggerTaskTemplate(Section parentSection, CVRAdvancedAvatarSettingsTriggerTask task, int idx) {
-                    string LastTriggered() => TriggerAasTaskLastTriggered.ContainsKey(task)
-                        ? Menu.GetTimeDifference(TriggerAasTaskLastTriggered[task])
-                        : "?" + " secs ago";
-                    string LastExecuted() => TriggerAasTasksLastExecuted.ContainsKey(task)
-                        ? Menu.GetTimeDifference(TriggerAasTasksLastExecuted[task])
-                        : "?" + " secs ago";
+                var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
 
-                    var specificTaskSection = parentSection.AddSection($"#{idx}");
-                    specificTaskSection.AddSection($"Name", task.settingName);
-                    specificTaskSection.AddSection($"Value").AddValueGetter(() => task.settingValue.ToString(CultureInfo.InvariantCulture));
-                    specificTaskSection.AddSection($"Delay", task.delay.ToString(CultureInfo.InvariantCulture));
-                    specificTaskSection.AddSection($"Hold Time", task.holdTime.ToString(CultureInfo.InvariantCulture));
-                    specificTaskSection.AddSection($"Update Method", task.updateMethod.ToString());
-                    specificTaskSection.AddSection($"Last Triggered").AddValueGetter(LastTriggered);
-                    specificTaskSection.AddSection($"Last Executed").AddValueGetter(LastExecuted);
-                }
+                // Set up CVR Pointers
+                var avatarPointers = avatarGo.GetComponentsInChildren<CVRPointer>(true);
+                foreach (var pointer in avatarPointers) {
 
-                // OnEnter, OnExit, and OnStay Tasks
-                var tasksOnEnterSection = spawnableSection.AddSection("Tasks [OnEnter]", trigger.enterTasks.Count == 0 ? Na : "");
-                for (var index = 0; index < trigger.enterTasks.Count; index++) {
-                    GetTriggerTaskTemplate(tasksOnEnterSection, trigger.enterTasks[index], index);
-                }
+                    var pointerGo = pointer.gameObject;
 
-                var tasksOnExitSection = spawnableSection.AddSection("Tasks [OnExit]", trigger.exitTasks.Count == 0 ? Na : "");
-                for (var index = 0; index < trigger.exitTasks.Count; index++) {
-                    GetTriggerTaskTemplate(tasksOnExitSection, trigger.exitTasks[index], index);
-                }
+                    // Create all pointer sections and sub-sections
+                    var pointerSubSection = _sectionPointers.AddSection(pointerGo.name, "", true);
+                    pointerSubSection.AddSection("Is Active").AddValueGetter(() => ToString(pointer.gameObject.activeInHierarchy));
+                    pointerSubSection.AddSection("Class", pointer.GetType().Name);
+                    pointerSubSection.AddSection("Is Internal", ToString(pointer.isInternalPointer));
+                    pointerSubSection.AddSection("Is Local", ToString(pointer.isLocalPointer));
+                    pointerSubSection.AddSection("Limit To Filtered Triggers", ToString(pointer.limitToFilteredTriggers));
+                    pointerSubSection.AddSection("Layer", pointerGo.layer.ToString());
+                    pointerSubSection.AddSection("Type", pointer.type);
 
-                var tasksOnStaySection = spawnableSection.AddSection("Tasks [OnStay]", trigger.stayTasks.Count == 0 ? Na : "");
-                for (var index = 0; index < trigger.stayTasks.Count; index++) {
-                    var stayTask = trigger.stayTasks[index];
-                    string LastTriggered() => TriggerAasStayTasksLastTriggered.ContainsKey(stayTask)
-                        ? Menu.GetTimeDifference(TriggerAasStayTasksLastTriggered[stayTask])
-                        : "?" + " secs ago";
-                    string LastTriggeredValue() => TriggerAasStayTasksLastTriggeredValue.ContainsKey(stayTask)
-                        ? TriggerAasStayTasksLastTriggeredValue[stayTask].ToString(CultureInfo.InvariantCulture)
-                        : "?";
-
-                    var specificTaskSection = tasksOnStaySection.AddSection($"#{index}");
-                    specificTaskSection.AddSection($"Name", stayTask.settingName);
-                    specificTaskSection.AddSection($"Update Method", stayTask.updateMethod.ToString());
-
-                    if (stayTask.updateMethod == CVRAdvancedAvatarSettingsTriggerTaskStay.UpdateMethod.SetFromPosition) {
-                        specificTaskSection.AddSection($"Min Value").AddValueGetter(() => stayTask.minValue.ToString(CultureInfo.InvariantCulture));
-                        specificTaskSection.AddSection($"Max Value").AddValueGetter(() => stayTask.maxValue.ToString(CultureInfo.InvariantCulture));
-                    }
-                    else {
-                        specificTaskSection.AddSection($"Change per sec").AddValueGetter(() => stayTask.minValue.ToString(CultureInfo.InvariantCulture));
-                    }
-
-                    specificTaskSection.AddSection($"Sample direction", trigger.sampleDirection.ToString());
-                    specificTaskSection.AddSection($"Last Triggered").AddValueGetter(LastTriggered);
-                    specificTaskSection.AddSection($"Last Triggered Value").AddValueGetter(LastTriggeredValue);
-                }
-
-                // Add the visualizer
-                if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
-                    CurrentEntityTriggerList.Add(triggerVisualizer);
-                }
-            }
-
-            var avatarHeight = Traverse.Create(isLocal ? PlayerSetup.Instance : currentPlayer.PuppetMaster).Field("_avatarHeight").GetValue<float>();
-
-            // Set up the Humanoid Bones
-            CurrentEntityBoneList.Clear();
-            if (_mainAnimator.isHuman) {
-                foreach (var target in BoneVisualizer.GetAvailableBones(_mainAnimator)) {
-                    if (BoneVisualizer.Create(target, out var boneVisualizer, avatarHeight)) {
-                        CurrentEntityBoneList.Add(boneVisualizer);
+                    // Add the visualizer
+                    if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
+                        CurrentEntityPointerList.Add(pointerVisualizer);
                     }
                 }
+
+                // Set up CVR Triggers
+                TrackedTriggers.Clear();
+                TriggerAasTaskLastTriggered.Clear();
+                TriggerAasTasksLastExecuted.Clear();
+                TriggerAasStayTasksLastTriggered.Clear();
+                TriggerAasStayTasksLastTriggeredValue.Clear();
+                var avatarTriggers = avatarGo.GetComponentsInChildren<CVRAdvancedAvatarSettingsTrigger>(true);
+                foreach (var trigger in avatarTriggers) {
+
+                    var triggerGo = trigger.gameObject;
+                    TrackedTriggers.Add(trigger);
+
+                    // Create all spawnable sections and sub-sections
+                    var spawnableSection = _sectionTriggers.AddSection(triggerGo.name, "", true);
+
+                    spawnableSection.AddSection("Is Active").AddValueGetter(() => ToString(triggerGo.gameObject.activeInHierarchy));
+                    spawnableSection.AddSection("Class", trigger.GetType().Name);
+                    spawnableSection.AddSection("Advanced Trigger", ToString(trigger.useAdvancedTrigger));
+                    spawnableSection.AddSection("Particle Interactions", ToString(trigger.allowParticleInteraction));
+                    spawnableSection.AddSection("Layer", triggerGo.layer.ToString());
+
+                    var allowedTypesSection = spawnableSection.AddSection("Allowed Types", trigger.allowedTypes.Length == 0 ? Na : "");
+                    foreach (var triggerAllowedType in trigger.allowedTypes) {
+                        allowedTypesSection.AddSection(triggerAllowedType);
+                    }
+
+                    void GetTriggerTaskTemplate(Section parentSection, CVRAdvancedAvatarSettingsTriggerTask task, int idx) {
+                        string LastTriggered() => TriggerAasTaskLastTriggered.ContainsKey(task)
+                            ? Menu.GetTimeDifference(TriggerAasTaskLastTriggered[task])
+                            : "?" + " secs ago";
+                        string LastExecuted() => TriggerAasTasksLastExecuted.ContainsKey(task)
+                            ? Menu.GetTimeDifference(TriggerAasTasksLastExecuted[task])
+                            : "?" + " secs ago";
+
+                        var specificTaskSection = parentSection.AddSection($"#{idx}");
+                        specificTaskSection.AddSection($"Name", task.settingName);
+                        specificTaskSection.AddSection($"Value").AddValueGetter(() => task.settingValue.ToString(CultureInfo.InvariantCulture));
+                        specificTaskSection.AddSection($"Delay", task.delay.ToString(CultureInfo.InvariantCulture));
+                        specificTaskSection.AddSection($"Hold Time", task.holdTime.ToString(CultureInfo.InvariantCulture));
+                        specificTaskSection.AddSection($"Update Method", task.updateMethod.ToString());
+                        specificTaskSection.AddSection($"Last Triggered").AddValueGetter(LastTriggered);
+                        specificTaskSection.AddSection($"Last Executed").AddValueGetter(LastExecuted);
+                    }
+
+                    // OnEnter, OnExit, and OnStay Tasks
+                    var tasksOnEnterSection = spawnableSection.AddSection("Tasks [OnEnter]", trigger.enterTasks.Count == 0 ? Na : "");
+                    for (var index = 0; index < trigger.enterTasks.Count; index++) {
+                        GetTriggerTaskTemplate(tasksOnEnterSection, trigger.enterTasks[index], index);
+                    }
+
+                    var tasksOnExitSection = spawnableSection.AddSection("Tasks [OnExit]", trigger.exitTasks.Count == 0 ? Na : "");
+                    for (var index = 0; index < trigger.exitTasks.Count; index++) {
+                        GetTriggerTaskTemplate(tasksOnExitSection, trigger.exitTasks[index], index);
+                    }
+
+                    var tasksOnStaySection = spawnableSection.AddSection("Tasks [OnStay]", trigger.stayTasks.Count == 0 ? Na : "");
+                    for (var index = 0; index < trigger.stayTasks.Count; index++) {
+                        var stayTask = trigger.stayTasks[index];
+                        string LastTriggered() => TriggerAasStayTasksLastTriggered.ContainsKey(stayTask)
+                            ? Menu.GetTimeDifference(TriggerAasStayTasksLastTriggered[stayTask])
+                            : "?" + " secs ago";
+                        string LastTriggeredValue() => TriggerAasStayTasksLastTriggeredValue.ContainsKey(stayTask)
+                            ? TriggerAasStayTasksLastTriggeredValue[stayTask].ToString(CultureInfo.InvariantCulture)
+                            : "?";
+
+                        var specificTaskSection = tasksOnStaySection.AddSection($"#{index}");
+                        specificTaskSection.AddSection($"Name", stayTask.settingName);
+                        specificTaskSection.AddSection($"Update Method", stayTask.updateMethod.ToString());
+
+                        if (stayTask.updateMethod == CVRAdvancedAvatarSettingsTriggerTaskStay.UpdateMethod.SetFromPosition) {
+                            specificTaskSection.AddSection($"Min Value").AddValueGetter(() => stayTask.minValue.ToString(CultureInfo.InvariantCulture));
+                            specificTaskSection.AddSection($"Max Value").AddValueGetter(() => stayTask.maxValue.ToString(CultureInfo.InvariantCulture));
+                        }
+                        else {
+                            specificTaskSection.AddSection($"Change per sec").AddValueGetter(() => stayTask.minValue.ToString(CultureInfo.InvariantCulture));
+                        }
+
+                        specificTaskSection.AddSection($"Sample direction", trigger.sampleDirection.ToString());
+                        specificTaskSection.AddSection($"Last Triggered").AddValueGetter(LastTriggered);
+                        specificTaskSection.AddSection($"Last Triggered Value").AddValueGetter(LastTriggeredValue);
+                    }
+
+                    // Add the visualizer
+                    if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
+                        CurrentEntityTriggerList.Add(triggerVisualizer);
+                    }
+                }
+
+                var avatarHeight = Traverse.Create(isLocal ? PlayerSetup.Instance : currentPlayer.PuppetMaster).Field("_avatarHeight").GetValue<float>();
+
+                // Set up the Humanoid Bones
+                CurrentEntityBoneList.Clear();
+                if (_mainAnimator.isHuman) {
+                    foreach (var target in BoneVisualizer.GetAvailableBones(_mainAnimator)) {
+                        if (BoneVisualizer.Create(target, out var boneVisualizer, avatarHeight)) {
+                            CurrentEntityBoneList.Add(boneVisualizer);
+                        }
+                    }
+                }
+
             }
 
             // Consume the avatar changed
@@ -291,6 +304,9 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Update Avatar Data Info
         _attributeUsername.Update(playerUserName);
         _attributeAvatar.Update(playerAvatarName);
+
+        // Ignore the rest, since it's not populated
+        if (_wasHidden) return;
 
         // Update animator parameters
         _sectionLocalParameters.UpdateFromGetter(true);

@@ -1,6 +1,5 @@
 ﻿using CCK.Debugger.Components;
 using MelonLoader;
-using Newtonsoft.Json;
 
 namespace CCK.Debugger.Events;
 
@@ -103,24 +102,14 @@ public static class DebuggerMenuCohtml {
     }
 
     public static event Action<Button> CohtmlMenuButtonUpdated;
-    private static Dictionary<int, Button> _latestButtonUpdates = new();
+    private static Dictionary<Button.ButtonType, Button> _latestButtonUpdates = new();
     private static bool _latestButtonUpdatesConsumed = true;
-    private static bool _erroredButton;
     public static void OnCohtmlMenuButtonUpdate(Button button) {
 
         CohtmlMenuButtonUpdated?.Invoke(button);
 
-        if (_erroredButton) return;
-
         lock (_latestButtonUpdates) lock (LatestCoreLock) {
-            // Check to prevent memory leaks
-            if (_latestButtonUpdates.Count > 10000) {
-                _erroredButton = true;
-                MelonLogger.Error("We reached over 10000 button updates... We're going to stop tracking the updates." +
-                                  "This is to prevent memory leaks, contact the mod creator to fix this issue.");
-                return;
-            }
-            _latestButtonUpdates[button.Id] = button;
+            _latestButtonUpdates[button.Type] = button;
             _latestButtonUpdatesConsumed = false;
         }
         //MelonLogger.Msg($"Button Updated\n{JsonConvert.SerializeObject(button, Formatting.Indented)}");
@@ -141,47 +130,5 @@ public static class DebuggerMenuCohtml {
     public static event Action<Button> CohtmlMenuButtonClicked;
     public static void OnCohtmlMenuButtonClick(Button button) {
         CohtmlMenuButtonClicked?.Invoke(button);
-
-        // Todo: Properly handle the buttons
-        void UpdateRest() {
-            Core.GetButton("Pointer", out var pointerButton);
-            Core.GetButton("Trigger", out var triggerButton);
-            Core.GetButton("Reset", out var resetButton);
-            if (pointerButton != null && triggerButton != null && resetButton != null) {
-                var visible = pointerButton.IsOn || triggerButton.IsOn;
-                if (resetButton.IsVisible == visible) return;
-                resetButton.IsVisible = visible;
-                OnCohtmlMenuButtonUpdate(resetButton);
-            }
-        }
-        switch (button.Type) {
-            case "Grab":
-            case "Hud":
-            case "Pin":
-            case "Tracker":
-            case "Bone":
-                button.IsOn = !button.IsOn;
-                OnCohtmlMenuButtonUpdate(button);
-                break;
-            case "Trigger":
-            case "Pointer":
-                button.IsOn = !button.IsOn;
-                OnCohtmlMenuButtonUpdate(button);
-                UpdateRest();
-                break;
-            case "Reset":
-                if (Core.GetButton("Pointer", out var pointerButton)) {
-                    pointerButton.IsOn = false;
-                    OnCohtmlMenuButtonUpdate(pointerButton);
-                }
-                if (Core.GetButton("Trigger", out var triggerButton)) {
-                    triggerButton.IsOn = false;
-                    OnCohtmlMenuButtonUpdate(triggerButton);
-                }
-                UpdateRest();
-                break;
-
-        }
-        //MelonLogger.Msg($"Button Clicked\n{JsonConvert.SerializeObject(button, Formatting.Indented)}");
     }
 }
