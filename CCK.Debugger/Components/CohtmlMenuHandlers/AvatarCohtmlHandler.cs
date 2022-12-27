@@ -2,6 +2,7 @@
 using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.IK;
 using ABI.CCK.Components;
 using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
@@ -66,7 +67,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
     }
 
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
-    private static bool _wasHidden;
+    private static bool _wasDisabled;
 
     private Core _core;
 
@@ -97,12 +98,12 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggeredValue;
 
-    public override void Load(CohtmlMenuController menu) {
+    protected override void Load(CohtmlMenuController menu) {
         PlayerEntities.ListenPageChangeEvents = true;
         PlayerEntities.HasChanged = true;
     }
 
-    public override void Unload() {
+    protected override void Unload() {
         PlayerEntities.ListenPageChangeEvents = false;
     }
 
@@ -114,13 +115,21 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         var isLocal = PlayerEntities.CurrentObject == null;
         var currentPlayer = PlayerEntities.CurrentObject;
-        var isHidden = false;
-        if (!isLocal) isHidden = Traverse.Create(currentPlayer).Field<bool>("_isHidden").Value;
+        var isAvatarDisabled = false;
+        if (!isLocal) {
+            var puppetMasterTraverse = Traverse.Create(currentPlayer.PuppetMaster);
+            var isHidden = puppetMasterTraverse.Field<bool>("_isHidden").Value;
+            var isBlocked = puppetMasterTraverse.Field<bool>("_isBlocked").Value;
+            var isBlockedAlt = puppetMasterTraverse.Field<bool>("_isBlockedAlt").Value;
+            isAvatarDisabled = isHidden || isBlocked || isBlockedAlt;
+        }
 
         // Reset the hidden when changing avatars
-        if (PlayerEntities.HasChanged) _wasHidden = false;
+        if (PlayerEntities.HasChanged) _wasDisabled = false;
         // Handle player avatar visibility changes
-        else if (!isLocal && isHidden != _wasHidden) PlayerEntities.HasChanged = true;
+        else if (!isLocal && isAvatarDisabled != _wasDisabled) PlayerEntities.HasChanged = true;
+
+        _wasDisabled = isAvatarDisabled;
 
         _core?.UpdateCore(playerCount > 1, $"({PlayerEntities.CurrentObjectIndex+1}/{playerCount})", true);
 
@@ -130,13 +139,48 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             // Recreate the core menu
             _core = new Core("Avatars");
 
+            // Setup buttons
+            var trackerButton = _core.AddButton(new Button(Button.ButtonType.Tracker, false, false));
+            var boneButton = _core.AddButton(new Button(Button.ButtonType.Bone, false, false));
+            var pointerButton = _core.AddButton(new Button(Button.ButtonType.Pointer, false, false));
+            var triggerButton = _core.AddButton(new Button(Button.ButtonType.Trigger, false, false));
+
+            // Setup button Handlers
+            trackerButton.StateUpdater = button => {
+                var handsActive = IKSystem.Instance.leftHandModel.activeSelf && IKSystem.Instance.rightHandModel.activeSelf;
+                button.IsOn = handsActive && CurrentEntityTrackerList.All(vis => vis != null && vis.enabled);
+                button.IsVisible = MetaPort.Instance.isUsingVr && isLocal;
+            };
+            trackerButton.ClickHandler = ClickTrackersButtonHandler;
+            boneButton.StateUpdater = button => button.IsOn = CurrentEntityBoneList.All(vis => vis != null && vis.enabled);
+            boneButton.ClickHandler = button => {
+                button.IsOn = !button.IsOn;
+                CurrentEntityBoneList.ForEach(vis => {
+                    if (vis != null) vis.enabled = button.IsOn;
+                });
+            };
+            pointerButton.StateUpdater = button => button.IsOn = CurrentEntityPointerList.All(vis => vis != null && vis.enabled);
+            pointerButton.ClickHandler = button => {
+                button.IsOn = !button.IsOn;
+                CurrentEntityPointerList.ForEach(vis => {
+                    if (vis != null) vis.enabled = button.IsOn;
+                });
+            };
+            triggerButton.StateUpdater = button => button.IsOn = CurrentEntityTriggerList.All(vis => vis != null && vis.enabled);
+            triggerButton.ClickHandler = button => {
+                button.IsOn = !button.IsOn;
+                CurrentEntityTriggerList.ForEach(vis => {
+                    if (vis != null) vis.enabled = button.IsOn;
+                });
+            };
+
             // Static sections
             var attributesSection = _core.AddSection("Attributes");
             _attributeUsername = attributesSection.AddSection("User Name");
             _attributeAvatar = attributesSection.AddSection("Avatar Name/ID");
-            attributesSection.AddSection("Is Hidden").Value = ToString(isHidden);
+            attributesSection.AddSection("Avatar Hidden").Value = ToString(isAvatarDisabled);
 
-            if (!isHidden) {
+            if (!isAvatarDisabled) {
 
                 _mainAnimator = isLocal
                     ? Events.Avatar.LocalPlayerAnimatorManager?.animator
@@ -155,7 +199,6 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
                 _sectionPointers = _core.AddSection("CVR Pointers", true);
                 _sectionTriggers = _core.AddSection("CVR AAS Triggers", true);
-
 
                 // Restore Main Animator Parameters
                 foreach (var parameter in _mainAnimator.parameters) {
@@ -190,6 +233,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                         CurrentEntityPointerList.Add(pointerVisualizer);
                     }
                 }
+                pointerButton.IsVisible = CurrentEntityPointerList.Count > 0;
 
                 // Set up CVR Triggers
                 TrackedTriggers.Clear();
@@ -219,10 +263,10 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
                     void GetTriggerTaskTemplate(Section parentSection, CVRAdvancedAvatarSettingsTriggerTask task, int idx) {
                         string LastTriggered() => TriggerAasTaskLastTriggered.ContainsKey(task)
-                            ? Menu.GetTimeDifference(TriggerAasTaskLastTriggered[task])
+                            ? GetTimeDifference(TriggerAasTaskLastTriggered[task])
                             : "?" + " secs ago";
                         string LastExecuted() => TriggerAasTasksLastExecuted.ContainsKey(task)
-                            ? Menu.GetTimeDifference(TriggerAasTasksLastExecuted[task])
+                            ? GetTimeDifference(TriggerAasTasksLastExecuted[task])
                             : "?" + " secs ago";
 
                         var specificTaskSection = parentSection.AddSection($"#{idx}");
@@ -250,7 +294,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                     for (var index = 0; index < trigger.stayTasks.Count; index++) {
                         var stayTask = trigger.stayTasks[index];
                         string LastTriggered() => TriggerAasStayTasksLastTriggered.ContainsKey(stayTask)
-                            ? Menu.GetTimeDifference(TriggerAasStayTasksLastTriggered[stayTask])
+                            ? GetTimeDifference(TriggerAasStayTasksLastTriggered[stayTask])
                             : "?" + " secs ago";
                         string LastTriggeredValue() => TriggerAasStayTasksLastTriggeredValue.ContainsKey(stayTask)
                             ? TriggerAasStayTasksLastTriggeredValue[stayTask].ToString(CultureInfo.InvariantCulture)
@@ -278,6 +322,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                         CurrentEntityTriggerList.Add(triggerVisualizer);
                     }
                 }
+                triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 
                 var avatarHeight = Traverse.Create(isLocal ? PlayerSetup.Instance : currentPlayer.PuppetMaster).Field("_avatarHeight").GetValue<float>();
 
@@ -290,13 +335,16 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                         }
                     }
                 }
-
+                boneButton.IsVisible = CurrentEntityBoneList.Count > 0;
             }
 
             // Consume the avatar changed
             PlayerEntities.HasChanged = false;
-            menu.SetCore(_core);
+            Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(_core);
         }
+
+        // Update button's states
+        Core.UpdateButtonsState();
 
         var playerUserName = isLocal ? MetaPort.Instance.username : currentPlayer.Username;
         var playerAvatarName = GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId);
@@ -306,7 +354,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         _attributeAvatar.Update(playerAvatarName);
 
         // Ignore the rest, since it's not populated
-        if (_wasHidden) return;
+        if (isAvatarDisabled) return;
 
         // Update animator parameters
         _sectionLocalParameters.UpdateFromGetter(true);

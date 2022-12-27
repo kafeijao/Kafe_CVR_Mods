@@ -15,18 +15,7 @@ namespace CCK.Debugger.Components;
 
 public class CohtmlMenuController : MonoBehaviour {
 
-    // Public
-    internal Core _currentCore;
-    internal bool HasCore;
-
     internal static bool Initialized { private set; get; }
-
-    internal Core SetCore(Core core) {
-        _currentCore = core;
-        Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
-        HasCore = true;
-        return core;
-    }
 
     // Internal
     private const string CouiUrl = "coui://UIResources/CCKDebugger";
@@ -37,6 +26,8 @@ public class CohtmlMenuController : MonoBehaviour {
     // MenuController References
     private Animator _animator;
     private CVRPickupObject _pickup;
+    public CVRPickupObject Pickup => _pickup;
+
     private CohtmlView _cohtmlView;
     private Collider _cohtmlViewCollider;
 
@@ -45,6 +36,8 @@ public class CohtmlMenuController : MonoBehaviour {
 
     // Menu Current Settings
     private MenuTarget _currentMenuParent;
+    internal MenuTarget CurrentMenuParent => _currentMenuParent;
+
     private float _scaleX, _scaleY;
 
     // Hashed IDs
@@ -63,8 +56,7 @@ public class CohtmlMenuController : MonoBehaviour {
         cohtmlMenuController.InitializeMenu(targetGo);
 
         // Add handlers
-        var avatarMenuHandler = new AvatarCohtmlHandler();
-        ICohtmlHandler.Handlers.Add(avatarMenuHandler);
+        ICohtmlHandler.Handlers.Add(new AvatarCohtmlHandler());
         ICohtmlHandler.Handlers.Add(new SpawnableCohtmlHandler());
         ICohtmlHandler.Handlers.Add(new MiscCohtmlHandler());
 
@@ -72,13 +64,13 @@ public class CohtmlMenuController : MonoBehaviour {
         Events.DebuggerMenu.MainPreviousPage += () => ICohtmlHandler.SwitchMenu(cohtmlMenuController, false);
     }
 
-    private enum MenuTarget {
+    internal enum MenuTarget {
         QuickMenu,
         World,
         HUD,
     }
 
-    private void ParentTo(MenuTarget targetType) {
+    internal void ParentTo(MenuTarget targetType) {
 
         var menuControllerTransform = transform;
 
@@ -159,9 +151,6 @@ public class CohtmlMenuController : MonoBehaviour {
 
         // Handle the quick menu reloads and reload CCK Debugger with it
         Events.DebuggerMenuCohtml.CohtmlMenuReloaded += FullReload;
-
-        // Handle button presses
-        Events.DebuggerMenuCohtml.CohtmlMenuButtonClicked += OnButtonClick;
     }
 
     private void FullReload() {
@@ -191,68 +180,6 @@ public class CohtmlMenuController : MonoBehaviour {
         _cohtmlView.enabled = isMenuEnabled;
         _animator.SetBool(AnimatorIdOpen, isMenuEnabled);
     }
-
-    private void OnButtonClick(Button button) {
-        switch (button.Type) {
-
-            case Button.ButtonType.Bone:
-                break;
-
-            case Button.ButtonType.Grab:
-                // Either the pickup script is enabled or not
-                button.IsOn = !button.IsOn;
-                _pickup.enabled = button.IsOn;
-                Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(button);
-                break;
-
-            case Button.ButtonType.Hud:
-                // Either parent to the world or not, and toggle the hud and pin buttons respectively
-                button.IsOn = !button.IsOn;
-                if (Core.GetButton(Button.ButtonType.Pin, out var pin) && pin.IsOn) {
-                    pin.IsOn = false;
-                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(pin);
-                }
-                // Also enables/disables the visibility for grabbing the menu
-                if (Core.GetButton(Button.ButtonType.Grab, out var hudGrab)) {
-                    hudGrab.IsOn = false;
-                    _pickup.enabled = false;
-                    hudGrab.IsVisible = false;
-                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(hudGrab);
-                }
-                ParentTo(button.IsOn ? MenuTarget.HUD : MenuTarget.QuickMenu);
-                Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(button);
-                break;
-
-            case Button.ButtonType.Pin:
-                // Either parent to the hud or not
-                button.IsOn = !button.IsOn;
-                // Disables the HUD button
-                if (Core.GetButton(Button.ButtonType.Hud, out var hud) && hud.IsOn) {
-                    hud.IsOn = false;
-                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(hud);
-                }
-                // Also enables/disables the visibility for grabbing the menu
-                if (Core.GetButton(Button.ButtonType.Grab, out var pingGrab)) {
-                    pingGrab.IsOn = false;
-                    _pickup.enabled = false;
-                    pingGrab.IsVisible = button.IsOn;
-                    Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(pingGrab);
-                }
-                ParentTo(button.IsOn ? MenuTarget.World : MenuTarget.QuickMenu);
-                Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(button);
-                break;
-
-            case Button.ButtonType.Pointer:
-                break;
-            case Button.ButtonType.Reset:
-                break;
-            case Button.ButtonType.Tracker:
-                break;
-            case Button.ButtonType.Trigger:
-                break;
-        }
-    }
-
 
     private void RegisterMenuViewEvents() {
 

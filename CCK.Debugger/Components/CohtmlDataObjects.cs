@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using CCK.Debugger.Components.GameObjectVisualizers;
+using CCK.Debugger.Components.PointerVisualizers;
+using CCK.Debugger.Components.TriggerVisualizers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using UnityEngine;
@@ -24,17 +26,73 @@ public class Core {
             ShowSections = showSections,
         };
 
-        // Create buttons
-        AddButton(new Button { Type = Button.ButtonType.Bone, IsOn = false, IsVisible = true });
-        AddButton(new Button { Type = Button.ButtonType.Grab, IsOn = false, IsVisible = false });
-        AddButton(new Button { Type = Button.ButtonType.Hud, IsOn = false, IsVisible = true });
-        AddButton(new Button { Type = Button.ButtonType.Pin, IsOn = false, IsVisible = true });
-        AddButton(new Button { Type = Button.ButtonType.Pointer, IsOn = false, IsVisible = true });
-        AddButton(new Button { Type = Button.ButtonType.Reset, IsOn = true, IsVisible = false });
-        AddButton(new Button { Type = Button.ButtonType.Tracker, IsOn = false, IsVisible = true });
-        AddButton(new Button { Type = Button.ButtonType.Trigger, IsOn = false, IsVisible = true });
+        // Buttons initialization
+        var grabButton = AddButton(new Button(Button.ButtonType.Grab, false, false));
+        var hud = AddButton(new Button(Button.ButtonType.Hud, false, true));
+        var pin = AddButton(new Button(Button.ButtonType.Pin, false, true));
+        var reset = AddButton(new Button(Button.ButtonType.Reset, true, false, false));
 
-        _instance = this;
+        // Grab Button Handlers
+        grabButton.StateUpdater = button => {
+            button.IsOn = CohtmlMenuController.Instance.Pickup.enabled;
+            button.IsVisible = CohtmlMenuController.Instance.CurrentMenuParent == CohtmlMenuController.MenuTarget.World;
+        };
+        grabButton.ClickHandler = button => {
+            button.IsOn = !button.IsOn;
+            CohtmlMenuController.Instance.Pickup.enabled = button.IsOn;
+        };
+
+        // HUD Button Handlers
+        hud.StateUpdater = button => {
+            button.IsOn = CohtmlMenuController.Instance.CurrentMenuParent == CohtmlMenuController.MenuTarget.HUD;
+        };
+        hud.ClickHandler = button => {
+            button.IsOn = !button.IsOn;
+            pin.IsOn = false;
+            CohtmlMenuController.Instance.ParentTo(button.IsOn ? CohtmlMenuController.MenuTarget.HUD : CohtmlMenuController.MenuTarget.QuickMenu);
+        };
+
+        // Pin Button Handlers
+        pin.StateUpdater = button => {
+            button.IsOn = CohtmlMenuController.Instance.CurrentMenuParent == CohtmlMenuController.MenuTarget.World;
+        };
+        pin.ClickHandler = button => {
+            button.IsOn = !button.IsOn;
+            hud.IsOn = false;
+            // Disable the grab if it's on
+            if (!button.IsOn && grabButton.IsOn) grabButton.Click();
+            CohtmlMenuController.Instance.ParentTo(button.IsOn ? CohtmlMenuController.MenuTarget.World : CohtmlMenuController.MenuTarget.QuickMenu);
+        };
+
+        // Reset Button Handlers
+        reset.StateUpdater = button => {
+            var hasActive = PointerVisualizer.HasActive() || TriggerVisualizer.HasActive() || GameObjectVisualizer.HasActive();
+            button.IsOn = hasActive;
+        };
+        reset.ClickHandler = button => {
+            button.IsOn = !button.IsOn;
+
+            // Reset all buttons (if available)
+            if (GetButton(Button.ButtonType.Pointer, out var pointerButton) && pointerButton.IsOn) {
+                pointerButton.IsOn = false;
+            }
+            if (GetButton(Button.ButtonType.Trigger, out var triggerButton) && triggerButton.IsOn) {
+                triggerButton.IsOn = false;
+            }
+            if (GetButton(Button.ButtonType.Bone, out var boneButton) && boneButton.IsOn) {
+                boneButton.IsOn = false;
+            }
+            if (GetButton(Button.ButtonType.Tracker, out var trackerButton) && trackerButton.IsOn) {
+                trackerButton.IsOn = false;
+            }
+
+            // Disable all visualizers
+            PointerVisualizer.DisableAll();
+            TriggerVisualizer.DisableAll();
+            GameObjectVisualizer.DisableAll();
+        };
+
+        Instance = this;
     }
 
     [JsonProperty("Sections")] private List<Section> Sections { get; } = new();
@@ -46,15 +104,16 @@ public class Core {
         return section;
     }
 
-    private void AddButton(Button button) => Buttons.Add(CacheButton(button));
-
-    public static bool GetButton(Button.ButtonType type, out Button button) {
-        button = _instance?._buttons[type];
-        return button != null;
+    internal Button AddButton(Button button) {
+        Buttons.Add(CacheButton(button));
+        return button;
     }
-    public static Button GetButton(Button.ButtonType type) => _instance?._buttons[type];
-    public static ReadOnlyCollection<Button> GetButtons() => _instance?.Buttons.AsReadOnly();
 
+    private static bool GetButton(Button.ButtonType type, out Button button) {
+        button = Instance?._buttons?.GetValueOrDefault(type, null);
+        return button != null;
+
+    }
 
     public void UpdateCore(bool showControls, string controlsInfo, bool showSections) {
         if (showControls == _info.ShowControls && controlsInfo.Equals(_info.ControlsInfo) && showSections == _info.ShowSections) return;
@@ -64,8 +123,12 @@ public class Core {
         Events.DebuggerMenuCohtml.OnCohtmlMenuCoreInfoUpdate(_info);
     }
 
+    public static void UpdateButtonsState() {
+        Instance?.Buttons.ForEach(button => button.UpdateState());
+    }
+
     public static void ClickButton(Button.ButtonType buttonType) {
-        _instance?._buttons[buttonType]?.Click();
+        Instance?._buttons?.GetValueOrDefault(buttonType, null)?.Click();
     }
 
     // Internal
@@ -85,7 +148,7 @@ public class Core {
         }
     }
 
-    [JsonIgnore] private static Core _instance;
+    [JsonIgnore] internal static Core Instance;
 }
 
 public class Section {
@@ -135,9 +198,41 @@ public class Section {
 }
 
 public class Button {
-    public ButtonType Type { get; set; }
-    public bool IsOn { get; set; }
-    public bool IsVisible { get; set; }
+
+    public Button(ButtonType buttonType, bool initialIsOn, bool initialIsVisible, bool isVisibleWhenOff = true) {
+        Type = buttonType;
+        _isOn = initialIsOn;
+        _isVisible = initialIsVisible;
+        _isVisibleWhenOff = isVisibleWhenOff;
+    }
+
+    public ButtonType Type { get; }
+
+    [JsonProperty("IsOn")] private bool _isOn;
+    [JsonIgnore] public bool IsOn {
+        get => _isOn;
+        set {
+            _isOn = value;
+            if (!_isVisibleWhenOff) _isVisible = _isOn;
+            Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(this);
+        }
+    }
+
+    [JsonProperty("IsVisible")] private bool _isVisible;
+    [JsonIgnore]
+    public bool IsVisible {
+        get => _isVisible;
+        set {
+            if (value == _isVisible) return;
+            _isVisible = value;
+            Events.DebuggerMenuCohtml.OnCohtmlMenuButtonUpdate(this);
+        }
+    }
+
+    [JsonIgnore] private readonly bool _isVisibleWhenOff;
+
+    [JsonIgnore] public Action<Button> StateUpdater;
+    [JsonIgnore] public Action<Button> ClickHandler;
 
     [JsonConverter(typeof(StringEnumConverter))]
     public enum ButtonType {
@@ -151,7 +246,6 @@ public class Button {
         Trigger,
     }
 
-    public void Click() {
-        Events.DebuggerMenuCohtml.OnCohtmlMenuButtonClick(this);
-    }
+    public void Click() => ClickHandler?.Invoke(this);
+    public void UpdateState() => StateUpdater?.Invoke(this);
 }

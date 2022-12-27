@@ -85,12 +85,12 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggered;
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggeredValue;
 
-    public override void Load(CohtmlMenuController menu) {
+    protected override void Load(CohtmlMenuController menu) {
         PropsData.ListenPageChangeEvents = true;
         PropsData.HasChanged = true;
     }
 
-    public override void Unload() {
+    protected override void Unload() {
         PropsData.ListenPageChangeEvents = false;
     }
 
@@ -109,7 +109,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                 // Consume the spawnable changed
                 _core = new Core("Props");
                 PropsData.HasChanged = false;
-                menu.SetCore(_core);
+                Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(_core);
             }
 
             return;
@@ -127,6 +127,26 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
 
             // Recreate the core menu
             _core = new Core("Props");
+
+            // Setup buttons
+            var pointerButton = _core.AddButton(new Button(Button.ButtonType.Pointer, false, false));
+            var triggerButton = _core.AddButton(new Button(Button.ButtonType.Trigger, false, false));
+
+            // Setup button Handlers
+            pointerButton.StateUpdater = button => button.IsOn = CurrentEntityPointerList.All(vis => vis != null && vis.enabled);
+            pointerButton.ClickHandler = button => {
+                button.IsOn = !button.IsOn;
+                CurrentEntityPointerList.ForEach(vis => {
+                    if (vis != null) vis.enabled = button.IsOn;
+                });
+            };
+            triggerButton.StateUpdater = button => button.IsOn = CurrentEntityTriggerList.All(vis => vis != null && vis.enabled);
+            triggerButton.ClickHandler = button => {
+                button.IsOn = !button.IsOn;
+                CurrentEntityTriggerList.ForEach(vis => {
+                    if (vis != null) vis.enabled = button.IsOn;
+                });
+            };
 
             // Static sections
             var attributesSection = _core.AddSection("Attributes", false);
@@ -198,6 +218,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                     CurrentEntityPointerList.Add(pointerVisualizer);
                 }
             }
+            pointerButton.IsVisible = CurrentEntityPointerList.Count > 0;
 
             // Set up CVR Triggers
             TrackedTriggers.Clear();
@@ -233,10 +254,10 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                             : Na;
                     }
                     string LastTriggered() => TriggerSpawnableTaskLastTriggered.ContainsKey(task)
-                        ? Menu.GetTimeDifference(TriggerSpawnableTaskLastTriggered[task])
+                        ? GetTimeDifference(TriggerSpawnableTaskLastTriggered[task])
                         : "?" + " secs ago";
                     string LastExecuted() => TriggerSpawnableTasksLastExecuted.ContainsKey(task)
-                        ? Menu.GetTimeDifference(TriggerSpawnableTasksLastExecuted[task])
+                        ? GetTimeDifference(TriggerSpawnableTasksLastExecuted[task])
                         : "?" + " secs ago";
 
                     var specificTaskSection = parentSection.AddSection($"#{idx}");
@@ -270,7 +291,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                             : Na;
                     }
                     string LastTriggered() => TriggerSpawnableStayTasksLastTriggered.ContainsKey(stayTask)
-                        ? Menu.GetTimeDifference(TriggerSpawnableStayTasksLastTriggered[stayTask])
+                        ? GetTimeDifference(TriggerSpawnableStayTasksLastTriggered[stayTask])
                         : "?" + " secs ago";
                     string LastTriggeredValue() => TriggerSpawnableStayTasksLastTriggeredValue.ContainsKey(stayTask)
                         ? TriggerSpawnableStayTasksLastTriggeredValue[stayTask].ToString(CultureInfo.InvariantCulture)
@@ -298,11 +319,15 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                     CurrentEntityTriggerList.Add(triggerVisualizer);
                 }
             }
+            triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 
             // Consume the spawnable changed
             PropsData.HasChanged = false;
-            menu.SetCore(_core);
+            Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(_core);
         }
+
+        // Update button's states
+        Core.UpdateButtonsState();
 
         // Update Prop Data Info
         _attributeId.Update(GetSpawnableName(currentSpawnablePropData?.ObjectId));

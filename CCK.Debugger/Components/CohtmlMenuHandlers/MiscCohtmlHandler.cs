@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.IK;
 using HarmonyLib;
 using Valve.VR;
 
@@ -10,9 +11,17 @@ public class MiscCohtmlHandler : ICohtmlHandler {
      // Finger Curls
     private static Section _fingerCurlSection;
 
-    public override void Load(CohtmlMenuController menu) {
+    protected override void Load(CohtmlMenuController menu) {
 
         var core = new Core("Misc");
+
+        var trackerButton = core.AddButton(new Button(Button.ButtonType.Tracker, false, false));
+        trackerButton.StateUpdater = button => {
+            var handsActive = IKSystem.Instance.leftHandModel.activeSelf && IKSystem.Instance.rightHandModel.activeSelf;
+            button.IsOn = handsActive && CurrentEntityTrackerList.All(vis => vis.enabled);
+            button.IsVisible = MetaPort.Instance.isUsingVr;
+        };
+        trackerButton.ClickHandler = ClickTrackersButtonHandler;
 
         // FingerCurls
         var im = CVRInputManager.Instance;
@@ -46,12 +55,17 @@ public class MiscCohtmlHandler : ICohtmlHandler {
             _fingerCurlSection = null;
         }
 
-        menu.SetCore(core);
+        Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
     }
-    public override void Unload() { }
+
+    protected override void Unload() { }
 
 
     public override void Update(CohtmlMenuController menu) {
+
+        // Update button's states
+        Core.UpdateButtonsState();
+
         // Update the finger curl values
         _fingerCurlSection?.UpdateFromGetter(true);
     }

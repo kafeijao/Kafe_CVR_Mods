@@ -126,9 +126,4 @@ public static class DebuggerMenuCohtml {
             return true;
         }
     }
-
-    public static event Action<Button> CohtmlMenuButtonClicked;
-    public static void OnCohtmlMenuButtonClick(Button button) {
-        CohtmlMenuButtonClicked?.Invoke(button);
-    }
 }

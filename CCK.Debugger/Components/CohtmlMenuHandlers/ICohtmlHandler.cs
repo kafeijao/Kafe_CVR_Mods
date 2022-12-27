@@ -1,30 +1,74 @@
-﻿using CCK.Debugger.Components.GameObjectVisualizers;
+﻿using System.Collections.ObjectModel;
+using ABI_RC.Core.Player;
+using ABI_RC.Systems.IK;
+using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
+using HarmonyLib;
 using UnityEngine;
 
 namespace CCK.Debugger.Components.CohtmlMenuHandlers;
 
 public abstract class ICohtmlHandler {
 
-    public abstract void Load(CohtmlMenuController menu);
-    public abstract void Unload();
+    protected abstract void Load(CohtmlMenuController menu);
+    protected abstract void Unload();
     public abstract void Update(CohtmlMenuController menu);
 
     internal static bool Crashed;
 
-    protected static int _currentHandlerIndex;
+    private static int _currentHandlerIndex;
     internal static ICohtmlHandler CurrentHandler;
     internal static readonly List<ICohtmlHandler> Handlers = new();
 
     public static void Reload(CohtmlMenuController menu) {
         if (CurrentHandler == null) {
             CurrentHandler = Handlers[0];
+            Initialize();
         }
         else {
             CurrentHandler.Unload();
         }
         CurrentHandler.Load(menu);
+    }
+
+    private static void Initialize() {
+
+        Events.DebuggerMenu.SwitchedInspectedEntity += finishedInitializing => {
+
+            // Cleaning up caches, since started changing entity
+            if (!finishedInitializing) {
+                CurrentEntityPointerList.Clear();
+                CurrentEntityTriggerList.Clear();
+                CurrentEntityBoneList.Clear();
+            }
+
+            // The change entity has finished, lets update the toggle states
+            else {
+                Core.UpdateButtonsState();
+            }
+        };
+    }
+
+    protected void ClickTrackersButtonHandler(Button button) {
+
+        // Create the visualizers if they don't exist
+        if (button.IsOn) {
+            CurrentEntityTrackerList.Clear();
+            var avatarHeight = Traverse.Create(PlayerSetup.Instance).Field("_avatarHeight").GetValue<float>();
+            var trackers = IKSystem.Instance.AllTrackingPoints.FindAll((t) => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
+            foreach (var tracker in trackers) {
+                if (TrackerVisualizer.Create(tracker, out var trackerVisualizer, avatarHeight)) {
+                    CurrentEntityTrackerList.Add(trackerVisualizer);
+                }
+            }
+        }
+
+        // Enable controller models
+        IKSystem.Instance.leftHandModel.SetActive(button.IsOn);
+        IKSystem.Instance.rightHandModel.SetActive(button.IsOn);
+
+        CurrentEntityTrackerList.ForEach(vis => vis.enabled = button.IsOn);
     }
 
     public static void SwitchMenu(CohtmlMenuController menu, bool next) {
@@ -39,8 +83,8 @@ public abstract class ICohtmlHandler {
         Events.DebuggerMenu.OnSwitchInspectedEntity(true);
 
         // Hide the controls (they'll be shown in the handler if they need
-        if (CohtmlMenuController.Initialized && menu.HasCore) {
-            menu._currentCore.UpdateCore(false, "N/A", false);
+        if (CohtmlMenuController.Initialized && Core.Instance != null) {
+            Core.Instance.UpdateCore(false, "N/A", false);
         }
 
         CurrentHandler = Handlers[_currentHandlerIndex];
