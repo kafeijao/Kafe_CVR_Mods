@@ -101,6 +101,13 @@ public class CohtmlMenuController : MonoBehaviour {
         UpdateMenuState();
     }
 
+    internal static void ConsumeCachedUpdates() {
+        if (Events.DebuggerMenuCohtml.GetLatestCoreToConsume(out var core)) Instance._cohtmlView.View.TriggerEvent("CCKDebuggerCoreUpdate", JsonConvert.SerializeObject(core));
+        if (Events.DebuggerMenuCohtml.GetLatestCoreInfoToConsume(out var coreInfo)) Instance._cohtmlView.View.TriggerEvent("CCKDebuggerCoreInfoUpdate",JsonConvert.SerializeObject(coreInfo));
+        if (Events.DebuggerMenuCohtml.GetLatestButtonUpdatesToConsume(out var buttons)) Instance._cohtmlView.View.TriggerEvent("CCKDebuggerButtonsUpdate",JsonConvert.SerializeObject(buttons));
+        if (Events.DebuggerMenuCohtml.GetLatestSectionUpdatesToConsume(out var sections)) Instance._cohtmlView.View.TriggerEvent("CCKDebuggerSectionsUpdate",JsonConvert.SerializeObject(sections));
+    }
+
     private void Update() {
 
         // Prevent updates until we swap entity
@@ -113,15 +120,16 @@ public class CohtmlMenuController : MonoBehaviour {
             ICohtmlHandler.CurrentHandler?.Update(this);
 
             // Send the and consume the cached updates saved in this frame
-            if (Events.DebuggerMenuCohtml.GetLatestCoreToConsume(out var core)) _cohtmlView.View.TriggerEvent("CCKDebuggerCoreUpdate", JsonConvert.SerializeObject(core));
-            if (Events.DebuggerMenuCohtml.GetLatestCoreInfoToConsume(out var coreInfo)) _cohtmlView.View.TriggerEvent("CCKDebuggerCoreInfoUpdate",JsonConvert.SerializeObject(coreInfo));
-            if (Events.DebuggerMenuCohtml.GetLatestButtonUpdatesToConsume(out var buttons)) _cohtmlView.View.TriggerEvent("CCKDebuggerButtonsUpdate",JsonConvert.SerializeObject(buttons));
-            if (Events.DebuggerMenuCohtml.GetLatestSectionUpdatesToConsume(out var sections)) _cohtmlView.View.TriggerEvent("CCKDebuggerSectionsUpdate",JsonConvert.SerializeObject(sections));
+            ConsumeCachedUpdates();
         }
         catch (Exception e) {
             MelonLogger.Error(e);
             MelonLogger.Error($"Something BORKED really bad, and to prevent lagging we're going to stop the debugger menu updates until you swap entity.");
             MelonLogger.Error($"Feel free to ping kafeijao#8342 in the #bug-reports channel of ChilloutVR Modding Group discord with the error message.");
+
+            // Add the error to the menu
+            Core.OnCrash();
+
             ICohtmlHandler.Crashed = true;
         }
     }

@@ -41,6 +41,11 @@ public class LooseList<T> : List<T> {
         };
     }
 
+    public void Reset() {
+        CurrentObject = default;
+        CurrentObjectIndex = 0;
+    }
+
     public void UpdateViaSource() {
         try {
 
@@ -55,8 +60,7 @@ public class LooseList<T> : List<T> {
 
             // If there are no elements, end it here
             if (Count == 0) {
-                CurrentObject = default;
-                CurrentObjectIndex = 0;
+                Reset();
                 return;
             }
 

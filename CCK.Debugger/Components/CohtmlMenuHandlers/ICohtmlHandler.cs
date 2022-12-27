@@ -14,6 +14,7 @@ public abstract class ICohtmlHandler {
     protected abstract void Load(CohtmlMenuController menu);
     protected abstract void Unload();
     public abstract void Update(CohtmlMenuController menu);
+    public abstract void Reset();
 
     internal static bool Crashed;
 
@@ -29,7 +30,12 @@ public abstract class ICohtmlHandler {
         else {
             CurrentHandler.Unload();
         }
+
         CurrentHandler.Load(menu);
+
+        // Recover from a crash
+        CurrentHandler.Reset();
+        Crashed = false;
     }
 
     private static void Initialize() {

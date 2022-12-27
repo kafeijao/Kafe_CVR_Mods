@@ -94,6 +94,8 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         PropsData.ListenPageChangeEvents = false;
     }
 
+    public override void Reset() => PropsData.Reset();
+
     public override void Update(CohtmlMenuController menu) {
 
         PropsData.UpdateViaSource();

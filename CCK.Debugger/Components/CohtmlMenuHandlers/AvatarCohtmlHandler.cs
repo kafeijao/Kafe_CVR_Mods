@@ -107,6 +107,8 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         PlayerEntities.ListenPageChangeEvents = false;
     }
 
+    public override void Reset() => PlayerEntities.Reset();
+
     public override void Update(CohtmlMenuController menu) {
 
         PlayerEntities.UpdateViaSource();

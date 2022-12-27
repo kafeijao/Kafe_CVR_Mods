@@ -60,6 +60,7 @@ public class MiscCohtmlHandler : ICohtmlHandler {
 
     protected override void Unload() { }
 
+    public override void Reset() { }
 
     public override void Update(CohtmlMenuController menu) {
 

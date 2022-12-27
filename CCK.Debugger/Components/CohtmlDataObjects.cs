@@ -1,4 +1,5 @@
-﻿using CCK.Debugger.Components.GameObjectVisualizers;
+﻿using CCK.Debugger.Components.CohtmlMenuHandlers;
+using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
 using Newtonsoft.Json;
@@ -16,6 +17,9 @@ public class Core {
         public bool ShowSections { get; set; }
     }
 
+    [JsonIgnore] internal static Core Instance;
+    [JsonIgnore] private int _indexToAdd = 0;
+
     [JsonProperty("Info")] private Info _info;
 
     public Core(string menuName, bool showControls = false, string controlsInfo = "", bool showSections= true) {
@@ -30,7 +34,7 @@ public class Core {
         var grabButton = AddButton(new Button(Button.ButtonType.Grab, false, false));
         var hud = AddButton(new Button(Button.ButtonType.Hud, false, true));
         var pin = AddButton(new Button(Button.ButtonType.Pin, false, true));
-        var reset = AddButton(new Button(Button.ButtonType.Reset, true, false, false));
+        var reset = AddButton(new Button(Button.ButtonType.Reset, true, false, false), true);
 
         // Grab Button Handlers
         grabButton.StateUpdater = button => {
@@ -67,10 +71,16 @@ public class Core {
         // Reset Button Handlers
         reset.StateUpdater = button => {
             var hasActive = PointerVisualizer.HasActive() || TriggerVisualizer.HasActive() || GameObjectVisualizer.HasActive();
-            button.IsOn = hasActive;
+            button.IsOn = hasActive || ICohtmlHandler.Crashed;
         };
         reset.ClickHandler = button => {
             button.IsOn = !button.IsOn;
+
+            // If the menu is crashed, attempt to reload
+            if (ICohtmlHandler.Crashed) {
+                ICohtmlHandler.Reload(CohtmlMenuController.Instance);
+                return;
+            }
 
             // Reset all buttons (if available)
             if (GetButton(Button.ButtonType.Pointer, out var pointerButton) && pointerButton.IsOn) {
@@ -104,15 +114,32 @@ public class Core {
         return section;
     }
 
-    internal Button AddButton(Button button) {
-        Buttons.Add(CacheButton(button));
+    internal Button AddButton(Button button, bool atTheEnd = false) {
+        // Insert the button, using an _indexToAdd to enable adding stuff to the end or not
+        Buttons.Insert(atTheEnd ? Buttons.Count : _indexToAdd++, CacheButton(button));
         return button;
     }
 
     private static bool GetButton(Button.ButtonType type, out Button button) {
         button = Instance?._buttons?.GetValueOrDefault(type, null);
         return button != null;
+    }
 
+    internal static void OnCrash() {
+
+        // Create the error menu
+        var core = new Core("Error");
+        core.AddSection("The CCK.Debugger menu crashed :(");
+        core.AddSection("To report this crash check the Console for instructions");
+        core.AddSection("To reload the menu press the Reset button");
+        Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
+
+        // Update buttons to reflect the crash
+        Instance?.Buttons?.ForEach(button => button.IsVisible = false);
+        if (GetButton(Button.ButtonType.Reset, out var resetButton)) resetButton.IsOn = true;
+
+        // Update cached stuff
+        CohtmlMenuController.ConsumeCachedUpdates();
     }
 
     public void UpdateCore(bool showControls, string controlsInfo, bool showSections) {
@@ -147,8 +174,6 @@ public class Core {
             return button;
         }
     }
-
-    [JsonIgnore] internal static Core Instance;
 }
 
 public class Section {
