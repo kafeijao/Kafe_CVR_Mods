@@ -95,6 +95,9 @@ public class Core {
             if (GetButton(Button.ButtonType.Tracker, out var trackerButton) && trackerButton.IsOn) {
                 trackerButton.IsOn = false;
             }
+            if (GetButton(Button.ButtonType.Eye, out var eyeButton) && eyeButton.IsOn) {
+                eyeButton.IsOn = false;
+            }
 
             // Disable all visualizers
             PointerVisualizer.DisableAll();
@@ -269,6 +272,7 @@ public class Button {
         Reset,
         Tracker,
         Trigger,
+        Eye,
     }
 
     public void Click() => ClickHandler?.Invoke(this);

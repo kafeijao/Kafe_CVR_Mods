@@ -61,7 +61,9 @@ public abstract class TriggerVisualizer : MonoBehaviour {
     private bool IsInitialized() => VisualizerGo != null;
 
     private void InitializeVisualizer(MonoBehaviour trigger, Mesh mesh) {
-        VisualizerGo = new GameObject(GameObjectName);
+        VisualizerGo = new GameObject(GameObjectName) {
+            layer = LayerMask.NameToLayer("UI Internal")
+        };
 
         TriggerBehavior = trigger;
 

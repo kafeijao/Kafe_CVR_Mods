@@ -6,8 +6,8 @@ namespace CCK.Debugger.Components.GameObjectVisualizers;
 
 public abstract class GameObjectVisualizer : MonoBehaviour {
 
-    private static readonly Dictionary<Tuple<GameObject, Type>, GameObjectVisualizer> VisualizersAll = new();
-    private static readonly Dictionary<Tuple<GameObject, Type>, GameObjectVisualizer> VisualizersActive = new();
+    protected static readonly Dictionary<Tuple<GameObject, Type>, GameObjectVisualizer> VisualizersAll = new();
+    protected static readonly Dictionary<Tuple<GameObject, Type>, GameObjectVisualizer> VisualizersActive = new();
 
     private const string GameObjectName = "[CCK.Debugger] GameObject Visualizer";
 
@@ -25,7 +25,7 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
 
         // Instantiate the visualizer GameObject inside of the target
         _visualizerGo = Instantiate(prefab, target.transform);
-
+        _visualizerGo.layer = LayerMask.NameToLayer("UI Internal");
         _visualizerGo.name = GameObjectName;
 
         // Get the renderer and assign material

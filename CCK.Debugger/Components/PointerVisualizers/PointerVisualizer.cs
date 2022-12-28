@@ -1,7 +1,6 @@
 ﻿using ABI.CCK.Components;
 using CCK.Debugger.Resources;
 using CCK.Debugger.Utils;
-using MelonLoader;
 using UnityEngine;
 
 namespace CCK.Debugger.Components.PointerVisualizers;
@@ -70,7 +69,9 @@ public abstract class PointerVisualizer : MonoBehaviour {
 
 
     private void InitializeVisualizer(CVRPointer pointer, Mesh mesh) {
-        VisualizerGo = new GameObject(GameObjectName);
+        VisualizerGo = new GameObject(GameObjectName) {
+            layer = LayerMask.NameToLayer("UI Internal")
+        };
 
         _pointer = pointer;
 

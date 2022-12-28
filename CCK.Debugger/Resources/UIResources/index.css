@@ -106,6 +106,9 @@ html, body {
 #cck-debugger-button-trigger {
     background-image: url("Images/Buttons/Trigger.png");
 }
+#cck-debugger-button-eye {
+    background-image: url("Images/Buttons/Eye.png");
+}
 
 .hidden {
     display: none;

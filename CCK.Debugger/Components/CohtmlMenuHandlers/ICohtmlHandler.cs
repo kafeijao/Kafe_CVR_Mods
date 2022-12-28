@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using ABI_RC.Core.Player;
+﻿using ABI_RC.Core.Player;
 using ABI_RC.Systems.IK;
 using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
@@ -131,4 +130,5 @@ public abstract class ICohtmlHandler {
     protected static readonly List<TriggerVisualizer> CurrentEntityTriggerList = new();
     protected static readonly List<GameObjectVisualizer> CurrentEntityBoneList = new();
     protected static readonly List<GameObjectVisualizer> CurrentEntityTrackerList = new();
+    protected static readonly List<EyeTargetVisualizer> CurrentEyeCandidateList = new();
 }
