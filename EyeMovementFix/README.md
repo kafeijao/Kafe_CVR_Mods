@@ -1,4 +1,4 @@
-# BetterEyeMovement
+# EyeMovementFix
 
 Mod to attempt to fix some of the current issues with the eye movement. This will affect the local and remote players
 eye movement but only for the local client.
