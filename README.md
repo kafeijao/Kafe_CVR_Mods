@@ -14,6 +14,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [FreedomFingers](FreedomFingers) *in-depth url*
 - [ProfilesExtended](ProfilesExtended) *in-depth url*
 - [BetterLipsync](BetterLipsync) *in-depth url*
+- [EyeMovementFix](EyeMovementFix) *in-depth url*
 
 ---
 
@@ -124,6 +125,15 @@ Mod to replace the viseme controller with the
 Might be a bit heaby on the CPU performance, so beware.
 
 Check [Better Lipsync In-Dept](BetterLipsync) for more info.
+
+---
+
+### Eye Movement Fix
+
+Mod to attempt to fix some of the current issues with the eye movement. This will affect the local and remote players
+eye movement but only for the local client.
+
+Check [Eye Movement Fix In-Dept](EyeMovementFix) for more info.
 
 ---
 
