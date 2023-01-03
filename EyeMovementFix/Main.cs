@@ -57,7 +57,10 @@ public class EyeMovementFix : MelonMod {
             PortableMirror.Main._mirrorTrans,
             PortableMirror.Main._mirrorCal,
         };
-        var isPortableMirror = mirrorParents.Contains(cvrMirror.transform.parent.gameObject);
+        var parentGo = cvrMirror.transform.parent;
+        // Ignore objects without a parent, since portable mirror objects must have a parent
+        if (parentGo == null) return;
+        var isPortableMirror = mirrorParents.Contains(parentGo.gameObject);
 
         // If we added a portable mirror to the targets, remove it!
         if (isPortableMirror && __instance.mirrorList.Contains(cvrMirror)) {
