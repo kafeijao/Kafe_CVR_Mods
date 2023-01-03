@@ -11,12 +11,14 @@ public class CVRMicLipsyncSubscriber : BaseMicrophoneSubscriber {
     private int _channels;
     private bool _initialized;
     private CVRLipSyncContext _lipSyncContext;
-    private static CVRMicLipsyncSubscriber Instance;
+    private static CVRMicLipsyncSubscriber _instance;
+    private static bool _muted;
 
     public void Initialize(CVRLipSyncContext lipSyncContext) {
         _lipSyncContext = lipSyncContext;
+        _lipSyncContext.Muted = _muted;
         _initialized = true;
-        Instance = this;
+        _instance = this;
     }
 
     protected override void ProcessAudio(ArraySegment<float> data) {
@@ -33,13 +35,24 @@ public class CVRMicLipsyncSubscriber : BaseMicrophoneSubscriber {
         RootLogic.Instance.comms.MicrophoneCapture.Unsubscribe(this);
     }
 
+    private static void SetMuted(bool isMuted) {
+        _muted = isMuted;
+        if (_instance == null) return;
+        _instance._lipSyncContext.Muted = isMuted;
+    }
+
     [HarmonyPatch]
     private static class HarmonyPatches {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Audio), nameof(Audio.SetMicrophoneActive))]
         private static void After_Audio_SetMicrophoneActive(bool muted) {
-            if (Instance == null) return;
-            Instance._lipSyncContext.Muted = muted;
+            SetMuted(muted);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(DissonanceComms), nameof(DissonanceComms.IsMuted), MethodType.Setter)]
+        private static void After_DissonanceComms_IsMuted_Setter(bool value) {
+            SetMuted(value);
         }
     }
 }
