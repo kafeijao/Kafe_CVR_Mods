@@ -25,7 +25,7 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
 
         // Instantiate the visualizer GameObject inside of the target
         _visualizerGo = Instantiate(prefab, target.transform);
-        _visualizerGo.layer = LayerMask.NameToLayer("UI Internal");
+        _visualizerGo.layer = target.layer;
         _visualizerGo.name = GameObjectName;
 
         // Get the renderer and assign material
@@ -54,8 +54,9 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
     }
 
     private void OnDestroy() {
-        VisualizersActive.Remove(Tuple.Create(_targetGo, _visualizerType));
-        VisualizersAll.Remove(Tuple.Create(_targetGo, _visualizerType));
+        var tuple = Tuple.Create(_targetGo, _visualizerType);
+        if (VisualizersActive.ContainsKey(tuple)) VisualizersActive.Remove(tuple);
+        if (VisualizersAll.ContainsKey(tuple)) VisualizersAll.Remove(tuple);
     }
 
     private void OnEnable() {

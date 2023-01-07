@@ -42,10 +42,24 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
             }
         };
 
-        SyncTypeDict = new() {
+        SyncTypeDict = new Dictionary<int, string> {
             { 1, "GrabbedByMe" },
             { 3, "TeleGrabbed" },
             { 2, "Attached" },
+        };
+
+        // After spawnable is properly loaded
+        Events.Spawnable.CVRSpawnableStarted += spawnable => {
+            if (PropsData.CurrentObject != null && PropsData.CurrentObject.Spawnable == spawnable) return;
+            _hasLoaded = true;
+        };
+
+        // Mark spawnable as changed if the current inspect is destroyed
+        Events.Spawnable.CVRSpawnableDestroyed += spawnable => {
+            if (PropsData.CurrentObject != null && PropsData.CurrentObject.Spawnable == spawnable) return;
+            ResetCurrentEntities();
+            _hasLoaded = false;
+            PropsData.HasChanged = true;
         };
     }
 
@@ -54,6 +68,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
     private static readonly Dictionary<int, string> SyncTypeDict;
 
     private static readonly LooseList<CVRSyncHelper.PropData> PropsData;
+    private static bool _hasLoaded;
 
     // Attributes
     private static Section _attributeId;
@@ -85,7 +100,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggered;
     private static readonly Dictionary<CVRSpawnableTriggerTaskStay, float> TriggerSpawnableStayTasksLastTriggeredValue;
 
-    protected override void Load(CohtmlMenuController menu) {
+    protected override void Load() {
         PropsData.ListenPageChangeEvents = true;
         PropsData.HasChanged = true;
     }
@@ -94,9 +109,9 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         PropsData.ListenPageChangeEvents = false;
     }
 
-    public override void Reset() => PropsData.Reset();
+    protected override void Reset() => PropsData.Reset();
 
-    public override void Update(CohtmlMenuController menu) {
+    public override void Update() {
 
         PropsData.UpdateViaSource();
 
@@ -112,6 +127,8 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                 _core = new Core("Props");
                 PropsData.HasChanged = false;
                 Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(_core);
+                // Update button's states
+                Core.UpdateButtonsState();
             }
 
             return;
@@ -122,6 +139,9 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
 
         // Update the menus if the spawnable changed
         if (PropsData.HasChanged) {
+
+            // Wait for the spawnable to be properly loaded
+            if (!_hasLoaded) return;
 
             // Place the highlighter on the first collider found (if present)
             var firstCollider = currentSpawnable.transform.GetComponentInChildren<Collider>();
@@ -135,18 +155,18 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
             var triggerButton = _core.AddButton(new Button(Button.ButtonType.Trigger, false, false));
 
             // Setup button Handlers
-            pointerButton.StateUpdater = button => button.IsOn = CurrentEntityPointerList.All(vis => vis != null && vis.enabled);
+            pointerButton.StateUpdater = button => button.IsOn = CurrentEntityPointerList.Count > 0 && CurrentEntityPointerList.All(vis => vis.enabled);
             pointerButton.ClickHandler = button => {
                 button.IsOn = !button.IsOn;
                 CurrentEntityPointerList.ForEach(vis => {
-                    if (vis != null) vis.enabled = button.IsOn;
+                    vis.enabled = button.IsOn;
                 });
             };
-            triggerButton.StateUpdater = button => button.IsOn = CurrentEntityTriggerList.All(vis => vis != null && vis.enabled);
+            triggerButton.StateUpdater = button => button.IsOn = CurrentEntityTriggerList.Count > 0 && CurrentEntityTriggerList.All(vis => vis.enabled);
             triggerButton.ClickHandler = button => {
                 button.IsOn = !button.IsOn;
                 CurrentEntityTriggerList.ForEach(vis => {
-                    if (vis != null) vis.enabled = button.IsOn;
+                    vis.enabled = button.IsOn;
                 });
             };
 
@@ -216,9 +236,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                 pointerSubSection.AddSection("Type", pointer.type);
 
                 // Add the visualizer
-                if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
-                    CurrentEntityPointerList.Add(pointerVisualizer);
-                }
+                CurrentEntityPointerList.Add(PointerVisualizer.CreateVisualizer(pointer));
             }
             pointerButton.IsVisible = CurrentEntityPointerList.Count > 0;
 
@@ -317,9 +335,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                 }
 
                 // Add the visualizer
-                if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
-                    CurrentEntityTriggerList.Add(triggerVisualizer);
-                }
+                CurrentEntityTriggerList.Add(TriggerVisualizer.CreateVisualizer(trigger));
             }
             triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 

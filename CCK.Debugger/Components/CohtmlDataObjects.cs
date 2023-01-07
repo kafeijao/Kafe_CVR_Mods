@@ -38,8 +38,11 @@ public class Core {
 
         // Grab Button Handlers
         grabButton.StateUpdater = button => {
-            button.IsOn = CohtmlMenuController.Instance.Pickup.enabled;
-            button.IsVisible = CohtmlMenuController.Instance.CurrentMenuParent == CohtmlMenuController.MenuTarget.World;
+            var canBeOn = CohtmlMenuController.Instance.CurrentMenuParent == CohtmlMenuController.MenuTarget.World;
+            var isOn = CohtmlMenuController.Instance.Pickup.enabled;
+            CohtmlMenuController.Instance.Pickup.enabled = canBeOn && isOn;
+            button.IsOn = isOn;
+            button.IsVisible = canBeOn;
         };
         grabButton.ClickHandler = button => {
             button.IsOn = !button.IsOn;
@@ -78,7 +81,7 @@ public class Core {
 
             // If the menu is crashed, attempt to reload
             if (ICohtmlHandler.Crashed) {
-                ICohtmlHandler.Reload(CohtmlMenuController.Instance);
+                ICohtmlHandler.Reload();
                 return;
             }
 
@@ -124,8 +127,9 @@ public class Core {
     }
 
     private static bool GetButton(Button.ButtonType type, out Button button) {
-        button = Instance?._buttons?.GetValueOrDefault(type, null);
-        return button != null;
+        button = null;
+        var found = Instance?._buttons?.TryGetValue(type, out button);
+        return found.HasValue && found.Value;
     }
 
     internal static void OnCrash() {
@@ -158,7 +162,9 @@ public class Core {
     }
 
     public static void ClickButton(Button.ButtonType buttonType) {
-        Instance?._buttons?.GetValueOrDefault(buttonType, null)?.Click();
+        Button button = null;
+        Instance?._buttons?.TryGetValue(buttonType, out button);
+        button?.Click();
     }
 
     // Internal

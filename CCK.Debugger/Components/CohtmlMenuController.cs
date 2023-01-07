@@ -60,8 +60,8 @@ public class CohtmlMenuController : MonoBehaviour {
         ICohtmlHandler.Handlers.Add(new SpawnableCohtmlHandler());
         ICohtmlHandler.Handlers.Add(new MiscCohtmlHandler());
 
-        Events.DebuggerMenu.MainNextPage += () => ICohtmlHandler.SwitchMenu(cohtmlMenuController, true);
-        Events.DebuggerMenu.MainPreviousPage += () => ICohtmlHandler.SwitchMenu(cohtmlMenuController, false);
+        Events.DebuggerMenu.MainNextPage += () => ICohtmlHandler.SwitchMenu(true);
+        Events.DebuggerMenu.MainPreviousPage += () => ICohtmlHandler.SwitchMenu(false);
     }
 
     internal enum MenuTarget {
@@ -117,7 +117,7 @@ public class CohtmlMenuController : MonoBehaviour {
         try {
 
             // Update values via the current handler
-            ICohtmlHandler.CurrentHandler?.Update(this);
+            ICohtmlHandler.CurrentHandler?.Update();
 
             // Send the and consume the cached updates saved in this frame
             ConsumeCachedUpdates();
@@ -223,7 +223,7 @@ public class CohtmlMenuController : MonoBehaviour {
             view.TriggerEvent("CCKDebuggerModReady");
 
             // Reload current handler
-            ICohtmlHandler.Reload(this);
+            ICohtmlHandler.Reload();
 
             // Mark as initialized and update state
             Initialized = true;

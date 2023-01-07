@@ -60,19 +60,44 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             }
         };
 
-        // Update local avatar if we changed avatar and local avatar is selected
-        Events.Avatar.AnimatorManagerUpdated += () => {
-            if (PlayerEntities.CurrentObject == null) PlayerEntities.HasChanged = true;
+        // After avatar is properly loaded
+        Events.Avatar.CVRAvatarStarted += avatar => {
+            if (_hasLoaded) return;
+            if (PlayerEntities.CurrentObject == null) {
+                if (avatar.gameObject == PlayerSetup.Instance._avatar) {
+                    _hasLoaded = true;
+                }
+            }
+            else if (avatar.gameObject == PlayerEntities.CurrentObject.AvatarHolder) {
+                _hasLoaded = true;
+            }
+        };
+
+        // Mark as changed if the current avatar being inspected is destroyed
+        Events.Avatar.CVRAvatarDestroyed += avatar => {
+            if (PlayerEntities.CurrentObject == null) {
+                if (avatar.gameObject != PlayerSetup.Instance._avatar) return;
+                ResetCurrentEntities();
+                _hasLoaded = false;
+                PlayerEntities.HasChanged = true;
+            }
+            else if (avatar.gameObject == PlayerEntities.CurrentObject.AvatarHolder) {
+                ResetCurrentEntities();
+                _hasLoaded = false;
+                PlayerEntities.HasChanged = true;
+            }
         };
     }
 
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
     private static bool _wasDisabled;
+    private static bool _hasLoaded;
 
     private Core _core;
 
     // Attributes
     private static Section _attributeUsername;
+    private static Section _attributePlayerUuid;
     private static Section _attributeAvatar;
 
     private static Animator _mainAnimator;
@@ -98,7 +123,10 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTaskStay, float> TriggerAasStayTasksLastTriggeredValue;
 
-    protected override void Load(CohtmlMenuController menu) {
+    // Eye Movement
+    private static Section _eyeMovementSection;
+
+    protected override void Load() {
         PlayerEntities.ListenPageChangeEvents = true;
         PlayerEntities.HasChanged = true;
     }
@@ -107,9 +135,9 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         PlayerEntities.ListenPageChangeEvents = false;
     }
 
-    public override void Reset() => PlayerEntities.Reset();
+    protected override void Reset() => PlayerEntities.Reset();
 
-    public override void Update(CohtmlMenuController menu) {
+    public override void Update() {
 
         PlayerEntities.UpdateViaSource();
 
@@ -138,6 +166,9 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Update the menus if the spawnable changed
         if (PlayerEntities.HasChanged) {
 
+            // Wait for the avatar to load...
+            if (!_hasLoaded) return;
+
             // Recreate the core menu
             _core = new Core("Avatars");
 
@@ -146,39 +177,42 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             var boneButton = _core.AddButton(new Button(Button.ButtonType.Bone, false, false));
             var pointerButton = _core.AddButton(new Button(Button.ButtonType.Pointer, false, false));
             var triggerButton = _core.AddButton(new Button(Button.ButtonType.Trigger, false, false));
+            var eyeButton = _core.AddButton(new Button(Button.ButtonType.Eye, false, true));
 
             // Setup button Handlers
             trackerButton.StateUpdater = button => {
                 var handsActive = IKSystem.Instance.leftHandModel.activeSelf && IKSystem.Instance.rightHandModel.activeSelf;
-                button.IsOn = handsActive && CurrentEntityTrackerList.All(vis => vis != null && vis.enabled);
+                button.IsOn = handsActive && CurrentEntityTrackerList.Count > 0 && CurrentEntityTrackerList.All(vis => vis.enabled);
                 button.IsVisible = MetaPort.Instance.isUsingVr && isLocal;
             };
             trackerButton.ClickHandler = ClickTrackersButtonHandler;
-            boneButton.StateUpdater = button => button.IsOn = CurrentEntityBoneList.All(vis => vis != null && vis.enabled);
+            boneButton.StateUpdater = button => button.IsOn = CurrentEntityBoneList.Count > 0 && CurrentEntityBoneList.All(vis => vis.enabled);
             boneButton.ClickHandler = button => {
                 button.IsOn = !button.IsOn;
                 CurrentEntityBoneList.ForEach(vis => {
                     if (vis != null) vis.enabled = button.IsOn;
                 });
             };
-            pointerButton.StateUpdater = button => button.IsOn = CurrentEntityPointerList.All(vis => vis != null && vis.enabled);
+            pointerButton.StateUpdater = button => button.IsOn = CurrentEntityPointerList.Count > 0 && CurrentEntityPointerList.All(vis => vis.enabled);
             pointerButton.ClickHandler = button => {
                 button.IsOn = !button.IsOn;
                 CurrentEntityPointerList.ForEach(vis => {
-                    if (vis != null) vis.enabled = button.IsOn;
+                    vis.enabled = button.IsOn;
                 });
             };
-            triggerButton.StateUpdater = button => button.IsOn = CurrentEntityTriggerList.All(vis => vis != null && vis.enabled);
+            triggerButton.StateUpdater = button => button.IsOn = CurrentEntityTriggerList.Count > 0 && CurrentEntityTriggerList.All(vis => vis.enabled);
             triggerButton.ClickHandler = button => {
                 button.IsOn = !button.IsOn;
                 CurrentEntityTriggerList.ForEach(vis => {
-                    if (vis != null) vis.enabled = button.IsOn;
+                    vis.enabled = button.IsOn;
                 });
             };
+            eyeButton.ClickHandler = button => button.IsOn = !button.IsOn;
 
             // Static sections
             var attributesSection = _core.AddSection("Attributes");
             _attributeUsername = attributesSection.AddSection("User Name");
+            _attributePlayerUuid = attributesSection.AddSection("User ID");
             _attributeAvatar = attributesSection.AddSection("Avatar Name/ID");
             attributesSection.AddSection("Avatar Hidden").Value = ToString(isAvatarDisabled);
 
@@ -231,9 +265,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                     pointerSubSection.AddSection("Type", pointer.type);
 
                     // Add the visualizer
-                    if (PointerVisualizer.CreateVisualizer(pointer, out var pointerVisualizer)) {
-                        CurrentEntityPointerList.Add(pointerVisualizer);
-                    }
+                    CurrentEntityPointerList.Add(PointerVisualizer.CreateVisualizer(pointer));
                 }
                 pointerButton.IsVisible = CurrentEntityPointerList.Count > 0;
 
@@ -320,9 +352,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                     }
 
                     // Add the visualizer
-                    if (TriggerVisualizer.CreateVisualizer(trigger, out var triggerVisualizer)) {
-                        CurrentEntityTriggerList.Add(triggerVisualizer);
-                    }
+                    CurrentEntityTriggerList.Add(TriggerVisualizer.CreateVisualizer(trigger));
                 }
                 triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 
@@ -338,6 +368,60 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                     }
                 }
                 boneButton.IsVisible = CurrentEntityBoneList.Count > 0;
+
+
+                // Eye movement target
+                EyeTargetVisualizer.UpdateActive(false, new List<CVREyeControllerCandidate>(), "");
+                _eyeMovementSection = _core.AddSection("Eye Movement", true);
+                var eyeManager = CVREyeControllerManager.Instance;
+                var localController = eyeManager.controllerList.FirstOrDefault(controller => controller.animator == _mainAnimator);
+
+                var hasEyeController = localController != null;
+                eyeButton.IsVisible = hasEyeController;
+
+                // Prevent initializing if there is no Eye Movement controller
+                if (hasEyeController) {
+
+                    var targetGuid = Traverse.Create(localController).Field<string>("targetGuid").Value;
+
+                    // Eye movement visualizers updater
+                    eyeButton.StateUpdater = button => {
+
+                        if (button.IsOn && eyeButton.IsVisible) {
+
+                            foreach (var candidate in eyeManager.targetCandidates) {
+                                // Create visualizer (if doesn't exist yet)
+                                EyeTargetVisualizer.Create(eyeManager.gameObject, out var trackerVisualizer, candidate.Key, candidate.Value) ;
+                            }
+
+                            // Update the visualizer states
+                            EyeTargetVisualizer.UpdateActive(button.IsOn, eyeManager.targetCandidates.Values, targetGuid);
+                        }
+                    };
+
+                    var controllerTraverse = Traverse.Create(localController);
+
+                    var targetGuidField = controllerTraverse.Field<string>("targetGuid");
+                    _eyeMovementSection.AddSection("Target Guid").AddValueGetter(() => targetGuidField.Value);
+
+                    var eyeAngleField = controllerTraverse.Field<Vector2>("eyeAngle");
+                    _eyeMovementSection.AddSection("Eye Angle").AddValueGetter(() => eyeAngleField.Value.ToString("F3"));
+
+                    var leftEyeField = controllerTraverse.Field<Transform>("EyeLeft");
+                    if (leftEyeField != null) _eyeMovementSection.AddSection("Left Eye Rotation").AddValueGetter(() => leftEyeField.Value.localRotation.ToString("F3"));
+
+                    var leftEyeBaseRotField = controllerTraverse.Field<Quaternion>("EyeLeftBaseRot");
+                    if (leftEyeBaseRotField != null) _eyeMovementSection.AddSection("Left Eye Rotation Base").AddValueGetter(() => leftEyeBaseRotField.Value.ToString("F3"));
+
+                    var rightEyeField = controllerTraverse.Field<Transform>("EyeRight");
+                    if (rightEyeField != null) _eyeMovementSection.AddSection("Right Eye Rotation").AddValueGetter(() => rightEyeField.Value.localRotation.ToString("F3"));
+
+                    var rightEyeBaseRotField = controllerTraverse.Field<Quaternion>("EyeRightBaseRot");
+                    if (rightEyeBaseRotField != null) _eyeMovementSection.AddSection("Right Eye Rotation Base").AddValueGetter(() => rightEyeBaseRotField.Value.ToString("F3"));
+
+                    _eyeMovementSection.AddSection("Candidates").AddValueGetter(() => eyeManager.targetCandidates.Values.Join(candidate => candidate.Guid));
+                }
+
             }
 
             // Consume the avatar changed
@@ -349,10 +433,12 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         Core.UpdateButtonsState();
 
         var playerUserName = isLocal ? MetaPort.Instance.username : currentPlayer.Username;
+        var playerId = isLocal ? MetaPort.Instance.ownerId : currentPlayer.Uuid;
         var playerAvatarName = GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId);
 
         // Update Avatar Data Info
         _attributeUsername.Update(playerUserName);
+        _attributePlayerUuid.Update(playerId);
         _attributeAvatar.Update(playerAvatarName);
 
         // Ignore the rest, since it's not populated
@@ -368,5 +454,8 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         // Update cvr trigger values
         _sectionTriggers.UpdateFromGetter(true);
+
+        // Update eye movement values
+        _eyeMovementSection?.UpdateFromGetter(true);
     }
 }

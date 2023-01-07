@@ -41,6 +41,10 @@ public class EyeTargetVisualizer : GameObjectVisualizer {
 
     protected override void SetupVisualizer(float scale = 1f) {
 
+        // Enforce eye targets to be on the UI Internel, so they are not visible in most mirrors, because they also
+        // have mirror behavior
+        _visualizerGo.layer = LayerMask.NameToLayer("UI Internal");
+
         // Set transform components
         var visualizerTransform = _visualizerGo.transform;
         visualizerTransform.localPosition = Vector3.zero;
@@ -54,16 +58,17 @@ public class EyeTargetVisualizer : GameObjectVisualizer {
 
     internal static void UpdateActive(bool isOn, ICollection<CVREyeControllerCandidate> candidates, string targetGuid) {
         foreach (var goVis in VisualizersAll) {
-            var vis = (EyeTargetVisualizer) goVis.Value;
-            var isCandidate = isOn && candidates.Contains(vis._candidate);
-            vis.enabled = isCandidate;
-            vis._visualizerGo.SetActive(isCandidate);
+            if (goVis.Value is EyeTargetVisualizer vis) {
+                var isCandidate = isOn && candidates.Contains(vis._candidate);
+                vis.enabled = isCandidate;
+                vis._visualizerGo.SetActive(isCandidate);
 
-            if (!isCandidate) continue;
-            var isTarget = vis._candidate.Guid == targetGuid;
-            vis._material.SetColor(Misc.MatOutlineColor, isTarget ? BrighterColor : DarkerColor);
-            vis._visualizerGo.transform.transform.localScale = vis._baseScale * (isTarget ? 2f : 1f);
-            vis.transform.position = vis._candidate.Position;
+                if (!isCandidate) continue;
+                var isTarget = vis._candidate.Guid == targetGuid;
+                vis._material.SetColor(Misc.MatOutlineColor, isTarget ? BrighterColor : DarkerColor);
+                vis._visualizerGo.transform.transform.localScale = vis._baseScale * (isTarget ? 2f : 1f);
+                vis.transform.position = vis._candidate.Position;
+            }
         }
     }
 }

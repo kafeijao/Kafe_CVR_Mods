@@ -8,7 +8,6 @@ using ABI.CCK.Components;
 using CCK.Debugger.Components;
 using HarmonyLib;
 using MelonLoader;
-using TMPro;
 using UnityEngine;
 
 namespace CCK.Debugger;
@@ -86,11 +85,30 @@ public class CCKDebugger : MelonMod {
     [HarmonyPatch]
     private class HarmonyPatches {
 
-        // TMP Text
+        // Avatar Destroyed
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(TextMeshProUGUI), "OnDestroy")]
-        static void AfterTextMeshProUGUIDestroyed(TextMeshProUGUI __instance) {
-            Events.DebuggerMenu.OnTextMeshProUGUIDestroyed(__instance);
+        [HarmonyPatch(typeof(CVRAvatar), "OnDestroy")]
+        static void After_CVAvatar_OnDestroy(CVRAvatar __instance) {
+            Events.Avatar.OnCVRAvatarDestroyed(__instance);
+        }
+        // Avatar Started
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRAvatar), "Start")]
+        static void After_CVAvatar_Start(CVRAvatar __instance) {
+            Events.Avatar.OnCVRAvatarStarted(__instance);
+        }
+
+        // Spawnable Destroyed
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnable), "OnDestroy")]
+        static void After_CVRSpawnable_OnDestroy(CVRSpawnable __instance) {
+            Events.Spawnable.OnCVRSpawnableDestroyed(__instance);
+        }
+        // Spawnable Started
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnable), "Start")]
+        static void After_CVRSpawnable_Start(CVRSpawnable __instance) {
+            Events.Spawnable.OnCVRSpawnableStarted(__instance);
         }
 
         // Spawnables
@@ -194,19 +212,6 @@ public class CCKDebugger : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), "Start")]
         private static void AfterMenuCreated(ref CVR_MenuManager __instance) {
-            // var quickMenuTransform = __instance.quickMenu.transform;
-            //
-            // // Instantiate and add the controller script
-            // var cckDebugger = UnityEngine.Object.Instantiate(
-            //     Resources.AssetBundleLoader.GetMenuGameObject(),
-            //     quickMenuTransform);
-            // var menu = cckDebugger.AddComponent<Menu>();
-            //
-            // // Add aux menu to be able to reset the menu if lost
-            // var cckDebuggerPins = UnityEngine.Object.Instantiate(
-            //     Resources.AssetBundleLoader.GetMenuPinGameObject(),
-            //     quickMenuTransform);
-            // menu.AddMenuAux(cckDebuggerPins);
 
             try {
                 // Initialize the CCK Debugger Cohtml menu

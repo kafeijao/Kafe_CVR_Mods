@@ -10,10 +10,10 @@ namespace CCK.Debugger.Components.CohtmlMenuHandlers;
 
 public abstract class ICohtmlHandler {
 
-    protected abstract void Load(CohtmlMenuController menu);
+    protected abstract void Load();
     protected abstract void Unload();
-    public abstract void Update(CohtmlMenuController menu);
-    public abstract void Reset();
+    public abstract void Update();
+    protected abstract void Reset();
 
     internal static bool Crashed;
 
@@ -21,41 +21,31 @@ public abstract class ICohtmlHandler {
     internal static ICohtmlHandler CurrentHandler;
     internal static readonly List<ICohtmlHandler> Handlers = new();
 
-    public static void Reload(CohtmlMenuController menu) {
+    public static void Reload() {
         if (CurrentHandler == null) {
             CurrentHandler = Handlers[0];
-            Initialize();
+            Core.UpdateButtonsState();
         }
         else {
             CurrentHandler.Unload();
         }
 
-        CurrentHandler.Load(menu);
+        CurrentHandler.Load();
 
         // Recover from a crash
         CurrentHandler.Reset();
         Crashed = false;
     }
 
-    private static void Initialize() {
+    internal static void ResetCurrentEntities() {
 
-        Events.DebuggerMenu.SwitchedInspectedEntity += finishedInitializing => {
-
-            // Cleaning up caches, since started changing entity
-            if (!finishedInitializing) {
-                CurrentEntityPointerList.Clear();
-                CurrentEntityTriggerList.Clear();
-                CurrentEntityBoneList.Clear();
-            }
-
-            // The change entity has finished, lets update the toggle states
-            else {
-                Core.UpdateButtonsState();
-            }
-        };
+        // Cleaning up caches, since started changing entity
+        CurrentEntityPointerList.Clear();
+        CurrentEntityTriggerList.Clear();
+        CurrentEntityBoneList.Clear();
     }
 
-    protected void ClickTrackersButtonHandler(Button button) {
+    protected static void ClickTrackersButtonHandler(Button button) {
 
         // Create the visualizers if they don't exist
         if (button.IsOn) {
@@ -76,7 +66,7 @@ public abstract class ICohtmlHandler {
         CurrentEntityTrackerList.ForEach(vis => vis.enabled = button.IsOn);
     }
 
-    public static void SwitchMenu(CohtmlMenuController menu, bool next) {
+    public static void SwitchMenu(bool next) {
         // We can't switch if we only have one handler
         if (Handlers.Count <= 1) return;
 
@@ -84,8 +74,7 @@ public abstract class ICohtmlHandler {
         CurrentHandler.Unload();
 
         // Reset inspected entity (since we're changing menu)
-        Events.DebuggerMenu.OnSwitchInspectedEntity(false);
-        Events.DebuggerMenu.OnSwitchInspectedEntity(true);
+        ResetCurrentEntities();
 
         // Hide the controls (they'll be shown in the handler if they need
         if (CohtmlMenuController.Initialized && Core.Instance != null) {
@@ -93,7 +82,7 @@ public abstract class ICohtmlHandler {
         }
 
         CurrentHandler = Handlers[_currentHandlerIndex];
-        CurrentHandler.Load(menu);
+        CurrentHandler.Load();
 
         // Recover from a crash
         Crashed = false;
@@ -130,5 +119,4 @@ public abstract class ICohtmlHandler {
     protected static readonly List<TriggerVisualizer> CurrentEntityTriggerList = new();
     protected static readonly List<GameObjectVisualizer> CurrentEntityBoneList = new();
     protected static readonly List<GameObjectVisualizer> CurrentEntityTrackerList = new();
-    protected static readonly List<EyeTargetVisualizer> CurrentEyeCandidateList = new();
 }

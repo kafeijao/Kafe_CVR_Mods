@@ -10,12 +10,7 @@ public class LooseList<T> : List<T> {
     private bool _hasChanged;
     public bool HasChanged {
         get => _hasChanged;
-        set {
-            // Ignore if it didn't change
-            //if (_hasChanged == value) return;
-            _hasChanged = value;
-            Events.DebuggerMenu.OnSwitchInspectedEntity(!_hasChanged);
-        }
+        set => _hasChanged = value;
     }
 
     private readonly IEnumerable<T> _source;

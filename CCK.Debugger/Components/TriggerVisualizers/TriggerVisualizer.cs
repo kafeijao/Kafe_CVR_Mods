@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace CCK.Debugger.Components.TriggerVisualizers;
 
+[DefaultExecutionOrder(999999)]
 public abstract class TriggerVisualizer : MonoBehaviour {
 
     private static readonly Dictionary<MonoBehaviour, TriggerVisualizer> VisualizersAll = new();
@@ -19,18 +20,14 @@ public abstract class TriggerVisualizer : MonoBehaviour {
     protected MonoBehaviour TriggerBehavior;
     protected GameObject VisualizerGo;
 
+    protected bool Initialized { get; private set; }
+
     protected BoxCollider TriggerCollider { get; private set; }
 
-    public static bool CreateVisualizer(MonoBehaviour trigger, out TriggerVisualizer visualizer) {
+    public static TriggerVisualizer CreateVisualizer(MonoBehaviour trigger) {
 
         // Check if the component already exists, if so ignore the creation request
-        if (trigger.TryGetComponent(out visualizer)) return true;
-
-        // Ignore triggers without box collider (should never happen ?)
-        if (!trigger.TryGetComponent(out BoxCollider boxCollider)) {
-            visualizer = null;
-            return false;
-        }
+        if (trigger.TryGetComponent(out TriggerVisualizer visualizer)) return visualizer;
 
         // Create a visualizer for the proper type ;_; why triggers don't have a base class
         Type visType;
@@ -42,30 +39,22 @@ public abstract class TriggerVisualizer : MonoBehaviour {
                 visType = typeof(TriggerSpawnableVisualizer);
                 break;
             default:
-                MelonLogger.Error($"Attempted to add a visualizer to the trigger type {trigger.GetType().Name}, " +
-                                  $"but this trigger type is not yet supported! Contact the mod creator.");
-                visualizer = null;
-                return false;
+                var type = trigger != null ? trigger.GetType().Name : "null";
+                throw new NotImplementedException($"Attempted to add a visualizer to the trigger type {type}, " +
+                                                  "but this trigger type is not yet supported! Contact the mod creator.");
         }
 
-        // Instantiate the proper visualizer for a cube collider
+        // Instantiate the proper visualizer for the right type of trigger
         visualizer = (TriggerVisualizer) trigger.gameObject.AddComponent(visType);
-        visualizer.TriggerCollider = boxCollider;
-        visualizer.InitializeVisualizer(trigger, Utils.Misc.GetPrimitiveMesh(PrimitiveType.Cube));
+        visualizer.TriggerBehavior = trigger;
 
         // Disable the behavior
         visualizer.enabled = false;
-        return true;
+        return visualizer;
     }
 
-    private bool IsInitialized() => VisualizerGo != null;
-
-    private void InitializeVisualizer(MonoBehaviour trigger, Mesh mesh) {
-        VisualizerGo = new GameObject(GameObjectName) {
-            layer = LayerMask.NameToLayer("UI Internal")
-        };
-
-        TriggerBehavior = trigger;
+    private void InitializeVisualizer(Mesh mesh) {
+        VisualizerGo = new GameObject(GameObjectName) { layer = TriggerBehavior.gameObject.layer };
 
         // Create mesh filter
         var meshFilter = VisualizerGo.AddComponent<MeshFilter>();
@@ -98,32 +87,54 @@ public abstract class TriggerVisualizer : MonoBehaviour {
         renderer.materials = new[] { MaterialStandard, MaterialNeitri };
 
         // Add as a child to the pointer
-        VisualizerGo.transform.SetParent(trigger.transform, false);
+        VisualizerGo.transform.SetParent(TriggerBehavior.transform, false);
 
         // Hide by default
         VisualizerGo.SetActive(false);
     }
 
     protected virtual void Start() {
+
+        // All triggers should have a collider at this point... Otherwise something went wrong
+        if (!TriggerBehavior.TryGetComponent(out BoxCollider boxCollider)) {
+            var err = $"Failed to create a trigger visualizer because it's missing a collider... Name: " +
+                      $"{TriggerBehavior.gameObject.name}: IsActive: {TriggerBehavior.gameObject.activeSelf} " +
+                      $"Components in the Game Object: \n";
+            foreach (var monoBehaviour in TriggerBehavior.GetComponents<MonoBehaviour>()) {
+                err += $"\tComponent Type: {monoBehaviour.GetType()}";
+            }
+            err += $"This is a bug, contact the mod creator with this information please.";
+            MelonLogger.Error(err);
+            return;
+        }
+
+        TriggerCollider = boxCollider;
+        InitializeVisualizer(Misc.GetPrimitiveMesh(PrimitiveType.Cube));
+
         VisualizersAll[TriggerBehavior] = this;
+        Initialized = true;
+        UpdateState();
+    }
+
+    private void UpdateState() {
+        if (!Initialized) return;
+        VisualizerGo.SetActive(enabled);
+        if (enabled && !VisualizersActive.ContainsKey(TriggerBehavior)) {
+            VisualizersActive.Add(TriggerBehavior, this);
+        }
+        else if (!enabled && VisualizersActive.ContainsKey(TriggerBehavior)) {
+            VisualizersActive.Remove(TriggerBehavior);
+        }
     }
 
     private void OnDestroy() {
-        VisualizersActive.Remove(TriggerBehavior);
-        VisualizersAll.Remove(TriggerBehavior);
+        if (VisualizersActive.ContainsKey(TriggerBehavior)) VisualizersActive.Remove(TriggerBehavior);
+        if (VisualizersAll.ContainsKey(TriggerBehavior)) VisualizersAll.Remove(TriggerBehavior);
     }
 
-    private void OnEnable() {
-        if (!IsInitialized()) return;
-        VisualizerGo.SetActive(true);
-        VisualizersActive.Add(TriggerBehavior, this);
-    }
+    private void OnEnable() => UpdateState();
 
-    private void OnDisable() {
-        if (!IsInitialized()) return;
-        VisualizerGo.SetActive(false);
-        VisualizersActive.Remove(TriggerBehavior);
-    }
+    private void OnDisable() => UpdateState();
 
     private void ResetMaterialSettings() {
         MaterialStandard.SetColor(Misc.MatMainColor, Misc.ColorWhiteFade);
