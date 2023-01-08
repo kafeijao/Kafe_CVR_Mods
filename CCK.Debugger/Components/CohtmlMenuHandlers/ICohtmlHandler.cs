@@ -1,9 +1,6 @@
-﻿using ABI_RC.Core.Player;
-using ABI_RC.Systems.IK;
-using CCK.Debugger.Components.GameObjectVisualizers;
+﻿using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
-using HarmonyLib;
 using UnityEngine;
 
 namespace CCK.Debugger.Components.CohtmlMenuHandlers;
@@ -43,27 +40,6 @@ public abstract class ICohtmlHandler {
         CurrentEntityPointerList.Clear();
         CurrentEntityTriggerList.Clear();
         CurrentEntityBoneList.Clear();
-    }
-
-    protected static void ClickTrackersButtonHandler(Button button) {
-
-        // Create the visualizers if they don't exist
-        if (button.IsOn) {
-            CurrentEntityTrackerList.Clear();
-            var avatarHeight = Traverse.Create(PlayerSetup.Instance).Field("_avatarHeight").GetValue<float>();
-            var trackers = IKSystem.Instance.AllTrackingPoints.FindAll((t) => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
-            foreach (var tracker in trackers) {
-                if (TrackerVisualizer.Create(tracker, out var trackerVisualizer, avatarHeight)) {
-                    CurrentEntityTrackerList.Add(trackerVisualizer);
-                }
-            }
-        }
-
-        // Enable controller models
-        IKSystem.Instance.leftHandModel.SetActive(button.IsOn);
-        IKSystem.Instance.rightHandModel.SetActive(button.IsOn);
-
-        CurrentEntityTrackerList.ForEach(vis => vis.enabled = button.IsOn);
     }
 
     public static void SwitchMenu(bool next) {
@@ -117,6 +93,5 @@ public abstract class ICohtmlHandler {
     // Pointers, Triggers, Bones, and Trackers
     protected static readonly List<PointerVisualizer> CurrentEntityPointerList = new();
     protected static readonly List<TriggerVisualizer> CurrentEntityTriggerList = new();
-    protected static readonly List<GameObjectVisualizer> CurrentEntityBoneList = new();
-    protected static readonly List<GameObjectVisualizer> CurrentEntityTrackerList = new();
+    protected static readonly List<BoneVisualizer> CurrentEntityBoneList = new();
 }

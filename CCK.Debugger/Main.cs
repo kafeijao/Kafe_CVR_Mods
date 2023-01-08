@@ -89,26 +89,54 @@ public class CCKDebugger : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRAvatar), "OnDestroy")]
         static void After_CVAvatar_OnDestroy(CVRAvatar __instance) {
-            Events.Avatar.OnCVRAvatarDestroyed(__instance);
+            try {
+                Events.Avatar.OnCVRAvatarDestroyed(__instance);
+            }
+            catch (Exception e) {
+                MelonLogger.Error("Error executing After_CVAvatar_OnDestroy Postfix...");
+                MelonLogger.Error(e);
+                throw;
+            }
         }
         // Avatar Started
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRAvatar), "Start")]
         static void After_CVAvatar_Start(CVRAvatar __instance) {
-            Events.Avatar.OnCVRAvatarStarted(__instance);
+            try {
+                Events.Avatar.OnCVRAvatarStarted(__instance);
+            }
+            catch (Exception e) {
+                MelonLogger.Error("Error executing After_CVAvatar_Start Postfix...");
+                MelonLogger.Error(e);
+                throw;
+            }
         }
 
         // Spawnable Destroyed
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRSpawnable), "OnDestroy")]
         static void After_CVRSpawnable_OnDestroy(CVRSpawnable __instance) {
-            Events.Spawnable.OnCVRSpawnableDestroyed(__instance);
+            try {
+                Events.Spawnable.OnCVRSpawnableDestroyed(__instance);
+            }
+            catch (Exception e) {
+                MelonLogger.Error("Error executing After_CVRSpawnable_OnDestroy Postfix...");
+                MelonLogger.Error(e);
+                throw;
+            }
         }
         // Spawnable Started
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRSpawnable), "Start")]
         static void After_CVRSpawnable_Start(CVRSpawnable __instance) {
-            Events.Spawnable.OnCVRSpawnableStarted(__instance);
+            try {
+                Events.Spawnable.OnCVRSpawnableStarted(__instance);
+            }
+            catch (Exception e) {
+                MelonLogger.Error("Error executing After_CVRSpawnable_Start Postfix...");
+                MelonLogger.Error(e);
+                throw;
+            }
         }
 
         // Spawnables
@@ -226,6 +254,5 @@ public class CCKDebugger : MelonMod {
             // Add ourselves to the player list (why not here xd)
             Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, MetaPort.Instance.username);
         }
-
     }
 }

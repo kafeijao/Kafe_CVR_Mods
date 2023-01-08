@@ -124,7 +124,7 @@ public class CohtmlMenuController : MonoBehaviour {
         }
         catch (Exception e) {
             MelonLogger.Error(e);
-            MelonLogger.Error($"Something BORKED really bad, and to prevent lagging we're going to stop the debugger menu updates until you swap entity.");
+            MelonLogger.Error($"Something BORKED really bad, and to prevent lagging we're going to stop the debugger menu updates until click reset.");
             MelonLogger.Error($"Feel free to ping kafeijao#8342 in the #bug-reports channel of ChilloutVR Modding Group discord with the error message.");
 
             // Add the error to the menu

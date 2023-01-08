@@ -8,14 +8,14 @@ public abstract class ParameterEntrySection {
     public static ParameterEntrySection Get(Animator animator, AnimatorControllerParameter param) {
         switch (param.type) {
             case AnimatorControllerParameterType.Float:
-                var entityFloat = new ParameterEntrySection<float>(param, id => animator == null ? -1f : animator.GetFloat(id));
+                var entityFloat = new ParameterEntrySection<float>(param, id => animator.GetFloat(id));
                 return entityFloat;
             case AnimatorControllerParameterType.Int:
-                var entityInt = new ParameterEntrySection<int>(param, id => animator == null ? -1 : animator.GetInteger(id));
+                var entityInt = new ParameterEntrySection<int>(param, id => animator.GetInteger(id));
                 return entityInt;
             case AnimatorControllerParameterType.Bool:
             case AnimatorControllerParameterType.Trigger:
-                var entityBool = new ParameterEntrySection<bool>(param, id => animator != null && animator.GetBool(id));
+                var entityBool = new ParameterEntrySection<bool>(param, id => animator.GetBool(id));
                 return entityBool;
                 //Entries.AddLast(new ParameterEntry<bool>(param, display, animator.GetBool, true));
                 //return;

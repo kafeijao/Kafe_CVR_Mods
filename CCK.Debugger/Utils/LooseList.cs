@@ -7,12 +7,6 @@ public class LooseList<T> : List<T> {
     public T CurrentObject { get; private set; }
     public int CurrentObjectIndex { get; private set; }
 
-    private bool _hasChanged;
-    public bool HasChanged {
-        get => _hasChanged;
-        set => _hasChanged = value;
-    }
-
     private readonly IEnumerable<T> _source;
     private readonly Func<T, bool> _sourceEntryIsValid;
     private readonly bool _initializeWithDefault;
@@ -25,7 +19,6 @@ public class LooseList<T> : List<T> {
         _source = source;
         _sourceEntryIsValid = sourceEntryIsValid;
         _initializeWithDefault = initializeWithDefault;
-        HasChanged = true;
 
         // Add handlers for increment changes
         Events.DebuggerMenu.ControlsNextPage += () => {
@@ -37,8 +30,12 @@ public class LooseList<T> : List<T> {
     }
 
     public void Reset() {
-        CurrentObject = default;
         CurrentObjectIndex = 0;
+        // Detect current object changes
+        if (!EqualityComparer<T>.Default.Equals(default, CurrentObject)) {
+            CurrentObject = default;
+            Events.DebuggerMenu.OnEntityChange();
+        }
     }
 
     public void UpdateViaSource() {
@@ -70,10 +67,11 @@ public class LooseList<T> : List<T> {
             CurrentObjectIndex = (currIndex + _pageIncrement + Count) % Count;
             _pageIncrement = 0;
 
-            // Detect current object changes
-            if (!EqualityComparer<T>.Default.Equals(this[CurrentObjectIndex], CurrentObject)) HasChanged = true;
+            if (EqualityComparer<T>.Default.Equals(this[CurrentObjectIndex], CurrentObject)) return;
 
+            // Update if there are current object changes
             CurrentObject = this[CurrentObjectIndex];
+            Events.DebuggerMenu.OnEntityChange();
         }
         catch (Exception e) {
             MelonLogger.Error("Something went wrong when updating our loose list.");

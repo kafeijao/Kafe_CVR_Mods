@@ -25,10 +25,7 @@ internal static class Spawnable {
         SpawnableStayTriggerTriggered?.Invoke(triggerTask);
     }
 
+    public static void OnCVRSpawnableStarted(CVRSpawnable spawnable) => DebuggerMenu.OnSpawnableLoad(spawnable, true);
 
-    public static event Action<CVRSpawnable> CVRSpawnableDestroyed;
-    public static void OnCVRSpawnableDestroyed(CVRSpawnable spawnable) => CVRSpawnableDestroyed?.Invoke(spawnable);
-
-    public static event Action<CVRSpawnable> CVRSpawnableStarted;
-    public static void OnCVRSpawnableStarted(CVRSpawnable spawnable) => CVRSpawnableStarted?.Invoke(spawnable);
+    public static void OnCVRSpawnableDestroyed(CVRSpawnable spawnable) => DebuggerMenu.OnSpawnableLoad(spawnable, false);
 }

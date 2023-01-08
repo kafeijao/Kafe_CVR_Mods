@@ -1,4 +1,5 @@
-﻿using CCK.Debugger.Components.CohtmlMenuHandlers;
+﻿using ABI_RC.Core.Savior;
+using CCK.Debugger.Components.CohtmlMenuHandlers;
 using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
 using CCK.Debugger.Components.TriggerVisualizers;
@@ -73,7 +74,10 @@ public class Core {
 
         // Reset Button Handlers
         reset.StateUpdater = button => {
-            var hasActive = PointerVisualizer.HasActive() || TriggerVisualizer.HasActive() || GameObjectVisualizer.HasActive();
+            var hasActive = PointerVisualizer.HasActive() ||
+                            TriggerVisualizer.HasActive() ||
+                            GameObjectVisualizer.HasActive() ||
+                            TrackerVisualizer.HasTrackersActive() && MetaPort.Instance.isUsingVr;
             button.IsOn = hasActive || ICohtmlHandler.Crashed;
         };
         reset.ClickHandler = button => {
@@ -106,6 +110,9 @@ public class Core {
             PointerVisualizer.DisableAll();
             TriggerVisualizer.DisableAll();
             GameObjectVisualizer.DisableAll();
+
+            // Disable trackers
+            TrackerVisualizer.ToggleTrackers(false);
         };
 
         Instance = this;
@@ -126,7 +133,7 @@ public class Core {
         return button;
     }
 
-    private static bool GetButton(Button.ButtonType type, out Button button) {
+    internal static bool GetButton(Button.ButtonType type, out Button button) {
         button = null;
         var found = Instance?._buttons?.TryGetValue(type, out button);
         return found.HasValue && found.Value;
@@ -159,6 +166,10 @@ public class Core {
 
     public static void UpdateButtonsState() {
         Instance?.Buttons.ForEach(button => button.UpdateState());
+    }
+
+    public static void UpdateSectionsFromGetters() {
+        Instance?.Sections.ForEach(section => section.UpdateFromGetter(true));
     }
 
     public static void ClickButton(Button.ButtonType buttonType) {

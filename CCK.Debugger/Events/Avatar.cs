@@ -31,10 +31,7 @@ internal static class Avatar {
         AasStayTriggerTriggered?.Invoke(triggerTask);
     }
 
+    public static void OnCVRAvatarStarted(CVRAvatar avatar) => DebuggerMenu.OnAvatarLoad(avatar, true);
 
-    public static event Action<CVRAvatar> CVRAvatarDestroyed;
-    public static void OnCVRAvatarDestroyed(CVRAvatar avatar) => CVRAvatarDestroyed?.Invoke(avatar);
-
-    public static event Action<CVRAvatar> CVRAvatarStarted;
-    public static void OnCVRAvatarStarted(CVRAvatar avatar) => CVRAvatarStarted?.Invoke(avatar);
+    public static void OnCVRAvatarDestroyed(CVRAvatar avatar) => DebuggerMenu.OnAvatarLoad(avatar, false);
 }
