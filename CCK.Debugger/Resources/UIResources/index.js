@@ -118,7 +118,7 @@ let cckDebugger = {
             key.setAttribute("cck-debugger-feedback", "Hover")
 
             // Add the click event to the section to show/hide the prefix on the section key, and hide/show the children
-            sectionNode.addEventListener("click", (event) => {
+            const clickEvent = (event) => {
                 prefixClosed.classList.toggle("hidden");
                 prefixOpened.classList.toggle("hidden");
                 sectionNode.classList.toggle('has-hidden-children');
@@ -126,7 +126,11 @@ let cckDebugger = {
                     subSectionNode.classList.toggle('hidden');
                 }
                 event.stopPropagation();
-            });
+            }
+            sectionNode.addEventListener("click", clickEvent);
+
+            // Cache the list of subsections (to be used if we have dynamic subsections)
+            sectionNode['CCK.ClickEventSubSectionNodes'] = subSectionNodes;
         }
 
         return sectionNode;
@@ -138,7 +142,7 @@ let cckDebugger = {
         // If the section already exists, lets just grab from the cache
         if (sectionId in cckDebugger.sectionCache) {
             // Destructuring assignment to put the cache variables into values
-            ({ root, prefixClosed, prefixOpened, key, separator, value, sectionInfo } = cckDebugger.sectionCache[sectionId]);
+            ({ parent, root, prefixClosed, prefixOpened, key, separator, value, sectionInfo } = cckDebugger.sectionCache[sectionId]);
         }
         // Otherwise, create new button element
         else {
@@ -158,7 +162,7 @@ let cckDebugger = {
             prefixClosed.classList.add("hidden");
             sectionInfo.appendChild(prefixClosed);
 
-            // Create the oepened prefix element part of the section
+            // Create the opened prefix element part of the section
             prefixOpened = document.createElement('p');
             prefixOpened.textContent = 'v ';
             // Lets have it hidden by default
@@ -184,8 +188,8 @@ let cckDebugger = {
             // Append to the parent provided
             parent.appendChild(root);
 
-            // Cache all 4 elements that make a section
-            cckDebugger.sectionCache[sectionId] = { root, prefixClosed, prefixOpened, key, separator, value, sectionInfo };
+            // Cache all elements that make a section
+            cckDebugger.sectionCache[sectionId] = { parent, root, prefixClosed, prefixOpened, key, separator, value, sectionInfo };
         }
         // Now actually update the value of the section, if there is no value let's set it to empty
         value.textContent = section['Value'] ?? "";
@@ -246,7 +250,35 @@ engine.on('CCKDebuggerSectionsUpdate', (sectionsJson) => {
     //console.log('Sections to update: ' + sections.length);
     for (let section of sections) {
         // The parent is null because at this point it should already be in the cache (I hope >.>)
-        cckDebugger.onSectionHandler(null, section);
+        if (!section['DynamicSubsections']) {
+            cckDebugger.onSectionHandler(null, section);
+        }
+        // Here we need to do some more work, because we have dynamic subsections ;_;
+        else {
+            let dynamicSection = cckDebugger.sectionCache[section['Id']]
+            // Delete the sections and subsections from the cache
+            delete cckDebugger.sectionCache[section['Id']]
+            for (let olsSectionId of section['OldSubSectionIDs']) {
+                delete cckDebugger.sectionCache[olsSectionId]
+            }
+            // Delete the section from the DOM
+            dynamicSection.parent.removeChild(dynamicSection.root);
+            // Recreate the sections and all it's sub-sections
+            const replacedSection = cckDebugger.onSectionCreation(dynamicSection.parent, section)
+            // Update the collapsible event of the parent
+            const eventSubSectionNodes = dynamicSection.parent['CCK.ClickEventSubSectionNodes'];
+            if (eventSubSectionNodes && eventSubSectionNodes.length > 0) {
+                // Add the section to the event
+                eventSubSectionNodes.push(replacedSection);
+                // Update the hidden to match the siblings
+                if (eventSubSectionNodes[0].classList.contains("hidden")) {
+                    replacedSection.classList.add("hidden");
+                }
+                // Remove original section (no memory leak please)
+                const index = eventSubSectionNodes.indexOf(dynamicSection.root);
+                if (index > -1) eventSubSectionNodes.splice(index, 1);
+            }
+        }
     }
 });
 

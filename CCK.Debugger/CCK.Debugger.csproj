@@ -21,8 +21,4 @@
         </Compile>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Resources\UIResources\Images\Buttons" />
-    </ItemGroup>
-
 </Project>

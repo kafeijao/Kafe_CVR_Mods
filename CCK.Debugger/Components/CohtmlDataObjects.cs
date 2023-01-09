@@ -180,11 +180,19 @@ public class Core {
 
     // Internal
     [JsonIgnore] private readonly Dictionary<int, Section> _sections = new();
+    [JsonIgnore] private int _sectionCurrentID = 0;
+    [JsonIgnore] private readonly Queue<int> _sectionFreeIds = new();
     public Section CacheSection(Section section) {
         lock (_sections) {
-            section.Id = _sections.Count;
+            section.Id = _sectionFreeIds.TryDequeue(out var reusableID) ? reusableID : _sectionCurrentID++;
             _sections[section.Id] = section;
             return section;
+        }
+    }
+    public void RemoveCacheSection(Section section) {
+        lock (_sections) {
+            _sections.Remove(section.Id);
+            _sectionFreeIds.Enqueue(section.Id);
         }
     }
     [JsonIgnore] private readonly Dictionary<Button.ButtonType, Button> _buttons = new();
@@ -202,26 +210,64 @@ public class Section {
     public string Title { get; set; }
     public string Value { get; set; }
     public bool Collapsable { get; set; }
+    public bool DynamicSubsections { get; set; }
+    [JsonProperty("OldSubSectionIDs")] private List<long> OldSubSectionIDs { get; } = new();
     [JsonProperty("SubSections")] public List<Section> SubSections { get; } = new();
 
 
     // Internal
     [JsonIgnore] private Core _core;
-    public Section(Core core) {
-        _core = core;
-    }
-    public Section AddSection(string title, string value = "", bool collapsable = false) {
-        var section = new Section(_core) { Title = title, Collapsable = collapsable, Value = value};
+    [JsonIgnore] private bool _dynamicSubsectionsUpdated;
+    [JsonIgnore] private List<Section> _dynamicSubsectionsLatest;
+    public Section(Core core) => _core = core;
+    public Section AddSection(string title, string value = "", bool collapsable = false, bool dynamicSubsections = false) {
+        var section = new Section(_core) { Title = title, Collapsable = collapsable, Value = value, DynamicSubsections = dynamicSubsections};
         SubSections.Add(_core.CacheSection(section));
         return section;
     }
+    private bool AreSubsectionsEqual(List<Section> newUncachedSections) {
+        return newUncachedSections.Count == SubSections.Count &&
+               newUncachedSections.Zip(SubSections, (item1, item2) => (item1, item2))
+                   .All(x =>
+                       x.item1.Title == x.item2.Title &&
+                       x.item1.Value == x.item2.Value &&
+                       x.item1.AreSubsectionsEqual(x.item2.SubSections));
+    }
+    public void QueueDynamicSectionsUpdate(List<Section> newUncachedSections) {
+        if (AreSubsectionsEqual(_dynamicSubsectionsUpdated ? _dynamicSubsectionsLatest : newUncachedSections)) return;
+        _dynamicSubsectionsLatest = newUncachedSections;
+        _dynamicSubsectionsUpdated = true;
+    }
+
+    private void AddNewSubsections(List<Section> newUncachedSections) {
+        foreach (var newUncachedSection in newUncachedSections) {
+            SubSections.Add(_core.CacheSection(newUncachedSection));
+            newUncachedSection.AddNewSubsections(newUncachedSection.SubSections);
+        }
+    }
+    private void ClearSubSections(List<long> oldSectionIds) {
+        OldSubSectionIDs.Clear();
+        foreach (var section in SubSections) {
+            section.ClearSubSections(oldSectionIds);
+            _core.RemoveCacheSection(section);
+            oldSectionIds.Add(section.Id);
+        }
+        SubSections.Clear();
+    }
     public void Update(string value) {
-        if (value == Value) return;
+        if (value == Value && !_dynamicSubsectionsUpdated) return;
 
         // Spread updates over 10 frames
         if (Time.frameCount % 10 != Id % 10) return;
 
+        // If we're going to consume the dynamic subsection update, lets commit the latest update
+        if (_dynamicSubsectionsUpdated) {
+            ClearSubSections(OldSubSectionIDs);
+            AddNewSubsections(_dynamicSubsectionsLatest);
+        }
+
         Value = value;
+        _dynamicSubsectionsUpdated = false;
         Events.DebuggerMenuCohtml.OnCohtmlMenuSectionUpdate(this);
     }
     [JsonIgnore] private Func<string> _valueGetter;

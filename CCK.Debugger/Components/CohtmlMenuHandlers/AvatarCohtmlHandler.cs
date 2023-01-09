@@ -265,6 +265,8 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         var sectionLocalParameters = _core.AddSection("Avatar Local Parameters", true);
         var sectionCoreParameters = _core.AddSection("Avatar Default Parameters", true);
 
+        var sectionAnimatorLayers = _core.AddSection("Animator Layers", true);
+
         var sectionPointers = _core.AddSection("CVR Pointers", true);
         var sectionTriggers = _core.AddSection("CVR AAS Triggers", true);
 
@@ -277,6 +279,28 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             if (parameter.name.StartsWith("#")) sectionLocalParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             else if (CoreParameterNames.Contains(parameter.name)) sectionCoreParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             else sectionSyncedParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
+        }
+
+        // Set up the animator layers
+        const string noClipsText = "Playing no Clips";
+        for (var i = 0; i < mainAnimator.layerCount; i++) {
+            var layerIndex = i;
+            var layerSection = sectionAnimatorLayers.AddSection(mainAnimator.GetLayerName(layerIndex), "", true);
+            layerSection.AddSection("Layer Weight").AddValueGetter(() => mainAnimator.GetLayerWeight(layerIndex).ToString("F"));
+            var playingClipsSection = layerSection.AddSection("Playing Clips [Weight:Name]", noClipsText, false, true);
+            playingClipsSection.AddValueGetter(() => {
+                var clipInfos = mainAnimator.GetCurrentAnimatorClipInfo(layerIndex);
+                var newSections = new List<Section>();
+                if (clipInfos.Length <= 0) {
+                    playingClipsSection.QueueDynamicSectionsUpdate(newSections);
+                    return noClipsText;
+                }
+                foreach (var animatorClipInfo in clipInfos.OrderByDescending(info => info.weight)) {
+                    newSections.Add(new Section(_core) { Title = animatorClipInfo.weight.ToString("F"), Value = animatorClipInfo.clip.name, Collapsable = false, DynamicSubsections = false});
+                }
+                playingClipsSection.QueueDynamicSectionsUpdate(newSections);
+                return $"Playing {clipInfos.Length} Clips";
+            });
         }
 
         var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
