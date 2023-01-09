@@ -23,6 +23,8 @@ public class CohtmlMenuController : MonoBehaviour {
 
     private static bool _errored;
 
+    public bool Enabled { get; set; }
+
     // MenuController References
     private Animator _animator;
     private CVRPickupObject _pickup;
@@ -111,7 +113,7 @@ public class CohtmlMenuController : MonoBehaviour {
     private void Update() {
 
         // Prevent updates until we swap entity
-        if (ICohtmlHandler.Crashed || !Initialized || !_cohtmlView.enabled) return;
+        if (ICohtmlHandler.Crashed || !Initialized || !_cohtmlView.enabled || !Enabled) return;
 
         // Crash wrapper to avoid giga lag
         try {
@@ -128,9 +130,7 @@ public class CohtmlMenuController : MonoBehaviour {
             MelonLogger.Error($"Feel free to ping kafeijao#8342 in the #bug-reports channel of ChilloutVR Modding Group discord with the error message.");
 
             // Add the error to the menu
-            Core.OnCrash();
-
-            ICohtmlHandler.Crashed = true;
+            ICohtmlHandler.Crash();
         }
     }
 

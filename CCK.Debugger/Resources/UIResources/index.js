@@ -57,6 +57,8 @@ let cckDebugger = {
     // Object Handlers
     onCoreInfoHandler: function(coreInfo) {
         cckDebugger.menuName.textContent = coreInfo['MenuName'];
+        cckDebugger.menuNext.classList.toggle("invisible", !coreInfo['MenuEnabled'])
+        cckDebugger.menuPrevious.classList.toggle("invisible", !coreInfo['MenuEnabled'])
         cckDebugger.controlsInfo.textContent = coreInfo['ControlsInfo'];
         cckDebugger.menuRoot.classList.toggle("hidden", !coreInfo['ShowSections']);
         cckDebugger.controlsPrevious.classList.toggle("invisible", !coreInfo['ShowControls']);
@@ -289,19 +291,21 @@ engine.on('CCKDebuggerModReady', () => {
     cckDebugger.menuRoot = document.getElementById('cck-debugger-menu');
     cckDebugger.buttonsRoot = document.getElementById('cck-debugger-buttons');
     cckDebugger.menuName = document.getElementById('cck-debugger-menu-title');
+    cckDebugger.menuNext = document.getElementById('cck-debugger-menu-next')
+    cckDebugger.menuPrevious = document.getElementById('cck-debugger-menu-previous')
     cckDebugger.controlsRoot = document.getElementById('cck-debugger-controls');
-    cckDebugger.controlsPrevious = document.getElementById('cck-debugger-controls-previous');
     cckDebugger.controlsNext = document.getElementById('cck-debugger-controls-next');
+    cckDebugger.controlsPrevious = document.getElementById('cck-debugger-controls-previous');
     cckDebugger.controlsInfo = document.getElementById('cck-debugger-controls-info');
 
     // Enable the hover functionality for buttons
     document.addEventListener("mousemove", cckDebugger.mouseHoverButton)
 
     // Setup the navigation elements
-    document.getElementById('cck-debugger-menu-next').addEventListener("click", cckDebugger.nextMenu)
-    document.getElementById('cck-debugger-menu-previous').addEventListener("click", cckDebugger.previousMenu)
-    document.getElementById('cck-debugger-controls-next').addEventListener("click", cckDebugger.nextControls)
-    document.getElementById('cck-debugger-controls-previous').addEventListener("click", cckDebugger.previousControls)
+    cckDebugger.menuNext.addEventListener("click", cckDebugger.nextMenu)
+    cckDebugger.menuPrevious.addEventListener("click", cckDebugger.previousMenu)
+    cckDebugger.controlsNext.addEventListener("click", cckDebugger.nextControls)
+    cckDebugger.controlsPrevious.addEventListener("click", cckDebugger.previousControls)
 
     // Mark the cohtml view as initialized
     cckDebugger.initialized = true;

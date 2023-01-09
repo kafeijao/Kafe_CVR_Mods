@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Savior;
+﻿using System.Collections.ObjectModel;
+using ABI_RC.Core.Savior;
 using CCK.Debugger.Components.CohtmlMenuHandlers;
 using CCK.Debugger.Components.GameObjectVisualizers;
 using CCK.Debugger.Components.PointerVisualizers;
@@ -13,6 +14,7 @@ public class Core {
 
     public class Info {
         public string MenuName { get; set; }
+        public bool MenuEnabled { get; set; }
         public bool ShowControls { get; set; }
         public string ControlsInfo { get; set; }
         public bool ShowSections { get; set; }
@@ -23,19 +25,35 @@ public class Core {
 
     [JsonProperty("Info")] private Info _info;
 
-    public Core(string menuName, bool showControls = false, string controlsInfo = "", bool showSections= true) {
+    public Core(string menuName, bool showControls = false, string controlsInfo = "", bool showSections = true, bool menuEnabled = true) {
         _info = new Info {
             MenuName = menuName,
             ShowControls = showControls,
             ControlsInfo = controlsInfo,
             ShowSections = showSections,
+            MenuEnabled = menuEnabled,
         };
 
         // Buttons initialization
+        var powerButton = AddButton(new Button(Button.ButtonType.Power, false, true));
         var grabButton = AddButton(new Button(Button.ButtonType.Grab, false, false));
         var hud = AddButton(new Button(Button.ButtonType.Hud, false, true));
         var pin = AddButton(new Button(Button.ButtonType.Pin, false, true));
         var reset = AddButton(new Button(Button.ButtonType.Reset, true, false, false), true);
+
+        // Power Button Handlers
+        powerButton.StateUpdater = button => {
+            button.IsOn = CohtmlMenuController.Instance.Enabled;
+        };
+        powerButton.ClickHandler = button => {
+            button.IsOn = !button.IsOn;
+            if (button.IsOn) {
+                ICohtmlHandler.Reload();
+            }
+            else {
+                ICohtmlHandler.Shutdown();
+            }
+        };
 
         // Grab Button Handlers
         grabButton.StateUpdater = button => {
@@ -89,30 +107,7 @@ public class Core {
                 return;
             }
 
-            // Reset all buttons (if available)
-            if (GetButton(Button.ButtonType.Pointer, out var pointerButton) && pointerButton.IsOn) {
-                pointerButton.IsOn = false;
-            }
-            if (GetButton(Button.ButtonType.Trigger, out var triggerButton) && triggerButton.IsOn) {
-                triggerButton.IsOn = false;
-            }
-            if (GetButton(Button.ButtonType.Bone, out var boneButton) && boneButton.IsOn) {
-                boneButton.IsOn = false;
-            }
-            if (GetButton(Button.ButtonType.Tracker, out var trackerButton) && trackerButton.IsOn) {
-                trackerButton.IsOn = false;
-            }
-            if (GetButton(Button.ButtonType.Eye, out var eyeButton) && eyeButton.IsOn) {
-                eyeButton.IsOn = false;
-            }
-
-            // Disable all visualizers
-            PointerVisualizer.DisableAll();
-            TriggerVisualizer.DisableAll();
-            GameObjectVisualizer.DisableAll();
-
-            // Disable trackers
-            TrackerVisualizer.ToggleTrackers(false);
+            ICohtmlHandler.DisableEverything();
         };
 
         Instance = this;
@@ -139,23 +134,6 @@ public class Core {
         return found.HasValue && found.Value;
     }
 
-    internal static void OnCrash() {
-
-        // Create the error menu
-        var core = new Core("Error");
-        core.AddSection("The CCK.Debugger menu crashed :(");
-        core.AddSection("To report this crash check the Console for instructions");
-        core.AddSection("To reload the menu press the Reset button");
-        Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
-
-        // Update buttons to reflect the crash
-        Instance?.Buttons?.ForEach(button => button.IsVisible = false);
-        if (GetButton(Button.ButtonType.Reset, out var resetButton)) resetButton.IsOn = true;
-
-        // Update cached stuff
-        CohtmlMenuController.ConsumeCachedUpdates();
-    }
-
     public void UpdateCore(bool showControls, string controlsInfo, bool showSections) {
         if (showControls == _info.ShowControls && controlsInfo.Equals(_info.ControlsInfo) && showSections == _info.ShowSections) return;
         _info.ShowControls = showControls;
@@ -166,6 +144,10 @@ public class Core {
 
     public static void UpdateButtonsState() {
         Instance?.Buttons.ForEach(button => button.UpdateState());
+    }
+
+    public static void UpdateButtonsVisibilityTo(bool isVisible) {
+        Instance?.Buttons.ForEach(button => button.IsVisible = isVisible);
     }
 
     public static void UpdateSectionsFromGetters() {
@@ -336,6 +318,7 @@ public class Button {
         Tracker,
         Trigger,
         Eye,
+        Power,
     }
 
     public void Click() => ClickHandler?.Invoke(this);
