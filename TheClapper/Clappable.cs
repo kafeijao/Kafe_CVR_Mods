@@ -47,9 +47,10 @@ public abstract class Clappable : MonoBehaviour {
         _visualizer = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         _visualizer.name = "[TheClapper] Visualizer";
         _visualizer.layer = LayerMask.NameToLayer("UI Internal");
+        _visualizer.transform.position = transform.position;
+        _visualizer.transform.rotation = transform.rotation;
         _visualizer.transform.localScale = Vector3.one * MinimumDistance * 2;
-        _visualizer.transform.SetParent(transform, false);
-        _visualizer.transform.localPosition = Vector3.zero;
+        _visualizer.transform.SetParent(transform, true);
 
         _positionConstraint = _visualizer.AddComponent<PositionConstraint>();
         UpdateVisualizerTransform();
