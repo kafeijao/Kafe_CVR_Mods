@@ -7,15 +7,17 @@ using UnityEngine;
 
 namespace BetterLipsync;
 
+[DefaultExecutionOrder(999999)]
 public class CVRLipSyncContext : OVRLipSyncContextBase {
 
     // Config
-    public bool Enabled = true;
-    public bool SingleViseme = true;
-    public bool SingleVisemeOriginalVolume = false;
+    public bool Enabled { get; set; } = true;
+    public bool SingleViseme { get; set; } = true;
+    public bool SingleVisemeOriginalVolume { get; set; } = false;
 
     // Internal
     private bool _errored;
+    private string _playerID;
     private bool _initialized;
     private bool _isLocalPlayer;
     private CVRVisemeController _visemeController;
@@ -23,7 +25,7 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     // Muted property
     public bool Muted { get; set; }
 
-    // Remote players talking state action
+    // Remote players dissonance events
     private Action<VoicePlayerState> _playerStartedSpeaking;
     private Action<VoicePlayerState> _playerStoppedSpeaking;
 
@@ -32,27 +34,66 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     private Traverse<float> _distance;
     private Traverse<int[]> _visemeBlendShapes;
 
-    // Previous frame info
-    private float[] _previousVisemes;
-    private int _previousViseme;
-    private float _previousVisemeLoudness;
-
     // Threading
-    private Task<OVRLipSync.Result> _lastProcessFrameTask;
+    private static bool _multithreading;
     private int _skippedAudioData = 0;
-    private bool _consumedProcessedFrame = true;
+    // If using a single thread with a queue
+    // private static readonly Thread ProcessFramesThread;
+    // private static readonly BlockingCollection<Action> ProcessFrameQueue;
 
     // Voice
     public VoicePlayerState CurrentVoicePlayerState;
     private float _detectedMaxVolume = 1f;
 
-    // private bool newCsv = false;
-    // private StringBuilder csvStringBuilder;
+    // Lipsync Results
+    private record LipsyncResult {
+        internal bool Consumed { get; set; }
+        internal float[] Visemes { get; init; } = new float[15];
+        internal int Viseme { get; init; }
+        internal float VisemeLoudness { get; init; }
+    }
+    private LipsyncResult _latestResult = new() { Consumed = true }; // Use lock (this) to access please
+    private LipsyncResult _previousResult;
+
+    static CVRLipSyncContext() {
+
+        // Update whether we're going to use a separated thread of not
+        _multithreading = BetterLipsync.MelonEntryMultithreading.Value;
+        void LogThreadUsage() => MelonLogger.Msg($"We're{(_multithreading ? " " : "NOT ")}going to use multithreading while processing the Lipsync audio, as set in the config.");
+        LogThreadUsage();
+        BetterLipsync.MelonEntryMultithreading.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) _multithreading = newValue;
+            LogThreadUsage();
+        });
+
+        // Setup the thread
+        // ProcessFrameQueue = new BlockingCollection<Action>(new ConcurrentQueue<Action>());
+        // void ProcessFrame() {
+        //     try {
+        //         while (true) {
+        //             // Wait for an element in the queue, and invoke as they arrive
+        //             ProcessFrameQueue.Take()?.Invoke();
+        //         }
+        //     }
+        //     catch (ThreadAbortException) {
+        //         MelonLogger.Msg("Lipsync Thread has stopped.");
+        //     }
+        //     catch (Exception ex) {
+        //         MelonLogger.Error("Error in the Lipsync Thread!");
+        //         MelonLogger.Error(ex);
+        //         throw;
+        //     }
+        // }
+        // ProcessFramesThread = new Thread(ProcessFrame);
+        // MelonLogger.Msg("Starting Lipsync Thread...");
+        // ProcessFramesThread.Start();
+    }
 
     internal void Initialize(CVRVisemeController visemeController, GameObject target, bool isLocalPlayer, string playerGuid) {
 
         _visemeController = visemeController;
         _isLocalPlayer = isLocalPlayer;
+        _playerID = playerGuid;
 
         // We require an audio source for remote players
         if (!_isLocalPlayer && !target.TryGetComponent(out AudioSource _)) {
@@ -65,14 +106,10 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         _distance = visemeControllerTraverse.Field<float>("_distance");
         _visemeBlendShapes = visemeControllerTraverse.Field<int[]>("visemeBlendShapes");
 
-        // Initialize first values
-        _previousVisemes = new float[15];
-        _previousViseme = 0;
-        _previousVisemeLoudness = 0f;
-
-        // Talking state handlers
         if (!isLocalPlayer) {
-            _playerStartedSpeaking = (voicePlayerState) => {
+
+            // Talking state handlers
+            _playerStartedSpeaking = voicePlayerState => {
                 if (voicePlayerState.Name != playerGuid) return;
                 CurrentVoicePlayerState = voicePlayerState;
                 Muted = false;
@@ -109,36 +146,25 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
 
         try {
 
-            // if (!Muted && !newCsv) {
-            //     newCsv = true;
-            //     csvStringBuilder = new StringBuilder();
-            //     csvStringBuilder.AppendLine($"Frame,CVR,OculusLoudest,CVRlamped");
-            //     MelonLogger.Msg("Reset file");
-            // }
-            // else if (Muted && newCsv) {
-            //     newCsv = false;
-            //     File.WriteAllText("ChilloutVR_Data/data.csv", csvStringBuilder.ToString());
-            //     MelonLogger.Msg("Wrote file to ChilloutVR_Data/data.csv");
-            // }
-
             // Check whether should do the heavy lifting or not
             if (!ShouldComputeVisemes()) {
                 ResetVisemes();
                 return;
             }
 
-            // If there is nothing to consume, skip getting visemes
-            if (_consumedProcessedFrame) {
-                // Todo: We could add some smoothing since the frame rate can be faster than the audio sample ticks
-                return;
-            }
-            _consumedProcessedFrame = true;
+            LipsyncResult latestResult;
+            lock (this) {
 
-            // Fetch the viseme values from oculus lip sync
-            var (visemes, viseme, visemeLoudness) = GetViseme();
+                // If there is nothing to consume, and is not cooling down there is nothing to do here
+                if (_latestResult.Consumed) return;
+
+                // Otherwise get and mark the result as consumed
+                latestResult = _latestResult;
+                _latestResult.Consumed = true;
+            }
 
             // Update the avatar visemes and the parameters (if present)
-            UpdateVisemes(visemes, viseme, visemeLoudness);
+            UpdateVisemes(latestResult);
         }
         catch (Exception e) {
             MelonLogger.Error(e);
@@ -146,13 +172,70 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         }
     }
 
-    private (float[], int, float) GetViseme() {
+    private float GetAmplitude() {
+        if (CurrentVoicePlayerState == null) return 0;
+        return CurrentVoicePlayerState.Amplitude;
+    }
 
-        // Grab viseme and viseme loudness from the oculus lip sync
-        var frame = GetCurrentPhonemeFrame();
+    private void UpdateVisemes(LipsyncResult latestResult) {
+
+        // Handle the face visemes from the descriptor
+        if (_visemeController.avatar != null && _visemeController.avatar.useVisemeLipsync && _visemeController.avatar.bodyMesh != null) {
+
+            // MelonLogger.Msg($"Visemes {_playerID}: {GetAmplitude():F2} {visemes.Join((f => f.ToString("F2")))}");
+
+            for (var visemeIdx = 0; visemeIdx < latestResult.Visemes.Length; visemeIdx++) {
+
+                // Ignore visemes set to none
+                if (_visemeController.avatar.visemeBlendshapes[visemeIdx] == "-none-") continue;
+
+                if (SingleViseme) {
+                    var clampedLoudness = Mathf.Clamp(latestResult.VisemeLoudness * 100f, 0, 100f);
+
+                    // Set the picked viseme to the loudness or 0 if not the current viseme
+                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemeIdx == latestResult.Viseme ? clampedLoudness : 0f);
+                }
+                else {
+                    // Set all visemes for their corresponding weight
+                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], latestResult.Visemes[visemeIdx] * 100f);
+                }
+            }
+        }
+
+        // Handle the animator parameters
+        if (_isLocalPlayer) {
+            PlayerSetup.Instance.animatorManager.SetAnimatorParameterInt("Viseme", latestResult.Viseme);
+            PlayerSetup.Instance.animatorManager.SetAnimatorParameterFloat("VisemeWeight", latestResult.VisemeLoudness);
+            PlayerSetup.Instance.animatorManager.SetAnimatorParameterFloat("VisemeLoudness", latestResult.VisemeLoudness);
+        }
+
+        // Save previous info
+        _previousResult = latestResult;
+    }
+
+    public void ResetVisemes() {
+
+        // Ignore resetting if already initial state
+        if (_previousResult == null || _previousResult.Viseme == 0 && Mathf.Approximately(_previousResult.VisemeLoudness, 0f)) return;
+
+        ResetContext();
+        UpdateVisemes(new LipsyncResult() { Consumed = false });
+    }
+
+    private void OnDestroy() {
+        // Clear the player talking delegates
+        if (_isLocalPlayer) return;
+        RootLogic.Instance.comms.OnPlayerStartedSpeaking -= _playerStartedSpeaking;
+        RootLogic.Instance.comms.OnPlayerStoppedSpeaking -= _playerStoppedSpeaking;
+    }
+
+    private void ComputeViseme() {
 
         var viseme = 0;
         var visemeHighestLoudness = 0f;
+
+        // Grab viseme and viseme loudness from the oculus lip sync
+        var frame = GetCurrentPhonemeFrame();
 
         for (var visemeIdx = 0; visemeIdx < frame.Visemes.Length; visemeIdx++) {
             var currVisemeLoudness = frame.Visemes[visemeIdx];
@@ -166,81 +249,30 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         }
 
         // If the viseme is SIL, set the loudness to zero
-        if (viseme == (int) OVRLipSync.Viseme.sil) {
+        if (viseme == (int)OVRLipSync.Viseme.sil) {
             visemeHighestLoudness = 0f;
         }
 
-        // If we want to use the original viseme loudness from CVR
-        // if (true) {
-        //     var voiceAmplitude = CurrentVoicePlayerState.Amplitude * _visemeController.amplifyMultipleExperimental;
-        //     var justClamped = Mathd.Clamp(voiceAmplitude, 0f, 1f);
-        //     _detectedMaxVolume = voiceAmplitude <= _detectedMaxVolume ? Mathf.Max(1f, _detectedMaxVolume * 0.999f) : voiceAmplitude;
-        //     var cvrLoudness = voiceAmplitude / _detectedMaxVolume;
-        //     csvStringBuilder.AppendLine($"{Time.frameCount},{cvrLoudness:0.00},{visemeHighestLoudness:0.00},{justClamped:0.00}");
-        // }
-
         if (SingleVisemeOriginalVolume) {
-            var voiceAmplitude = CurrentVoicePlayerState.Amplitude * _visemeController.amplifyMultipleExperimental;
-            _detectedMaxVolume = voiceAmplitude <= _detectedMaxVolume ? Mathf.Max(1f, _detectedMaxVolume * 0.999f) : voiceAmplitude;
+            var voiceAmplitude = GetAmplitude() * _visemeController.amplifyMultipleExperimental;
+            _detectedMaxVolume = voiceAmplitude <= _detectedMaxVolume
+                ? Mathf.Max(1f, _detectedMaxVolume * 0.999f)
+                : voiceAmplitude;
             visemeHighestLoudness = voiceAmplitude / _detectedMaxVolume;
         }
 
         // Update the loudness on the viseme controller (to keep things working properly)
         _visemeController.visemeLoudness = visemeHighestLoudness;
 
-        return (frame.Visemes, viseme, visemeHighestLoudness);
-    }
-
-    private void UpdateVisemes(float[] visemes, int viseme, float visemeLoudness) {
-
-        // Handle the face visemes from the descriptor
-        if (_visemeController.avatar != null && _visemeController.avatar.useVisemeLipsync && _visemeController.avatar.bodyMesh != null) {
-
-            for (var visemeIdx = 0; visemeIdx < visemes.Length; visemeIdx++) {
-
-                // Ignore visemes set to none
-                if (_visemeController.avatar.visemeBlendshapes[visemeIdx] == "-none-") continue;
-
-                if (SingleViseme) {
-                    var clampedLoudness = Mathf.Clamp(visemeLoudness * 100f, 0, 100f);
-
-                    // Set the picked viseme to the loudness or 0 if not the current viseme
-                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemeIdx == viseme ? clampedLoudness : 0f);
-                }
-                else {
-                    // Set all visemes for their corresponding weight
-                    _visemeController.avatar.bodyMesh.SetBlendShapeWeight(_visemeBlendShapes.Value[visemeIdx], visemes[visemeIdx] * 100f);
-                }
-            }
+        // Create a result object
+        lock (this) {
+            _latestResult = new LipsyncResult {
+                Consumed = false,
+                Visemes = frame.Visemes,
+                Viseme = viseme,
+                VisemeLoudness = visemeHighestLoudness,
+            };
         }
-
-        // Handle the animator parameters
-        if (_isLocalPlayer) {
-            PlayerSetup.Instance.animatorManager.SetAnimatorParameterInt("Viseme", viseme);
-            PlayerSetup.Instance.animatorManager.SetAnimatorParameterFloat("VisemeWeight", visemeLoudness);
-            PlayerSetup.Instance.animatorManager.SetAnimatorParameterFloat("VisemeLoudness", visemeLoudness);
-        }
-
-        // Save previous info
-        _previousVisemes = visemes;
-        _previousViseme = viseme;
-        _previousVisemeLoudness = visemeLoudness;
-    }
-
-    public void ResetVisemes() {
-
-        // Ignore resetting if already initial state
-        if (_previousViseme == 0 && Mathf.Approximately(_previousVisemeLoudness, 1f)) return;
-
-        ResetContext();
-        UpdateVisemes(new float[15], 0, 1f);
-    }
-
-    private void OnDestroy() {
-        // Clear the player talking delegates
-        if (_isLocalPlayer) return;
-        RootLogic.Instance.comms.OnPlayerStartedSpeaking -= _playerStartedSpeaking;
-        RootLogic.Instance.comms.OnPlayerStoppedSpeaking -= _playerStoppedSpeaking;
     }
 
     public void ProcessAudioSamples(float[] data, int channels) {
@@ -260,33 +292,64 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         lock (this) {
             if (Context == 0 || OVRLipSync.IsInitialized() != OVRLipSync.Result.Success) return;
 
-            // Wait for the LateUpdate to consume the processed frame
-            if (!_consumedProcessedFrame) {
-                return;
+            lock (this) {
+                // Wait for the LateUpdate to consume the processed frame
+                if (!_latestResult.Consumed) {
+                    _skippedAudioData++;
+                    return;
+                }
             }
 
-            // Wait for last frame process to end (if still processing)
-            if (_lastProcessFrameTask is { IsCompleted: false }) {
-                _skippedAudioData++;
-                return;
+            // if (_skippedAudioData > 1) {
+            //     MelonLogger.Msg($"Fell behind on the ProcessAudioSamples task by {_skippedAudioData} ticks. This is normal if the game is having lag spikes...");
+            // }
+
+            if (_multithreading) {
+
+                // Create a deep copy of the data, since it will be recycled for the other ProcessAudioSamples calls ?
+                var bufferedData = new float[data.Length];
+                data.CopyTo(bufferedData, 0);
+
+                // Enqueue the processing to the thread
+                // ProcessFrameQueue.Add(() => {
+                //     OVRLipSync.ProcessFrame(Context, bufferedData, Frame, channels == 2);
+                //     ComputeViseme();
+                // });
+
+                // Using a thread pool to run the tasks
+                Task.Factory.StartNew(() => {
+                    OVRLipSync.ProcessFrame(Context, bufferedData, Frame, channels == 2);
+                    ComputeViseme();
+                });
             }
 
-            if (_skippedAudioData > 1) {
-                MelonLogger.Msg($"Fell behind on the ProcessAudioSamples task by {_skippedAudioData} ticks...");
+            else {
+                // Just process this on the current thread, we're on the Audio thread thought...
+                OVRLipSync.ProcessFrame(Context, data, Frame, channels == 2);
+                ComputeViseme();
             }
-
-            // Actual process frame in a task
-            _lastProcessFrameTask = Task<OVRLipSync.Result>.Factory.StartNew(() =>
-                OVRLipSync.ProcessFrame(Context, data, Frame, channels == 2));
 
             _skippedAudioData = 0;
-            _consumedProcessedFrame = false;
         }
     }
 
     private void OnAudioFilterRead(float[] data, int channels) {
+        // This event will only be called when there is actually data, so we don't need to check for muted
+        // Also frigging data is the same object across all game object that call this, which means if we want to do
+        // async stuff with it, we need to deep copy. Come on unity a note indicating this would save me some pain ;_;
+
         // Local player will handle the audio directly
         if (_isLocalPlayer) return;
+
         ProcessAudioSamples(data, channels);
     }
+
+    // private void OnApplicationQuit() {
+    //     if (!_isLocalPlayer) return;
+    //     // When the application is quitting let's have out local player behavior to tell the thread to stop
+    //     ProcessFramesThread.Abort();
+    //     MelonLogger.Msg("Joining Lipsync Thread...");
+    //     ProcessFramesThread.Join();
+    //     MelonLogger.Msg("Joined Lipsync Thread successfully!");
+    // }
 }

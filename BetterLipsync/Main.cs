@@ -16,11 +16,12 @@ public class BetterLipsync : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntryEnhancedMode;
     private static MelonPreferences_Entry<bool> _melonEntrySingleViseme;
     private static MelonPreferences_Entry<bool> _melonEntrySingleVisemeOriginalVolume;
+    internal static MelonPreferences_Entry<bool> MelonEntryMultithreading;
 
-    private static Dictionary<string, GameObject> _playbackGameObjects = new();
-    private static Dictionary<string, CVRVisemeController> _visemeControllers = new();
+    private static readonly Dictionary<string, GameObject> PlaybackGameObjects = new();
+    private static readonly Dictionary<string, CVRVisemeController> VisemeControllers = new();
 
-    public override void OnApplicationStart() {
+    public override void OnInitializeMelon() {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(BetterLipsync));
@@ -46,16 +47,19 @@ public class BetterLipsync : MelonMod {
             description: "Whether to use the original CVR viseme volume detection (how much the mouth opens) when " +
                          "talking (true), or use the Oculus Lipsync highest viseme level (false).");
 
+        MelonEntryMultithreading = _melonCategory.CreateEntry("UseMultithreading", true,
+            description: "Whether or not to process the Lipsync audio using multithreading.");
+
 
         // Extract the native binary to the plugins folder
-        var dllName = "OVRLipSync.dll";
-        var dstPath = "ChilloutVR_Data/Plugins/x86_64/" + dllName;
+        const string dllName = "OVRLipSync.dll";
+        const string dstPath = "ChilloutVR_Data/Plugins/x86_64/" + dllName;
 
         try {
             MelonLogger.Msg($"Copying the OVRLipSync.dll to ChilloutVR_Data/Plugins/ ...");
             using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(dllName);
             using var fileStream = File.Open(dstPath, FileMode.Create, FileAccess.Write);
-            resourceStream.CopyTo(fileStream);
+            resourceStream!.CopyTo(fileStream);
         }
         catch (IOException ex) {
             MelonLogger.Error("Failed to copy native library: " + ex.Message);
@@ -67,22 +71,22 @@ public class BetterLipsync : MelonMod {
         var isLocalPlayer = playerGuid == MetaPort.Instance.ownerId;
 
         // Check if the current player guid was initialized and currently exists, otherwise ignore
-        if (!_visemeControllers.ContainsKey(playerGuid) || _visemeControllers[playerGuid] == null ||
-            (!isLocalPlayer && (!_playbackGameObjects.ContainsKey(playerGuid) || _playbackGameObjects[playerGuid] == null))) {
+        if (!VisemeControllers.ContainsKey(playerGuid) || VisemeControllers[playerGuid] == null ||
+            (!isLocalPlayer && (!PlaybackGameObjects.ContainsKey(playerGuid) || PlaybackGameObjects[playerGuid] == null))) {
             return;
         }
 
         // Pick the target to add our lipsync component
         GameObject target;
         if (isLocalPlayer) {
-            target = _visemeControllers[playerGuid].gameObject;
+            target = VisemeControllers[playerGuid].gameObject;
         }
         else {
-            if (!_playbackGameObjects.ContainsKey(playerGuid)) {
+            if (!PlaybackGameObjects.ContainsKey(playerGuid)) {
                 MelonLogger.Error($"Attempted to initialize lipsync for player {playerGuid}, but the " +
                                   $"playback game object was not initialized yet...");
             }
-            target = _playbackGameObjects[playerGuid];
+            target = PlaybackGameObjects[playerGuid];
         }
 
         // Create context if doesn't exist
@@ -93,54 +97,63 @@ public class BetterLipsync : MelonMod {
         // Initialize context
         // var playerName = (isLocalPlayer ? "Local " : "") + $"player {___playerGuid}";
         // MelonLogger.Msg($"Initializing CVRLipSyncContext for {playerName}");
-        context.Initialize(_visemeControllers[playerGuid], target, isLocalPlayer, playerGuid);
+        context.Initialize(VisemeControllers[playerGuid], target, isLocalPlayer, playerGuid);
 
         // Update smoothing value
         context.Smoothing = _melonEntrySmoothing.Value;
-        _melonEntrySmoothing.OnValueChangedUntyped += () => context.Smoothing = _melonEntrySmoothing.Value;
+        _melonEntrySmoothing.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) context.Smoothing = newValue;
+        });
 
         // Update the mode settings
         context.provider = _melonEntryEnhancedMode.Value
             ? OVRLipSync.ContextProviders.Enhanced
             : OVRLipSync.ContextProviders.Original;
-        _melonEntryEnhancedMode.OnValueChangedUntyped += () => context.provider = _melonEntryEnhancedMode.Value
-            ? OVRLipSync.ContextProviders.Enhanced
-            : OVRLipSync.ContextProviders.Original;
+        _melonEntryEnhancedMode.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) context.provider = newValue
+                ? OVRLipSync.ContextProviders.Enhanced
+                : OVRLipSync.ContextProviders.Original;
+        });
 
         // Update whether is enabled or not
         context.Enabled = _melonEntryEnabled.Value;
-        _melonEntryEnabled.OnValueChangedUntyped += () => context.Enabled = _melonEntryEnabled.Value;
+        _melonEntryEnabled.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) context.Enabled = newValue;
+        });
 
         // Update whether a single viseme should be used or not
         context.SingleViseme = _melonEntrySingleViseme.Value;
-        _melonEntrySingleViseme.OnValueChangedUntyped += () => context.SingleViseme = _melonEntrySingleViseme.Value;
+        _melonEntrySingleViseme.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) context.SingleViseme = newValue;
+        });
 
         // Update whether a single viseme original volume or the oculus loudest viseme
         context.SingleVisemeOriginalVolume = _melonEntrySingleVisemeOriginalVolume.Value;
-        _melonEntrySingleVisemeOriginalVolume.OnValueChangedUntyped += () => context.SingleVisemeOriginalVolume = _melonEntrySingleVisemeOriginalVolume.Value;
+        _melonEntrySingleVisemeOriginalVolume.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) context.SingleVisemeOriginalVolume = newValue;
+        });
 
+        if (!isLocalPlayer) return;
         // Handle local player specifics
-        if (isLocalPlayer) {
-            // Add the dissonance lip sync subscriber to the local player
-            if (!target.TryGetComponent(out CVRMicLipsyncSubscriber lipsyncSubscriber)) {
-                if (RootLogic.Instance.comms.MicrophoneCapture == null) {
-                    MelonLogger.Error("Attempted to initialize the microphone subscriber, but the MicrophoneCapture" +
-                                      "was null...");
-                    return;
-                }
-                lipsyncSubscriber = target.AddComponent<CVRMicLipsyncSubscriber>();
-                RootLogic.Instance.comms.MicrophoneCapture.Subscribe(lipsyncSubscriber);
-            }
-            lipsyncSubscriber.Initialize(context);
-
-            // Fetch the local player voice state, remote voice player states will be fetched when they speak
-            var localPlayerVoiceState = RootLogic.Instance.comms.Players.FirstOrDefault(state => state.IsLocalPlayer);
-            if (localPlayerVoiceState == null) {
-                MelonLogger.Error("Attempted to fetch local player voice state, but it was null?");
+        // Add the dissonance lip sync subscriber to the local player
+        if (!target.TryGetComponent(out CVRMicLipsyncSubscriber lipsyncSubscriber)) {
+            if (RootLogic.Instance.comms.MicrophoneCapture == null) {
+                MelonLogger.Error("Attempted to initialize the microphone subscriber, but the MicrophoneCapture " +
+                                  "was null...");
                 return;
             }
-            context.CurrentVoicePlayerState = localPlayerVoiceState;
+            lipsyncSubscriber = target.AddComponent<CVRMicLipsyncSubscriber>();
+            RootLogic.Instance.comms.MicrophoneCapture.Subscribe(lipsyncSubscriber);
         }
+        lipsyncSubscriber.Initialize(context);
+
+        // Fetch the local player voice state, remote voice player states will be fetched when they speak
+        var localPlayerVoiceState = RootLogic.Instance.comms.Players.FirstOrDefault(state => state.IsLocalPlayer);
+        if (localPlayerVoiceState == null) {
+            MelonLogger.Error("Attempted to fetch local player voice state, but it was null?");
+            return;
+        }
+        context.CurrentVoicePlayerState = localPlayerVoiceState;
     }
 
 
@@ -170,7 +183,7 @@ public class BetterLipsync : MelonMod {
                     var playbackGameObject = ((Component)state.Playback)?.gameObject;
 
                     // Cache playback game object using userid (state name)
-                    _playbackGameObjects[state.Name] = playbackGameObject;
+                    PlaybackGameObjects[state.Name] = playbackGameObject;
 
                     CreateLipsyncContext(state.Name);
                 };
@@ -187,7 +200,7 @@ public class BetterLipsync : MelonMod {
                 //MelonLogger.Msg($"The player {___playerGuid} has initialized a CVRVisemeController!");
 
                 // Cache playback game object using userid (state name)
-                _visemeControllers[___playerGuid] = __instance;
+                VisemeControllers[___playerGuid] = __instance;
 
                 CreateLipsyncContext(___playerGuid);
             }
