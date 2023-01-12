@@ -224,6 +224,11 @@ public class EyeMovementFix : MelonMod {
                 // Fallback to the mouth pointer
                 __instance.viewPosition = ___avatar.mouthPointer.transform.position;
             }
+            if (puppetMaster == null && !__instance.isLocal && ___avatar.mouthPointer == null && !Mathf.Approximately(__instance.viewPosition.x, 0f)) {
+                // Let's add another fallback since there are avatars (namely generic rigs) that don't have a mouth pointer
+                // We gonna use the avatar position + the avatar view point static position (kinda cancer but better than on my own head)
+                __instance.viewPosition = ___avatar.transform.position + ___avatar.viewPosition;
+            }
             else if (__instance.isLocal && PlayerSetup.Instance != null) {
                 // Fix the local eye controller candidate, the viewpoint wouldn't follow the head Up/Down while in FBT
                 // Also it seems in 3pt there was some weird jitter when moving and stopping using the thumbstick
