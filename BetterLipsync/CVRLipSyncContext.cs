@@ -155,12 +155,17 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
             LipsyncResult latestResult;
             lock (this) {
 
-                // If there is nothing to consume, and is not cooling down there is nothing to do here
-                if (_latestResult.Consumed) return;
+                // If there is nothing to consume return. Edit: orrrr just re-use the last viseme
+                // Because some avatars set visemes via animations, which then makes it bork ;_;
+                if (_latestResult.Consumed) {
+                    latestResult = _latestResult;
+                }
+                else {
+                    // Otherwise get and mark the result as consumed
+                    latestResult = _latestResult;
+                    _latestResult.Consumed = true;
+                }
 
-                // Otherwise get and mark the result as consumed
-                latestResult = _latestResult;
-                _latestResult.Consumed = true;
             }
 
             // Update the avatar visemes and the parameters (if present)
