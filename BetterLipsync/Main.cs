@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core;
+﻿using System.Collections;
+using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using HarmonyLib;
@@ -17,9 +18,6 @@ public class BetterLipsync : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntrySingleViseme;
     private static MelonPreferences_Entry<bool> _melonEntrySingleVisemeOriginalVolume;
     internal static MelonPreferences_Entry<bool> MelonEntryMultithreading;
-
-    private static readonly Dictionary<string, GameObject> PlaybackGameObjects = new();
-    private static readonly Dictionary<string, CVRVisemeController> VisemeControllers = new();
 
     public override void OnInitializeMelon() {
 
@@ -64,40 +62,55 @@ public class BetterLipsync : MelonMod {
         catch (IOException ex) {
             MelonLogger.Error("Failed to copy native library: " + ex.Message);
         }
+
+#if DEBUG
+        MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
+#endif
+
     }
 
-    private static void CreateLipsyncContext(string playerGuid) {
+    private static IEnumerator InitializeLocalPlayerAudio(CVRLipSyncContext context) {
+
+        // Wait for microphone capture
+        while (RootLogic.Instance.comms.MicrophoneCapture == null) yield return null;
+
+        #if DEBUG
+        MelonLogger.Msg("Found the MicrophoneCapture! Creating mic subscriber and adding the local player voice state...");
+        #endif
+
+        // Create the mic listener for the local player, since we have no audio source
+        var lipsyncSubscriber = RootLogic.Instance.comms.gameObject.AddComponent<CVRMicLipsyncSubscriber>();
+        RootLogic.Instance.comms.MicrophoneCapture.Subscribe(lipsyncSubscriber);
+        lipsyncSubscriber.SetContext(context);
+
+        // Fetch the local player voice state, remote voice player states will be fetched when they speak
+        var localPlayerVoiceState = RootLogic.Instance.comms.Players.FirstOrDefault(state => state.IsLocalPlayer);
+        context.CurrentVoicePlayerState = localPlayerVoiceState;
+    }
+
+    private static CVRLipSyncContext CreateLipsyncContext(string playerGuid, GameObject target) {
 
         var isLocalPlayer = playerGuid == MetaPort.Instance.ownerId;
 
-        // Check if the current player guid was initialized and currently exists, otherwise ignore
-        if (!VisemeControllers.ContainsKey(playerGuid) || VisemeControllers[playerGuid] == null ||
-            (!isLocalPlayer && (!PlaybackGameObjects.ContainsKey(playerGuid) || PlaybackGameObjects[playerGuid] == null))) {
-            return;
+        // We require an audio source for remote players
+        if (!isLocalPlayer && !target.TryGetComponent(out AudioSource _)) {
+            MelonLogger.Error($"Attempted to initialized a Lip Sync module on a remote player without an audio source.");
         }
 
-        // Pick the target to add our lipsync component
-        GameObject target;
-        if (isLocalPlayer) {
-            target = VisemeControllers[playerGuid].gameObject;
-        }
-        else {
-            if (!PlaybackGameObjects.ContainsKey(playerGuid)) {
-                MelonLogger.Error($"Attempted to initialize lipsync for player {playerGuid}, but the " +
-                                  $"playback game object was not initialized yet...");
-            }
-            target = PlaybackGameObjects[playerGuid];
-        }
+        #if DEBUG
+        MelonLogger.Msg($"Creating a lipsync context for {playerGuid}. IsLocalPlayer: {isLocalPlayer}");
+        #endif
 
-        // Create context if doesn't exist
+        // Create context
         if (!target.TryGetComponent(out CVRLipSyncContext context)) {
             context = target.AddComponent<CVRLipSyncContext>();
         }
+        else {
+            MelonLogger.Error($"The context already existed! Resetting it! This shouldn't happen...");
+        }
 
         // Initialize context
-        // var playerName = (isLocalPlayer ? "Local " : "") + $"player {___playerGuid}";
-        // MelonLogger.Msg($"Initializing CVRLipSyncContext for {playerName}");
-        context.Initialize(VisemeControllers[playerGuid], target, isLocalPlayer, playerGuid);
+        context.Initialize(isLocalPlayer, playerGuid);
 
         // Update smoothing value
         context.Smoothing = _melonEntrySmoothing.Value;
@@ -133,27 +146,7 @@ public class BetterLipsync : MelonMod {
             if (newValue != oldValue) context.SingleVisemeOriginalVolume = newValue;
         });
 
-        if (!isLocalPlayer) return;
-        // Handle local player specifics
-        // Add the dissonance lip sync subscriber to the local player
-        if (!target.TryGetComponent(out CVRMicLipsyncSubscriber lipsyncSubscriber)) {
-            if (RootLogic.Instance.comms.MicrophoneCapture == null) {
-                MelonLogger.Error("Attempted to initialize the microphone subscriber, but the MicrophoneCapture " +
-                                  "was null...");
-                return;
-            }
-            lipsyncSubscriber = target.AddComponent<CVRMicLipsyncSubscriber>();
-            RootLogic.Instance.comms.MicrophoneCapture.Subscribe(lipsyncSubscriber);
-        }
-        lipsyncSubscriber.Initialize(context);
-
-        // Fetch the local player voice state, remote voice player states will be fetched when they speak
-        var localPlayerVoiceState = RootLogic.Instance.comms.Players.FirstOrDefault(state => state.IsLocalPlayer);
-        if (localPlayerVoiceState == null) {
-            MelonLogger.Error("Attempted to fetch local player voice state, but it was null?");
-            return;
-        }
-        context.CurrentVoicePlayerState = localPlayerVoiceState;
+        return context;
     }
 
 
@@ -161,48 +154,41 @@ public class BetterLipsync : MelonMod {
     private static class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), "Start")]
-        private static void After_PlayerSetup_Start(PlayerSetup __instance) {
-            try {
-                // Add the lip sync instance to the scene
-                __instance.gameObject.AddComponent<OVRLipSync>();
-            }
-            catch (Exception e) {
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
         [HarmonyPatch(typeof(RootLogic), "Start")]
-        private static void After_RootLogic_Start() {
+        private static void After_RootLogic_Start(RootLogic __instance) {
             try {
-                // When a new playback game object is created/enabled save it associated to its user id
+
+                #if DEBUG
+                MelonLogger.Msg("Adding the OVRLipSync object to the DissonanceSetup object...");
+                #endif
+
+                var dissonanceSetupGameObject = __instance.comms.gameObject;
+
+                // Add the lip sync instance to the scene
+                dissonanceSetupGameObject.AddComponent<OVRLipSync>();
+
+                #if DEBUG
+                MelonLogger.Msg("Adding the Local Player context...");
+                #endif
+
+                // Created and Add the Local Lipsync context (This one won't ever be destroyed)
+                var localContext = CreateLipsyncContext(MetaPort.Instance.ownerId, dissonanceSetupGameObject);
+
+                // Create a coroutine to initialize the remaining local stuff
+                MelonCoroutines.Start(InitializeLocalPlayerAudio(localContext));
+
+                #if DEBUG
+                MelonLogger.Msg("Setting up the context creation for remote players, using the dissonance sessions...");
+                #endif
+
+                // Create a lipsync context when a new player joins the dissonance session
                 RootLogic.Instance.comms.OnPlayerJoinedSession += state => {
-                    // MelonLogger.Msg($"The player {state.Name} has joined the comms session!");
+                    #if DEBUG
+                    MelonLogger.Msg($"OnPlayerJoinedSession => {state.Name} has JOINED the comms session!");
+                    #endif
 
-                    var playbackGameObject = ((Component)state.Playback)?.gameObject;
-
-                    // Cache playback game object using userid (state name)
-                    PlaybackGameObjects[state.Name] = playbackGameObject;
-
-                    CreateLipsyncContext(state.Name);
+                    CreateLipsyncContext(state.Name, ((Component)state.Playback)!.gameObject);
                 };
-            }
-            catch (Exception e) {
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRVisemeController), "Start")]
-        private static void After_CVRVisemeController_Start(CVRVisemeController __instance, string ___playerGuid) {
-            try {
-                //MelonLogger.Msg($"The player {___playerGuid} has initialized a CVRVisemeController!");
-
-                // Cache playback game object using userid (state name)
-                VisemeControllers[___playerGuid] = __instance;
-
-                CreateLipsyncContext(___playerGuid);
             }
             catch (Exception e) {
                 MelonLogger.Error(e);

@@ -222,10 +222,6 @@ public class OVRLipSync : MonoBehaviour
                 ("OvrLipSync Awake: Failed to init Speech Rec library"));
             }
         }
-
-        // Important: Use the touchpad mechanism for input, call Create on the OVRTouchpad helper class
-        OVRTouchpad.Create();
-
     }
 
     /// <summary>

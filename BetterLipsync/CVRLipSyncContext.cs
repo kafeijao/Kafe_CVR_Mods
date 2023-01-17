@@ -10,6 +10,9 @@ namespace BetterLipsync;
 [DefaultExecutionOrder(999999)]
 public class CVRLipSyncContext : OVRLipSyncContextBase {
 
+    private static readonly Dictionary<string, CVRLipSyncContext> PlayersCurrentContext = new();
+    private static readonly Dictionary<string, CVRVisemeController> PlayersCurrentVisemeController = new();
+
     // Config
     public bool Enabled { get; set; } = true;
     public bool SingleViseme { get; set; } = true;
@@ -37,9 +40,6 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     // Threading
     private static bool _multithreading;
     private int _skippedAudioData = 0;
-    // If using a single thread with a queue
-    // private static readonly Thread ProcessFramesThread;
-    // private static readonly BlockingCollection<Action> ProcessFrameQueue;
 
     // Voice
     public VoicePlayerState CurrentVoicePlayerState;
@@ -66,49 +66,15 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
             LogThreadUsage();
         });
 
-        // Setup the thread
-        // ProcessFrameQueue = new BlockingCollection<Action>(new ConcurrentQueue<Action>());
-        // void ProcessFrame() {
-        //     try {
-        //         while (true) {
-        //             // Wait for an element in the queue, and invoke as they arrive
-        //             ProcessFrameQueue.Take()?.Invoke();
-        //         }
-        //     }
-        //     catch (ThreadAbortException) {
-        //         MelonLogger.Msg("Lipsync Thread has stopped.");
-        //     }
-        //     catch (Exception ex) {
-        //         MelonLogger.Error("Error in the Lipsync Thread!");
-        //         MelonLogger.Error(ex);
-        //         throw;
-        //     }
-        // }
-        // ProcessFramesThread = new Thread(ProcessFrame);
-        // MelonLogger.Msg("Starting Lipsync Thread...");
-        // ProcessFramesThread.Start();
     }
 
-    internal void Initialize(CVRVisemeController visemeController, GameObject target, bool isLocalPlayer, string playerGuid) {
+    internal void Initialize(bool isLocalPlayer, string playerGuid) {
 
-        _visemeController = visemeController;
         _isLocalPlayer = isLocalPlayer;
         _playerID = playerGuid;
 
-        // We require an audio source for remote players
-        if (!_isLocalPlayer && !target.TryGetComponent(out AudioSource _)) {
-            MelonLogger.Error($"Attempted to initialized a Lip Sync module on a remote player without an audio source.");
-        }
-
-        // Cache fields from visemeController
-        var visemeControllerTraverse = Traverse.Create(visemeController);
-        _configSuccessful = visemeControllerTraverse.Field<bool>("configSuccessful");
-        _distance = visemeControllerTraverse.Field<float>("_distance");
-        _visemeBlendShapes = visemeControllerTraverse.Field<int[]>("visemeBlendShapes");
-
+        // Setup Talking handlers for remote user contexts, the local one will be handled by the CVRMicLipsyncSubscriber
         if (!isLocalPlayer) {
-
-            // Talking state handlers
             _playerStartedSpeaking = voicePlayerState => {
                 if (voicePlayerState.Name != playerGuid) return;
                 CurrentVoicePlayerState = voicePlayerState;
@@ -121,7 +87,35 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
             RootLogic.Instance.comms.OnPlayerStoppedSpeaking += _playerStoppedSpeaking;
         }
 
-        _initialized = true;
+        PlayersCurrentContext[playerGuid] = this;
+
+        // Check if we're ready to go already
+        CheckVisemeController();
+    }
+
+    private void CheckVisemeController() {
+
+        // If we got both a context (this instance) and a viseme controller. We're gucci to go!
+        // Lets initialize stuff!
+        if (PlayersCurrentVisemeController.ContainsKey(_playerID)) {
+            var visemeController = PlayersCurrentVisemeController[_playerID];
+            _visemeController = visemeController;
+            // Cache fields from visemeController
+            var visemeControllerTraverse = Traverse.Create(visemeController);
+            _configSuccessful = visemeControllerTraverse.Field<bool>("configSuccessful");
+            _distance = visemeControllerTraverse.Field<float>("_distance");
+            _visemeBlendShapes = visemeControllerTraverse.Field<int[]>("visemeBlendShapes");
+            _initialized = true;
+        }
+
+        // Otherwise, lets disable the lipsync for now
+        else {
+            _initialized = false;
+        }
+
+        #if DEBUG
+        MelonLogger.Msg($"[CVRLipSyncContext.CheckVisemeController] Checking viseme controller for {_playerID}, the context is now active: {_initialized}");
+        #endif
     }
 
     private bool ShouldComputeVisemes() {
@@ -221,17 +215,41 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
     public void ResetVisemes() {
 
         // Ignore resetting if already initial state
-        if (_previousResult == null || _previousResult.Viseme == 0 && Mathf.Approximately(_previousResult.VisemeLoudness, 0f)) return;
+        if (!_initialized || _previousResult == null || _previousResult.Viseme == 0 && Mathf.Approximately(_previousResult.VisemeLoudness, 0f)) return;
 
         ResetContext();
         UpdateVisemes(new LipsyncResult() { Consumed = false });
     }
 
-    private void OnDestroy() {
-        // Clear the player talking delegates
+    private void OnDisable() {
+        // This should never happen since the local player context is on the DissonanceSetup object!
         if (_isLocalPlayer) return;
-        RootLogic.Instance.comms.OnPlayerStartedSpeaking -= _playerStartedSpeaking;
-        RootLogic.Instance.comms.OnPlayerStoppedSpeaking -= _playerStoppedSpeaking;
+
+        #if DEBUG
+        MelonLogger.Msg($"[CVRLipSyncContext.OnDisable] The game object has been turned off! The player {_playerID}");
+        #endif
+        Destroy(this);
+    }
+
+    private new void OnDestroy() {
+
+        #if DEBUG
+        MelonLogger.Msg($"[CVRLipSyncContext.OnDestroy] The {(_isLocalPlayer ? "LOCAL" : "")} player {_playerID} has been nuked!");
+        #endif
+
+        if (_isLocalPlayer) {
+            // Clear the player talking delegates
+            RootLogic.Instance.comms.OnPlayerStartedSpeaking -= _playerStartedSpeaking;
+            RootLogic.Instance.comms.OnPlayerStoppedSpeaking -= _playerStoppedSpeaking;
+        }
+
+        // Clear the cache for the context being destroyed
+        if (PlayersCurrentContext.ContainsKey(_playerID)) {
+            PlayersCurrentContext.Remove(_playerID);
+        }
+
+        // And call destroy of the base class
+        base.OnDestroy();
     }
 
     private void ComputeViseme() {
@@ -305,21 +323,17 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
                 }
             }
 
-            // if (_skippedAudioData > 1) {
-            //     MelonLogger.Msg($"Fell behind on the ProcessAudioSamples task by {_skippedAudioData} ticks. This is normal if the game is having lag spikes...");
-            // }
+            #if DEBUG
+            if (_skippedAudioData > 10) {
+                MelonLogger.Msg($"Fell behind on the ProcessAudioSamples task by {_skippedAudioData} ticks. This is normal if the game is having lag spikes...");
+            }
+            #endif
 
             if (_multithreading) {
 
                 // Create a deep copy of the data, since it will be recycled for the other ProcessAudioSamples calls ?
                 var bufferedData = new float[data.Length];
                 data.CopyTo(bufferedData, 0);
-
-                // Enqueue the processing to the thread
-                // ProcessFrameQueue.Add(() => {
-                //     OVRLipSync.ProcessFrame(Context, bufferedData, Frame, channels == 2);
-                //     ComputeViseme();
-                // });
 
                 // Using a thread pool to run the tasks
                 Task.Factory.StartNew(() => {
@@ -349,12 +363,51 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         ProcessAudioSamples(data, channels);
     }
 
-    // private void OnApplicationQuit() {
-    //     if (!_isLocalPlayer) return;
-    //     // When the application is quitting let's have out local player behavior to tell the thread to stop
-    //     ProcessFramesThread.Abort();
-    //     MelonLogger.Msg("Joining Lipsync Thread...");
-    //     ProcessFramesThread.Join();
-    //     MelonLogger.Msg("Joined Lipsync Thread successfully!");
-    // }
+
+    [HarmonyPatch]
+    private static class HarmonyPatches {
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRVisemeController), "Start")]
+        private static void After_CVRVisemeController_Start(CVRVisemeController __instance, string ___playerGuid) {
+            try {
+
+                #if DEBUG
+                MelonLogger.Msg($"[CVRVisemeController.Start] {___playerGuid} has INITIALIZED their viseme controller!");
+                #endif
+
+                // Cache the viseme controller
+                PlayersCurrentVisemeController[___playerGuid] = __instance;
+
+                // Update the context for this change
+                if (PlayersCurrentContext.ContainsKey(___playerGuid)) PlayersCurrentContext[___playerGuid].CheckVisemeController();
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRVisemeController), "OnDestroy")]
+        private static void After_CVRVisemeController_OnDestroy(CVRVisemeController __instance, string ___playerGuid) {
+            try {
+
+                #if DEBUG
+                MelonLogger.Msg($"[CVRVisemeController.Start] {___playerGuid} has DESTROYED their viseme controller!");
+                #endif
+
+                // Clear viseme controller from cache
+                if (PlayersCurrentVisemeController.ContainsKey(___playerGuid)) {
+                    PlayersCurrentVisemeController.Remove(___playerGuid);
+                }
+
+                // Update the context for this changes
+                if (PlayersCurrentContext.ContainsKey(___playerGuid)) PlayersCurrentContext[___playerGuid].CheckVisemeController();
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+    }
 }
