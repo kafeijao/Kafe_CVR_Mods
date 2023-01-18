@@ -20,7 +20,7 @@ public class Core {
         public bool ShowSections { get; set; }
     }
 
-    [JsonIgnore] internal static Core Instance;
+    [JsonIgnore] public static Core Instance;
     [JsonIgnore] private int _indexToAdd = 0;
 
     [JsonProperty("Info")] private Info _info;
@@ -122,13 +122,13 @@ public class Core {
         return section;
     }
 
-    internal Button AddButton(Button button, bool atTheEnd = false) {
+    public Button AddButton(Button button, bool atTheEnd = false) {
         // Insert the button, using an _indexToAdd to enable adding stuff to the end or not
         Buttons.Insert(atTheEnd ? Buttons.Count : _indexToAdd++, CacheButton(button));
         return button;
     }
 
-    internal static bool GetButton(Button.ButtonType type, out Button button) {
+    public static bool GetButton(Button.ButtonType type, out Button button) {
         button = null;
         var found = Instance?._buttons?.TryGetValue(type, out button);
         return found.HasValue && found.Value;
@@ -319,6 +319,9 @@ public class Button {
         Trigger,
         Eye,
         Power,
+        Mod1,
+        Mod2,
+        Mod3,
     }
 
     public void Click() => ClickHandler?.Invoke(this);

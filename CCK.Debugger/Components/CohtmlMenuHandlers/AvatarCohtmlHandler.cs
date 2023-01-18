@@ -101,6 +101,9 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
     private static bool _isLoaded;
     private static CVRAvatar _currentAvatar;
 
+    // Event to allow other mods to tag in
+    public static event Action<Core, bool, CVRPlayerEntity, GameObject, Animator> AvatarChangeEvent;
+
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
     private static readonly HashSet<string> CoreParameterNames;
     private static readonly List<CVRAdvancedAvatarSettingsTrigger> TrackedTriggers;
@@ -152,7 +155,10 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             SetupAvatarBase(_isLoaded, isLocal, isDisabled, isInitialized, currentPlayer);
 
             // Set up the body part of the menu
-            if (!isDisabled && isInitialized && _isLoaded) SetupAvatarBody(isLocal, currentPlayer);
+            if (!isDisabled && isInitialized && _isLoaded) {
+                SetupAvatarBody(isLocal, currentPlayer, out var avatarGameObject, out var avatarAnimator);
+                AvatarChangeEvent?.Invoke(_core, isLocal, currentPlayer, avatarGameObject, avatarAnimator);
+            }
 
             // Consume the avatar change and send core create update
             _avatarChanged = false;
@@ -207,7 +213,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         attributesSection.AddSection("Avatar Hidden").Value = ToString(isAvatarDisabled);
     }
 
-    private void SetupAvatarBody(bool isLocal, CVRPlayerEntity currentPlayer) {
+    private void SetupAvatarBody(bool isLocal, CVRPlayerEntity currentPlayer, out GameObject avatarGo, out Animator avatarAnimator) {
 
         // Setup buttons
         var trackerButton = _core.AddButton(new Button(Button.ButtonType.Tracker, false, false));
@@ -247,7 +253,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         };
         eyeButton.ClickHandler = button => button.IsOn = !button.IsOn;
 
-        var mainAnimator = isLocal
+        var mainAnimator = avatarAnimator = isLocal
             ? Events.Avatar.LocalPlayerAnimatorManager?.animator
             : Traverse.Create(currentPlayer.PuppetMaster).Field("_animator").GetValue<Animator>();
 
@@ -303,7 +309,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             });
         }
 
-        var avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
+        avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
 
         // Set up CVR Pointers
         var avatarPointers = avatarGo.GetComponentsInChildren<CVRPointer>(true);

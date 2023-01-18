@@ -112,6 +112,15 @@ html, body {
 #cck-debugger-button-power {
     background-image: url("Images/Buttons/Power.png");
 }
+#cck-debugger-button-mod1 {
+    background-image: url("Images/Buttons/Mod1.png");
+}
+#cck-debugger-button-mod2 {
+    background-image: url("Images/Buttons/Mod2.png");
+}
+#cck-debugger-button-mod3 {
+    background-image: url("Images/Buttons/Mod3.png");
+}
 
 .hidden {
     display: none;

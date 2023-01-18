@@ -22,7 +22,7 @@ public class CCKDebugger : MelonMod {
     private static MelonPreferences_Category _melonCategory;
     private static MelonPreferences_Entry<bool> _melonEntryOverwriteUIResources;
 
-    public override void OnApplicationStart() {
+    public override void OnInitializeMelon() {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(CCKDebugger));
