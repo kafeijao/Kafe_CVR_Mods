@@ -43,7 +43,8 @@ public class PointerSphereVisualizer : PointerVisualizer {
         // Update the size and position to match the pointer
         var lossyScale = PointerCollider.transform.lossyScale.x;
         var scaledRadius = lossyScale == 0 ? 0 : Mathf.Max(PointerCollider.radius, MinimumRadius / lossyScale);
-        VisualizerGo.transform.localScale = Vector3.one * scaledRadius;
+        // Multiplying by two because scale would be diameter and not radius
+        VisualizerGo.transform.localScale = Vector3.one * (2 * scaledRadius);
         VisualizerGo.transform.localPosition = PointerCollider.center;
     }
 }
