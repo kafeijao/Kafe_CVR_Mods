@@ -22,7 +22,7 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
-[assembly: MelonOptionalDependencies("PortableMirrorMod")]
+[assembly: MelonOptionalDependencies("PortableMirrorMod", "CCKDebugger")]
 
 namespace EyeMovementFix.Properties;
 internal static class AssemblyInfoParams {

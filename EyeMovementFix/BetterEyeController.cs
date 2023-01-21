@@ -1,12 +1,14 @@
-﻿using ABI_RC.Core;
-using ABI_RC.Core.Player;
+﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Player.AvatarTracking.Local;
 using ABI_RC.Core.Player.AvatarTracking.Remote;
-using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
+
+#if DEBUG
+using CCK.Debugger.Components;
+#endif
 
 namespace EyeMovementFix;
 
@@ -14,34 +16,18 @@ namespace EyeMovementFix;
 public class BetterEyeController : MonoBehaviour {
 
     private static bool _errored;
-    private static readonly Dictionary<CVREyeController, BetterEyeController> BetterControllers = new();
-
-    private static readonly int DefaultLayer = LayerMask.NameToLayer("Default");
-    private static readonly int PlayerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
-    private static readonly int PlayerNetworkLayer = LayerMask.NameToLayer("PlayerNetwork");
-    private static readonly int DefaultLayerMask = 1 << DefaultLayer;
-    private static readonly int PlayerLocalMask = 1 << PlayerLocalLayer;
-    private static readonly int PlayerNetworkMask = 1 << PlayerNetworkLayer;
-    private static readonly int DefaultOrRemotePlayersMask = DefaultLayerMask | PlayerNetworkMask;
-    private static readonly int DefaultOrAllPlayersMask = DefaultLayerMask | PlayerLocalMask | PlayerNetworkMask;
-
+    public static readonly Dictionary<CVREyeController, BetterEyeController> BetterControllers = new();
+    public static readonly Dictionary<CVRAvatar, Quaternion> OriginalLeftEyeLocalRotation = new();
+    public static readonly Dictionary<CVRAvatar, Quaternion> OriginalRightEyeLocalRotation = new();
 
     private const float MaxVerticalAngle = 25f;
     private const float MaxHorizontalAngle = 25f;
 
-    private const float MaxTargetAngle = 45f;
-
-    private const string CameraGuid = "CVRCamera";
-    private const string MirrorSuffix = " [mirror]";
-
     private CVRAvatar _avatar;
-    private Traverse<Vector3> _targetTraverse;
-    private Traverse<Vector2> _eyeAngleTraverse;
-    private Traverse<string> _targetGuidTraverse;
 
-    private bool _isLocal;
+    public CVREyeController cvrEyeController;
 
-    private Transform _viewpoint;
+    public Transform viewpoint;
 
     private bool _hasLeftEye;
     private BetterEye _leftEye;
@@ -50,39 +36,116 @@ public class BetterEyeController : MonoBehaviour {
     private BetterEye _rightEye;
 
     // Internal
-    private bool _initialized;
+    public bool initialized;
     private float _getNextTargetAt;
-
+    private TargetCandidate _lastTarget;
 
     private class BetterEye {
         public bool IsLeft;
         public Transform RealEye;
         public Transform FakeEye;
         public Transform FakeEyeWrapper;
+        public Transform FakeEyeViewpointOffset;
     }
 
-    private static void CreateFake(BetterEye eye, Transform viewpoint) {
+    // Debugging
+    #if DEBUG
+
+    public string lastTargetDebugNameFirst;
+    public string lastTargetDebugName;
+    public readonly List<string> LastTargetCandidates = new();
+
+    private Vector3 _viewpointPositionFixedUpdate;
+    private Quaternion _viewpointRotationFixedUpdate;
+
+    private Vector3 _viewpointPositionUpdate;
+    private Quaternion _viewpointRotationUpdate;
+
+    private Vector3 _viewpointPositionLateUpdate;
+    private Quaternion _viewpointRotationLateUpdate;
+
+    private Vector3 _viewpointPositionPreRender;
+    private Quaternion _viewpointRotationPreRender;
+
+
+    private Quaternion _rightEyeAttempted;
+    private Quaternion _rightEyeFixedUpdate;
+    private Quaternion _rightEyeUpdate;
+    private Quaternion _rightEyeLateUpdate;
+    private Quaternion _rightEyeOnRender;
+
+    private Quaternion _leftEyeAttempted;
+    private Quaternion _leftEyeFixedUpdate;
+    private Quaternion _leftEyeUpdate;
+    private Quaternion _leftEyeLateUpdate;
+    private Quaternion _leftEyeOnRender;
+
+    private string _debug1;
+    private string _debug2;
+    private string _debug3;
+    private string _debug4;
+    #endif
+
+    private static void CreateFake(BetterEye eye, Transform viewpoint, Transform head, CVRAvatar avatar) {
+
+        // Create the viewpoint offset parent, this is needed when the parent of the real eye is not aligned with the viewpoint
+        // This way we keep the rotation offset, allowing the looking forward of the eye wrapper to be local rotation = Quaternion.identity
+        var fakeEyeBallViewpointOffset = new GameObject($"[EyeMovementFix] Fake{(eye.IsLeft ? "Left" : "Right")}EyeViewpointOffset");
+        var viewpointOffsetEye = fakeEyeBallViewpointOffset.transform;
+
+        viewpointOffsetEye.SetParent(eye.RealEye.parent, true);
+        viewpointOffsetEye.localScale = Vector3.one;
+        viewpointOffsetEye.position = eye.RealEye.position;
+        viewpointOffsetEye.rotation = viewpoint.rotation;
 
         // Create the in-between fake eye ball wrapper
         var fakeEyeBallWrapper = new GameObject($"[EyeMovementFix] Fake{(eye.IsLeft ? "Left" : "Right")}EyeWrapper");
         var wrapperEye = fakeEyeBallWrapper.transform;
 
-        wrapperEye.SetParent(eye.RealEye.parent, true);
+        wrapperEye.SetParent(viewpointOffsetEye, true);
         wrapperEye.localScale = Vector3.one;
-        wrapperEye.position = eye.RealEye.position;
-        wrapperEye.rotation = viewpoint.rotation;
+        wrapperEye.localPosition = Vector3.zero;
+        wrapperEye.localRotation = Quaternion.identity;
 
-        // Create the in-between fake eye ball, copying the og eye initial local rotation
+        // Create the in-between fake eye ball, copying the eye initial local rotation
         var fakeEyeBall = new GameObject($"[EyeMovementFix] Fake{(eye.IsLeft ? "Left" : "Right")}Eye");
         var fakeEye = fakeEyeBall.transform;
 
         fakeEye.SetParent(wrapperEye, true);
         fakeEye.localScale = Vector3.one;
         fakeEye.localPosition = Vector3.zero;
-        fakeEye.rotation = eye.RealEye.rotation;
+        //fakeEye.rotation = eye.RealEye.rotation;
 
+        if (eye.IsLeft && OriginalLeftEyeLocalRotation.ContainsKey(avatar)) {
+            // Use the local rotation grabbed right after initializing the avatar, before ik/network do the funny
+            fakeEye.rotation = OriginalLeftEyeLocalRotation[avatar];
+        }
+        else if (!eye.IsLeft && OriginalRightEyeLocalRotation.ContainsKey(avatar)) {
+            // Use the local rotation grabbed right after initializing the avatar, before ik/network do the funny
+            fakeEye.rotation = OriginalRightEyeLocalRotation[avatar];
+        }
+        else {
+            // Default to the current real eye rotation
+            fakeEye.rotation = eye.RealEye.rotation;
+            #if DEBUG
+            MelonLogger.Msg($"[{(eye.IsLeft ? "Left" : "Right")} Eye][{avatar.GetInstanceID()}] Had no initial rotation, falling back to current rotation.");
+            #endif
+        }
+
+        eye.FakeEyeViewpointOffset = viewpointOffsetEye;
         eye.FakeEyeWrapper = wrapperEye;
         eye.FakeEye = fakeEye;
+
+        #if DEBUG
+        MelonLogger.Msg($"{(eye.IsLeft ? "Left" : "Right")} Eye:");
+        MelonLogger.Msg($"Avat: {avatar.transform.position.ToString("F2")} - {avatar.transform.rotation.eulerAngles.ToString("F2")}");
+        MelonLogger.Msg($"Head: {head.position.ToString("F2")} - {head.rotation.eulerAngles.ToString("F2")}");
+        MelonLogger.Msg($"VPVP: {viewpoint.position.ToString("F2")} - {viewpoint.rotation.eulerAngles.ToString("F2")}");
+        MelonLogger.Msg($"Real: {eye.RealEye.position.ToString("F2")} - {eye.RealEye.rotation.eulerAngles.ToString("F2")}");
+        MelonLogger.Msg($"WrVP: {eye.FakeEyeViewpointOffset.position.ToString("F2")} - {eye.FakeEyeViewpointOffset.rotation.eulerAngles.ToString("F2")}");
+        MelonLogger.Msg($"FkWr: {eye.FakeEyeWrapper.position.ToString("F2")} - {eye.FakeEyeWrapper.rotation.eulerAngles.ToString("F2")}");
+        MelonLogger.Msg($"FaEy: {eye.FakeEye.position.ToString("F2")} - {eye.FakeEye.rotation.eulerAngles.ToString("F2")}");
+        #endif
     }
 
     private static void Initialize(CVRAvatar avatar, CVREyeController eyeController, Transform head, Transform leftRealEye, Transform rightRealEye) {
@@ -90,30 +153,8 @@ public class BetterEyeController : MonoBehaviour {
         // Initialize our better eye controller
         var betterEyeController = eyeController.gameObject.AddComponent<BetterEyeController>();
         BetterControllers[eyeController] = betterEyeController;
+        betterEyeController.cvrEyeController = eyeController;
         betterEyeController._avatar = avatar;
-        betterEyeController._targetTraverse = Traverse.Create(eyeController).Field<Vector3>("targetViewPosition");
-        betterEyeController._eyeAngleTraverse = Traverse.Create(eyeController).Field<Vector2>("eyeAngle");
-        betterEyeController._targetGuidTraverse = Traverse.Create(eyeController).Field<string>("targetGuid");
-        betterEyeController._isLocal = eyeController.isLocal;
-
-        // Create the viewpoint
-        // var viewpointGo = new GameObject($"[EyeMovementFix] Viewpoint");
-        // var viewpoint = viewpointGo.transform;
-        //
-        // // Setup the viewpoint
-        // viewpoint.SetParent(head, true);
-        // viewpoint.localScale = Vector3.one;
-        // viewpoint.localRotation = Quaternion.identity;
-        // if (eyeController.isLocal) {
-        //     // Because the _avatar.GetViewWorldPosition() of the local player is completely broken
-        //     viewpoint.position = head.position + head.TransformVector(Traverse.Create(PlayerSetup.Instance).Field<Vector3>("initialCameraPos").Value);
-        // }
-        // else {
-        //     // This only works because I patched the CVREverController to fix the CVRAvatar not having a puppet master
-        //     viewpoint.position = avatar.GetViewWorldPosition();
-        // }
-        // betterEyeController._viewpoint = viewpoint;
-
 
         // Todo: Improve this crap
         if (eyeController.isLocal) {
@@ -123,29 +164,8 @@ public class BetterEyeController : MonoBehaviour {
                 betterEyeController.enabled = false;
                 return;
             }
-            betterEyeController._viewpoint = localHeadPoint.GetTransform();
+            betterEyeController.viewpoint = localHeadPoint.GetTransform();
 
-
-            // // Create the viewpoint
-            // var viewpointGo = new GameObject($"[EyeMovementFix] Viewpoint");
-            // var viewpoint = viewpointGo.transform;
-            //
-            // var localHeadPoint = Traverse.Create(PlayerSetup.Instance).Field<LocalHeadPoint>("_viewPoint").Value;
-            // if (localHeadPoint == null) {
-            //     MelonLogger.Warning($"Failed to get our avatar's viewpoint... Eye Movement will break for me ;_;");
-            //     betterEyeController.enabled = false;
-            //     return;
-            // }
-            //
-            // var localHeadTransform = localHeadPoint.transform;
-            //
-            // // Setup the viewpoint
-            // viewpoint.SetParent(head, true);
-            // viewpoint.localScale = Vector3.one;
-            // viewpoint.rotation = localHeadTransform.rotation;
-            // viewpoint.position = localHeadTransform.position;
-            //
-            // betterEyeController._viewpoint = localHeadPoint.GetTransform();
         }
         else {
             var puppetMaster = Traverse.Create(avatar).Field<PuppetMaster>("puppetMaster").Value;
@@ -156,15 +176,13 @@ public class BetterEyeController : MonoBehaviour {
                 betterEyeController.enabled = false;
                 return;
             }
-            betterEyeController._viewpoint = remoteHeadPoint.GetTransform();
+            betterEyeController.viewpoint = remoteHeadPoint.GetTransform();
         }
-
-
 
         // Create the fake left eye
         if (leftRealEye != null) {
             var betterLeftEye = new BetterEye { IsLeft = true, RealEye = leftRealEye };
-            CreateFake(betterLeftEye, betterEyeController._viewpoint);
+            CreateFake(betterLeftEye, betterEyeController.viewpoint, head, avatar);
             betterEyeController._leftEye = betterLeftEye;
             betterEyeController._hasLeftEye = true;
         }
@@ -172,9 +190,21 @@ public class BetterEyeController : MonoBehaviour {
         // Create the fake right eye
         if (rightRealEye != null) {
             var betterRightEye = new BetterEye { IsLeft = false, RealEye = rightRealEye };
-            CreateFake(betterRightEye, betterEyeController._viewpoint);
+            CreateFake(betterRightEye, betterEyeController.viewpoint, head, avatar);
             betterEyeController._rightEye = betterRightEye;
             betterEyeController._hasRightEye = true;
+        }
+
+        // Exclude our fake eyeballs from dyn bones
+        foreach (var dynamicBone in avatar.GetComponentsInChildren<DynamicBone>(true)) {
+            if (betterEyeController._hasLeftEye) {
+                dynamicBone.m_Exclusions.Add(betterEyeController._leftEye.RealEye);
+                dynamicBone.m_Exclusions.Add(betterEyeController._leftEye.FakeEyeViewpointOffset);
+            }
+            if (betterEyeController._hasRightEye) {
+                dynamicBone.m_Exclusions.Add(betterEyeController._rightEye.RealEye);
+                dynamicBone.m_Exclusions.Add(betterEyeController._rightEye.FakeEyeViewpointOffset);
+            }
         }
     }
 
@@ -183,7 +213,7 @@ public class BetterEyeController : MonoBehaviour {
 #if DEBUG
         for (var i = 0; i < _debugLineRenderers.Length; i++) {
             var a = new GameObject("[EyeMovementFix] Line Visualizer", typeof(LineRenderer));
-            a.transform.SetParent(_viewpoint);
+            a.transform.SetParent(viewpoint);
             a.transform.localScale = Vector3.one;
             a.transform.localPosition = Vector3.zero;
             a.transform.localRotation = Quaternion.identity;
@@ -195,212 +225,35 @@ public class BetterEyeController : MonoBehaviour {
             l.endWidth = 0.002f;
             _debugLineRenderers[i] = l;
         }
+
+
+        CCK.Debugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent += OnCCKDebuggerAvatarChanged;
 #endif
 
-        if (enabled) _initialized = true;
+        if (enabled) initialized = true;
     }
 
-    public void GetNewTarget(CVREyeController controller) {
+    private void FindAndSetNewTarget(CVREyeController controller) {
 
-        float GetAlignmentScore(CVREyeControllerCandidate targetCandidate) {
-            // Get how aligned (angle wise) the target is to our viewpoint center
-            // 100% align returns 1, angles equal or higher than 45 degrees will return 0
-            var targetDirection = (targetCandidate.Position - controller.viewPosition).normalized;
-            var angle = Mathf.Abs(CVRTools.AngleToSigned(Vector3.Angle(targetDirection, _viewpoint.forward)));
-            return 1 - Mathf.InverseLerp(0, MaxTargetAngle, angle);
-        }
+        // The target candidates needs to be fetched on LateUpdate, because for some reason the viewpoint positions are
+        // all wonky on the Update loop. They seem fine in FixedUpdate and LateUpdate. By wonky I mean that the position
+        // y (height) doesn't follow the head while in VR
+        if (TargetCandidate.Initialized) TargetCandidate.UpdateTargetCandidates();
 
-        float GetDistanceScore(float targetDistance) {
-            // Get how close the target is
-            // Right on top of us is 1, 15 meters and further is 0
-            return 1 - Mathf.InverseLerp(0, 15, targetDistance);
-        }
+        // Grab a candidate
+        _lastTarget = TargetCandidate.GetNewTarget(this, controller, viewpoint)?.GetCopy();
 
-        bool HasLineOfSight(CVREyeControllerCandidate targetCandidate, float targetDistance, out bool inMirror) {
-            // Shoot a raycast that stops at target distance
-            // If collides with a player capsule, assume LOS
-            // If doesnt collide with anything, assume LOS because there was nothing blocking reaching the target
-
-            // Ignore mirrors and camera (because the raycast won't reach a player lol)
-            // And can't look if the ray hit has the mirror script, because not all mirrors have colliders
-            if (targetCandidate.Guid == CameraGuid || targetCandidate.Guid.Contains(MirrorSuffix)) {
-                inMirror = true;
-                return true;
-            }
-            inMirror = false;
-
-            var targetDirection = (targetCandidate.Position - controller.viewPosition).normalized;
-
-            // If we're shooting the raycast from the local player we don't want to hit ourselves
-            var mask = _isLocal ? DefaultOrRemotePlayersMask : DefaultOrAllPlayersMask;
-
-            if (Physics.Raycast(_viewpoint.position, targetDirection, out var hitInfo, targetDistance, mask)) {
-#if DEBUG
-                if (_isDebugging) MelonLogger.Msg($"\t\t[Raycast] Layer: {LayerMask.LayerToName(hitInfo.collider.gameObject.layer)}, Name: {hitInfo.collider.gameObject.name}");
-#endif
-                // If we hit something other than the default layer we can consider we didn't get blocked
-                if (hitInfo.collider.gameObject.layer != DefaultLayer) return true;
-
-                // Otherwise lets check if the thing we hit got a player descriptor (some player stuff is in the Default Layer)
-                return hitInfo.collider.GetComponent<PlayerDescriptor>() != null;
-            }
-
-#if DEBUG
-            if (_isDebugging) MelonLogger.Msg($"\t\t[Raycast] Did not reach anything (means target wasn't blocked)");
-#endif
-            // Since we limited our raycast to the target's distance, here means the raycast wasn't blocked!
-            return true;
-        }
-
-        float GetTalkingScore(CVREyeControllerCandidate targetCandidate, out string playerName, out bool isLocal) {
-            // Attempt to get the talking score of the target
-            // It seems like the talker amplitude changes from 0 to 0.1 (max), so this seems like a good approximation
-            // Returns 1 when really loud, and 0 when not talking
-
-            // See if it's the local player
-            if (PlayerSetup.Instance.PlayerAvatarParent.transform.childCount > 0) {
-                var avatarInstanceId = PlayerSetup.Instance.PlayerAvatarParent.transform.GetChild(0).gameObject.GetInstanceID();
-                if (targetCandidate.Guid.StartsWith(avatarInstanceId.ToString())) {
-                    playerName = MetaPort.Instance.username;
-                    isLocal = true;
-                    return Mathf.InverseLerp(0f, 0.1f, RootLogic.Instance.comms.Players[0].Amplitude);
-                }
-            }
-
-            // See if it's any other player
-            isLocal = false;
-            foreach (var entity in CVRPlayerManager.Instance.NetworkPlayers) {
-                // When avatars are initializing they might not have anything in here yet
-                if (entity.AvatarHolder.transform.childCount == 0) continue;
-                var avatarInstanceId = entity.AvatarHolder.transform.GetChild(0).gameObject.GetInstanceID();
-                if (!targetCandidate.Guid.StartsWith(avatarInstanceId.ToString())) continue;
-                playerName = entity.Username;
-                return Mathf.InverseLerp(0f, 0.1f, entity.TalkerAmplitude);
-            }
-
-            playerName = "N/A";
-            return 0f;
-        }
-
-        var totalWeight = 0;
-        var targetCandidates = CVREyeControllerManager.Instance.targetCandidates;
-
-#if DEBUG
-        if (_isDebugging) MelonLogger.Msg($"\nPicking new target...");
-#endif
-
-        var userNameMap = new Dictionary<CVREyeControllerCandidate, string>();
-
-        foreach (var (guid, targetCandidate) in targetCandidates) {
-
-            // Exclude ourselves from the targets
-            if (guid == controller.gameObject.GetInstanceID().ToString()) {
-                targetCandidate.Weight = 0;
-#if DEBUG
-                if (_isDebugging) MelonLogger.Msg($"\t[__SELF__] [{targetCandidate.Guid}] Ignored ourselves c:");
-#endif
-                continue;
-            }
-
-            var talkingScore = GetTalkingScore(targetCandidate, out var username, out var isLocal);
-            userNameMap[targetCandidate] = username;
-
-            var targetDistance = Vector3.Distance(controller.viewPosition, targetCandidate.Position);
-
-            // If the player is being hidden by a wall or some collider in the default layer
-            if (!HasLineOfSight(targetCandidate, targetDistance, out var inMirror)) {
-                targetCandidate.Weight = 0;
-#if DEBUG
-                if (_isDebugging) MelonLogger.Msg($"\t[{username}] [{targetCandidate.Guid}] Ignored a player because was behind a wall!");
-#endif
-                continue;
-            }
-
-            var distanceScore = GetDistanceScore(targetDistance);
-
-            // Exclude targets with a distance further than 15 meters from our viewpoint
-            if (Mathf.Approximately(distanceScore, 0)) {
-                targetCandidate.Weight = 0;
-#if DEBUG
-                if (_isDebugging) MelonLogger.Msg($"\t[{username}] [{targetCandidate.Guid}] Further than 15 meters!");
-#endif
-                continue;
-            }
-
-            var alignmentScore = GetAlignmentScore(targetCandidate);
-
-            // Exclude targets with a direction further than 45 degrees from out viewpoint
-            if (Mathf.Approximately(alignmentScore, 0)) {
-                targetCandidate.Weight = 0;
-#if DEBUG
-                if (_isDebugging) MelonLogger.Msg($"\t[{username}] [{targetCandidate.Guid}] Angle bigger than {MaxTargetAngle}!");
-#endif
-                continue;
-            }
-
-            // Please notice me more than my mirror reflection
-            var realMeScore = inMirror ? 0 : 1;
-
-            // Lets not lie to ourselves :)
-            var narcissistScore = isLocal ? 1 : 0;
-
-            // Create a weighted score, here we can decide the weight of each category
-            targetCandidate.Weight = (int) Math.Round(alignmentScore * 100f + distanceScore * 100f + talkingScore * 200f + narcissistScore * 50f + realMeScore * 50f, 0);
-
-#if DEBUG
-            if (_isDebugging) MelonLogger.Msg($"\t[{username}] [{targetCandidate.Guid}] alignmentScore: {alignmentScore}, distanceScore{distanceScore}, talkingScore: {talkingScore}, narcissistScore: {narcissistScore}, realMeScore: {realMeScore}, Weight: {targetCandidate.Weight}");
-#endif
-
-            totalWeight += targetCandidate.Weight;
-        }
-
-        // Roll 50% from just picking the highest weight
-        if (UnityEngine.Random.Range(0f, 1f) > 0.5) {
-            var targetCandidate = targetCandidates.Values.OrderByDescending(item => item.Weight).First();
-            _targetGuidTraverse.Value = targetCandidate.Guid;
-#if DEBUG
-            if (_isDebugging) {
-                var usr = "N/A";
-                if (userNameMap.ContainsKey(targetCandidate)) {
-                    usr = userNameMap[targetCandidate];
-                }
-                MelonLogger.Msg($"[{usr}] [{targetCandidate.Guid}] [Picked] was selected with {targetCandidate.Weight}!!!\n");
-            }
-#endif
-            return;
-        }
-
-
-        // Random weighted picker
-        float randomValue = UnityEngine.Random.Range(0, totalWeight);
-        foreach (var (_, targetCandidate) in targetCandidates) {
-            if (targetCandidate.Weight == 0) continue;
-            randomValue -= targetCandidate.Weight;
-            if (randomValue > 0) continue;
-            _targetGuidTraverse.Value = targetCandidate.Guid;
-#if DEBUG
-            if (_isDebugging) {
-                var usr = "N/A";
-                if (userNameMap.ContainsKey(targetCandidate)) {
-                    usr = userNameMap[targetCandidate];
-                }
-                MelonLogger.Msg($"[{usr}] [{targetCandidate.Guid}] [Random] HAS WON with {targetCandidate.Weight}!!!\n");
-            }
-#endif
-            return;
-        }
-
-        _targetGuidTraverse.Value = "";
+        #if DEBUG
+        lastTargetDebugName = $"{_lastTarget?.GetName()} [Picked or Random] -> {_lastTarget?.Weight:F2}";
+        lastTargetDebugNameFirst = $"{_lastTarget?.Position:F2}";
+        #endif
     }
 
     private void TargetHandler(CVREyeController controller) {
 
 #if DEBUG
-        if (_isDebugging) {
-            if (Input.GetKeyDown(KeyCode.T) ) {
-                GetNewTarget(controller);
-                controller.targetViewPosition = CVREyeControllerManager.Instance.GetPositionFromGuid(_targetGuidTraverse.Value);
-            }
+        if (isDebugging) {
+            if (Input.GetKeyDown(KeyCode.T)) FindAndSetNewTarget(controller);
             return;
         }
 #endif
@@ -408,13 +261,8 @@ public class BetterEyeController : MonoBehaviour {
         if (Time.time > _getNextTargetAt) {
             // Pick a random time to get another target from 2 to 8 seconds
             _getNextTargetAt = Time.time + UnityEngine.Random.Range(2f, 8f);
-
-            GetNewTarget(controller);
-
-            // Update the target
-            controller.targetViewPosition = CVREyeControllerManager.Instance.GetPositionFromGuid(_targetGuidTraverse.Value);
+            FindAndSetNewTarget(controller);
         }
-
     }
 
     private void UpdateEyeRotation(BetterEye eye, Quaternion lookRotation) {
@@ -430,10 +278,16 @@ public class BetterEyeController : MonoBehaviour {
         // Set the rotation of the wrapper, this way we can query the fake eyes to the proper position of the real eyes
         eye.FakeEyeWrapper.localRotation = Quaternion.Euler(wrapperLocalRotation);
 
+        #if DEBUG
+        _debug1 = $"prev: {previousLocal.eulerAngles:F2}, Frame: {Time.frameCount}";
+        _debug2 = $"{wrapperLocalRotation:F2} -> {eye.FakeEyeWrapper.localRotation.eulerAngles:F2}";
+        _debug3 = $"Angle: {Quaternion.Angle(previousLocal, eye.FakeEyeWrapper.localRotation):F2}";
+        #endif
+
         // Set the eye angle (we're setting twice if we have 2 eyes, but the values should be the same anyway)
         // This will give values different than cvr. I've opted to have the looking forward angle to be 0
         // And then goes between [-25;0] and [0;+25], instead of [335-360] and [0-25] (cvr default)
-        _eyeAngleTraverse.Value.Set(wrapperLocalRotation.y, wrapperLocalRotation.x);
+        cvrEyeController.eyeAngle.Set(wrapperLocalRotation.y, wrapperLocalRotation.x);
     }
 
     private void UpdateEyeRotations() {
@@ -441,13 +295,34 @@ public class BetterEyeController : MonoBehaviour {
         // If setting the eyes is disabled, prevent updates
         if (!_avatar.useEyeMovement) return;
 
-        var target = _targetTraverse.Value;
+        var target = _lastTarget?.Position ?? Vector3.zero;
+
 
         // Calculate the look direction
-        var forward = target - _viewpoint.position;
-        var lookRotation = Quaternion.LookRotation(forward, _viewpoint.up);
+        var forward = target - viewpoint.position;
 
-        var isBehind = _viewpoint.InverseTransformDirection(forward).z < 0;
+        Quaternion lookRotation;
+        if (forward == Vector3.zero) {
+            // If we're already aligned, just grab the rotation
+            lookRotation = _hasLeftEye ? _leftEye.FakeEyeWrapper.rotation : _rightEye.FakeEyeWrapper.rotation;
+
+            #if DEBUG
+            _debug4 = $"Grabbed rotation because already aligned... {Time.frameCount}";
+            #endif
+        }
+        else {
+            // Otherwise let's calculate the direction
+            lookRotation = Quaternion.LookRotation(forward, viewpoint.up);
+
+            #if DEBUG
+            _debug4 = $"Calculated look at like a chad...{Time.frameCount}";
+            #endif
+        }
+
+        //_debug1 = $"trg: {target:F2} view: {viewpoint.position:F2}, forward: {forward:F2} {Time.frameCount}";
+
+
+        var isBehind = viewpoint.InverseTransformDirection(forward).z < 0;
 
         var isLooking = target != Vector3.zero;
 
@@ -456,51 +331,152 @@ public class BetterEyeController : MonoBehaviour {
         if (!isLooking || isBehind) {
             if (_hasLeftEye) _leftEye.FakeEyeWrapper.localRotation = Quaternion.identity;
             if (_hasRightEye) _rightEye.FakeEyeWrapper.localRotation = Quaternion.identity;
-            _eyeAngleTraverse.Value.Set(0f, 0f);
+            cvrEyeController.eyeAngle.Set(0f, 0f);
 
             // Let's clear our target
-            _targetGuidTraverse.Value = "";
+            _lastTarget = null;
+
+            #if DEBUG
+            lastTargetDebugName = $"[None] Looked away: {!isLooking}, gotBehind:{isBehind}... {Time.frameCount}";
+            #endif
         }
 
         // Otherwise we update the wrapper rotations to match looking at the target
         else {
             if (_hasLeftEye) UpdateEyeRotation(_leftEye, lookRotation);
             if (_hasRightEye) UpdateEyeRotation(_rightEye, lookRotation);
+
+            #if DEBUG
+            _rightEyeAttempted = lookRotation;
+            _leftEyeAttempted = lookRotation;
+            #endif
         }
 
         // Finally we update the real eyes by querying the fake eyes inside of the wrapper
+
         if (_hasLeftEye) _leftEye.RealEye.rotation = _leftEye.FakeEye.rotation;
         if (_hasRightEye) _rightEye.RealEye.rotation = _rightEye.FakeEye.rotation;
-    }
-
-    private void FixViewpointPositionViewPoint(CVREyeController eyeController) {
-        // Fix the local viewpoint, to match our pristine viewpoint c:
-        // When in FBT it doesn't follow the head for some reason. This will ensure our view position will be accurate!
-
-        // Heck let's just set them all to use my borked viewpoint
-        eyeController.viewPosition = _viewpoint.position;
+        //_debug3 = $"wra: {_leftEye.FakeEyeWrapper.rotation.eulerAngles:F2} fake: {_leftEye.FakeEye.rotation.eulerAngles:F2}, real: {_leftEye.RealEye.rotation.eulerAngles:F2} {Time.frameCount}";
     }
 
     private void OnDestroy() {
-        _initialized = false;
+        initialized = false;
         foreach(var (eyeController, _) in BetterControllers.Where(kvp => kvp.Value == this).ToList()) {
             BetterControllers.Remove(eyeController);
         }
+
+        #if DEBUG
+        CCK.Debugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent -= OnCCKDebuggerAvatarChanged;
+        #endif
     }
 
 #if DEBUG
 
-    private void ToggleDebugging() {
-        _isDebugging = !_isDebugging;
+    private void FixedUpdate() {
+        if (!initialized) return;
+        _viewpointPositionFixedUpdate = viewpoint.position;
+        _viewpointRotationFixedUpdate = viewpoint.rotation;
+
+        _rightEyeFixedUpdate = _leftEye.FakeEyeWrapper.rotation;
+        _leftEyeFixedUpdate = _rightEye.FakeEyeWrapper.rotation;
     }
 
-    private bool _isDebugging;
+    private void Update() {
+        if (!initialized) return;
+        _viewpointPositionUpdate = viewpoint.position;
+        _viewpointRotationUpdate = viewpoint.rotation;
+
+        _rightEyeUpdate = _leftEye.FakeEyeWrapper.rotation;
+        _leftEyeUpdate = _rightEye.FakeEyeWrapper.rotation;
+    }
+
+    private void LateUpdate() {
+        if (!initialized) return;
+        _viewpointPositionLateUpdate = viewpoint.position;
+        _viewpointRotationLateUpdate = viewpoint.rotation;
+
+        _rightEyeLateUpdate = _leftEye.FakeEyeWrapper.rotation;
+        _leftEyeLateUpdate = _rightEye.FakeEyeWrapper.rotation;
+    }
+
+    private void OnCCKDebuggerAvatarChanged(Core core, bool isLocal, CVRPlayerEntity remotePlayer, GameObject avatarGameObject, Animator avatarAnimator) {
+
+        if (_avatar.gameObject != avatarGameObject) return;
+
+        var debuggingButton = core.AddButton(new Button(Button.ButtonType.Mod1, false, true));
+        debuggingButton.StateUpdater = button => button.IsOn = isDebugging;
+        debuggingButton.ClickHandler = button => ToggleDebugging();
+
+        var linesButton = core.AddButton(new Button(Button.ButtonType.Mod2, false, true));
+        linesButton.StateUpdater = button => button.IsOn = _isDebuggingLines;
+        linesButton.ClickHandler = button => ToggleDebuggingVisualizers();
+
+        var getTarget = core.AddButton(new Button(Button.ButtonType.Mod3, false, false));
+        getTarget.StateUpdater = button => {
+            button.IsOn = debuggingButton.IsOn;
+            button.IsVisible = debuggingButton.IsOn;
+        };
+        getTarget.ClickHandler = button => FindAndSetNewTarget(cvrEyeController);
+
+        var eyeSection = core.AddSection("[EyeMovementFix] View Point positions", true);
+
+        eyeSection.AddSection("VP Fiixed").AddValueGetter(() => $"{_viewpointPositionFixedUpdate:F2} - {_viewpointRotationFixedUpdate.eulerAngles:F2}");
+        eyeSection.AddSection("VP Update").AddValueGetter(() => $"{_viewpointPositionUpdate:F2} - {_viewpointRotationUpdate.eulerAngles:F2}");
+        eyeSection.AddSection("VP LateOR").AddValueGetter(() => $"{_viewpointPositionPreRender:F2} - {_viewpointRotationPreRender.eulerAngles:F2}");
+        eyeSection.AddSection("VP Laaate").AddValueGetter(() => $"{_viewpointPositionLateUpdate:F2} - {_viewpointRotationLateUpdate.eulerAngles:F2}");
+
+        var targetingSection = core.AddSection("[EyeMovementFix] Target", true);
+        targetingSection.AddSection("Target").AddValueGetter(() => lastTargetDebugName);
+        targetingSection.AddSection("Target Pos First").AddValueGetter(() => lastTargetDebugNameFirst);
+        targetingSection.AddSection("Target Pos").AddValueGetter(() => (_lastTarget?.Position ?? Vector3.zero).ToString("F2"));
+
+        var targetCandidatesSection = targetingSection.AddSection("Target Candidates", "", false, true);
+        targetCandidatesSection.AddValueGetter(() => {
+            var newUncachedSections = new List<Section>();
+            foreach (var lastTargetCandidate in LastTargetCandidates) {
+                newUncachedSections.Add(new Section(core) {
+                    Title = lastTargetCandidate,
+                    Value = "",
+                    Collapsable = false,
+                    DynamicSubsections = false,
+                });
+            }
+            targetCandidatesSection.QueueDynamicSectionsUpdate(newUncachedSections);
+            return $"[{newUncachedSections.Count}]";
+        });
+
+        var eyeWrapper = core.AddSection("[EyeMovementFix] Eye Wrapper", true);
+
+        eyeWrapper.AddSection("debug1").AddValueGetter(() => $"{_debug1}");
+        eyeWrapper.AddSection("debug2").AddValueGetter(() => $"{_debug2}");
+        eyeWrapper.AddSection("debug3").AddValueGetter(() => $"{_debug3}");
+        eyeWrapper.AddSection("debug4").AddValueGetter(() => $"{_debug4}");
+
+        eyeWrapper.AddSection("Eye Attemp").AddValueGetter(() => $"{_rightEyeAttempted.eulerAngles:F2} - {_leftEyeAttempted.eulerAngles:F2}");
+        eyeWrapper.AddSection("Eye Fiixed").AddValueGetter(() => $"{_rightEyeFixedUpdate.eulerAngles:F2} - {_leftEyeFixedUpdate.eulerAngles:F2}");
+        eyeWrapper.AddSection("Eye Update").AddValueGetter(() => $"{_rightEyeUpdate.eulerAngles:F2} - {_leftEyeUpdate.eulerAngles:F2}");
+        eyeWrapper.AddSection("Eye LateOR").AddValueGetter(() => $"{_rightEyeLateUpdate.eulerAngles:F2} - {_leftEyeLateUpdate.eulerAngles:F2}");
+        eyeWrapper.AddSection("Eye Render").AddValueGetter(() => $"{_rightEyeOnRender.eulerAngles:F2} - {_leftEyeOnRender.eulerAngles:F2}");
+    }
+
+    private void ToggleDebugging() {
+        isDebugging = !isDebugging;
+    }
+    private void ToggleDebuggingVisualizers() {
+        _isDebuggingLines = !_isDebuggingLines;
+    }
+
+    public bool isDebugging;
+    private bool _isDebuggingLines;
     private readonly LineRenderer[] _debugLineRenderers = new LineRenderer[6];
     private readonly Color[] _debugColors = { Color.green, Color.red, Color.blue, Color.blue, Color.cyan, Color.cyan };
 
     private void OnRenderObject() {
 
-        if (!_initialized || !_isDebugging) return;
+        _rightEyeOnRender = _leftEye.FakeEyeWrapper.rotation;
+        _leftEyeOnRender = _rightEye.FakeEyeWrapper.rotation;
+
+        if (!initialized || !_isDebuggingLines) return;
 
         void DrawRay(LineRenderer lineRenderer, Vector3 position, Vector3 forward, float distance = 2) {
             lineRenderer.positionCount = 2;
@@ -508,17 +484,16 @@ public class BetterEyeController : MonoBehaviour {
             lineRenderer.SetPosition(1, forward * distance + position);
         }
 
-        var target = _targetTraverse.Value;
+        var targetPos = _lastTarget?.Position ?? Vector3.zero;
 
         // Calculate the look direction
-        var forward = target - _viewpoint.position;
-        var lookRotation = Quaternion.LookRotation(forward, _viewpoint.up);
+        var forward = targetPos - viewpoint.position;
 
         // Green
-        DrawRay(_debugLineRenderers[0], _viewpoint.position, _viewpoint.forward);
+        DrawRay(_debugLineRenderers[0], viewpoint.position, viewpoint.forward);
 
         // Red
-        DrawRay(_debugLineRenderers[1], _viewpoint.position, forward);
+        DrawRay(_debugLineRenderers[1], viewpoint.position, forward);
 
         // Blue
         DrawRay(_debugLineRenderers[2], _leftEye.FakeEyeWrapper.position, _leftEye.FakeEyeWrapper.forward);
@@ -533,25 +508,20 @@ public class BetterEyeController : MonoBehaviour {
     [HarmonyPatch]
     private static class HarmonyPatches {
 
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CVREyeController), "Update")]
+        private static void Before_CVREyeController_Update(CVREyeController __instance, out Vector2 __state) {
+            // Save eye angle before the update from CVR
+            __state = __instance.eyeAngle;
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVREyeController), "Update")]
-        private static void After_CVREyeController_Update(CVREyeController __instance) {
-            if (_errored) return;
-
-            try {
-                if (!BetterControllers.ContainsKey(__instance)) return;
-                var betterEyeController = BetterControllers[__instance];
-                if (!betterEyeController._initialized) return;
-
-                betterEyeController.FixViewpointPositionViewPoint(__instance);
-                if (!__instance.viewNetworkControlled) betterEyeController.TargetHandler(__instance);
-            }
-            catch (Exception e) {
-                MelonLogger.Error(e);
-                MelonLogger.Error("We've encountered an error, in order to not spam or lag we're going to stop the " +
-                                  "the execution. Contact the mod creator with the error above.");
-                _errored = true;
-            }
+        private static void After_CVREyeController_Update(CVREyeController __instance, ref Vector2 __state) {
+            // Restore the eye angle after the update from CVR
+            // We do this because we're managing that value in LateUpdate
+            __instance.eyeAngle = __state;
         }
 
         [HarmonyPostfix]
@@ -560,9 +530,21 @@ public class BetterEyeController : MonoBehaviour {
             if (_errored) return;
 
             try {
+                // Check if we're ready to run our stuff
                 if (!BetterControllers.ContainsKey(__instance)) return;
                 var betterEyeController = BetterControllers[__instance];
-                if (!betterEyeController._initialized) return;
+                if (!betterEyeController.initialized) return;
+
+                #if DEBUG
+                betterEyeController._viewpointPositionPreRender = betterEyeController.viewpoint.position;
+                betterEyeController._viewpointRotationPreRender = betterEyeController.viewpoint.rotation;
+                #endif
+
+                // We're picking the target in LateUpdate because the viewpoint in FBT does not follow the head up and
+                // down in the Update loop. In FixedUpdate and LateUpdate the value seems to be fine.
+                if (!__instance.viewNetworkControlled) betterEyeController.TargetHandler(__instance);
+
+                // Do the eye ball orientation properly
                 betterEyeController.UpdateEyeRotations();
             }
             catch (Exception e) {
@@ -600,22 +582,6 @@ public class BetterEyeController : MonoBehaviour {
                 MelonLogger.Error("We've encountered an error, in order to not spam or lag we're going to stop the " +
                                   "the execution. Contact the mod creator with the error above.");
                 _errored = true;
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeControllerManager), nameof(CVREyeControllerManager.Update))]
-        private static void After_CVREyeControllerManager_Update(CVREyeControllerManager __instance) {
-            // At this point I was lazy already, but basically this adds MirrorSuffix to mirror target GUIDs
-            // This is used to tell if a target is a mirror during picking a target to bypass the player raycast...
-            foreach (var mirror in __instance.mirrorList) {
-                foreach (var (guid, candidate) in __instance.targetCandidates
-                             .Where(pair => pair.Key.Contains(mirror.gameObject.GetInstanceID().ToString())).ToList()) {
-                    __instance.targetCandidates.Remove(guid);
-                    var newGuid = candidate.Guid + MirrorSuffix;
-                    candidate.Guid = newGuid;
-                    __instance.targetCandidates[newGuid] = candidate;
-                }
             }
         }
     }

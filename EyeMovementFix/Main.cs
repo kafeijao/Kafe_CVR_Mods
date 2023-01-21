@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
 using ABI_RC.Core.Player;
-using ABI_RC.Systems.Camera;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -12,7 +11,7 @@ namespace EyeMovementFix;
 public class EyeMovementFix : MelonMod {
 
     private static MelonPreferences_Category _melonCategory;
-    private static MelonPreferences_Entry<bool> _meForceLookAtCamera;
+    public static MelonPreferences_Entry<bool> MeForceLookAtCamera;
     private static MelonPreferences_Entry<bool> _meIgnorePortableMirrors;
 
     private static bool _hasPortableMirror;
@@ -21,7 +20,7 @@ public class EyeMovementFix : MelonMod {
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(EyeMovementFix));
 
-        _meForceLookAtCamera = _melonCategory.CreateEntry("ForceLookAtCamera", true,
+        MeForceLookAtCamera = _melonCategory.CreateEntry("ForceLookAtCamera", true,
             description: "Whether to force everyone to look at the camera whn being held. The camera needs to be " +
                          "within the avatar field of view. And needs the camera setting to add the camera to look " +
                          "at targets activated (camera settings in-game).");
@@ -73,9 +72,9 @@ public class EyeMovementFix : MelonMod {
         }
     }
 
+
     [HarmonyPatch]
     private static class HarmonyPatches {
-
 
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(CVRParameterStreamEntry), nameof(CVRParameterStreamEntry.CheckUpdate))]
@@ -108,36 +107,6 @@ public class EyeMovementFix : MelonMod {
             }).InstructionEnumeration();
         }
 
-        private static CVRPickupObject _cameraPickup;
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVREyeControllerManager), nameof(CVREyeControllerManager.Update))]
-        private static bool Before_CVREyeControllerManager_Update(CVREyeControllerManager __instance, bool ____cameraISLookAtTarget) {
-            // This patch is to allow the option to make the camera the only possible target when grabbed
-            // Only works if the camera setting camera is look at target is ON, is being held, it's configured to
-            // be enabled on this mod, and it's within the fov of the player
-
-            if (_cameraPickup == null) {
-                _cameraPickup = CVRCamController.Instance.cvrCamera.GetComponent<CVRPickupObject>();
-            }
-
-            // Execute the original method normally
-            if (!_meForceLookAtCamera.Value ||
-                !CVRCamController.Instance.cvrCamera.activeSelf ||
-                !_cameraPickup.IsGrabbedByMe() ||
-                !____cameraISLookAtTarget) {
-                return true;
-            }
-
-            // Otherwise lets ensure we only have the camera as eye track candidate
-            __instance.targetCandidates.Clear();
-            var controllerCandidate = new CVREyeControllerCandidate("CVRCamera",
-                PortableCamera.Instance.cameraComponent.transform.position);
-            __instance.targetCandidates.Add(controllerCandidate.Guid, controllerCandidate);
-            return false;
-        }
-
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CVREyeController), "Start")]
         private static void Before_CVREyeControllerManager_Start(CVREyeController __instance, ref Transform ___EyeLeft, ref Transform ___EyeRight) {
@@ -155,12 +124,63 @@ public class EyeMovementFix : MelonMod {
         }
 
 
+        private static void CacheInitialEyeRotations(Transform transform) {
+            try {
+                var avatar = transform.GetComponent<CVRAvatar>();
+                if (avatar == null) return;
+                var animator = avatar.GetComponent<Animator>();
+                if (animator == null) return;
+                var leftEye = animator.GetBoneTransform(HumanBodyBones.LeftEye);
+                if (leftEye != null) BetterEyeController.OriginalLeftEyeLocalRotation[avatar] = leftEye.rotation;
+                var rightEye = animator.GetBoneTransform(HumanBodyBones.RightEye);
+                if (rightEye != null) BetterEyeController.OriginalRightEyeLocalRotation[avatar] = rightEye.rotation;
+
+                #if DEBUG
+            if (leftEye != null) MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] LeftEye: {leftEye.position.ToString("F2")} - {leftEye.rotation.eulerAngles.ToString("F2")}");
+            if (rightEye != null) MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] RightEye: {leftEye.position.ToString("F2")} - {rightEye.rotation.eulerAngles.ToString("F2")}");
+                #endif
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.AvatarInstantiated))]
+        private static void Before_CVREyeControllerManager_Start(PuppetMaster __instance) {
+            try {
+                CacheInitialEyeRotations(__instance.transform);
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVREyeControllerManager), nameof(CVREyeControllerManager.GetNewTarget))]
-        private static bool Before_CVREyeControllerManager_Start(CVREyeController controller, ref string __result) {
-            // Prevent executing and send the same target as the previous. We'll be implementing our own
-            __result = Traverse.Create(controller).Field<string>("targetGuid").Value;
-            return false;
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.SetupAvatar))]
+        private static void Before_PlayerSetup_PlayerSetup(GameObject inAvatar) {
+            try {
+                CacheInitialEyeRotations(inAvatar.transform);
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRAvatar), "OnDestroy")]
+        private static void Before_CVREyeControllerManager_Start(CVRAvatar __instance) {
+            try {
+                if (BetterEyeController.OriginalLeftEyeLocalRotation.ContainsKey(__instance)) {
+                    BetterEyeController.OriginalLeftEyeLocalRotation.Remove(__instance);
+                }
+                if (BetterEyeController.OriginalRightEyeLocalRotation.ContainsKey(__instance)) {
+                    BetterEyeController.OriginalRightEyeLocalRotation.Remove(__instance);
+                }
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
         }
     }
 }
