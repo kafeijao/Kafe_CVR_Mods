@@ -265,6 +265,11 @@ public class BetterEyeController : MonoBehaviour {
         }
     }
 
+    private static float NormalizeAngleToPercent(float angle, float maxAngle) {
+        var normal = Mathf.InverseLerp(-maxAngle, maxAngle, angle);
+        return Mathf.Lerp(-1f, 1f, normal);
+    }
+
     private void UpdateEyeRotation(BetterEye eye, Quaternion lookRotation) {
 
         // Limit the rotation on the X and Y axes on the left eye
@@ -286,8 +291,8 @@ public class BetterEyeController : MonoBehaviour {
 
         // Set the eye angle (we're setting twice if we have 2 eyes, but the values should be the same anyway)
         // This will give values different than cvr. I've opted to have the looking forward angle to be 0
-        // And then goes between [-25;0] and [0;+25], instead of [335-360] and [0-25] (cvr default)
-        cvrEyeController.eyeAngle.Set(wrapperLocalRotation.y, wrapperLocalRotation.x);
+        // And then goes between [-1;0] and [0;+1], instead of [335-360] and [0-25] (cvr default)
+        cvrEyeController.eyeAngle.Set(NormalizeAngleToPercent(wrapperLocalRotation.y, MaxHorizontalAngle), NormalizeAngleToPercent(wrapperLocalRotation.x, MaxVerticalAngle));
     }
 
     private void UpdateEyeRotations() {
