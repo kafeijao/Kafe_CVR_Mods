@@ -53,7 +53,7 @@ public sealed class TargetCandidate : IReusable {
         }
     }
 
-    private int _weight;
+    public int Weight;
 
     // Player related
     private bool _isPlayer;
@@ -76,7 +76,7 @@ public sealed class TargetCandidate : IReusable {
 
     public void Recycle() {
 
-        _weight = default;
+        Weight = default;
 
         _isCamera = default;
         _isMirrorReflection = default;
@@ -92,7 +92,7 @@ public sealed class TargetCandidate : IReusable {
 
     public TargetCandidate GetCopy() {
         return new TargetCandidate {
-            _weight = _weight,
+            Weight = Weight,
             _isCamera = _isCamera,
             _isMirrorReflection = _isMirrorReflection,
             _mirror = _mirror,
@@ -265,7 +265,7 @@ public sealed class TargetCandidate : IReusable {
 
             // Exclude ourselves from the targets
             if (targetCandidate._controller == cvrController && !targetCandidate._isMirrorReflection) {
-                targetCandidate._weight = 0;
+                targetCandidate.Weight = 0;
 
                 #if DEBUG
                 if (betterController.isDebugging) {
@@ -283,7 +283,7 @@ public sealed class TargetCandidate : IReusable {
 
             // If the player is being hidden by a wall or some collider in the default layer
             if (!HasLineOfSight(targetCandidate, targetDistance, out var inMirror)) {
-                targetCandidate._weight = 0;
+                targetCandidate.Weight = 0;
 
                 #if DEBUG
                 if (betterController.isDebugging) {
@@ -299,7 +299,7 @@ public sealed class TargetCandidate : IReusable {
 
             // Exclude targets with a distance further than 15 meters from our viewpoint
             if (Mathf.Approximately(distanceScore, 0)) {
-                targetCandidate._weight = 0;
+                targetCandidate.Weight = 0;
 
                 #if DEBUG
                 if (betterController.isDebugging) {
@@ -314,7 +314,7 @@ public sealed class TargetCandidate : IReusable {
 
             // Exclude targets with a direction further than 45 degrees from out viewpoint
             if (Mathf.Approximately(alignmentScore, 0)) {
-                targetCandidate._weight = 0;
+                targetCandidate.Weight = 0;
 
                 #if DEBUG
                 if (betterController.isDebugging) {
@@ -341,7 +341,7 @@ public sealed class TargetCandidate : IReusable {
             var narcissistScore = targetCandidate._isPlayer && targetCandidate._controller.isLocal ? 1 : 0;
 
             // Create a weighted score, here we can decide the weight of each category
-            targetCandidate._weight = (int) Math.Round(alignmentAndDistanceScore * 200f + talkingScore * 200f + narcissistScore * 50f + realMeScore * 50f + cameraBuff, 0);
+            targetCandidate.Weight = (int) Math.Round(alignmentAndDistanceScore * 200f + talkingScore * 200f + narcissistScore * 50f + realMeScore * 50f + cameraBuff, 0);
 
             #if DEBUG
             if (betterController.isDebugging) {
@@ -350,12 +350,12 @@ public sealed class TargetCandidate : IReusable {
             betterController.LastTargetCandidates.Add($"{targetCandidate.GetName()} ali:{alignmentAndDistanceScore:F2}, tlk:{talkingScore:F2}, nar:{narcissistScore:F2}, real:{realMeScore:F2}, Cam:{cameraBuff}, W:{targetCandidate.Weight:F2}");
             #endif
 
-            totalWeight += targetCandidate._weight;
+            totalWeight += targetCandidate.Weight;
         }
 
         // Roll from just picking the highest weight (65% chance)
         if (UnityEngine.Random.Range(0f, 1f) < 0.75f) {
-            var targetCandidate = TargetCandidates.OrderByDescending(item => item._weight).First();
+            var targetCandidate = TargetCandidates.OrderByDescending(item => item.Weight).First();
 
             #if DEBUG
             if (betterController.isDebugging) MelonLogger.Msg($"{targetCandidate.GetName()} [Picked] was selected with {targetCandidate.Weight}!!!\n");
@@ -367,8 +367,8 @@ public sealed class TargetCandidate : IReusable {
         // Random weighted picker
         float randomValue = UnityEngine.Random.Range(0, totalWeight);
         foreach (var targetCandidate in TargetCandidates) {
-            if (targetCandidate._weight == 0) continue;
-            randomValue -= targetCandidate._weight;
+            if (targetCandidate.Weight == 0) continue;
+            randomValue -= targetCandidate.Weight;
             if (randomValue > 0) continue;
 
             #if DEBUG

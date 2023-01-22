@@ -117,12 +117,12 @@ public class BetterEyeController : MonoBehaviour {
         //fakeEye.rotation = eye.RealEye.rotation;
 
         if (eye.IsLeft && OriginalLeftEyeLocalRotation.ContainsKey(avatar)) {
-            // Use the local rotation grabbed right after initializing the avatar, before ik/network do the funny
-            fakeEye.rotation = OriginalLeftEyeLocalRotation[avatar];
+            // Use the rotation offset grabbed right after initializing the avatar, before ik/network do the funny
+            fakeEye.rotation = avatar.transform.rotation * OriginalLeftEyeLocalRotation[avatar];
         }
         else if (!eye.IsLeft && OriginalRightEyeLocalRotation.ContainsKey(avatar)) {
-            // Use the local rotation grabbed right after initializing the avatar, before ik/network do the funny
-            fakeEye.rotation = OriginalRightEyeLocalRotation[avatar];
+            // Use the rotation offset grabbed right after initializing the avatar, before ik/network do the funny
+            fakeEye.rotation = avatar.transform.rotation * OriginalRightEyeLocalRotation[avatar];
         }
         else {
             // Default to the current real eye rotation
@@ -279,6 +279,10 @@ public class BetterEyeController : MonoBehaviour {
         if (wrapperLocalRotation.y > 180f) wrapperLocalRotation.y -= 360f;
         wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, -MaxVerticalAngle, MaxVerticalAngle);
         wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, -MaxHorizontalAngle, MaxHorizontalAngle);
+
+        #if DEBUG
+        var previousLocal = eye.FakeEyeWrapper.localRotation;
+        #endif
 
         // Set the rotation of the wrapper, this way we can query the fake eyes to the proper position of the real eyes
         eye.FakeEyeWrapper.localRotation = Quaternion.Euler(wrapperLocalRotation);

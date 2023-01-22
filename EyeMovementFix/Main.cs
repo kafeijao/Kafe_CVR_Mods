@@ -131,13 +131,21 @@ public class EyeMovementFix : MelonMod {
                 var animator = avatar.GetComponent<Animator>();
                 if (animator == null) return;
                 var leftEye = animator.GetBoneTransform(HumanBodyBones.LeftEye);
-                if (leftEye != null) BetterEyeController.OriginalLeftEyeLocalRotation[avatar] = leftEye.rotation;
+                if (leftEye != null) BetterEyeController.OriginalLeftEyeLocalRotation[avatar] = Quaternion.Inverse(transform.rotation) * leftEye.rotation;
                 var rightEye = animator.GetBoneTransform(HumanBodyBones.RightEye);
-                if (rightEye != null) BetterEyeController.OriginalRightEyeLocalRotation[avatar] = rightEye.rotation;
+                if (rightEye != null) BetterEyeController.OriginalRightEyeLocalRotation[avatar] = Quaternion.Inverse(transform.rotation) * rightEye.rotation;
 
                 #if DEBUG
-            if (leftEye != null) MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] LeftEye: {leftEye.position.ToString("F2")} - {leftEye.rotation.eulerAngles.ToString("F2")}");
-            if (rightEye != null) MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] RightEye: {leftEye.position.ToString("F2")} - {rightEye.rotation.eulerAngles.ToString("F2")}");
+                if (leftEye != null) {
+                    MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] LeftEye: {leftEye.position.ToString("F2")} - {leftEye.rotation.eulerAngles.ToString("F2")}");
+                    MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] Avatar: {transform.position.ToString("F2")} - {transform.rotation.eulerAngles.ToString("F2")}");
+                    MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] Saved: {leftEye.rotation.eulerAngles.ToString("F2")} -> {(Quaternion.Inverse(transform.rotation) * leftEye.rotation).eulerAngles.ToString("F2")} -> {(avatar.transform.rotation * (Quaternion.Inverse(transform.rotation) * leftEye.rotation)).eulerAngles.ToString("F2")}");
+                }
+                if (rightEye != null) {
+                    MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] RightEye: {leftEye.position.ToString("F2")} - {rightEye.rotation.eulerAngles.ToString("F2")}");
+                    MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] Avatar: {transform.position.ToString("F2")} - {transform.rotation.eulerAngles.ToString("F2")}");
+                    MelonLogger.Msg($"[PlayerSetup][Pre][{avatar.GetInstanceID()}] Saved: {rightEye.rotation.eulerAngles.ToString("F2")} -> {(Quaternion.Inverse(transform.rotation) * rightEye.rotation).eulerAngles.ToString("F2")} -> {(avatar.transform.rotation * (Quaternion.Inverse(transform.rotation) * rightEye.rotation)).eulerAngles.ToString("F2")}");
+                }
                 #endif
             }
             catch (Exception e) {
@@ -158,7 +166,7 @@ public class EyeMovementFix : MelonMod {
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.SetupAvatar))]
-        private static void Before_PlayerSetup_PlayerSetup(GameObject inAvatar) {
+        private static void Before_PlayerSetup_SetupAvatar(GameObject inAvatar) {
             try {
                 CacheInitialEyeRotations(inAvatar.transform);
             }
