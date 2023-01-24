@@ -8,20 +8,28 @@ namespace BetterLipsync;
 
 public class CVRMicLipsyncSubscriber : BaseMicrophoneSubscriber {
 
-    private int _channels;
-    private bool _initialized;
-    private CVRLipSyncContext _lipSyncContext;
-    private static CVRMicLipsyncSubscriber Instance;
+    private static bool _muted;
+    internal static CVRMicLipsyncSubscriber Instance;
 
-    public void Initialize(CVRLipSyncContext lipSyncContext) {
-        _lipSyncContext = lipSyncContext;
-        _initialized = true;
+    private int _channels;
+    public CVRLipSyncContext lipSyncContext;
+
+    private void Start() {
         Instance = this;
+        UpdateMute();
+    }
+
+    private static void UpdateMute() {
+        if (Instance != null && Instance.lipSyncContext != null) Instance.lipSyncContext.Muted = _muted;
+    }
+
+    public void SetContext(CVRLipSyncContext context) {
+        lipSyncContext = context;
+        lipSyncContext.Muted = _muted;
     }
 
     protected override void ProcessAudio(ArraySegment<float> data) {
-        if (!_initialized) return;
-        _lipSyncContext.ProcessAudioSamples(data.ToArray(), _channels);
+        lipSyncContext.ProcessAudioSamples(data.ToArray(), _channels);
     }
 
     protected override void ResetAudioStream(WaveFormat waveFormat) {
@@ -38,8 +46,15 @@ public class CVRMicLipsyncSubscriber : BaseMicrophoneSubscriber {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Audio), nameof(Audio.SetMicrophoneActive))]
         private static void After_Audio_SetMicrophoneActive(bool muted) {
-            if (Instance == null) return;
-            Instance._lipSyncContext.Muted = muted;
+            _muted = muted;
+            UpdateMute();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(DissonanceComms), nameof(DissonanceComms.IsMuted), MethodType.Setter)]
+        private static void After_DissonanceComms_IsMuted_Setter(bool value) {
+            _muted = value;
+            UpdateMute();
         }
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <Reference Include="PortableMirrorMod">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\PortableMirrorMod.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="CCKDebugger">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\CCK.Debugger.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+</Project>

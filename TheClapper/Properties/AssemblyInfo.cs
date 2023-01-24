@@ -1,18 +1,18 @@
-using System.Reflection;
-using FreedomFingers.Properties;
+﻿using System.Reflection;
+using TheClapper.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(FreedomFingers))]
+[assembly: AssemblyTitle(nameof(TheClapper))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(FreedomFingers))]
+[assembly: AssemblyProduct(nameof(TheClapper))]
 
 [assembly: MelonInfo(
-    typeof(FreedomFingers.FreedomFingers),
-    nameof(FreedomFingers),
+    typeof(TheClapper.TheClapper),
+    nameof(TheClapper),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -23,8 +23,8 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 
-namespace FreedomFingers.Properties;
+namespace TheClapper.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.2";
+    public const string Version = "1.0.1";
     public const string Author = "kafeijao";
 }

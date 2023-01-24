@@ -37,7 +37,6 @@ public class OVRLipSyncContextBase : MonoBehaviour
 {
     // * * * * * * * * * * * * *
     // Public members
-    public AudioSource audioSource = null;
 
     [Tooltip("Which lip sync provider to use for viseme computation.")]
     public OVRLipSync.ContextProviders provider = OVRLipSync.ContextProviders.Enhanced;
@@ -100,12 +99,6 @@ public class OVRLipSyncContextBase : MonoBehaviour
     /// </summary>
     void Awake()
     {
-        // Cache the audio source we are going to be using to pump data to the SR
-        if (!audioSource)
-        {
-            audioSource = GetComponent<AudioSource>();
-        }
-
         lock (this)
         {
             if (context == 0)
@@ -125,7 +118,7 @@ public class OVRLipSyncContextBase : MonoBehaviour
     /// <summary>
     /// Raises the destroy event.
     /// </summary>
-    void OnDestroy()
+    protected void OnDestroy()
     {
         // Create the context that we will feed into the audio buffer
         lock (this)

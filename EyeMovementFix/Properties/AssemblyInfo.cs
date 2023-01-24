@@ -1,18 +1,18 @@
-using System.Reflection;
-using FreedomFingers.Properties;
+﻿using System.Reflection;
+using EyeMovementFix.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(FreedomFingers))]
+[assembly: AssemblyTitle(nameof(EyeMovementFix))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(FreedomFingers))]
+[assembly: AssemblyProduct(nameof(EyeMovementFix))]
 
 [assembly: MelonInfo(
-    typeof(FreedomFingers.FreedomFingers),
-    nameof(FreedomFingers),
+    typeof(EyeMovementFix.EyeMovementFix),
+    nameof(EyeMovementFix),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -22,9 +22,10 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonOptionalDependencies("PortableMirrorMod", "CCKDebugger")]
 
-namespace FreedomFingers.Properties;
+namespace EyeMovementFix.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.2";
+    public const string Version = "2.0.2";
     public const string Author = "kafeijao";
 }
