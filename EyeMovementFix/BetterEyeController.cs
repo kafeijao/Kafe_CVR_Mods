@@ -2,12 +2,14 @@
 using ABI_RC.Core.Player.AvatarTracking.Local;
 using ABI_RC.Core.Player.AvatarTracking.Remote;
 using ABI.CCK.Components;
+using EyeMovementFix.CCK;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
 #if DEBUG
 using CCK.Debugger.Components;
+using CCKDebugger = CCK.Debugger;
 #endif
 
 namespace EyeMovementFix;
@@ -20,8 +22,7 @@ public class BetterEyeController : MonoBehaviour {
     public static readonly Dictionary<CVRAvatar, Quaternion> OriginalLeftEyeLocalRotation = new();
     public static readonly Dictionary<CVRAvatar, Quaternion> OriginalRightEyeLocalRotation = new();
 
-    private const float MaxVerticalAngle = 25f;
-    private const float MaxHorizontalAngle = 25f;
+    private EyeRotationLimits _eyeRotationLimits;
 
     private CVRAvatar _avatar;
 
@@ -148,13 +149,16 @@ public class BetterEyeController : MonoBehaviour {
         #endif
     }
 
-    private static void Initialize(CVRAvatar avatar, CVREyeController eyeController, Transform head, Transform leftRealEye, Transform rightRealEye) {
+    private static void Initialize(CVRAvatar avatar, Animator animator, CVREyeController eyeController, Transform head, Transform leftRealEye, Transform rightRealEye) {
 
         // Initialize our better eye controller
         var betterEyeController = eyeController.gameObject.AddComponent<BetterEyeController>();
         BetterControllers[eyeController] = betterEyeController;
         betterEyeController.cvrEyeController = eyeController;
         betterEyeController._avatar = avatar;
+
+        // Fetch and load the eye rotation limits
+        LoadRotationLimits(avatar, animator, betterEyeController);
 
         // Todo: Improve this crap
         if (eyeController.isLocal) {
@@ -208,6 +212,50 @@ public class BetterEyeController : MonoBehaviour {
         }
     }
 
+    private static void LoadRotationLimits(CVRAvatar avatar, Animator animator, BetterEyeController betterEyeController) {
+
+        // Look for the EyeRotationLimit Script
+        betterEyeController._eyeRotationLimits = avatar.GetComponent<EyeRotationLimits>();
+
+        #if DEBUG
+        if (betterEyeController._eyeRotationLimits != null) MelonLogger.Msg($"Found avatar EyeRotationLimits in the avatar!");
+        #endif
+
+        if (betterEyeController._eyeRotationLimits != null) return;
+
+        // If there is no script, created with defaults (25)
+        betterEyeController._eyeRotationLimits = avatar.gameObject.AddComponent<EyeRotationLimits>();
+
+        // If there are bone muscle limits, get them and apply over the defaults!
+        var humanBones = animator.avatar.humanDescription.human;
+        foreach (var humanBone in humanBones) {
+
+            // Ignore default muscle values values
+            if (humanBone.limit.useDefaultValues) continue;
+
+            if (humanBone.humanName == HumanBodyBones.LeftEye.ToString()) {
+                betterEyeController._eyeRotationLimits.LeftEyeMinY = humanBone.limit.min.z;
+                betterEyeController._eyeRotationLimits.LeftEyeMaxY = humanBone.limit.max.z;
+                betterEyeController._eyeRotationLimits.LeftEyeMinX = -humanBone.limit.max.y;
+                betterEyeController._eyeRotationLimits.LeftEyeMaxX = -humanBone.limit.min.y;
+
+                #if DEBUG
+                MelonLogger.Msg($"Found avatar Left Eye Muscle Limits on the avatar!");
+                #endif
+            }
+            else if (humanBone.humanName == HumanBodyBones.RightEye.ToString()) {
+                betterEyeController._eyeRotationLimits.RightEyeMinY = humanBone.limit.min.z;
+                betterEyeController._eyeRotationLimits.RightEyeMaxY = humanBone.limit.max.z;
+                betterEyeController._eyeRotationLimits.RightEyeMinX = humanBone.limit.min.y;
+                betterEyeController._eyeRotationLimits.RightEyeMaxX = humanBone.limit.max.y;
+
+                #if DEBUG
+                MelonLogger.Msg($"Found avatar Right Eye Muscle Limits on the avatar!");
+                #endif
+            }
+        }
+    }
+
     private void Start() {
 
 #if DEBUG
@@ -227,7 +275,7 @@ public class BetterEyeController : MonoBehaviour {
         }
 
 
-        CCK.Debugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent += OnCCKDebuggerAvatarChanged;
+        CCKDebugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent += OnCCKDebuggerAvatarChanged;
 #endif
 
         if (enabled) initialized = true;
@@ -265,9 +313,13 @@ public class BetterEyeController : MonoBehaviour {
         }
     }
 
-    private static float NormalizeAngleToPercent(float angle, float maxAngle) {
-        var normal = Mathf.InverseLerp(-maxAngle, maxAngle, angle);
-        return Mathf.Lerp(-1f, 1f, normal);
+    private static float NormalizeAngleToPercent(float angle, float minAngle, float maxAngle) {
+        if (angle >= 0) {
+            return Mathf.Lerp(0, 1f, Mathf.InverseLerp(0, maxAngle, angle));
+        }
+        else {
+            return Mathf.Lerp(-1f, 0, Mathf.InverseLerp(minAngle, 0, angle));
+        }
     }
 
     private void UpdateEyeRotation(BetterEye eye, Quaternion lookRotation) {
@@ -277,8 +329,15 @@ public class BetterEyeController : MonoBehaviour {
         var wrapperLocalRotation = eye.FakeEyeWrapper.localRotation.eulerAngles;
         if (wrapperLocalRotation.x > 180f) wrapperLocalRotation.x -= 360f;
         if (wrapperLocalRotation.y > 180f) wrapperLocalRotation.y -= 360f;
-        wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, -MaxVerticalAngle, MaxVerticalAngle);
-        wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, -MaxHorizontalAngle, MaxHorizontalAngle);
+
+        if (eye.IsLeft) {
+            wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, _eyeRotationLimits.LeftEyeMinY, _eyeRotationLimits.LeftEyeMaxY);
+            wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, _eyeRotationLimits.LeftEyeMinX, _eyeRotationLimits.LeftEyeMaxX);
+        }
+        else {
+            wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, _eyeRotationLimits.RightEyeMinY, _eyeRotationLimits.RightEyeMaxY);
+            wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, _eyeRotationLimits.RightEyeMinX, _eyeRotationLimits.RightEyeMaxX);
+        }
 
         #if DEBUG
         var previousLocal = eye.FakeEyeWrapper.localRotation;
@@ -296,7 +355,9 @@ public class BetterEyeController : MonoBehaviour {
         // Set the eye angle (we're setting twice if we have 2 eyes, but the values should be the same anyway)
         // This will give values different than cvr. I've opted to have the looking forward angle to be 0
         // And then goes between [-1;0] and [0;+1], instead of [335-360] and [0-25] (cvr default)
-        cvrEyeController.eyeAngle.Set(NormalizeAngleToPercent(wrapperLocalRotation.y, MaxHorizontalAngle), NormalizeAngleToPercent(wrapperLocalRotation.x, MaxVerticalAngle));
+        cvrEyeController.eyeAngle.Set(
+            NormalizeAngleToPercent(wrapperLocalRotation.y, _eyeRotationLimits.LeftEyeMinX, _eyeRotationLimits.LeftEyeMaxX),
+            NormalizeAngleToPercent(wrapperLocalRotation.x, _eyeRotationLimits.LeftEyeMinY, _eyeRotationLimits.LeftEyeMaxY));
     }
 
     private void UpdateEyeRotations() {
@@ -375,7 +436,7 @@ public class BetterEyeController : MonoBehaviour {
         }
 
         #if DEBUG
-        CCK.Debugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent -= OnCCKDebuggerAvatarChanged;
+        CCKDebugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent -= OnCCKDebuggerAvatarChanged;
         #endif
     }
 
@@ -583,7 +644,7 @@ public class BetterEyeController : MonoBehaviour {
                 if ((__instance.isLocal && head == null) || leftEye == null && rightEye == null) return;
 
                 // Initialize the controller
-                Initialize(___avatar, __instance, head, leftEye, rightEye);
+                Initialize(___avatar, animator, __instance, head, leftEye, rightEye);
 
             }
             catch (Exception e) {
