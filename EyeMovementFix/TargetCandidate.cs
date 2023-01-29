@@ -28,7 +28,7 @@ public sealed class TargetCandidate : IReusable {
     private const string LookAtCameraSettingName = "PortableCamera_LookAtTarget";
 
     private static readonly ObjectPool<TargetCandidate> Pool = new(() => new TargetCandidate());
-    private static readonly List<TargetCandidate> TargetCandidates = new();
+    public static readonly List<TargetCandidate> TargetCandidates = new();
     private static CVRPickupObject _cameraPickup;
     private static bool _cameraIsLookAtTarget;
     public static bool Initialized;

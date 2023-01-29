@@ -8,8 +8,10 @@ using MelonLoader;
 using UnityEngine;
 
 #if DEBUG
+using ABI_RC.Core.Savior;
 using CCK.Debugger.Components;
 using CCKDebugger = CCK.Debugger;
+using CCK.Debugger.Components.GameObjectVisualizers;
 #endif
 
 namespace EyeMovementFix;
@@ -486,7 +488,25 @@ public class BetterEyeController : MonoBehaviour {
             button.IsOn = debuggingButton.IsOn;
             button.IsVisible = debuggingButton.IsOn;
         };
-        getTarget.ClickHandler = button => FindAndSetNewTarget(cvrEyeController);
+        getTarget.ClickHandler = button => {
+            TargetCandidate.UpdateTargetCandidates();
+            foreach (Transform trx in MetaPort.Instance.transform) {
+                if (trx.gameObject.name == "[EyeMovementFixDebugTargets]") {
+                    Destroy(trx);
+                }
+            }
+            var go = new GameObject("[EyeMovementFixDebugTargets]");
+            go.transform.SetParent(MetaPort.Instance.transform);
+            foreach (var candidate in TargetCandidate.TargetCandidates) {
+                var goo = new GameObject($"[EyeMovementFixDebugTargets] {candidate.GetName()}");
+                goo.transform.SetParent(go.transform);
+                goo.transform.position = candidate.Position;
+                var bv = BoneVisualizer.Create(goo, 1);
+                bv.enabled = true;
+            }
+
+            FindAndSetNewTarget(cvrEyeController);
+        };
 
         var eyeSection = core.AddSection("[EyeMovementFix] View Point positions", true);
 
