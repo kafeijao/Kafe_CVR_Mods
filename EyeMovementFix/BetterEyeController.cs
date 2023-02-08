@@ -369,14 +369,16 @@ public class BetterEyeController : MonoBehaviour {
 
         var target = _lastTarget?.Position ?? Vector3.zero;
 
-
         // Calculate the look direction
-        var forward = target - viewpoint.position;
+        var forwardViewpoint = target - viewpoint.position;
 
-        Quaternion lookRotation;
-        if (forward == Vector3.zero) {
+        var lookRotationLeft = Quaternion.identity;
+        var lookRotationRight = Quaternion.identity;
+
+        if (forwardViewpoint == Vector3.zero) {
             // If we're already aligned, just grab the rotation
-            lookRotation = _hasLeftEye ? _leftEye.FakeEyeWrapper.rotation : _rightEye.FakeEyeWrapper.rotation;
+            if (_hasLeftEye) lookRotationLeft = _leftEye.FakeEyeWrapper.rotation;
+            if (_hasRightEye) lookRotationRight = _rightEye.FakeEyeWrapper.rotation;
 
             #if DEBUG
             _debug4 = $"Grabbed rotation because already aligned... {Time.frameCount}";
@@ -384,7 +386,9 @@ public class BetterEyeController : MonoBehaviour {
         }
         else {
             // Otherwise let's calculate the direction
-            lookRotation = Quaternion.LookRotation(forward, viewpoint.up);
+            //lookRotation = Quaternion.LookRotation(forward, viewpoint.up);
+            if (_hasLeftEye) lookRotationLeft = Quaternion.LookRotation(target - _leftEye.FakeEye.position, _leftEye.FakeEyeViewpointOffset.up);
+            if (_hasRightEye) lookRotationRight = Quaternion.LookRotation(target - _rightEye.FakeEye.position, _leftEye.FakeEyeViewpointOffset.up);
 
             #if DEBUG
             _debug4 = $"Calculated look at like a chad...{Time.frameCount}";
@@ -394,7 +398,7 @@ public class BetterEyeController : MonoBehaviour {
         //_debug1 = $"trg: {target:F2} view: {viewpoint.position:F2}, forward: {forward:F2} {Time.frameCount}";
 
 
-        var isBehind = viewpoint.InverseTransformDirection(forward).z < 0;
+        var isBehind = viewpoint.InverseTransformDirection(forwardViewpoint).z < 0;
 
         var isLooking = target != Vector3.zero;
 
@@ -415,12 +419,12 @@ public class BetterEyeController : MonoBehaviour {
 
         // Otherwise we update the wrapper rotations to match looking at the target
         else {
-            if (_hasLeftEye) UpdateEyeRotation(_leftEye, lookRotation);
-            if (_hasRightEye) UpdateEyeRotation(_rightEye, lookRotation);
+            if (_hasLeftEye) UpdateEyeRotation(_leftEye, lookRotationLeft);
+            if (_hasRightEye) UpdateEyeRotation(_rightEye, lookRotationRight);
 
             #if DEBUG
-            _rightEyeAttempted = lookRotation;
-            _leftEyeAttempted = lookRotation;
+            _rightEyeAttempted = lookRotationLeft;
+            _leftEyeAttempted = lookRotationRight;
             #endif
         }
 
@@ -462,13 +466,69 @@ public class BetterEyeController : MonoBehaviour {
         _leftEyeUpdate = _rightEye.FakeEyeWrapper.rotation;
     }
 
+    private bool _clickedGetTarget;
+
     private void LateUpdate() {
+
+        // I want to execute this in late update, because it's when I do it, and also it's when it's gonna be right
+        if (_clickedGetTarget) {
+            _clickedGetTarget = false;
+
+            TargetCandidate.UpdateTargetCandidates();
+            foreach (Transform trx in MetaPort.Instance.transform) {
+                if (trx.gameObject.name == "[EyeMovementFixDebugTargets]") {
+                    Destroy(trx);
+                }
+            }
+            var go = new GameObject("[EyeMovementFixDebugTargets]");
+            go.transform.SetParent(MetaPort.Instance.transform);
+            foreach (var candidate in TargetCandidate.TargetCandidates) {
+                var goo = new GameObject($"[EyeMovementFixDebugTargets] {candidate.GetName()}");
+                goo.transform.SetParent(go.transform);
+                goo.transform.position = candidate.Position;
+                var bv = BoneVisualizer.Create(goo, 1);
+                bv.enabled = true;
+            }
+
+            FindAndSetNewTarget(cvrEyeController);
+        }
+
         if (!initialized) return;
+
         _viewpointPositionLateUpdate = viewpoint.position;
         _viewpointRotationLateUpdate = viewpoint.rotation;
 
         _rightEyeLateUpdate = _leftEye.FakeEyeWrapper.rotation;
         _leftEyeLateUpdate = _rightEye.FakeEyeWrapper.rotation;
+
+
+
+        if (!_isDebuggingLines) return;
+
+        void DrawRay(LineRenderer lineRenderer, Vector3 position, Vector3 forward, float distance = 2) {
+            lineRenderer.positionCount = 2;
+            lineRenderer.SetPosition(0, position);
+            lineRenderer.SetPosition(1, forward * distance + position);
+        }
+
+        var targetPos = _lastTarget?.Position ?? Vector3.zero;
+
+        // Calculate the look direction
+        var forward = targetPos - viewpoint.position;
+
+        // Green
+        DrawRay(_debugLineRenderers[0], viewpoint.position, viewpoint.forward);
+
+        // Red
+        DrawRay(_debugLineRenderers[1], viewpoint.position, forward);
+
+        // Blue
+        DrawRay(_debugLineRenderers[2], _leftEye.FakeEyeWrapper.position, _leftEye.FakeEyeWrapper.forward);
+        DrawRay(_debugLineRenderers[3], _rightEye.FakeEyeWrapper.position, _rightEye.FakeEyeWrapper.forward);
+
+        // Cyan
+        DrawRay(_debugLineRenderers[4], _leftEye.FakeEye.position, _leftEye.FakeEye.forward);
+        DrawRay(_debugLineRenderers[5], _rightEye.FakeEye.position, _rightEye.FakeEye.forward);
     }
 
     private void OnCCKDebuggerAvatarChanged(Core core, bool isLocal, CVRPlayerEntity remotePlayer, GameObject avatarGameObject, Animator avatarAnimator) {
@@ -489,23 +549,7 @@ public class BetterEyeController : MonoBehaviour {
             button.IsVisible = debuggingButton.IsOn;
         };
         getTarget.ClickHandler = button => {
-            TargetCandidate.UpdateTargetCandidates();
-            foreach (Transform trx in MetaPort.Instance.transform) {
-                if (trx.gameObject.name == "[EyeMovementFixDebugTargets]") {
-                    Destroy(trx);
-                }
-            }
-            var go = new GameObject("[EyeMovementFixDebugTargets]");
-            go.transform.SetParent(MetaPort.Instance.transform);
-            foreach (var candidate in TargetCandidate.TargetCandidates) {
-                var goo = new GameObject($"[EyeMovementFixDebugTargets] {candidate.GetName()}");
-                goo.transform.SetParent(go.transform);
-                goo.transform.position = candidate.Position;
-                var bv = BoneVisualizer.Create(goo, 1);
-                bv.enabled = true;
-            }
-
-            FindAndSetNewTarget(cvrEyeController);
+            _clickedGetTarget = true;
         };
 
         var eyeSection = core.AddSection("[EyeMovementFix] View Point positions", true);
@@ -552,6 +596,7 @@ public class BetterEyeController : MonoBehaviour {
     private void ToggleDebugging() {
         isDebugging = !isDebugging;
     }
+
     private void ToggleDebuggingVisualizers() {
         _isDebuggingLines = !_isDebuggingLines;
     }
@@ -562,36 +607,8 @@ public class BetterEyeController : MonoBehaviour {
     private readonly Color[] _debugColors = { Color.green, Color.red, Color.blue, Color.blue, Color.cyan, Color.cyan };
 
     private void OnRenderObject() {
-
         _rightEyeOnRender = _leftEye.FakeEyeWrapper.rotation;
         _leftEyeOnRender = _rightEye.FakeEyeWrapper.rotation;
-
-        if (!initialized || !_isDebuggingLines) return;
-
-        void DrawRay(LineRenderer lineRenderer, Vector3 position, Vector3 forward, float distance = 2) {
-            lineRenderer.positionCount = 2;
-            lineRenderer.SetPosition(0, position);
-            lineRenderer.SetPosition(1, forward * distance + position);
-        }
-
-        var targetPos = _lastTarget?.Position ?? Vector3.zero;
-
-        // Calculate the look direction
-        var forward = targetPos - viewpoint.position;
-
-        // Green
-        DrawRay(_debugLineRenderers[0], viewpoint.position, viewpoint.forward);
-
-        // Red
-        DrawRay(_debugLineRenderers[1], viewpoint.position, forward);
-
-        // Blue
-        DrawRay(_debugLineRenderers[2], _leftEye.FakeEyeWrapper.position, _leftEye.FakeEyeWrapper.forward);
-        DrawRay(_debugLineRenderers[3], _rightEye.FakeEyeWrapper.position, _rightEye.FakeEyeWrapper.forward);
-
-        // Cyan
-        DrawRay(_debugLineRenderers[4], _leftEye.FakeEye.position, _leftEye.FakeEye.forward);
-        DrawRay(_debugLineRenderers[5], _rightEye.FakeEye.position, _rightEye.FakeEye.forward);
     }
 #endif
 

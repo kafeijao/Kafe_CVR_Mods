@@ -282,18 +282,19 @@ public sealed class TargetCandidate : IReusable {
             var targetDistance = Vector3.Distance(cvrController.viewPosition, targetCandidate.Position);
 
             // If the player is being hidden by a wall or some collider in the default layer
-            if (!HasLineOfSight(targetCandidate, targetDistance, out var inMirror)) {
-                targetCandidate.Weight = 0;
-
-                #if DEBUG
-                if (betterController.isDebugging) {
-                    MelonLogger.Msg($"\t{targetCandidate.GetName()} Ignored a player because was behind a wall!");
-                }
-                betterController.LastTargetCandidates.Add($"{targetCandidate.GetName()} Ignored a player because was behind a wall!");
-                #endif
-
-                continue;
-            }
+            // Todo: Find a better way to tackle this, because some worlds break this completely
+            // if (!HasLineOfSight(targetCandidate, targetDistance, out var inMirror)) {
+            //     targetCandidate.Weight = 0;
+            //
+            //     #if DEBUG
+            //     if (betterController.isDebugging) {
+            //         MelonLogger.Msg($"\t{targetCandidate.GetName()} Ignored a player because was behind a wall!");
+            //     }
+            //     betterController.LastTargetCandidates.Add($"{targetCandidate.GetName()} Ignored a player because was behind a wall!");
+            //     #endif
+            //
+            //     continue;
+            // }
 
             var distanceScore = GetDistanceScore(targetDistance);
 
@@ -335,7 +336,7 @@ public sealed class TargetCandidate : IReusable {
             }
 
             // Please notice me more than my mirror reflection
-            var realMeScore = inMirror ? 0 : 1;
+            var realMeScore = targetCandidate._isCamera || targetCandidate._isMirrorReflection ? 0 : 1;
 
             // Lets not lie to ourselves :)
             var narcissistScore = targetCandidate._isPlayer && targetCandidate._controller.isLocal ? 1 : 0;
@@ -361,7 +362,8 @@ public sealed class TargetCandidate : IReusable {
             if (betterController.isDebugging) MelonLogger.Msg($"{targetCandidate.GetName()} [Picked] was selected with {targetCandidate.Weight}!!!\n");
             #endif
 
-            return targetCandidate;
+            // Return null if the weight of the highest weight is zero, because we don't have any selected duh
+            return targetCandidate.Weight != 0 ? targetCandidate : null;
         }
 
         // Random weighted picker
