@@ -11,7 +11,7 @@ namespace CVRSuperMario64;
 
 [DefaultExecutionOrder(999999)]
 [RequireComponent(typeof(SM64Mario), typeof(CVRSpawnable))]
-public class CVRSpawnableInputProvider : SM64InputProvider {
+public class CVRSM64InputSpawnable : CVRSM64Input {
 
     [SerializeField]
     private CVRSpawnable Spawnable;
@@ -36,7 +36,7 @@ public class CVRSpawnableInputProvider : SM64InputProvider {
             parameter = Spawnable.syncValues[index];
         }
         catch (ArgumentException) {
-            var err = $"{nameof(CVRSpawnableInputProvider)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
+            var err = $"{nameof(CVRSM64InputSpawnable)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
             MelonLogger.Error(err);
             Spawnable.Delete();
             throw new Exception(err);
@@ -56,7 +56,7 @@ public class CVRSpawnableInputProvider : SM64InputProvider {
         // Check for Spawnable component
         Spawnable = GetComponent<CVRSpawnable>();
         if (Spawnable == null) {
-            var err = $"{nameof(CVRSpawnableInputProvider)} requires a ${nameof(CVRSpawnable)} on the same GameObject!";
+            var err = $"{nameof(CVRSM64InputSpawnable)} requires a ${nameof(CVRSpawnable)} on the same GameObject!";
             MelonLogger.Error(err);
             Destroy(this);
             return;
@@ -66,7 +66,7 @@ public class CVRSpawnableInputProvider : SM64InputProvider {
             Owner = MetaPort.Instance.PlayerManager.NetworkPlayers.Find(entity => entity.Uuid == Spawnable.ownerId);
             OwnerViewPoint = Traverse.Create(Owner.PuppetMaster).Field<RemoteHeadPoint>("_viewPoint");
             if (OwnerViewPoint == null || OwnerViewPoint.Value == null) {
-                var err = $"{nameof(CVRSpawnableInputProvider)} failed to start because couldn't find the viewpoint of the owner of it!";
+                var err = $"{nameof(CVRSM64InputSpawnable)} failed to start because couldn't find the viewpoint of the owner of it!";
                 MelonLogger.Error(err);
                 Spawnable.Delete();
                 return;

@@ -30,8 +30,10 @@ public class CVRSuperMario64 : MelonMod {
 
         // Add our CCK component to the whitelist
         var whitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
-        whitelist.Add(typeof(CVRSpawnableInputProvider));
-        whitelist.Add(typeof(SM64DynamicTerrain));
+        whitelist.Add(typeof(CVRSM64InputSpawnable));
+        whitelist.Add(typeof(CVRSM64DynamicCollider));
+        whitelist.Add(typeof(CVRSM64StaticCollider));
+        whitelist.Add(typeof(CVRSM64CMario));
 
         // Extract the native binary to the plugins folder
         const string dllName = "sm64.dll";
