@@ -1,23 +1,21 @@
-using LibSM64;
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
 public class CVRSM64CContext : MonoBehaviour {
-    
+
     static CVRSM64CContext s_instance = null;
 
     List<CVRSM64CMario> _marios = new List<CVRSM64CMario>();
-    readonly List<CVRSM64DynamicCollider> _surfaceObjects = new List<CVRSM64DynamicCollider>();
+    readonly List<CVRSM64ColliderDynamic> _surfaceObjects = new List<CVRSM64ColliderDynamic>();
 
     private void Awake() {
-        
         //Interop.GlobalInit( File.ReadAllBytes( Application.dataPath + "/../baserom.us.z64" ));
         Interop.GlobalInit(CVRSuperMario64.SuperMario64UsZ64RomBytes);
         //RefreshStaticTerrain();
 
         // Update context's colliders
-        Interop.StaticSurfacesLoad(Misc.GetAllStaticSurfaces());
+        Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
     }
 
     // private void Start() {
@@ -31,24 +29,22 @@ public class CVRSM64CContext : MonoBehaviour {
     // }
 
     private void Update() {
-
         foreach (var o in _surfaceObjects) {
-            o.contextUpdate();
+            o.ContextUpdate();
         }
 
         foreach (var o in _marios) {
-            o.contextUpdate();
+            o.ContextUpdate();
         }
     }
 
     private void FixedUpdate() {
-
         foreach (var o in _surfaceObjects) {
-            o.contextFixedUpdate();
+            o.ContextFixedUpdate();
         }
 
         foreach (var o in _marios) {
-            o.contextFixedUpdate();
+            o.ContextFixedUpdate();
         }
     }
 
@@ -83,7 +79,7 @@ public class CVRSM64CContext : MonoBehaviour {
         }
     }
 
-    public static void RegisterSurfaceObject(CVRSM64DynamicCollider surfaceObject) {
+    public static void RegisterSurfaceObject(CVRSM64ColliderDynamic surfaceObject) {
         EnsureInstanceExists();
 
         if (!s_instance._surfaceObjects.Contains(surfaceObject)) {
@@ -91,7 +87,7 @@ public class CVRSM64CContext : MonoBehaviour {
         }
     }
 
-    public static void UnregisterSurfaceObject(CVRSM64DynamicCollider surfaceObject) {
+    public static void UnregisterSurfaceObject(CVRSM64ColliderDynamic surfaceObject) {
         if (s_instance != null && s_instance._surfaceObjects.Contains(surfaceObject)) {
             s_instance._surfaceObjects.Remove(surfaceObject);
         }

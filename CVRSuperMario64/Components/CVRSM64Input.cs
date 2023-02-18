@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
 public abstract class CVRSM64Input : MonoBehaviour {
     
@@ -12,6 +12,6 @@ public abstract class CVRSM64Input : MonoBehaviour {
 
     public abstract Vector3 GetCameraLookDirection();
     public abstract Vector2 GetJoystickAxes();
-    public abstract bool GetButtonHeld( Button button );
+    public abstract bool GetButtonHeld(Button button);
     public virtual bool IsMine() => true;
 }

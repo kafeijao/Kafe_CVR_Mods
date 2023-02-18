@@ -1,10 +1,9 @@
-using LibSM64;
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
-public class CVRSM64DynamicCollider : MonoBehaviour {
-    
+public class CVRSM64ColliderDynamic : MonoBehaviour {
+
     [SerializeField] SM64TerrainType terrainType = SM64TerrainType.Grass;
     [SerializeField] SM64SurfaceType surfaceType = SM64SurfaceType.Default;
 
@@ -23,7 +22,6 @@ public class CVRSM64DynamicCollider : MonoBehaviour {
     public Quaternion lastRotation { get; private set; }
 
     void OnEnable() {
-        
         CVRSM64CContext.RegisterSurfaceObject(this);
 
         position = transform.position;
@@ -43,19 +41,16 @@ public class CVRSM64DynamicCollider : MonoBehaviour {
         }
     }
 
-    internal void contextFixedUpdate() {
-        
+    internal void ContextFixedUpdate() {
         if (position != lastPosition || rotation != lastRotation) {
-            
             lastPosition = position;
             lastRotation = rotation;
-            
+
             Interop.SurfaceObjectMove(_surfaceObjectId, position, rotation);
         }
     }
 
-    internal void contextUpdate() {
-        
+    internal void ContextUpdate() {
         var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
 
         transform.position = Vector3.LerpUnclamped(lastPosition, position, t);

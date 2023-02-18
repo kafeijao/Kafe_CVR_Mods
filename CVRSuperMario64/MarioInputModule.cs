@@ -1,7 +1,7 @@
 ﻿using ABI_RC.Core.Savior;
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
 public class MarioInputModule : CVRInputModule {
 

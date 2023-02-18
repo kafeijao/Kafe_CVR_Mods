@@ -1,13 +1,13 @@
-using LibSM64;
+using MelonLoader;
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
 public class CVRSM64CMario : MonoBehaviour {
-    
+
     [SerializeField] internal Material material = null;
 
-    SM64InputProvider inputProvider;
+    CVRSM64Input inputProvider;
 
     Vector3[][] positionBuffers;
     Vector3[][] normalBuffers;
@@ -23,14 +23,13 @@ public class CVRSM64CMario : MonoBehaviour {
     Mesh marioMesh;
     uint marioId;
 
-    void OnEnable() {
-        
+    private void OnEnable() {
         CVRSM64CContext.RegisterMario(this);
 
         var initPos = transform.position;
         marioId = Interop.MarioCreate(new Vector3(-initPos.x, initPos.y, initPos.z) * Interop.SCALE_FACTOR);
 
-        inputProvider = GetComponent<SM64InputProvider>();
+        inputProvider = GetComponent<CVRSM64Input>();
         if (inputProvider == null)
             throw new System.Exception("Need to add an input provider component to Mario");
 
@@ -47,7 +46,11 @@ public class CVRSM64CMario : MonoBehaviour {
 
         // If not material is set, let's set our fallback one
         if (material == null) {
+            MelonLogger.Msg($"CVRSM64Mario didn't have a material, assigning the default material...");
             material = CVRSuperMario64.GetMarioMaterial();
+        }
+        else {
+            MelonLogger.Msg($"CVRSM64Mario had a material! Using the existing one...");
         }
 
         renderer.material = material;
@@ -58,8 +61,10 @@ public class CVRSM64CMario : MonoBehaviour {
 
         lerpPositionBuffer = new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES];
         lerpNormalBuffer = new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES];
-        positionBuffers = new Vector3[][] { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
-        normalBuffers = new Vector3[][] { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
+        positionBuffers = new Vector3[][]
+            { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
+        normalBuffers = new Vector3[][]
+            { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
         colorBuffer = new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES];
         colorBufferColors = new Color[3 * Interop.SM64_GEO_MAX_TRIANGLES];
         uvBuffer = new Vector2[3 * Interop.SM64_GEO_MAX_TRIANGLES];
@@ -70,13 +75,11 @@ public class CVRSM64CMario : MonoBehaviour {
         meshFilter.sharedMesh = marioMesh;
     }
 
-    private void OnDestroy()
-    {
+    private void OnDestroy() {
         OnDisable();
     }
 
     private void OnDisable() {
-        
         if (marioRendererObject != null) {
             Destroy(marioRendererObject);
             marioRendererObject = null;
@@ -88,8 +91,7 @@ public class CVRSM64CMario : MonoBehaviour {
         }
     }
 
-    public void contextFixedUpdate() {
-        
+    public void ContextFixedUpdate() {
         var inputs = new Interop.SM64MarioInputs();
         var look = inputProvider.GetCameraLookDirection();
         look.y = 0;
@@ -101,11 +103,12 @@ public class CVRSM64CMario : MonoBehaviour {
         inputs.camLookZ = look.z;
         inputs.stickX = joystick.x;
         inputs.stickY = -joystick.y;
-        inputs.buttonA = inputProvider.GetButtonHeld(SM64InputProvider.Button.Jump) ? (byte)1 : (byte)0;
-        inputs.buttonB = inputProvider.GetButtonHeld(SM64InputProvider.Button.Kick) ? (byte)1 : (byte)0;
-        inputs.buttonZ = inputProvider.GetButtonHeld(SM64InputProvider.Button.Stomp) ? (byte)1 : (byte)0;
+        inputs.buttonA = inputProvider.GetButtonHeld(CVRSM64Input.Button.Jump) ? (byte)1 : (byte)0;
+        inputs.buttonB = inputProvider.GetButtonHeld(CVRSM64Input.Button.Kick) ? (byte)1 : (byte)0;
+        inputs.buttonZ = inputProvider.GetButtonHeld(CVRSM64Input.Button.Stomp) ? (byte)1 : (byte)0;
 
-        states[buffIndex] = Interop.MarioTick(marioId, inputs, positionBuffers[buffIndex], normalBuffers[buffIndex], colorBuffer, uvBuffer);
+        states[buffIndex] = Interop.MarioTick(marioId, inputs, positionBuffers[buffIndex], normalBuffers[buffIndex],
+            colorBuffer, uvBuffer);
 
         for (var i = 0; i < colorBuffer.Length; ++i) {
             colorBufferColors[i] = new Color(colorBuffer[i].x, colorBuffer[i].y, colorBuffer[i].z, 1);
@@ -117,8 +120,7 @@ public class CVRSM64CMario : MonoBehaviour {
         buffIndex = 1 - buffIndex;
     }
 
-    public void contextUpdate() {
-        
+    public void ContextUpdate() {
         var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
         var j = 1 - buffIndex;
 

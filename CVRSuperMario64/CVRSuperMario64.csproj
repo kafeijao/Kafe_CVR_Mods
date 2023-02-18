@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <EmbeddedResource Include="libsm64-unity\Plugins\sm64.dll">
+        <EmbeddedResource Include="libsm64\Plugins\sm64.dll">
             <LogicalName>sm64.dll</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="Resources/libsm64.assetbundle">

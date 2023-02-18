@@ -2,11 +2,10 @@
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
 using HarmonyLib;
-using LibSM64;
 using MelonLoader;
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
 public class CVRSuperMario64 : MelonMod {
 
@@ -18,7 +17,7 @@ public class CVRSuperMario64 : MelonMod {
     // Rom
     private const string SuperMario64UsZ64RomHashHex = "20b854b239203baf6c961b850a4a51a2";
     private const string SuperMario64UsZ64RomName = "baserom.us.z64";
-    internal static Byte[] SuperMario64UsZ64RomBytes;
+    internal static byte[] SuperMario64UsZ64RomBytes;
 
     // Internal
     internal static bool FilesLoaded = false;
@@ -30,10 +29,10 @@ public class CVRSuperMario64 : MelonMod {
 
         // Add our CCK component to the whitelist
         var whitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
-        whitelist.Add(typeof(CVRSM64InputSpawnable));
-        whitelist.Add(typeof(CVRSM64DynamicCollider));
-        whitelist.Add(typeof(CVRSM64StaticCollider));
         whitelist.Add(typeof(CVRSM64CMario));
+        whitelist.Add(typeof(CVRSM64InputSpawnable));
+        whitelist.Add(typeof(CVRSM64ColliderStatic));
+        whitelist.Add(typeof(CVRSM64ColliderDynamic));
 
         // Extract the native binary to the plugins folder
         const string dllName = "sm64.dll";
@@ -78,7 +77,7 @@ public class CVRSuperMario64 : MelonMod {
         // Load the ROM
         try {
             var abiAppDataPath = Application.persistentDataPath;
-            var smRomPath = Path.Combine(abiAppDataPath, nameof(LibSM64), SuperMario64UsZ64RomName);
+            var smRomPath = Path.Combine(abiAppDataPath, "LibSM64", SuperMario64UsZ64RomName);
             MelonLogger.Msg($"Loading the Super Mario 64 [US] z64 ROM from ${smRomPath}...");
             var smRomFileInfo = new FileInfo(smRomPath);
             if (!smRomFileInfo.Exists) {

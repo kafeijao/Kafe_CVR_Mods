@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
-using CVRSuperMario64.Properties;
+using Kafe.CVRSuperMario64;
+using Kafe.CVRSuperMario64.Properties;
 using MelonLoader;
 
 
@@ -11,8 +12,8 @@ using MelonLoader;
 [assembly: AssemblyProduct(nameof(CVRSuperMario64))]
 
 [assembly: MelonInfo(
-    typeof(CVRSuperMario64.CVRSuperMario64),
-    nameof(CVRSuperMario64),
+    typeof(Kafe.CVRSuperMario64.CVRSuperMario64),
+    nameof(Kafe.CVRSuperMario64),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -23,7 +24,7 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 
-namespace CVRSuperMario64.Properties;
+namespace Kafe.CVRSuperMario64.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "0.0.1";
     public const string Author = "kafeijao";

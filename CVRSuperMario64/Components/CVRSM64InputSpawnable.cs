@@ -3,18 +3,17 @@ using ABI_RC.Core.Player.AvatarTracking.Remote;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using HarmonyLib;
-using LibSM64;
 using MelonLoader;
 using UnityEngine;
 
-namespace CVRSuperMario64;
+namespace Kafe.CVRSuperMario64;
 
 [DefaultExecutionOrder(999999)]
-[RequireComponent(typeof(SM64Mario), typeof(CVRSpawnable))]
+[RequireComponent(typeof(CVRSM64CMario), typeof(CVRSpawnable))]
+
 public class CVRSM64InputSpawnable : CVRSM64Input {
 
-    [SerializeField]
-    private CVRSpawnable Spawnable;
+    [SerializeField] private CVRSpawnable Spawnable;
     private CVRPlayerEntity Owner;
     private Traverse<RemoteHeadPoint> OwnerViewPoint;
 
@@ -36,7 +35,8 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
             parameter = Spawnable.syncValues[index];
         }
         catch (ArgumentException) {
-            var err = $"{nameof(CVRSM64InputSpawnable)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
+            var err =
+                $"{nameof(CVRSM64InputSpawnable)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
             MelonLogger.Error(err);
             Spawnable.Delete();
             throw new Exception(err);
@@ -44,7 +44,6 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
     }
 
     private void Start() {
-
         if (!CVRSuperMario64.FilesLoaded) {
             MelonLogger.Error($"The mod files were not properly loaded! Check the errors at the startup!");
             Destroy(this);
@@ -54,19 +53,27 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
         MelonLogger.Msg($"Initializing a SM64Mario Spawnable...");
 
         // Check for Spawnable component
-        Spawnable = GetComponent<CVRSpawnable>();
-        if (Spawnable == null) {
-            var err = $"{nameof(CVRSM64InputSpawnable)} requires a ${nameof(CVRSpawnable)} on the same GameObject!";
-            MelonLogger.Error(err);
-            Destroy(this);
-            return;
+        if (Spawnable != null) {
+            MelonLogger.Msg($"SM64Mario Spawnable was set! We don't need to look for it!");
         }
+        else {
+            Spawnable = GetComponent<CVRSpawnable>();
+            if (Spawnable == null) {
+                var err = $"{nameof(CVRSM64InputSpawnable)} requires a ${nameof(CVRSpawnable)} on the same GameObject!";
+                MelonLogger.Error(err);
+                Destroy(this);
+                return;
+            }
+            MelonLogger.Msg($"SM64Mario Spawnable was missing, but we look at the game object and found one!");
+        }
+
 
         if (!Spawnable.IsMine()) {
             Owner = MetaPort.Instance.PlayerManager.NetworkPlayers.Find(entity => entity.Uuid == Spawnable.ownerId);
             OwnerViewPoint = Traverse.Create(Owner.PuppetMaster).Field<RemoteHeadPoint>("_viewPoint");
             if (OwnerViewPoint == null || OwnerViewPoint.Value == null) {
-                var err = $"{nameof(CVRSM64InputSpawnable)} failed to start because couldn't find the viewpoint of the owner of it!";
+                var err =
+                    $"{nameof(CVRSM64InputSpawnable)} failed to start because couldn't find the viewpoint of the owner of it!";
                 MelonLogger.Error(err);
                 Spawnable.Delete();
                 return;
@@ -81,10 +88,10 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
         LoadInput(out _inputStomp, out _inputStompIndex, "Stomp");
 
         // Check for the SM64Mario component
-        var mario = GetComponent<SM64Mario>();
+        var mario = GetComponent<CVRSM64CMario>();
         if (mario == null) {
-            MelonLogger.Msg($"Adding the ${nameof(SM64Mario)} Component...");
-            gameObject.AddComponent<SM64Mario>();
+            MelonLogger.Msg($"Adding the ${nameof(CVRSM64CMario)} Component...");
+            gameObject.AddComponent<CVRSM64CMario>();
         }
 
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {Spawnable.IsMine()}");
@@ -106,7 +113,7 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
         if (Input.GetKeyDown(KeyCode.End)) {
             Collider[] hitColliders = Physics.OverlapSphere(transform.position, 0.5f);
             foreach (Collider collider in hitColliders) {
-                if (!Misc.IsGoodCollider(collider)) continue;
+                if (!Utils.IsGoodCollider(collider)) continue;
                 MelonLogger.Msg("Collider within 0.5 units: " + collider.gameObject.name);
             }
         }
@@ -121,7 +128,6 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
     }
 
     public override Vector3 GetCameraLookDirection() {
-
         // Use our own camera
         if (Spawnable.IsMine()) {
             return PlayerSetup.Instance.GetActiveCamera().transform.forward;
@@ -136,25 +142,22 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
     }
 
     public override Vector2 GetJoystickAxes() {
-
         // Update the spawnable sync values and send the values
         if (Spawnable.IsMine()) {
             var horizontal = MarioInputModule.Instance.horizontal;
             var vertical = MarioInputModule.Instance.vertical;
             Spawnable.SetValue(_inputHorizontalIndex, horizontal);
             Spawnable.SetValue(_inputVerticalIndex, vertical);
-            return new Vector2( horizontal, vertical );
+            return new Vector2(horizontal, vertical);
         }
 
         // Send the current values from the spawnable
-        return new Vector2( _inputHorizontal.currentValue, _inputVertical.currentValue );
+        return new Vector2(_inputHorizontal.currentValue, _inputVertical.currentValue);
     }
 
-    public override bool GetButtonHeld( Button button ) {
-
+    public override bool GetButtonHeld(Button button) {
         if (Spawnable.IsMine()) {
-
-            switch( button ) {
+            switch (button) {
                 case Button.Jump: {
                     var jump = MarioInputModule.Instance.jump;
                     Spawnable.SetValue(_inputJumpIndex, jump ? 1f : 0f);
@@ -171,15 +174,16 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
                     return stomp;
                 }
             }
-            return false;
 
+            return false;
         }
 
-        switch( button ) {
-            case Button.Jump:  return _inputJump.currentValue > 0.5f;
-            case Button.Kick:  return _inputKick.currentValue > 0.5f;
+        switch (button) {
+            case Button.Jump: return _inputJump.currentValue > 0.5f;
+            case Button.Kick: return _inputKick.currentValue > 0.5f;
             case Button.Stomp: return _inputStomp.currentValue > 0.5f;
         }
+
         return false;
     }
 

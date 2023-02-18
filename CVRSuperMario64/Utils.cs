@@ -1,9 +1,41 @@
-﻿using MelonLoader;
+using MelonLoader;
 using UnityEngine;
 
-namespace LibSM64;
+namespace Kafe.CVRSuperMario64;
 
-public static class Misc {
+internal static class Utils {
+
+    private static void TransformAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, Mesh mesh,
+        SM64SurfaceType surfaceType, SM64TerrainType terrainType, Func<Vector3, Vector3> transformFunc) {
+        for (var subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++) {
+            var tris = mesh.GetTriangles(subMeshIndex);
+            var vertices = mesh.vertices.Select(transformFunc).ToArray();
+
+            for (int i = 0; i < tris.Length; i += 3) {
+                outSurfaces.Add(new Interop.SM64Surface {
+                    force = 0,
+                    type = (short)surfaceType,
+                    terrain = (ushort)terrainType,
+                    v0x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i]].x),
+                    v0y = (short)(Interop.SCALE_FACTOR * vertices[tris[i]].y),
+                    v0z = (short)(Interop.SCALE_FACTOR * vertices[tris[i]].z),
+                    v1x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i + 2]].x),
+                    v1y = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 2]].y),
+                    v1z = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 2]].z),
+                    v2x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i + 1]].x),
+                    v2y = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 1]].y),
+                    v2z = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 1]].z)
+                });
+            }
+        }
+    }
+
+    public static Interop.SM64Surface[] GetSurfacesForMesh(Vector3 scale, Mesh mesh, SM64SurfaceType surfaceType,
+        SM64TerrainType terrainType) {
+        var surfaces = new List<Interop.SM64Surface>();
+        TransformAndGetSurfaces(surfaces, mesh, surfaceType, terrainType, x => Vector3.Scale(scale, x));
+        return surfaces.ToArray();
+    }
 
     private static readonly Dictionary<PrimitiveType, Mesh> MeshesCache = new();
 
@@ -33,7 +65,7 @@ public static class Misc {
             col.enabled
             && col.gameObject.activeInHierarchy
             // Ignore other mario's colliders
-            && col.GetComponentInChildren<SM64Mario>() == null
+            && col.GetComponentInChildren<CVRSM64CMario>() == null
             // Ignore the some layers
             && col.gameObject.layer != PlayerLocalLayer
             && col.gameObject.layer != PlayerNetworkLayer
@@ -46,18 +78,18 @@ public static class Misc {
     }
 
 
-    internal static void TransformAndGetSurfaces( List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType ) {
-
+    internal static void TransformAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b,
+        SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         Vector3[] vertices = {
-            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, -b.size.y, -b.size.z)*0.5f),
-            b.transform.TransformPoint(b.center + new Vector3(b.size.x, -b.size.y, -b.size.z)*0.5f),
-            b.transform.TransformPoint(b.center + new Vector3(b.size.x, b.size.y, -b.size.z)*0.5f),
-            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, b.size.y, -b.size.z)*0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, -b.size.y, -b.size.z) * 0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(b.size.x, -b.size.y, -b.size.z) * 0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(b.size.x, b.size.y, -b.size.z) * 0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, b.size.y, -b.size.z) * 0.5f),
 
-            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, b.size.y, b.size.z)*0.5f),
-            b.transform.TransformPoint(b.center + new Vector3(b.size.x, b.size.y, b.size.z)*0.5f),
-            b.transform.TransformPoint(b.center + new Vector3(b.size.x, -b.size.y, b.size.z)*0.5f),
-            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, -b.size.y, b.size.z)*0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, b.size.y, b.size.z) * 0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(b.size.x, b.size.y, b.size.z) * 0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(b.size.x, -b.size.y, b.size.z) * 0.5f),
+            b.transform.TransformPoint(b.center + new Vector3(-b.size.x, -b.size.y, b.size.z) * 0.5f),
         };
 
         int[] tris = {
@@ -75,20 +107,20 @@ public static class Misc {
             0, 1, 6
         };
 
-        for( var i = 0; i < tris.Length; i += 3 ) {
+        for (var i = 0; i < tris.Length; i += 3) {
             outSurfaces.Add(new Interop.SM64Surface {
                 force = 0,
                 type = (short)surfaceType,
                 terrain = (ushort)terrainType,
-                v0x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i  ]].x),
-                v0y = (short)(Interop.SCALE_FACTOR *  vertices[tris[i  ]].y),
-                v0z = (short)(Interop.SCALE_FACTOR *  vertices[tris[i  ]].z),
-                v1x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i+2]].x),
-                v1y = (short)(Interop.SCALE_FACTOR *  vertices[tris[i+2]].y),
-                v1z = (short)(Interop.SCALE_FACTOR *  vertices[tris[i+2]].z),
-                v2x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i+1]].x),
-                v2y = (short)(Interop.SCALE_FACTOR *  vertices[tris[i+1]].y),
-                v2z = (short)(Interop.SCALE_FACTOR *  vertices[tris[i+1]].z)
+                v0x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i]].x),
+                v0y = (short)(Interop.SCALE_FACTOR * vertices[tris[i]].y),
+                v0z = (short)(Interop.SCALE_FACTOR * vertices[tris[i]].z),
+                v1x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i + 2]].x),
+                v1y = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 2]].y),
+                v1z = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 2]].z),
+                v2x = (short)(Interop.SCALE_FACTOR * -vertices[tris[i + 1]].x),
+                v2y = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 1]].y),
+                v2z = (short)(Interop.SCALE_FACTOR * vertices[tris[i + 1]].z)
             });
         }
     }
@@ -98,7 +130,6 @@ public static class Misc {
     }
 
     internal static Vector3 TransformPoint(CapsuleCollider c, Vector3 point) {
-
         // Calculate the height and radius as if we were on the direction y (i == 1)
         for (int i = 0; i < 3; i++) {
             point[i] *= i == 1 ? Mathf.Max(c.height, c.radius * 2) / 2 : c.radius * 2;
@@ -110,11 +141,13 @@ public static class Misc {
             direction.x = 90f;
             direction.y = -90f;
         }
+
         if (c.direction == 2) {
             direction.z = 90f;
             direction.y = -90f;
         }
-        var alignedCapsule = Quaternion.Euler(direction) * point ;
+
+        var alignedCapsule = Quaternion.Euler(direction) * point;
 
         return c.transform.TransformPoint(alignedCapsule + c.center);
     }
@@ -123,8 +156,7 @@ public static class Misc {
     internal static Interop.SM64Surface[] GetAllStaticSurfaces() {
         var surfaces = new List<Interop.SM64Surface>();
 
-        foreach(var obj in UnityEngine.Object.FindObjectsOfType<Collider>()) {
-
+        foreach (var obj in UnityEngine.Object.FindObjectsOfType<Collider>()) {
             // Ignore bad colliders
             if (!IsGoodCollider(obj)) continue;
 
@@ -138,33 +170,37 @@ public static class Misc {
                     // surfaces.AddRange(Utils.GetSurfacesForMesh(boxCollider.transform.lossyScale, GetPrimitiveMesh(PrimitiveType.Cube), SM64SurfaceType.Default, SM64TerrainType.Grass));
                     // Utils.transformAndGetSurfaces( surfaces, GetPrimitiveMesh(PrimitiveType.Cube), SM64SurfaceType.Default, SM64TerrainType.Grass, x => boxCollider.transform.TransformPoint( x ) * boxCollider.size);
                     //Utils.transformAndGetSurfaces( surfaces, GetPrimitiveMesh(PrimitiveType.Cube), SM64SurfaceType.Default, SM64TerrainType.Grass, x => TransformPoint( boxCollider, x ));
-                    TransformAndGetSurfaces( surfaces, boxCollider, SM64SurfaceType.Default, SM64TerrainType.Grass );
+                    TransformAndGetSurfaces(surfaces, boxCollider, SM64SurfaceType.Default, SM64TerrainType.Grass);
                     break;
                 case CapsuleCollider capsuleCollider:
                     // surfaces.AddRange(Utils.GetSurfacesForMesh(capsuleCollider.transform.lossyScale, GetPrimitiveMesh(PrimitiveType.Capsule), SM64SurfaceType.Default, SM64TerrainType.Grass));
                     // Utils.transformAndGetSurfaces( surfaces, GetPrimitiveMesh(PrimitiveType.Capsule), SM64SurfaceType.Default, SM64TerrainType.Grass, x => capsuleCollider.transform.TransformPoint( x ));
-                    Utils.transformAndGetSurfaces( surfaces, GetPrimitiveMesh(PrimitiveType.Capsule), SM64SurfaceType.Default, SM64TerrainType.Grass, x => TransformPoint( capsuleCollider, x ));
+                    Utils.TransformAndGetSurfaces(surfaces, GetPrimitiveMesh(PrimitiveType.Capsule),
+                        SM64SurfaceType.Default, SM64TerrainType.Grass, x => TransformPoint(capsuleCollider, x));
                     break;
                 case MeshCollider meshCollider:
                     // Skip meshes we can't read the information! ;_;
                     #if DEBUG
-                    MelonLogger.Msg($"[MeshCollider] {meshCollider.name} Readable: {meshCollider.sharedMesh.isReadable}, SubMeshCount: {meshCollider.sharedMesh.subMeshCount}, TrisCount: {meshCollider.sharedMesh.triangles.Length}");
+                    MelonLogger.Msg(
+                        $"[MeshCollider] {meshCollider.name} Readable: {meshCollider.sharedMesh.isReadable}, SubMeshCount: {meshCollider.sharedMesh.subMeshCount}, TrisCount: {meshCollider.sharedMesh.triangles.Length}");
                     #endif
                     if (!meshCollider.sharedMesh.isReadable) {
                         continue;
                     }
-                    Utils.transformAndGetSurfaces( surfaces, meshCollider.sharedMesh, SM64SurfaceType.Default, SM64TerrainType.Grass, x => meshCollider.transform.TransformPoint( x ));
+
+                    Utils.TransformAndGetSurfaces(surfaces, meshCollider.sharedMesh, SM64SurfaceType.Default,
+                        SM64TerrainType.Grass, x => meshCollider.transform.TransformPoint(x));
                     break;
                 case SphereCollider sphereCollider:
                     // surfaces.AddRange(Utils.GetSurfacesForMesh(sphereCollider.transform.lossyScale, GetPrimitiveMesh(PrimitiveType.Sphere), SM64SurfaceType.Default, SM64TerrainType.Grass));
                     // Utils.transformAndGetSurfaces( surfaces, GetPrimitiveMesh(PrimitiveType.Sphere), SM64SurfaceType.Default, SM64TerrainType.Grass, x => sphereCollider.transform.TransformPoint( x ));
-                    Utils.transformAndGetSurfaces( surfaces, GetPrimitiveMesh(PrimitiveType.Sphere), SM64SurfaceType.Default, SM64TerrainType.Grass, x => TransformPoint( sphereCollider, x ));
+                    Utils.TransformAndGetSurfaces(surfaces, GetPrimitiveMesh(PrimitiveType.Sphere),
+                        SM64SurfaceType.Default, SM64TerrainType.Grass, x => TransformPoint(sphereCollider, x));
                     break;
                 // Ignore other colliders as they would need more handling
                 // case TerrainCollider terrainCollider:
                 //     terrainCollider.terrainData
             }
-
         }
 
         return surfaces.ToArray();
