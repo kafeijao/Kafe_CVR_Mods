@@ -9,6 +9,10 @@ namespace Kafe.CVRSuperMario64;
 
 public class CVRSuperMario64 : MelonMod {
 
+    private static MelonPreferences_Category _melonCategory;
+    private static MelonPreferences_Entry<bool> MeAlwaysReplaceLib;
+    internal static MelonPreferences_Entry<bool> MeDisableAudio;
+
     // Asset bundle
     private static Material _marioMaterialCached;
     private const string LibSM64AssetBundleName = "libsm64.assetbundle";
@@ -23,6 +27,17 @@ public class CVRSuperMario64 : MelonMod {
     internal static bool FilesLoaded = false;
 
     public override void OnInitializeMelon() {
+
+
+        // Melon Config
+        _melonCategory = MelonPreferences.CreateCategory(nameof(CVRSuperMario64));
+
+        MeAlwaysReplaceLib = _melonCategory.CreateEntry("AlwaysReplaceLib", true,
+            description: "Whether to always replace the sm64.dll lib on start or not. Only disable if you know what " +
+                         "you're doing!");
+
+        MeDisableAudio = _melonCategory.CreateEntry("MeDisableAudio", false,
+            description: "Whether to disable the game audio or not.");
 
         // Limit max polygons on the meshes
         // Configure framework
@@ -40,7 +55,7 @@ public class CVRSuperMario64 : MelonMod {
 
         try {
             var sm64LibFileInfo = new FileInfo(dstPath);
-            if (!sm64LibFileInfo.Exists) {
+            if (!sm64LibFileInfo.Exists || MeAlwaysReplaceLib.Value) {
                 MelonLogger.Msg($"Copying the sm64.dll to {dstPath}");
                 using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(dllName);
                 using var fileStream = File.Open(dstPath, FileMode.Create, FileAccess.Write);

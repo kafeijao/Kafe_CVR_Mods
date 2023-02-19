@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Runtime.InteropServices;
+using MelonLoader;
 
 namespace Kafe.CVRSuperMario64;
 
@@ -19,17 +20,17 @@ internal static class Interop {
         public short type;
         public short force;
         public ushort terrain;
-        public short v0x, v0y, v0z;
-        public short v1x, v1y, v1z;
-        public short v2x, v2y, v2z;
-    };
+        public int v0x, v0y, v0z;
+        public int v1x, v1y, v1z;
+        public int v2x, v2y, v2z;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct SM64MarioInputs {
         public float camLookX, camLookZ;
         public float stickX, stickY;
         public byte buttonA, buttonB, buttonZ;
-    };
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct SM64MarioState {
@@ -42,6 +43,11 @@ internal static class Interop {
         public float faceAngle;
         public short health;
 
+        public uint action;
+        public uint flags;
+        public uint particleFlags;
+        public short invincTimer;
+
         public Vector3 unityPosition {
             get {
                 return position != null
@@ -49,7 +55,7 @@ internal static class Interop {
                     : Vector3.zero;
             }
         }
-    };
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     struct SM64MarioGeometryBuffers {
@@ -58,7 +64,7 @@ internal static class Interop {
         public IntPtr color;
         public IntPtr uv;
         public ushort numTrianglesUsed;
-    };
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     struct SM64ObjectTransform {
@@ -68,7 +74,7 @@ internal static class Interop {
         [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 3)]
         float[] eulerRotation;
 
-        static public SM64ObjectTransform FromUnityWorld(Vector3 position, Quaternion rotation) {
+        public static SM64ObjectTransform FromUnityWorld(Vector3 position, Quaternion rotation) {
             float[] vecToArr(Vector3 v) {
                 return new float[] { v.x, v.y, v.z };
             }
@@ -93,7 +99,7 @@ internal static class Interop {
                 eulerRotation = vecToArr(rot)
             };
         }
-    };
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     struct SM64SurfaceObject {
@@ -103,16 +109,28 @@ internal static class Interop {
     }
 
     [DllImport("sm64")]
-    static extern void sm64_global_init(IntPtr rom, IntPtr outTexture, IntPtr debugPrintFunctionPtr);
+    static extern void sm64_register_debug_print_function(IntPtr debugPrintFunctionPtr);
+
+    [DllImport("sm64")]
+    static extern void sm64_global_init(IntPtr rom, IntPtr outTexture);
 
     [DllImport("sm64")]
     static extern void sm64_global_terminate();
 
     [DllImport("sm64")]
+    static extern void sm64_audio_init(IntPtr rom);
+
+    [DllImport("sm64")]
+    static extern uint sm64_audio_tick(uint numQueuedSamples, uint numDesiredSamples, IntPtr audio_buffer);
+
+    [DllImport("sm64")]
+    static extern void sm64_play_music(byte player, ushort seqArgs, ushort fadeTimer);
+
+    [DllImport("sm64")]
     static extern void sm64_static_surfaces_load(SM64Surface[] surfaces, ulong numSurfaces);
 
     [DllImport("sm64")]
-    static extern uint sm64_mario_create(short marioX, short marioY, short marioZ);
+    static extern uint sm64_mario_create(float marioX, float marioY, float marioZ);
 
     [DllImport("sm64")]
     static extern void sm64_mario_tick(uint marioId, ref SM64MarioInputs inputs, ref SM64MarioState outState,
@@ -120,9 +138,6 @@ internal static class Interop {
 
     [DllImport("sm64")]
     static extern void sm64_mario_delete(uint marioId);
-
-    // [DllImport("sm64")]
-    // static extern void sm64_set_mario_position( uint marioId, float marioX, float marioY, float marioZ );
 
     [DllImport("sm64")]
     static extern uint sm64_surface_object_create(ref SM64SurfaceObject surfaceObject);
@@ -139,18 +154,27 @@ internal static class Interop {
     static public Texture2D marioTexture { get; private set; }
     static public bool isGlobalInit { get; private set; }
 
-    static void debugPrintCallback(string str) {
-        Debug.Log("libsm64: " + str);
+    static void DebugPrintCallback(string str) {
+        MelonLogger.Msg($"[libsm64] {str}");
     }
 
     public static void GlobalInit(byte[] rom) {
-        var callbackDelegate = new DebugPrintFuncDelegate(debugPrintCallback);
         var romHandle = GCHandle.Alloc(rom, GCHandleType.Pinned);
         var textureData = new byte[4 * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT];
         var textureDataHandle = GCHandle.Alloc(textureData, GCHandleType.Pinned);
 
-        sm64_global_init(romHandle.AddrOfPinnedObject(), textureDataHandle.AddrOfPinnedObject(),
-            Marshal.GetFunctionPointerForDelegate(callbackDelegate));
+        sm64_global_init(romHandle.AddrOfPinnedObject(), textureDataHandle.AddrOfPinnedObject());
+        sm64_audio_init(romHandle.AddrOfPinnedObject());
+
+        //sm64_play_music(0, (ushort)MusicSeqId.SEQ_LEVEL_GRASS, 0);
+
+        // With audio this has became waaaay too spammy ;_;
+        // #if DEBUG
+        // var callbackDelegate = new DebugPrintFuncDelegate(DebugPrintCallback);
+        // sm64_register_debug_print_function(Marshal.GetFunctionPointerForDelegate(callbackDelegate));
+        // #endif
+
+        //sm64_register_play_sound_function(Marshal.GetFunctionPointerForDelegate(playSoundDelegate));
 
         Color32[] cols = new Color32[SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT];
         marioTexture = new Texture2D(SM64_TEXTURE_WIDTH, SM64_TEXTURE_HEIGHT);
@@ -184,13 +208,8 @@ internal static class Interop {
     }
 
     public static uint MarioCreate(Vector3 marioPos) {
-        return sm64_mario_create((short)marioPos.x, (short)marioPos.y, (short)marioPos.z);
+        return sm64_mario_create(marioPos.x, marioPos.y, marioPos.z);
     }
-
-    // public static void MarioSetPosition( uint marioId, Vector3 marioPos )
-    // {
-    //     sm64_set_mario_position( marioId, marioPos.x, marioPos.y, marioPos.z );
-    // }
 
     public static SM64MarioState MarioTick(uint marioId, SM64MarioInputs inputs, Vector3[] positionBuffer,
         Vector3[] normalBuffer, Vector3[] colorBuffer, Vector2[] uvBuffer) {
@@ -216,6 +235,13 @@ internal static class Interop {
         uvHandle.Free();
 
         return outState;
+    }
+
+    public static uint AudioTick(short[] audioBuffer, uint numDesiredSamples, uint numQueuedSamples = 0) {
+        var audioBufferPointer = GCHandle.Alloc(audioBuffer, GCHandleType.Pinned);
+        var numSamples = sm64_audio_tick(numQueuedSamples, numDesiredSamples, audioBufferPointer.AddrOfPinnedObject());
+        audioBufferPointer.Free();
+        return numSamples;
     }
 
     public static void MarioDelete(uint marioId) {
