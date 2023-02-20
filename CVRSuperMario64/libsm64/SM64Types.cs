@@ -29,6 +29,7 @@ public enum SM64SurfaceType {
     VerticalWind = 0x0038, // Death at bottom with vertical wind
 }
 
+[Flags]
 public enum MusicSeqId {
     SEQ_SOUND_PLAYER                = 0x00,
     SEQ_EVENT_CUTSCENE_COLLECT_STAR = 0x01,
@@ -65,6 +66,6 @@ public enum MusicSeqId {
     SEQ_EVENT_CUTSCENE_ENDING       = 0x20,
     SEQ_MENU_FILE_SELECT            = 0x21,
     SEQ_EVENT_CUTSCENE_LAKITU       = 0x22, // (not in JP),
-    SEQ_COUNT,
-    SEQ_VARIATION = 0x80,
+    SEQ_VARIATION                   = 0x80, // Arg, should be used with | on other sequences
+    SEQ_NONE                        = 0xFFFF, // When no current music is being played it will return this
 };

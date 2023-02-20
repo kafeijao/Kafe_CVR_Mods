@@ -15,6 +15,40 @@ internal static class Interop {
 
     public const int SM64_MAX_HEALTH = 8;
 
+    private static readonly ushort[] MUSICS = {
+        (ushort) MusicSeqId.SEQ_MENU_TITLE_SCREEN,
+        (ushort) (MusicSeqId.SEQ_MENU_TITLE_SCREEN | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_GRASS,
+        (ushort) (MusicSeqId.SEQ_LEVEL_GRASS | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_INSIDE_CASTLE,
+        (ushort) (MusicSeqId.SEQ_LEVEL_INSIDE_CASTLE | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_WATER,
+        (ushort) (MusicSeqId.SEQ_LEVEL_WATER | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_HOT,
+        (ushort) (MusicSeqId.SEQ_LEVEL_HOT | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_BOSS_KOOPA,
+        (ushort) (MusicSeqId.SEQ_LEVEL_BOSS_KOOPA | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_SNOW,
+        (ushort) (MusicSeqId.SEQ_LEVEL_SNOW | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_SLIDE,
+        (ushort) (MusicSeqId.SEQ_LEVEL_SLIDE | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_SPOOKY,
+        (ushort) (MusicSeqId.SEQ_LEVEL_SPOOKY | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_EVENT_POWERUP,
+        (ushort) (MusicSeqId.SEQ_EVENT_POWERUP | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_EVENT_METAL_CAP,
+        (ushort) (MusicSeqId.SEQ_EVENT_METAL_CAP | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_LEVEL_KOOPA_ROAD,
+        (ushort) (MusicSeqId.SEQ_LEVEL_KOOPA_ROAD | MusicSeqId.SEQ_VARIATION),
+
+        (ushort) MusicSeqId.SEQ_LEVEL_BOSS_KOOPA_FINAL,
+        (ushort) (MusicSeqId.SEQ_LEVEL_BOSS_KOOPA_FINAL | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_MENU_FILE_SELECT,
+        (ushort) (MusicSeqId.SEQ_MENU_FILE_SELECT | MusicSeqId.SEQ_VARIATION),
+        (ushort) MusicSeqId.SEQ_EVENT_CUTSCENE_CREDITS,
+        (ushort) (MusicSeqId.SEQ_EVENT_CUTSCENE_CREDITS | MusicSeqId.SEQ_VARIATION),
+    };
+
     [StructLayout(LayoutKind.Sequential)]
     public struct SM64Surface {
         public short type;
@@ -127,6 +161,12 @@ internal static class Interop {
     static extern void sm64_play_music(byte player, ushort seqArgs, ushort fadeTimer);
 
     [DllImport("sm64")]
+    static extern ushort sm64_get_current_background_music();
+
+    [DllImport("sm64")]
+    static extern void sm64_stop_background_music(ushort seqId);
+
+    [DllImport("sm64")]
     static extern void sm64_static_surfaces_load(SM64Surface[] surfaces, ulong numSurfaces);
 
     [DllImport("sm64")]
@@ -166,15 +206,12 @@ internal static class Interop {
         sm64_global_init(romHandle.AddrOfPinnedObject(), textureDataHandle.AddrOfPinnedObject());
         sm64_audio_init(romHandle.AddrOfPinnedObject());
 
-        //sm64_play_music(0, (ushort)MusicSeqId.SEQ_LEVEL_GRASS, 0);
-
         // With audio this has became waaaay too spammy ;_;
         // #if DEBUG
         // var callbackDelegate = new DebugPrintFuncDelegate(DebugPrintCallback);
         // sm64_register_debug_print_function(Marshal.GetFunctionPointerForDelegate(callbackDelegate));
         // #endif
 
-        //sm64_register_play_sound_function(Marshal.GetFunctionPointerForDelegate(playSoundDelegate));
 
         Color32[] cols = new Color32[SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT];
         marioTexture = new Texture2D(SM64_TEXTURE_WIDTH, SM64_TEXTURE_HEIGHT);
@@ -199,8 +236,21 @@ internal static class Interop {
 
     public static void GlobalTerminate() {
         sm64_global_terminate();
+        StopMusic();
         marioTexture = null;
         isGlobalInit = false;
+    }
+
+    public static void PlayRandomMusic() {
+        StopMusic();
+        sm64_play_music(0, MUSICS[UnityEngine.Random.Range (0, MUSICS.Length)], 0);
+    }
+
+    public static void StopMusic() {
+        // Stop all music that was queued
+        while (sm64_get_current_background_music() is var currentMusic && currentMusic != (ushort) MusicSeqId.SEQ_NONE) {
+            sm64_stop_background_music(currentMusic);
+        }
     }
 
     public static void StaticSurfacesLoad(SM64Surface[] surfaces) {

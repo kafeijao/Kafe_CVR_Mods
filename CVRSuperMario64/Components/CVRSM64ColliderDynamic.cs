@@ -1,3 +1,4 @@
+using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
@@ -8,52 +9,54 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
     [SerializeField] SM64SurfaceType surfaceType = SM64SurfaceType.Default;
 
     public SM64TerrainType TerrainType => terrainType;
-
     public SM64SurfaceType SurfaceType => surfaceType;
 
     uint _surfaceObjectId;
 
-    public Vector3 position { get; private set; }
+    private Vector3 LastPosition { get; set; }
+    private Quaternion LastRotation { get; set; }
 
-    public Vector3 lastPosition { get; private set; }
 
-    public Quaternion rotation { get; private set; }
-
-    public Quaternion lastRotation { get; private set; }
-
-    void OnEnable() {
+    private void OnEnable() {
         CVRSM64CContext.RegisterSurfaceObject(this);
 
-        position = transform.position;
-        rotation = transform.rotation;
-        lastPosition = position;
-        lastRotation = rotation;
+        LastPosition = transform.position;
+        LastRotation = transform.rotation;
 
-        var mc = GetComponent<MeshCollider>();
-        var surfaces = Utils.GetSurfacesForMesh(transform.lossyScale, mc.sharedMesh, surfaceType, terrainType);
-        _surfaceObjectId = Interop.SurfaceObjectCreate(position, rotation, surfaces.ToArray());
+        var col = GetComponent<Collider>();
+        var surfaces = Utils.GetScaledSurfaces(col, new List<Interop.SM64Surface>(), surfaceType, terrainType, true).ToArray();
+        _surfaceObjectId = Interop.SurfaceObjectCreate(transform.position, transform.rotation, surfaces.ToArray());
+
+        #if DEBUG
+        MelonLogger.Msg($"[CVRSM64ColliderDynamic] [{_surfaceObjectId}] {gameObject.name} Enabled! Surface Count: {surfaces.Length}");
+        #endif
     }
 
-    void OnDisable() {
+    private void OnDisable() {
+
         if (Interop.isGlobalInit) {
             CVRSM64CContext.UnregisterSurfaceObject(this);
             Interop.SurfaceObjectDelete(_surfaceObjectId);
         }
+
+        #if DEBUG
+        MelonLogger.Msg($"[CVRSM64ColliderDynamic] [{_surfaceObjectId}] {gameObject.name} Disabled!");
+        #endif
     }
 
     internal void ContextFixedUpdate() {
-        if (position != lastPosition || rotation != lastRotation) {
-            lastPosition = position;
-            lastRotation = rotation;
+        if (transform.position != LastPosition || transform.rotation != LastRotation) {
+            LastPosition = transform.position;
+            LastRotation = transform.rotation;
 
-            Interop.SurfaceObjectMove(_surfaceObjectId, position, rotation);
+            Interop.SurfaceObjectMove(_surfaceObjectId, transform.position, transform.rotation);
         }
     }
 
     internal void ContextUpdate() {
-        var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
-
-        transform.position = Vector3.LerpUnclamped(lastPosition, position, t);
-        transform.rotation = Quaternion.SlerpUnclamped(lastRotation, rotation, t);
+        // var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
+        //
+        // transform.position = Vector3.LerpUnclamped(lastPosition, position, t);
+        // transform.rotation = Quaternion.SlerpUnclamped(lastRotation, rotation, t);
     }
 }

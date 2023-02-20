@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util;
 using ABI_RC.Core.Util.AssetFiltering;
 using HarmonyLib;
 using MelonLoader;
@@ -12,6 +13,11 @@ public class CVRSuperMario64 : MelonMod {
     private static MelonPreferences_Category _melonCategory;
     private static MelonPreferences_Entry<bool> MeAlwaysReplaceLib;
     internal static MelonPreferences_Entry<bool> MeDisableAudio;
+    internal static MelonPreferences_Entry<float> MeAudioPitch;
+    internal static MelonPreferences_Entry<float> MeAudioVolume;
+    internal static MelonPreferences_Entry<int> MeGameTickMs;
+    internal static MelonPreferences_Entry<int> MeIgnoreCollidersHigherThanPolygons;
+    internal static MelonPreferences_Entry<bool> MePlayRandomMusicOnMarioJoin;
 
     // Asset bundle
     private static Material _marioMaterialCached;
@@ -36,8 +42,26 @@ public class CVRSuperMario64 : MelonMod {
             description: "Whether to always replace the sm64.dll lib on start or not. Only disable if you know what " +
                          "you're doing!");
 
-        MeDisableAudio = _melonCategory.CreateEntry("MeDisableAudio", false,
+        MeDisableAudio = _melonCategory.CreateEntry("DisableAudio", false,
             description: "Whether to disable the game audio or not.");
+
+        MeAudioVolume = _melonCategory.CreateEntry("AudioVolume", 1f,
+            description: "The audio volume.");
+
+        MeAudioPitch = _melonCategory.CreateEntry("AudioPitch", 0.74f,
+            description: "The audio pitch of the game sounds.");
+
+        MeGameTickMs = _melonCategory.CreateEntry("GameTickMs", 25,
+            description: "The game ticks frequency in Milliseconds.");
+
+        MeIgnoreCollidersHigherThanPolygons = _melonCategory.CreateEntry("IgnoreCollidersHigherThanPolygons", 10000,
+            description: "Ignore colliders with a poly count higher than.");
+
+        MePlayRandomMusicOnMarioJoin = _melonCategory.CreateEntry("PlayRandomMusicOnMarioJoin", true,
+            description: "Whether to play a random music when a mario joins or not.");
+        MePlayRandomMusicOnMarioJoin.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (!newValue) Interop.StopMusic();
+        });
 
         // Limit max polygons on the meshes
         // Configure framework
@@ -137,6 +161,22 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPatch(typeof(CVRInputManager), "Start")]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
             __instance.gameObject.AddComponent<MarioInputModule>();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn))]
+        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(CVRSyncHelper.PropData propData) {
+            try {
+                // If we load a prop with static colliders, let's trigger a static colliders refresh!
+                if (propData.Spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
+                    MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
+                                    $"all static colliders. You might notice some lag spike...");
+                    Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
+                }
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
         }
     }
 }
