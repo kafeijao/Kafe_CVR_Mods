@@ -77,6 +77,8 @@ public class Spawnable : OscHandler {
             for (var index = 0; index < spawnable.subSyncs.Count; index++) {
                 var spawnableSubSync = spawnable.subSyncs[index];
                 var sTransform = spawnableSubSync.transform;
+                // If there are transforms defined but the prop was Enable Sync Values is turned off...
+                if (sTransform == null) continue;
                 var sPos = sTransform.position;
                 var sRot = sTransform.rotation.eulerAngles;
                 HandlerOsc.SendMessage($"{AddressPrefixSpawnable}{nameof(SpawnableOperation.location_sub)}",
