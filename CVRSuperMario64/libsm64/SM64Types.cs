@@ -68,4 +68,14 @@ public enum MusicSeqId {
     SEQ_EVENT_CUTSCENE_LAKITU       = 0x22, // (not in JP),
     SEQ_VARIATION                   = 0x80, // Arg, should be used with | on other sequences
     SEQ_NONE                        = 0xFFFF, // When no current music is being played it will return this
-};
+}
+
+[Flags]
+public enum CapFlags {
+    MARIO_NORMAL_CAP               = 0x00000001,
+    MARIO_VANISH_CAP               = 0x00000002,
+    MARIO_METAL_CAP                = 0x00000004,
+    MARIO_WING_CAP                 = 0x00000008,
+    MARIO_CAP_ON_HEAD              = 0x00000010,
+    MARIO_CAP_IN_HAND              = 0x00000020,
+}

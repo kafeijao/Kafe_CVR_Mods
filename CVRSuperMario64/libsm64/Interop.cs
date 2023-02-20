@@ -151,6 +151,8 @@ internal static class Interop {
     [DllImport("sm64")]
     static extern void sm64_global_terminate();
 
+
+
     [DllImport("sm64")]
     static extern void sm64_audio_init(IntPtr rom);
 
@@ -165,6 +167,20 @@ internal static class Interop {
 
     [DllImport("sm64")]
     static extern void sm64_stop_background_music(ushort seqId);
+
+
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_water_level(uint marioId, int level);
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_gas_level(uint marioId, int level);
+
+
+
+    [DllImport("sm64")]
+    static extern void sm64_mario_interact_cap(uint marioId, uint capFlag, ushort capTime, byte playMusic);
+
 
     [DllImport("sm64")]
     static extern void sm64_static_surfaces_load(SM64Surface[] surfaces, ulong numSurfaces);
@@ -322,5 +338,20 @@ internal static class Interop {
 
     public static void SurfaceObjectDelete(uint id) {
         sm64_surface_object_delete(id);
+    }
+
+    public static void MarioCap(uint marioId, CapFlags capFlags, ushort capTime = 0, bool playCapMusic = true) {
+        // Untested (seems broken)
+        sm64_mario_interact_cap(marioId, (uint)capFlags, capTime, playCapMusic ? (byte) 1 : (byte) 0);
+    }
+
+    public static void SetWaterLevel(uint marioId, float waterLevelY) {
+        // Unity Y (height) world coord, which will be filled with water
+        sm64_set_mario_water_level(marioId, (int) (SCALE_FACTOR * waterLevelY));
+    }
+
+    public static void SetGasLevel(uint marioId, float gasLevelY) {
+        // Unity Y (height) world coord, which will be filled with gast
+        sm64_set_mario_gas_level(marioId, (int) (SCALE_FACTOR * gasLevelY));
     }
 }
