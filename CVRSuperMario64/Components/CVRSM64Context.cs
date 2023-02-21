@@ -80,42 +80,41 @@ public class CVRSM64CContext : MonoBehaviour {
             InvokeRepeating(nameof(SM64GameTick), 0, newValue / 1000f);
         });
 
-
+        // CVRSuperMario64.MeGameTickMs.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        //     if (newValue == oldValue) return;
+        //     lock (_tickIntervalLock) {
+        //         _tickInterval = newValue;
+        //     }
+        // });
+        //
+        // _isRunning = true;
+        // _gameThread = new Thread(GameTickLoop);
+        // _gameThread.Start();
     }
 
-    // Todo: After get the audio properly working, let's put it in it's own thread!
-
-    // private Thread audioThread;
-    // private bool isRunning = false;
-    // private readonly int tickInterval = 33;
+    // private Thread _gameThread;
+    // private bool _isRunning = false;
+    // private readonly object _tickIntervalLock = new();
+    // private int _tickInterval = CVRSuperMario64.MeGameTickMs.Value;
     //
-    // private void Start() {
-    //     void AudioTickLoop() {
-    //         while (isRunning) {
-    //             AudioTick();
-    //             Thread.Sleep(tickInterval);
+    // private void GameTickLoop() {
+    //     while (_isRunning) {
+    //         lock (_tickIntervalLock) {
+    //             lock (_marios) {
+    //                 foreach (var o in _marios) {
+    //                     o.Sm64MarioTickThread();
+    //                 }
+    //             }
+    //             Thread.Sleep(_tickInterval);
     //         }
     //     }
-    //     isRunning = true;
-    //     audioThread = new Thread(AudioTickLoop);
-    //     audioThread.Start();
     // }
     //
     // private void OnDestroy() {
-    //     isRunning = false;
-    //     audioThread?.Join();
+    //     _isRunning = false;
+    //     _gameThread?.Join();
     // }
 
-    // private void Start() {
-    //     // Update the ticks at 30 times a second
-    //     //InvokeRepeating(nameof(FunctionToCall), 0, 1f / 30f);
-    //     InvokeRepeating(nameof(Sample), 0, 0.033f);
-    // }
-    //
-    // private void FunctionToCall() {
-    //     FakeFixedUpdate();
-    //     FakeUpdate();
-    // }
 
     private void Update() {
         lock (_marios) {

@@ -6,6 +6,8 @@ namespace Kafe.CVRSuperMario64;
 public class CVRSM64CMario : MonoBehaviour {
 
     [SerializeField] internal Material material = null;
+    [SerializeField] internal bool replaceTextures = true;
+    [SerializeField] internal List<string> propertiesToReplaceWithTexture = new() { "_MainTex" };
 
     private CVRSM64Input _inputProvider;
 
@@ -25,7 +27,9 @@ public class CVRSM64CMario : MonoBehaviour {
 
     private bool _enabled;
 
-    private static readonly int MainTex = Shader.PropertyToID("_MainTex");
+    // Threading
+    //private Interop.SM64MarioInputs _currentInputs;
+    private readonly object _lock = new();
 
     private void OnEnable() {
         CVRSM64CContext.RegisterMario(this);
@@ -59,17 +63,27 @@ public class CVRSM64CMario : MonoBehaviour {
         }
 
         renderer.material = material;
-        renderer.sharedMaterial.SetTexture(MainTex, Interop.marioTexture);
+
+        // Replace the material's texture with mario's textures
+        if (replaceTextures) {
+            foreach (var propertyToReplaceWithTexture in propertiesToReplaceWithTexture) {
+                try {
+                    renderer.sharedMaterial.SetTexture(propertyToReplaceWithTexture, Interop.marioTexture);
+                }
+                catch (Exception e) {
+                    MelonLogger.Error($"Attempting to replace the texture in the shader property name {propertyToReplaceWithTexture}...");
+                    MelonLogger.Error(e);
+                }
+            }
+        }
 
         _marioRendererObject.transform.localScale = new Vector3(-1, 1, 1) / Interop.SCALE_FACTOR;
         _marioRendererObject.transform.localPosition = Vector3.zero;
 
         _lerpPositionBuffer = new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES];
         _lerpNormalBuffer = new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES];
-        _positionBuffers = new Vector3[][]
-            { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
-        _normalBuffers = new Vector3[][]
-            { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
+        _positionBuffers = new Vector3[][] { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
+        _normalBuffers = new Vector3[][] { new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES], new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES] };
         _colorBuffer = new Vector3[3 * Interop.SM64_GEO_MAX_TRIANGLES];
         _colorBufferColors = new Color[3 * Interop.SM64_GEO_MAX_TRIANGLES];
         _uvBuffer = new Vector2[3 * Interop.SM64_GEO_MAX_TRIANGLES];
@@ -101,6 +115,53 @@ public class CVRSM64CMario : MonoBehaviour {
         _enabled = false;
     }
 
+    // private void UpdateCurrentInputs() {
+    //
+    //     var currentInputs = new Interop.SM64MarioInputs();
+    //
+    //     var look = _inputProvider.GetCameraLookDirection();
+    //     look.y = 0;
+    //     look = look.normalized;
+    //
+    //     var joystick = _inputProvider.GetJoystickAxes();
+    //
+    //     currentInputs.camLookX = -look.x;
+    //     currentInputs.camLookZ = look.z;
+    //     currentInputs.stickX = joystick.x;
+    //     currentInputs.stickY = -joystick.y;
+    //     currentInputs.buttonA = _inputProvider.GetButtonHeld(CVRSM64Input.Button.Jump) ? (byte)1 : (byte)0;
+    //     currentInputs.buttonB = _inputProvider.GetButtonHeld(CVRSM64Input.Button.Kick) ? (byte)1 : (byte)0;
+    //     currentInputs.buttonZ = _inputProvider.GetButtonHeld(CVRSM64Input.Button.Stomp) ? (byte)1 : (byte)0;
+    //
+    //     lock (_lock) {
+    //         _currentInputs = currentInputs;
+    //     }
+    // }
+    //
+    // internal void Sm64MarioTickThread() {
+    //     lock (_lock) {
+    //         _states[_buffIndex] = Interop.MarioTick(_marioId, _currentInputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer);
+    //
+    //         for (var i = 0; i < _colorBuffer.Length; ++i) {
+    //             _colorBufferColors[i] = new Color(_colorBuffer[i].x, _colorBuffer[i].y, _colorBuffer[i].z, 1);
+    //         }
+    //
+    //     }
+    // }
+    //
+    // internal void Sm64MarioTickMain() {
+    //     lock (_lock) {
+    //         _marioMesh.colors = _colorBufferColors;
+    //         _marioMesh.uv = _uvBuffer;
+    //
+    //         _buffIndex = 1 - _buffIndex;
+    //     }
+    //
+    //     UpdateCurrentInputs();
+    // }
+
+
+
     public void ContextFixedUpdateSynced() {
         var inputs = new Interop.SM64MarioInputs();
         var look = _inputProvider.GetCameraLookDirection();
@@ -131,19 +192,22 @@ public class CVRSM64CMario : MonoBehaviour {
 
     public void ContextUpdateSynced() {
         var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
-        var j = 1 - _buffIndex;
 
-        for (var i = 0; i < _lerpPositionBuffer.Length; ++i) {
-            _lerpPositionBuffer[i] = Vector3.LerpUnclamped(_positionBuffers[_buffIndex][i], _positionBuffers[j][i], t);
-            _lerpNormalBuffer[i] = Vector3.LerpUnclamped(_normalBuffers[_buffIndex][i], _normalBuffers[j][i], t);
-        }
+        lock (_lock) {
+            var j = 1 - _buffIndex;
 
-        // Handle the position
-        if (_inputProvider.IsMine()) {
-            transform.position = Vector3.LerpUnclamped(_states[_buffIndex].unityPosition, _states[j].unityPosition, t);
-        }
-        else {
-            SetPosition(transform.position);
+            for (var i = 0; i < _lerpPositionBuffer.Length; ++i) {
+                _lerpPositionBuffer[i] = Vector3.LerpUnclamped(_positionBuffers[_buffIndex][i], _positionBuffers[j][i], t);
+                _lerpNormalBuffer[i] = Vector3.LerpUnclamped(_normalBuffers[_buffIndex][i], _normalBuffers[j][i], t);
+            }
+
+            // Handle the position
+            if (_inputProvider.IsMine()) {
+                transform.position = Vector3.LerpUnclamped(_states[_buffIndex].unityPosition, _states[j].unityPosition, t);
+            }
+            else {
+                SetPosition(transform.position);
+            }
         }
 
         _marioMesh.vertices = _lerpPositionBuffer;

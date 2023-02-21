@@ -19,11 +19,11 @@ juicy I guess x)
 
 ## Todos
 
-- [ ] Fix the sync between players.
-- [ ] Fix frame rate.
+- [x] Fix the sync between players.
+- [x] Fix frame rate.
 - [ ] Offload the heavy work to a thread.
-- [ ] Add support to configure terrain types.
-- [ ] Add support for moving colliders.
+- [x] Add support to configure terrain types.
+- [x] Add support for moving colliders.
 - [ ] Add marios collision.
 - [ ] Add support for coins?
 - [ ] Add support for enemies?

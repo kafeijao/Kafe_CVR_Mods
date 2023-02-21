@@ -5,7 +5,7 @@ namespace Kafe.CVRSuperMario64;
 
 public class MarioInputModule : CVRInputModule {
 
-    public static MarioInputModule Instance;
+    internal static MarioInputModule Instance;
 
     private CVRInputManager _inputManager;
 
@@ -16,7 +16,7 @@ public class MarioInputModule : CVRInputModule {
     public float horizontal;
     public bool jump;
     public bool kick;
-    public bool stop;
+    public bool stomp;
 
     public new void Start() {
         _inputManager = CVRInputManager.Instance;
@@ -49,7 +49,7 @@ public class MarioInputModule : CVRInputModule {
         vertical = movementVector.z;
         jump = _inputManager.jump;
         kick = _inputManager.interactRightValue > 0.25f;
-        stop = _inputManager.gripRightValue > 0.25f;
+        stomp = _inputManager.gripRightValue > 0.25f;
 
         // Prevent moving if we're controlling marios
         if (!CanMove()) {
@@ -69,6 +69,6 @@ public class MarioInputModule : CVRInputModule {
         vertical = 0;
         jump = false;
         kick = false;
-        stop = false;
+        stomp = false;
     }
 }

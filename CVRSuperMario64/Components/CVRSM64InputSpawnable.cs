@@ -168,7 +168,7 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
                     return kick;
                 }
                 case Button.Stomp: {
-                    var stomp = MarioInputModule.Instance.stop;
+                    var stomp = MarioInputModule.Instance.stomp;
                     Spawnable.SetValue(_inputStompIndex, stomp ? 1f : 0f);
                     return stomp;
                 }

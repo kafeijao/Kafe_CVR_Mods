@@ -17,7 +17,7 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
     private uint _surfaceObjectId;
 
     // Threading
-    private object _lock = new();
+    private readonly object _lock = new();
 
     private Vector3 LastPosition { get; set; }
     private Quaternion LastRotation { get; set; }
