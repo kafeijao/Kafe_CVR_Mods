@@ -118,7 +118,6 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
             }
         }
     }
-
     #endif
 
     private void OnDestroy() {

@@ -152,6 +152,9 @@ internal static class Interop {
     static extern void sm64_global_terminate();
 
 
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_position(uint marioId, float x, float y, float z);
+
 
     [DllImport("sm64")]
     static extern void sm64_audio_init(IntPtr rom);
@@ -189,8 +192,7 @@ internal static class Interop {
     static extern uint sm64_mario_create(float marioX, float marioY, float marioZ);
 
     [DllImport("sm64")]
-    static extern void sm64_mario_tick(uint marioId, ref SM64MarioInputs inputs, ref SM64MarioState outState,
-        ref SM64MarioGeometryBuffers outBuffers);
+    static extern void sm64_mario_tick(uint marioId, ref SM64MarioInputs inputs, ref SM64MarioState outState, ref SM64MarioGeometryBuffers outBuffers);
 
     [DllImport("sm64")]
     static extern void sm64_mario_delete(uint marioId);
@@ -270,6 +272,9 @@ internal static class Interop {
     }
 
     public static void StaticSurfacesLoad(SM64Surface[] surfaces) {
+        MelonLogger.Msg("Reloading all static collider surfaces, this can be caused by the Game Engine " +
+                        "Initialized/Destroyed or some component with static colliders was loaded/deleted. " +
+                        $"You might notice some lag spike... Total Polygons: {surfaces.Length}");
         sm64_static_surfaces_load(surfaces, (ulong)surfaces.Length);
     }
 
@@ -351,7 +356,11 @@ internal static class Interop {
     }
 
     public static void SetGasLevel(uint marioId, float gasLevelY) {
-        // Unity Y (height) world coord, which will be filled with gast
+        // Unity Y (height) world coord, which will be filled with gas
         sm64_set_mario_gas_level(marioId, (int) (SCALE_FACTOR * gasLevelY));
+    }
+
+    public static void MarioSetPosition(uint marioId, Vector3 marioPos) {
+        sm64_set_mario_position(marioId, marioPos.x, marioPos.y, marioPos.z);
     }
 }

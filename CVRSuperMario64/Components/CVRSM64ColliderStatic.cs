@@ -1,11 +1,15 @@
+using ABI_RC.Core.Util;
+using ABI.CCK.Components;
+using HarmonyLib;
+using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
 
 public class CVRSM64ColliderStatic : MonoBehaviour {
 
-    [SerializeField] SM64TerrainType terrainType = SM64TerrainType.Grass;
-    [SerializeField] SM64SurfaceType surfaceType = SM64SurfaceType.Default;
+    [SerializeField] private SM64TerrainType terrainType = SM64TerrainType.Grass;
+    [SerializeField] private SM64SurfaceType surfaceType = SM64SurfaceType.Default;
 
     public SM64TerrainType TerrainType => terrainType;
     public SM64SurfaceType SurfaceType => surfaceType;
@@ -50,4 +54,44 @@ public class CVRSM64ColliderStatic : MonoBehaviour {
     //     MelonLogger.Msg($"[CVRSM64ColliderStatic] [{_surfaceObjectId}] {gameObject.name} Disabled!");
     //     #endif
     // }
+
+    [HarmonyPatch]
+    internal class HarmonyPatches {
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn))]
+        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(CVRSyncHelper.PropData propData) {
+            try {
+                // If we load a prop with static colliders, let's queue a static colliders refresh!
+                if (propData.Spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
+                    #if DEBUG
+                    MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
+                                    $"all static colliders. You might notice some lag spike...");
+                    #endif
+                    CVRSM64CContext.QueueStaticSurfacesUpdate();
+                }
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.OnDestroy))]
+        private static void Before_CVRSpawnable_OnDestroy(CVRSpawnable __instance) {
+            try {
+                // If we delete a prop with static colliders, let's queue a static colliders refresh!
+                if (__instance.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
+                    #if DEBUG
+                    MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been deleted, we need to reload " +
+                                    $"all static colliders. You might notice some lag spike...");
+                    #endif
+                    CVRSM64CContext.QueueStaticSurfacesUpdate();
+                }
+            }
+            catch (Exception e) {
+                MelonLogger.Error(e);
+            }
+        }
+    }
 }

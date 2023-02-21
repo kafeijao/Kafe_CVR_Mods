@@ -4,10 +4,10 @@ namespace Kafe.CVRSuperMario64;
 
 public class CVRSM64CContext : MonoBehaviour {
 
-    static CVRSM64CContext s_instance = null;
+    private static CVRSM64CContext _instance = null;
 
-    List<CVRSM64CMario> _marios = new List<CVRSM64CMario>();
-    readonly List<CVRSM64ColliderDynamic> _surfaceObjects = new List<CVRSM64ColliderDynamic>();
+    private readonly List<CVRSM64CMario> _marios = new();
+    private readonly List<CVRSM64ColliderDynamic> _surfaceObjects = new();
 
     // Audio
     private AudioSource _audioSource;
@@ -18,7 +18,7 @@ public class CVRSM64CContext : MonoBehaviour {
 
     private void Awake() {
 
-        SetAudioStuff();
+        SetAudioSource();
 
         Interop.GlobalInit(CVRSuperMario64.SuperMario64UsZ64RomBytes);
 
@@ -30,27 +30,28 @@ public class CVRSM64CContext : MonoBehaviour {
         });
     }
 
-    private void SetAudioStuff() {
+    private void SetAudioSource() {
+
         _audioSource = gameObject.AddComponent<AudioSource>();
         _audioSource.spatialBlend = 0f;
+
         _audioSource.volume = CVRSuperMario64.MeAudioVolume.Value;
         CVRSuperMario64.MeAudioVolume.OnEntryValueChanged.Subscribe((_, newValue) => _audioSource.volume = newValue);
+
         _audioSource.pitch = CVRSuperMario64.MeAudioPitch.Value;
         CVRSuperMario64.MeAudioPitch.OnEntryValueChanged.Subscribe((_, newValue) => _audioSource.pitch = newValue);
-        //audioSource.clip = AudioClip.Create("CVRSM64Context", bufferSize, numChannels, sampleRate, false);
+
         _audioSource.loop = true;
         _audioSource.Play();
     }
 
     private void ProcessMoreSamples() {
         Interop.AudioTick(_audioBuffer, BufferSize);
-        //MelonLogger.Msg($"numSamples: {numSamples} -> audioSource.timeSamples {audioSource.timeSamples} -> {audioBuffer.Min(s => s):F5}/{audioBuffer.Average(s => s):F5}/{audioBuffer.Max(s => s):F5}");
         for (var i = 0; i < BufferSize; i++) {
             _processedAudioBuffer[i] = Mathf.Min((float)_audioBuffer[i] / short.MaxValue, 1f);
         }
         _bufferPosition = 0;
     }
-
 
     private void OnAudioFilterRead(float[] data, int channels) {
 
@@ -70,18 +71,17 @@ public class CVRSM64CContext : MonoBehaviour {
     }
 
     private void Start() {
-        // Update the ticks at 30 times a second
-        //InvokeRepeating(nameof(FunctionToCall), 0, 1f / 30f);
 
-        InvokeRepeating(nameof(FixedUpdatee), 0, CVRSuperMario64.MeGameTickMs.Value / 1000f);
+        // Game ticks via invoking
+        InvokeRepeating(nameof(SM64GameTick), 0, CVRSuperMario64.MeGameTickMs.Value / 1000f);
         CVRSuperMario64.MeGameTickMs.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue == oldValue) return;
-            CancelInvoke(nameof(FixedUpdatee));
-            InvokeRepeating(nameof(FixedUpdatee), 0, newValue / 1000f);
+            CancelInvoke(nameof(SM64GameTick));
+            InvokeRepeating(nameof(SM64GameTick), 0, newValue / 1000f);
         });
+
+
     }
-
-
 
     // Todo: After get the audio properly working, let's put it in it's own thread!
 
@@ -118,55 +118,73 @@ public class CVRSM64CContext : MonoBehaviour {
     // }
 
     private void Update() {
-        foreach (var o in _surfaceObjects) {
-            o.ContextUpdate();
-        }
-
-        foreach (var o in _marios) {
-            o.ContextUpdate();
+        lock (_marios) {
+            foreach (var o in _marios) {
+                o.ContextUpdateSynced();
+            }
         }
     }
 
-    private void FixedUpdatee() {
-        foreach (var o in _surfaceObjects) {
-            o.ContextFixedUpdate();
+    private void SM64GameTick() {
+
+        lock (_surfaceObjects) {
+            foreach (var o in _surfaceObjects) {
+                o.ContextFixedUpdateSynced();
+            }
         }
 
-        foreach (var o in _marios) {
-            o.ContextFixedUpdate();
+        lock (_marios) {
+            foreach (var o in _marios) {
+                o.ContextFixedUpdateSynced();
+            }
         }
     }
 
     private void OnApplicationQuit() {
         Interop.GlobalTerminate();
-        s_instance = null;
+        _instance = null;
     }
 
-    internal static void EnsureInstanceExists() {
-        if (s_instance == null) {
-            var contextGo = new GameObject("SM64_CONTEXT");
-            contextGo.hideFlags |= HideFlags.HideInHierarchy;
-            s_instance = contextGo.AddComponent<CVRSM64CContext>();
-        }
+    private static void EnsureInstanceExists() {
+        if (_instance != null) return;
+
+        var contextGo = new GameObject("SM64_CONTEXT");
+        contextGo.hideFlags |= HideFlags.HideInHierarchy;
+        _instance = contextGo.AddComponent<CVRSM64CContext>();
     }
 
-    public static void RefreshStaticTerrain() {
+    public static void QueueStaticSurfacesUpdate() {
+        // If there was a queued update, cancel it first
+        _instance.CancelInvoke(nameof(StaticTerrainUpdate));
+        _instance.Invoke(nameof(StaticTerrainUpdate), 2.5f);
+    }
+
+    private void StaticTerrainUpdate() {
+        if (_instance == null) return;
         Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
     }
 
     public static void RegisterMario(CVRSM64CMario mario) {
         EnsureInstanceExists();
 
-        if (!s_instance._marios.Contains(mario)) {
+        lock (_instance._marios) {
+            if (_instance._marios.Contains(mario)) return;
+
+            _instance._marios.Add(mario);
+
             if (CVRSuperMario64.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
-            s_instance._marios.Add(mario);
         }
     }
 
     public static void UnregisterMario(CVRSM64CMario mario) {
-        if (s_instance != null && s_instance._marios.Contains(mario)) {
-            s_instance._marios.Remove(mario);
-            if (s_instance._marios.Count == 0) {
+        if (_instance == null) return;
+
+        lock (_instance._marios) {
+            if (!_instance._marios.Contains(mario)) return;
+
+            _instance._marios.Remove(mario);
+
+            if (_instance._marios.Count == 0) {
                 Interop.StopMusic();
             }
         }
@@ -175,14 +193,20 @@ public class CVRSM64CContext : MonoBehaviour {
     public static void RegisterSurfaceObject(CVRSM64ColliderDynamic surfaceObject) {
         EnsureInstanceExists();
 
-        if (!s_instance._surfaceObjects.Contains(surfaceObject)) {
-            s_instance._surfaceObjects.Add(surfaceObject);
+        lock (_instance._surfaceObjects) {
+            if (!_instance._surfaceObjects.Contains(surfaceObject)) {
+                _instance._surfaceObjects.Add(surfaceObject);
+            }
         }
     }
 
     public static void UnregisterSurfaceObject(CVRSM64ColliderDynamic surfaceObject) {
-        if (s_instance != null && s_instance._surfaceObjects.Contains(surfaceObject)) {
-            s_instance._surfaceObjects.Remove(surfaceObject);
+        if (_instance == null) return;
+
+        lock (_instance._surfaceObjects) {
+            if (_instance._surfaceObjects.Contains(surfaceObject)) {
+                _instance._surfaceObjects.Remove(surfaceObject);
+            }
         }
     }
 }

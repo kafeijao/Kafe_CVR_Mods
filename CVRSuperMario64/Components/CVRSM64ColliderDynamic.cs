@@ -1,20 +1,28 @@
-using MelonLoader;
 using UnityEngine;
+
+#if DEBUG
+using MelonLoader;
+#endif
 
 namespace Kafe.CVRSuperMario64;
 
 public class CVRSM64ColliderDynamic : MonoBehaviour {
 
-    [SerializeField] SM64TerrainType terrainType = SM64TerrainType.Grass;
-    [SerializeField] SM64SurfaceType surfaceType = SM64SurfaceType.Default;
+    [SerializeField] private SM64TerrainType terrainType = SM64TerrainType.Grass;
+    [SerializeField] private SM64SurfaceType surfaceType = SM64SurfaceType.Default;
 
     public SM64TerrainType TerrainType => terrainType;
     public SM64SurfaceType SurfaceType => surfaceType;
 
-    uint _surfaceObjectId;
+    private uint _surfaceObjectId;
+
+    // Threading
+    private object _lock = new();
 
     private Vector3 LastPosition { get; set; }
     private Quaternion LastRotation { get; set; }
+
+    private bool HasChanges { get; set; }
 
 
     private void OnEnable() {
@@ -44,19 +52,31 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
         #endif
     }
 
-    internal void ContextFixedUpdate() {
+    internal void UpdateCurrentPositionData() {
+        lock (_lock) {
+            if (transform.position != LastPosition || transform.rotation != LastRotation) {
+                LastPosition = transform.position;
+                LastRotation = transform.rotation;
+                HasChanges = true;
+            }
+        }
+    }
+
+    internal void ConsumeCurrentPosition() {
+        lock (_lock) {
+            if (HasChanges) {
+                Interop.SurfaceObjectMove(_surfaceObjectId, LastPosition, LastRotation);
+                HasChanges = false;
+            }
+        }
+    }
+
+    internal void ContextFixedUpdateSynced() {
         if (transform.position != LastPosition || transform.rotation != LastRotation) {
             LastPosition = transform.position;
             LastRotation = transform.rotation;
 
             Interop.SurfaceObjectMove(_surfaceObjectId, transform.position, transform.rotation);
         }
-    }
-
-    internal void ContextUpdate() {
-        // var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
-        //
-        // transform.position = Vector3.LerpUnclamped(lastPosition, position, t);
-        // transform.rotation = Quaternion.SlerpUnclamped(lastRotation, rotation, t);
     }
 }

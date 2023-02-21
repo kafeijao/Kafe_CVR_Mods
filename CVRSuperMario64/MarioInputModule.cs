@@ -38,9 +38,15 @@ public class MarioInputModule : CVRInputModule {
             canMoveOverride = false;
         }
 
+        // Normalize the movement vector, this is done after the modules run, but I'm saving the values before so...
+        var movementVector = _inputManager.movementVector;
+        if (movementVector.magnitude > movementVector.normalized.magnitude) {
+            movementVector.Normalize();
+        }
+
         // Save current input
-        horizontal = _inputManager.movementVector.x;
-        vertical = _inputManager.movementVector.z;
+        horizontal = movementVector.x;
+        vertical = movementVector.z;
         jump = _inputManager.jump;
         kick = _inputManager.interactRightValue > 0.25f;
         stop = _inputManager.gripRightValue > 0.25f;

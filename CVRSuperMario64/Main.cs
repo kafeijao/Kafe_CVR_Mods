@@ -45,7 +45,7 @@ public class CVRSuperMario64 : MelonMod {
         MeDisableAudio = _melonCategory.CreateEntry("DisableAudio", false,
             description: "Whether to disable the game audio or not.");
 
-        MeAudioVolume = _melonCategory.CreateEntry("AudioVolume", 1f,
+        MeAudioVolume = _melonCategory.CreateEntry("AudioVolume", 0.1f,
             description: "The audio volume.");
 
         MeAudioPitch = _melonCategory.CreateEntry("AudioPitch", 0.74f,
@@ -161,22 +161,6 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPatch(typeof(CVRInputManager), "Start")]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
             __instance.gameObject.AddComponent<MarioInputModule>();
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn))]
-        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(CVRSyncHelper.PropData propData) {
-            try {
-                // If we load a prop with static colliders, let's trigger a static colliders refresh!
-                if (propData.Spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
-                    MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
-                                    $"all static colliders. You might notice some lag spike...");
-                    Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
-                }
-            }
-            catch (Exception e) {
-                MelonLogger.Error(e);
-            }
         }
     }
 }
