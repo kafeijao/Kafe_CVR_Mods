@@ -14,6 +14,7 @@ namespace Kafe.CVRSuperMario64;
 public class CVRSM64InputSpawnable : CVRSM64Input {
 
     [SerializeField] private CVRSpawnable Spawnable;
+
     private CVRPlayerEntity Owner;
     private Traverse<RemoteHeadPoint> OwnerViewPoint;
 
@@ -28,6 +29,8 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
     private CVRSpawnableValue _inputKick;
     private int _inputStompIndex;
     private CVRSpawnableValue _inputStomp;
+
+    private CVRPickupObject _pickup;
 
     private void LoadInput(out CVRSpawnableValue parameter, out int index, string inputName) {
         try {
@@ -87,6 +90,12 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
         LoadInput(out _inputKick, out _inputKickIndex, "Kick");
         LoadInput(out _inputStomp, out _inputStompIndex, "Stomp");
 
+        // Pickup
+        _pickup = GetComponent<CVRPickupObject>();
+        if (!Spawnable.IsMine() && _pickup != null) {
+            Destroy(_pickup);
+        }
+
         // Check for the SM64Mario component
         var mario = GetComponent<CVRSM64CMario>();
         if (mario == null) {
@@ -95,7 +104,6 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
         }
 
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {Spawnable.IsMine()}");
-
 
         if (Spawnable != null && Spawnable.IsMine()) {
             MarioInputModule.Instance.controllingMarios++;
@@ -138,6 +146,10 @@ public class CVRSM64InputSpawnable : CVRSM64Input {
         }
 
         return Vector3.zero;
+    }
+
+    public override bool IsPositionOverriden() {
+        return _pickup != null && _pickup.IsGrabbedByMe();
     }
 
     public override Vector2 GetJoystickAxes() {

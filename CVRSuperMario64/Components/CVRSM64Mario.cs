@@ -202,7 +202,7 @@ public class CVRSM64CMario : MonoBehaviour {
             }
 
             // Handle the position
-            if (_inputProvider.IsMine()) {
+            if (_inputProvider.IsMine() && !_inputProvider.IsPositionOverriden()) {
                 transform.position = Vector3.LerpUnclamped(_states[_buffIndex].unityPosition, _states[j].unityPosition, t);
             }
             else {

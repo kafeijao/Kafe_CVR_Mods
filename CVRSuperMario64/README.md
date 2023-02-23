@@ -9,6 +9,16 @@ juicy I guess x)
 
 ---
 
+## ROM Installation
+
+1. Obtain a copy of `Super Mario 64 [US] z64 ROM`, with the MD5 hash: `20b854b239203baf6c961b850a4a51a2`. If you google
+   the hash, you should easily find it.
+2. Rename that file to `baserom.us.z64`
+3. Copy that file to `UserData\` in the ChilloutVR folder. By
+   default: `C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\UserData\`
+
+---
+
 ## Troubleshooting
 
 1. If the Mario falls through the floor it is most likely caused because the world creator disabled the mesh read/write
@@ -24,9 +34,10 @@ juicy I guess x)
 - [ ] Offload the heavy work to a thread.
 - [x] Add support to configure terrain types.
 - [x] Add support for moving colliders.
-- [ ] Add marios collision.
+- [ ] Add marios collision?
 - [ ] Add support for coins?
 - [ ] Add support for enemies?
+- [ ] Add Mario pvp?
 
 ---
 

@@ -14,4 +14,5 @@ public abstract class CVRSM64Input : MonoBehaviour {
     public abstract Vector2 GetJoystickAxes();
     public abstract bool GetButtonHeld(Button button);
     public virtual bool IsMine() => true;
+    public virtual bool IsPositionOverriden() => false;
 }

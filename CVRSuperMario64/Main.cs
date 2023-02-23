@@ -1,6 +1,5 @@
 ﻿using System.Security.Cryptography;
 using ABI_RC.Core.Savior;
-using ABI_RC.Core.Util;
 using ABI_RC.Core.Util.AssetFiltering;
 using HarmonyLib;
 using MelonLoader;
@@ -63,19 +62,9 @@ public class CVRSuperMario64 : MelonMod {
             if (!newValue) Interop.StopMusic();
         });
 
-        // Limit max polygons on the meshes
-        // Configure framework
-
-        // Add our CCK component to the whitelist
-        var whitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
-        whitelist.Add(typeof(CVRSM64CMario));
-        whitelist.Add(typeof(CVRSM64InputSpawnable));
-        whitelist.Add(typeof(CVRSM64ColliderStatic));
-        whitelist.Add(typeof(CVRSM64ColliderDynamic));
-
         // Extract the native binary to the plugins folder
         const string dllName = "sm64.dll";
-        const string dstPath = "ChilloutVR_Data/Plugins/x86_64/" + dllName;
+        var dstPath = Path.GetFullPath(Path.Combine("ChilloutVR_Data", "Plugins", "x86_64", dllName));
 
         try {
             var sm64LibFileInfo = new FileInfo(dstPath);
@@ -87,6 +76,7 @@ public class CVRSuperMario64 : MelonMod {
             }
             else {
                 MelonLogger.Msg($"The lib sm64.dll already exists at {dstPath}, we won't overwrite...");
+                return;
             }
         }
         catch (IOException ex) {
@@ -111,20 +101,19 @@ public class CVRSuperMario64 : MelonMod {
         }
         catch (Exception ex) {
             MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
+            return;
         }
 
         // Load the ROM
         try {
-            var abiAppDataPath = Application.persistentDataPath;
-            var smRomPath = Path.Combine(abiAppDataPath, "LibSM64", SuperMario64UsZ64RomName);
-            MelonLogger.Msg($"Loading the Super Mario 64 [US] z64 ROM from ${smRomPath}...");
+            var smRomPath = Path.GetFullPath(Path.Combine("UserData", SuperMario64UsZ64RomName));
+            MelonLogger.Msg($"Loading the Super Mario 64 [US] z64 ROM from {smRomPath}...");
             var smRomFileInfo = new FileInfo(smRomPath);
             if (!smRomFileInfo.Exists) {
-                // Create directory if doesn't exist
-                smRomFileInfo.Directory?.Create();
                 MelonLogger.Error($"You need to download the Super Mario 64 [US] z64 ROM " +
-                                  $"(MD5 20b854b239203baf6c961b850a4a51a2) rename the file to {SuperMario64UsZ64RomName} and" +
-                                  $"save it on {smRomPath}");
+                                  $"(MD5 {SuperMario64UsZ64RomHashHex}), rename the file to {SuperMario64UsZ64RomName} " +
+                                  $"and save it to the path: {smRomPath}");
+                return;
             }
             using var md5 = MD5.Create();
             using var smRomFileSteam = File.OpenRead(smRomPath);
@@ -133,15 +122,23 @@ public class CVRSuperMario64 : MelonMod {
 
             if (smRomFileMd5HashHex != SuperMario64UsZ64RomHashHex) {
                 MelonLogger.Error($"The file at {smRomPath} MD5 hash is {smRomFileMd5HashHex}. That file needs to be a copy of " +
-                                  $"Super Mario 64 [US] z64 ROM, which has a MD5 Hash of 20b854b239203baf6c961b850a4a51a2");
+                                  $"Super Mario 64 [US] z64 ROM, which has a MD5 Hash of {SuperMario64UsZ64RomHashHex}");
                 return;
             }
 
             SuperMario64UsZ64RomBytes = File.ReadAllBytes(smRomPath);
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
+            MelonLogger.Error("Failed to Load the Super Mario 64 [US] z64 ROM: " + ex.Message);
+            return;
         }
+
+        // Add our CCK component to the whitelist
+        var whitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
+        whitelist.Add(typeof(CVRSM64CMario));
+        whitelist.Add(typeof(CVRSM64InputSpawnable));
+        whitelist.Add(typeof(CVRSM64ColliderStatic));
+        whitelist.Add(typeof(CVRSM64ColliderDynamic));
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
