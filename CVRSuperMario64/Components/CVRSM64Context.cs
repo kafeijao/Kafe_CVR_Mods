@@ -6,7 +6,7 @@ public class CVRSM64CContext : MonoBehaviour {
 
     private static CVRSM64CContext _instance = null;
 
-    private readonly List<CVRSM64CMario> _marios = new();
+    private readonly List<CVRSM64Mario> _marios = new();
     private readonly List<CVRSM64ColliderDynamic> _surfaceObjects = new();
 
     // Audio
@@ -163,7 +163,7 @@ public class CVRSM64CContext : MonoBehaviour {
         Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
     }
 
-    public static void RegisterMario(CVRSM64CMario mario) {
+    public static void RegisterMario(CVRSM64Mario mario) {
         EnsureInstanceExists();
 
         lock (_instance._marios) {
@@ -175,7 +175,7 @@ public class CVRSM64CContext : MonoBehaviour {
         }
     }
 
-    public static void UnregisterMario(CVRSM64CMario mario) {
+    public static void UnregisterMario(CVRSM64Mario mario) {
         if (_instance == null) return;
 
         lock (_instance._marios) {

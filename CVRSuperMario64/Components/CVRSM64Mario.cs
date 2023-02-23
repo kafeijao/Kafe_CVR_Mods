@@ -1,16 +1,29 @@
+using ABI_RC.Core.Player;
+using ABI_RC.Core.Player.AvatarTracking.Remote;
+using ABI_RC.Core.Savior;
+using ABI.CCK.Components;
+using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
 
-public class CVRSM64CMario : MonoBehaviour {
 
+[DefaultExecutionOrder(999999)]
+public class CVRSM64Mario : MonoBehaviour {
+
+    // Serialized Fields
     [SerializeField] internal Material material = null;
     [SerializeField] internal bool replaceTextures = true;
     [SerializeField] internal List<string> propertiesToReplaceWithTexture = new() { "_MainTex" };
+    [SerializeField] private CVRSpawnable spawnable;
 
-    private CVRSM64Input _inputProvider;
+    // Components
+    private CVRPickupObject _pickup;
+    private CVRPlayerEntity _owner;
+    private Traverse<RemoteHeadPoint> _ownerViewPoint;
 
+    // Mario State
     private Vector3[][] _positionBuffers;
     private Vector3[][] _normalBuffers;
     private Vector3[] _lerpPositionBuffer;
@@ -21,26 +34,113 @@ public class CVRSM64CMario : MonoBehaviour {
     private int _buffIndex;
     private Interop.SM64MarioState[] _states;
 
+    // Renderer
     private GameObject _marioRendererObject;
     private Mesh _marioMesh;
-    private uint _marioId;
 
+    // Internal
+    private uint _marioId;
     private bool _enabled;
+
+    // Spawnable Inputs
+    private int _inputHorizontalIndex;
+    private CVRSpawnableValue _inputHorizontal;
+    private int _inputVerticalIndex;
+    private CVRSpawnableValue _inputVertical;
+    private int _inputJumpIndex;
+    private CVRSpawnableValue _inputJump;
+    private int _inputKickIndex;
+    private CVRSpawnableValue _inputKick;
+    private int _inputStompIndex;
+    private CVRSpawnableValue _inputStomp;
 
     // Threading
     //private Interop.SM64MarioInputs _currentInputs;
     private readonly object _lock = new();
+
+    private void LoadInput(out CVRSpawnableValue parameter, out int index, string inputName) {
+        try {
+            index = spawnable.syncValues.FindIndex(value => value.name == inputName);
+            parameter = spawnable.syncValues[index];
+        }
+        catch (ArgumentException) {
+            var err =
+                $"{nameof(CVRSM64Mario)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
+            MelonLogger.Error(err);
+            spawnable.Delete();
+            throw new Exception(err);
+        }
+    }
+
+    private void Start() {
+
+        if (!CVRSuperMario64.FilesLoaded) {
+            MelonLogger.Error($"The mod files were not properly loaded! Check the errors at the startup!");
+            Destroy(this);
+            return;
+        }
+
+        MelonLogger.Msg($"Initializing a SM64Mario Spawnable...");
+
+        // Check for Spawnable component
+        if (spawnable != null) {
+            MelonLogger.Msg($"SM64Mario Spawnable was set! We don't need to look for it!");
+        }
+        else {
+            spawnable = GetComponent<CVRSpawnable>();
+            if (spawnable == null) {
+                var err = $"{nameof(CVRSM64Mario)} requires a ${nameof(CVRSpawnable)} on the same GameObject!";
+                MelonLogger.Error(err);
+                Destroy(this);
+                return;
+            }
+            MelonLogger.Msg($"SM64Mario Spawnable was missing, but we look at the game object and found one!");
+        }
+
+
+        if (!spawnable.IsMine()) {
+            _owner = MetaPort.Instance.PlayerManager.NetworkPlayers.Find(entity => entity.Uuid == spawnable.ownerId);
+            _ownerViewPoint = Traverse.Create(_owner.PuppetMaster).Field<RemoteHeadPoint>("_viewPoint");
+            if (_ownerViewPoint == null || _ownerViewPoint.Value == null) {
+                var err = $"{nameof(CVRSM64Mario)} failed to start because couldn't find the viewpoint of the owner of it!";
+                MelonLogger.Error(err);
+                spawnable.Delete();
+                return;
+            }
+        }
+
+        // Load the spawnable inputs
+        LoadInput(out _inputHorizontal, out _inputHorizontalIndex, "Horizontal");
+        LoadInput(out _inputVertical, out _inputVerticalIndex, "Vertical");
+        LoadInput(out _inputJump, out _inputJumpIndex, "Jump");
+        LoadInput(out _inputKick, out _inputKickIndex, "Kick");
+        LoadInput(out _inputStomp, out _inputStompIndex, "Stomp");
+
+        // Pickup
+        _pickup = GetComponent<CVRPickupObject>();
+        if (!spawnable.IsMine() && _pickup != null) {
+            Destroy(_pickup);
+        }
+
+        // Check for the SM64Mario component
+        var mario = GetComponent<CVRSM64Mario>();
+        if (mario == null) {
+            MelonLogger.Msg($"Adding the ${nameof(CVRSM64Mario)} Component...");
+            gameObject.AddComponent<CVRSM64Mario>();
+        }
+
+        MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
+
+        if (spawnable != null && spawnable.IsMine()) {
+            MarioInputModule.Instance.controllingMarios++;
+        }
+    }
 
     private void OnEnable() {
         CVRSM64CContext.RegisterMario(this);
 
         var initPos = transform.position;
         _marioId = Interop.MarioCreate(new Vector3(-initPos.x, initPos.y, initPos.z) * Interop.SCALE_FACTOR);
-
-        _inputProvider = GetComponent<CVRSM64Input>();
-        if (_inputProvider == null) {
-            throw new Exception("Need to add an input provider component to Mario");
-        }
 
         _marioRendererObject = new GameObject("MARIO");
         _marioRendererObject.hideFlags |= HideFlags.HideInHierarchy;
@@ -98,6 +198,9 @@ public class CVRSM64CMario : MonoBehaviour {
     }
 
     private void OnDestroy() {
+        if (spawnable != null && spawnable.IsMine()) {
+            MarioInputModule.Instance.controllingMarios--;
+        }
         OnDisable();
     }
 
@@ -160,23 +263,21 @@ public class CVRSM64CMario : MonoBehaviour {
     //     UpdateCurrentInputs();
     // }
 
-
-
     public void ContextFixedUpdateSynced() {
         var inputs = new Interop.SM64MarioInputs();
-        var look = _inputProvider.GetCameraLookDirection();
+        var look = GetCameraLookDirection();
         look.y = 0;
         look = look.normalized;
 
-        var joystick = _inputProvider.GetJoystickAxes();
+        var joystick = GetJoystickAxes();
 
         inputs.camLookX = -look.x;
         inputs.camLookZ = look.z;
         inputs.stickX = joystick.x;
         inputs.stickY = -joystick.y;
-        inputs.buttonA = _inputProvider.GetButtonHeld(CVRSM64Input.Button.Jump) ? (byte)1 : (byte)0;
-        inputs.buttonB = _inputProvider.GetButtonHeld(CVRSM64Input.Button.Kick) ? (byte)1 : (byte)0;
-        inputs.buttonZ = _inputProvider.GetButtonHeld(CVRSM64Input.Button.Stomp) ? (byte)1 : (byte)0;
+        inputs.buttonA = GetButtonHeld(Button.Jump) ? (byte)1 : (byte)0;
+        inputs.buttonB = GetButtonHeld(Button.Kick) ? (byte)1 : (byte)0;
+        inputs.buttonZ = GetButtonHeld(Button.Stomp) ? (byte)1 : (byte)0;
 
         _states[_buffIndex] = Interop.MarioTick(_marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer);
 
@@ -202,7 +303,7 @@ public class CVRSM64CMario : MonoBehaviour {
             }
 
             // Handle the position
-            if (_inputProvider.IsMine() && !_inputProvider.IsPositionOverriden()) {
+            if (spawnable.IsMine() && !IsPositionOverriden()) {
                 transform.position = Vector3.LerpUnclamped(_states[_buffIndex].unityPosition, _states[j].unityPosition, t);
             }
             else {
@@ -221,4 +322,87 @@ public class CVRSM64CMario : MonoBehaviour {
         if (!_enabled) return;
         Interop.MarioSetPosition(_marioId, new Vector3(-pos.x, pos.y, pos.z) * Interop.SCALE_FACTOR);
     }
+
+
+    private bool IsPositionOverriden() {
+        return _pickup != null && _pickup.IsGrabbedByMe();
+    }
+
+    private Vector2 GetJoystickAxes() {
+        // Update the spawnable sync values and send the values
+        if (spawnable.IsMine()) {
+            var horizontal = MarioInputModule.Instance.horizontal;
+            var vertical = MarioInputModule.Instance.vertical;
+            spawnable.SetValue(_inputHorizontalIndex, horizontal);
+            spawnable.SetValue(_inputVerticalIndex, vertical);
+            return new Vector2(horizontal, vertical);
+        }
+
+        // Send the current values from the spawnable
+        return new Vector2(_inputHorizontal.currentValue, _inputVertical.currentValue);
+    }
+
+    private Vector3 GetCameraLookDirection() {
+        // Use our own camera
+        if (spawnable.IsMine()) {
+            return PlayerSetup.Instance.GetActiveCamera().transform.forward;
+        }
+
+        // Use the remote player viewpoint
+        if (_ownerViewPoint.Value) {
+            return _ownerViewPoint.Value.transform.forward;
+        }
+
+        return Vector3.zero;
+    }
+
+    private enum Button {
+        Jump,
+        Kick,
+        Stomp,
+    }
+
+    private bool GetButtonHeld(Button button) {
+        if (spawnable.IsMine()) {
+            switch (button) {
+                case Button.Jump: {
+                    var jump = MarioInputModule.Instance.jump;
+                    spawnable.SetValue(_inputJumpIndex, jump ? 1f : 0f);
+                    return jump;
+                }
+                case Button.Kick: {
+                    var kick = MarioInputModule.Instance.kick;
+                    spawnable.SetValue(_inputKickIndex, kick ? 1f : 0f);
+                    return kick;
+                }
+                case Button.Stomp: {
+                    var stomp = MarioInputModule.Instance.stomp;
+                    spawnable.SetValue(_inputStompIndex, stomp ? 1f : 0f);
+                    return stomp;
+                }
+            }
+
+            return false;
+        }
+
+        switch (button) {
+            case Button.Jump: return _inputJump.currentValue > 0.5f;
+            case Button.Kick: return _inputKick.currentValue > 0.5f;
+            case Button.Stomp: return _inputStomp.currentValue > 0.5f;
+        }
+
+        return false;
+    }
+
+    #if DEBUG
+    private void Update() {
+        if (Input.GetKeyDown(KeyCode.End)) {
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 0.5f);
+            foreach (Collider collider in hitColliders) {
+                if (!Utils.IsGoodCollider(collider)) continue;
+                MelonLogger.Msg("Collider within 0.5 units: " + collider.gameObject.name);
+            }
+        }
+    }
+    #endif
 }

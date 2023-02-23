@@ -62,7 +62,7 @@ internal static class Utils {
             col.enabled
             && col.gameObject.activeInHierarchy
             // Ignore other mario's colliders
-            && col.GetComponentInChildren<CVRSM64CMario>() == null
+            && col.GetComponentInChildren<CVRSM64Mario>() == null
             // Ignore the some layers
             && col.gameObject.layer != PlayerLocalLayer
             && col.gameObject.layer != PlayerNetworkLayer
