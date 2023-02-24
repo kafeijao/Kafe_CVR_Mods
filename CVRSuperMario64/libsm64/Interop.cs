@@ -4,6 +4,26 @@ using MelonLoader;
 
 namespace Kafe.CVRSuperMario64;
 
+public static class MarioExtensions {
+
+    public static Vector3 ToMarioRotation(this Vector3 rot) {
+
+        float Fmod(float a, float b) {
+            return a - b * Mathf.Floor(a / b);
+        }
+
+        float FixAngle(float a) {
+            return Fmod(a + 180.0f, 360.0f) - 180.0f;
+        }
+
+        return new Vector3(FixAngle(-rot.x), FixAngle(rot.y), FixAngle(rot.z));
+    }
+
+    public static Vector3 ToMarioPosition(this Vector3 pos) {
+        return Interop.SCALE_FACTOR * Vector3.Scale(pos, new Vector3(-1, 1, 1));
+    }
+}
+
 internal static class Interop {
 
     public const float SCALE_FACTOR = 1000.0f;
@@ -13,7 +33,7 @@ internal static class Interop {
     public const int SM64_TEXTURE_HEIGHT = 64;
     public const int SM64_GEO_MAX_TRIANGLES = 1024;
 
-    public const int SM64_MAX_HEALTH = 8;
+    public const float SM64_HEALTH_PER_LIFE = 0x100;
 
     private static readonly ushort[] MUSICS = {
         (ushort) MusicSeqId.SEQ_MENU_TITLE_SCREEN,
@@ -82,17 +102,18 @@ internal static class Interop {
         public uint particleFlags;
         public short invincTimer;
 
-        public Vector3 unityPosition {
-            get {
-                return position != null
-                    ? new Vector3(-position[0], position[1], position[2]) / SCALE_FACTOR
-                    : Vector3.zero;
-            }
-        }
+        public Vector3 UnityPosition =>
+            position != null
+                ? new Vector3(-position[0], position[1], position[2]) / SCALE_FACTOR
+                : Vector3.zero;
+
+        public Quaternion UnityRotation => Quaternion.Euler(0f, Mathf.Repeat((-Mathf.Rad2Deg * faceAngle) + 180f, 360f) - 180f, 0f);
+
+        public float Lives => health / SM64_HEALTH_PER_LIFE;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct SM64MarioGeometryBuffers {
+    private struct SM64MarioGeometryBuffers {
         public IntPtr position;
         public IntPtr normal;
         public IntPtr color;
@@ -101,36 +122,21 @@ internal static class Interop {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct SM64ObjectTransform {
+    private struct SM64ObjectTransform {
         [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 3)]
-        float[] position;
+        private float[] position;
 
         [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 3)]
-        float[] eulerRotation;
+        private float[] eulerRotation;
 
         public static SM64ObjectTransform FromUnityWorld(Vector3 position, Quaternion rotation) {
-            float[] vecToArr(Vector3 v) {
+            float[] VecToArr(Vector3 v) {
                 return new float[] { v.x, v.y, v.z };
             }
 
-            float fmod(float a, float b) {
-                return a - b * Mathf.Floor(a / b);
-            }
-
-            float fixAngle(float a) {
-                return fmod(a + 180.0f, 360.0f) - 180.0f;
-            }
-
-            var pos = SCALE_FACTOR * Vector3.Scale(position, new Vector3(-1, 1, 1));
-            var rot = Vector3.Scale(rotation.eulerAngles, new Vector3(-1, 1, 1));
-
-            rot.x = fixAngle(rot.x);
-            rot.y = fixAngle(rot.y);
-            rot.z = fixAngle(rot.z);
-
             return new SM64ObjectTransform {
-                position = vecToArr(pos),
-                eulerRotation = vecToArr(rot)
+                position = VecToArr(position.ToMarioPosition()),
+                eulerRotation = VecToArr(rotation.eulerAngles.ToMarioRotation())
             };
         }
     }
@@ -154,6 +160,12 @@ internal static class Interop {
 
     [DllImport("sm64")]
     static extern void sm64_set_mario_position(uint marioId, float x, float y, float z);
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_faceangle(uint marioId, float y);
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_health(uint marioId, ushort health);
 
 
     [DllImport("sm64")]
@@ -209,8 +221,8 @@ internal static class Interop {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     delegate void DebugPrintFuncDelegate(string str);
 
-    static public Texture2D marioTexture { get; private set; }
-    static public bool isGlobalInit { get; private set; }
+    public static Texture2D marioTexture { get; private set; }
+    public static bool isGlobalInit { get; private set; }
 
     static void DebugPrintCallback(string str) {
         MelonLogger.Msg($"[libsm64] {str}");
@@ -360,7 +372,20 @@ internal static class Interop {
         sm64_set_mario_gas_level(marioId, (int) (SCALE_FACTOR * gasLevelY));
     }
 
-    public static void MarioSetPosition(uint marioId, Vector3 marioPos) {
+    public static void MarioSetPosition(uint marioId, Vector3 pos) {
+        var marioPos = pos.ToMarioPosition();
         sm64_set_mario_position(marioId, marioPos.x, marioPos.y, marioPos.z);
+    }
+
+    public static void MarioSetRotation(uint marioId, Quaternion rot) {
+        var angleInDegrees = rot.eulerAngles.y;
+        if (angleInDegrees > 180f) {
+            angleInDegrees -= 360f;
+        }
+        sm64_set_mario_faceangle(marioId, -Mathf.Deg2Rad * angleInDegrees);
+    }
+
+    public static void MarioSetLives(uint marioId, float lives) {
+        sm64_set_mario_health(marioId, (ushort) (lives * SM64_HEALTH_PER_LIFE));
     }
 }

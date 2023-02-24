@@ -54,6 +54,10 @@ public class CVRSM64Mario : MonoBehaviour {
     private int _inputStompIndex;
     private CVRSpawnableValue _inputStomp;
 
+    // Spawnable State Synced Params
+    private int _syncedHealthIndex;
+    private CVRSpawnableValue _syncedHealth;
+
     // Threading
     //private Interop.SM64MarioInputs _currentInputs;
     private readonly object _lock = new();
@@ -64,8 +68,7 @@ public class CVRSM64Mario : MonoBehaviour {
             parameter = spawnable.syncValues[index];
         }
         catch (ArgumentException) {
-            var err =
-                $"{nameof(CVRSM64Mario)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
+            var err = $"{nameof(CVRSM64Mario)} requires a ${nameof(CVRSpawnable)} with a synced value named ${inputName}!";
             MelonLogger.Error(err);
             spawnable.Delete();
             throw new Exception(err);
@@ -115,6 +118,9 @@ public class CVRSM64Mario : MonoBehaviour {
         LoadInput(out _inputJump, out _inputJumpIndex, "Jump");
         LoadInput(out _inputKick, out _inputKickIndex, "Kick");
         LoadInput(out _inputStomp, out _inputStompIndex, "Stomp");
+
+        // Load the spawnable synced params
+        LoadInput(out _syncedHealth, out _syncedHealthIndex, "Health");
 
         // Pickup
         _pickup = GetComponent<CVRPickupObject>();
@@ -205,6 +211,7 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     private void OnDisable() {
+
         if (_marioRendererObject != null) {
             Destroy(_marioRendererObject);
             _marioRendererObject = null;
@@ -302,12 +309,22 @@ public class CVRSM64Mario : MonoBehaviour {
                 _lerpNormalBuffer[i] = Vector3.LerpUnclamped(_normalBuffers[_buffIndex][i], _normalBuffers[j][i], t);
             }
 
-            // Handle the position
+            // Handle the position and rotation
             if (spawnable.IsMine() && !IsPositionOverriden()) {
-                transform.position = Vector3.LerpUnclamped(_states[_buffIndex].unityPosition, _states[j].unityPosition, t);
+                transform.position = Vector3.LerpUnclamped(_states[_buffIndex].UnityPosition, _states[j].UnityPosition, t);
+                transform.rotation = Quaternion.LerpUnclamped(_states[_buffIndex].UnityRotation, _states[j].UnityRotation, t);
             }
             else {
                 SetPosition(transform.position);
+                SetRotation(transform.rotation);
+            }
+
+            // Handle other synced params
+            if (spawnable.IsMine()) {
+                spawnable.SetValue(_syncedHealthIndex, _states[j].Lives);
+            }
+            else {
+                SetLives(_syncedHealth.currentValue);
             }
         }
 
@@ -320,9 +337,18 @@ public class CVRSM64Mario : MonoBehaviour {
 
     public void SetPosition(Vector3 pos) {
         if (!_enabled) return;
-        Interop.MarioSetPosition(_marioId, new Vector3(-pos.x, pos.y, pos.z) * Interop.SCALE_FACTOR);
+        Interop.MarioSetPosition(_marioId, pos);
     }
 
+    public void SetRotation(Quaternion rot) {
+        if (!_enabled) return;
+        Interop.MarioSetRotation(_marioId, rot);
+    }
+
+    public void SetLives(float lives) {
+        if (!_enabled) return;
+        Interop.MarioSetLives(_marioId, lives);
+    }
 
     private bool IsPositionOverriden() {
         return _pickup != null && _pickup.IsGrabbedByMe();
