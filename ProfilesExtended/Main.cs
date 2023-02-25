@@ -1,10 +1,12 @@
-﻿using ABI_RC.Core;
+﻿using System.Collections;
+using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI.CCK.Components;
 using ABI.CCK.Scripts;
 using HarmonyLib;
 using MelonLoader;
+using UnityEngine;
 
 namespace ProfilesExtended;
 
@@ -16,10 +18,12 @@ public class ProfilesExtended : MelonMod {
     private static bool _autoProfileEnabled;
     private static string _autoProfileName;
 
-    public override void OnApplicationStart() {
+    private static object _coroutineCancellationToken;
+
+    public override void OnInitializeMelon() {
 
         // Warn about CacheManager@1.0.1 issue
-        if (MelonHandler.Mods.Exists(m => m.Info.Name == "CacheManager" && m.Info.Version == "1.0.1")) {
+        if (RegisteredMelons.ToList().Exists(m => m.Info.Name == "CacheManager" && m.Info.Version == "1.0.1")) {
             MelonLogger.Warning("[IMPORTANT] CacheManager@v1.0.1 mod detected!");
             MelonLogger.Msg("The mod CacheManager@v1.0.1 is bugged, and prevents the Avatar Profiles from " +
                                 "working completely... And since this mod is all about Avatar Profiles it becomes " +
@@ -32,39 +36,50 @@ public class ProfilesExtended : MelonMod {
             description: "Which tag should be added to the AAS param name (not animator param name) to blacklist" +
                          "the parameter from being affected by profile changes. Requires restart.");
         _paramTag = ignoreTagParamConfig.Value;
-        ignoreTagParamConfig.OnValueChangedUntyped += () => _paramTag = ignoreTagParamConfig.Value;
+        ignoreTagParamConfig.OnEntryValueChanged.Subscribe((_, _) => _paramTag = ignoreTagParamConfig.Value);
 
         var ignoreTagProfileConfig = cat.CreateEntry("BlacklistBypassProfileTag", "*",
             description: "Which tag should be added to the profile name to bypass the blacklist (forcing all params" +
                          "to change. Requires restart.");
         _profileTag = ignoreTagProfileConfig.Value;
-        ignoreTagProfileConfig.OnValueChangedUntyped += () => _profileTag = ignoreTagProfileConfig.Value;
+        ignoreTagProfileConfig.OnEntryValueChanged.Subscribe((_, _) => _profileTag = ignoreTagProfileConfig.Value);
 
         var useAutoProfile = cat.CreateEntry("RememberParams", true,
             description: "Whether the mod will remember the latest parameter settings across avatar changes or game " +
                          "restarts or not. It will create a new profile while keeping it updated with current values.");
         _autoProfileEnabled = useAutoProfile.Value;
-        useAutoProfile.OnValueChangedUntyped += () => {
+        useAutoProfile.OnEntryValueChanged.Subscribe((_, _) => {
             _autoProfileEnabled = useAutoProfile.Value;
-            OnParameterChangedViaMenu();
-        };
+            QueueSaveAvatarSettingsProfile();
+        });
 
         var autoProfileName = cat.CreateEntry("RememberParamsProfileName", "Auto",
             description: "Profile name save the parameters to remember. You can use the BlacklistBypassProfileTag on " +
                          "this profile name to indicate where you want load ALL parameters (including the blacklisted ones)." +
                          " Requires restart.");
         _autoProfileName = autoProfileName.Value;
-        autoProfileName.OnValueChangedUntyped += () => {
+        autoProfileName.OnEntryValueChanged.Subscribe((_, _) => {
             _autoProfileName = autoProfileName.Value;
-            OnParameterChangedViaMenu();
-        };
+            QueueSaveAvatarSettingsProfile();
+        });
     }
 
-    private static void OnParameterChangedViaMenu() {
-        if (!_autoProfileEnabled) return;
+    private static void QueueSaveAvatarSettingsProfile() {
+        if (_coroutineCancellationToken != null) {
+            MelonCoroutines.Stop(_coroutineCancellationToken);
+        }
+        _coroutineCancellationToken = MelonCoroutines.Start(SaveAvatarSettingsProfile());
+    }
+
+    private static IEnumerator SaveAvatarSettingsProfile() {
+        yield return new WaitForSeconds(1f);
+
+        if (!_autoProfileEnabled) yield break;
 
         // Saves current parameters to profile and sets it as the default
         PlayerSetup.Instance.SaveCurrentAvatarSettingsProfile(_autoProfileName);
+
+        _coroutineCancellationToken = null;
     }
 
     [HarmonyPatch]
@@ -104,7 +119,7 @@ public class ProfilesExtended : MelonMod {
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.HandleSystemCall))]
         private static void AfterCVR_MenuManagerHandleSystemCall(string type, string param1, string param2) {
             // We're detecting the Quick Menu parameter change events here
-            if (type is "AppChangeAnimatorParam" or "ChangeAnimatorParam") OnParameterChangedViaMenu();
+            if (type is "AppChangeAnimatorParam" or "ChangeAnimatorParam") QueueSaveAvatarSettingsProfile();
         }
 
         [HarmonyPrefix]
@@ -115,7 +130,7 @@ public class ProfilesExtended : MelonMod {
             __instance.gameMenuView.View.BindCall("CVRAppCallChangeAnimatorParam", (string name, float value) => {
                 // Call the original function
                 PlayerSetup.Instance.changeAnimatorParam(name, value);
-                OnParameterChangedViaMenu();
+                QueueSaveAvatarSettingsProfile();
             });
         }
     }
