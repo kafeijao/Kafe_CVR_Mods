@@ -26,7 +26,7 @@ public class CVRSM64Mario : MonoBehaviour {
 
     // Camera override
     [SerializeField] private bool overrideCameraPosition = false;
-    [SerializeField] private Transform cameraPositionTransform;
+    [SerializeField] private Transform cameraPositionTransform = null;
 
 
     // Components

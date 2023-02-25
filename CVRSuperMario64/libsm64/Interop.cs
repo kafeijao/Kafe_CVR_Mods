@@ -35,6 +35,10 @@ internal static class Interop {
 
     public const float SM64_HEALTH_PER_LIFE = 0x100;
 
+    // It seems a collider can't be too big, otherwise it will be ignored
+    // This seems like too much of a pain to fix rn, let the future me worry about it
+    public const int SM64_MAX_VERTEX_DISTANCE = 250000 * (int) SCALE_FACTOR;
+
     private static readonly ushort[] MUSICS = {
         (ushort) MusicSeqId.SEQ_MENU_TITLE_SCREEN,
         (ushort) (MusicSeqId.SEQ_MENU_TITLE_SCREEN | MusicSeqId.SEQ_VARIATION),
@@ -330,6 +334,43 @@ internal static class Interop {
     public static void MarioDelete(uint marioId) {
         sm64_mario_delete(marioId);
     }
+
+    public static void CreateAndAppendSurfaces(List<SM64Surface> outSurfaces, int[] triangles, Vector3[] vertices, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
+        for (var i = 0; i <  triangles.Length; i += 3) {
+            outSurfaces.Add(new SM64Surface {
+                force = 0,
+                type = (short)surfaceType,
+                terrain = (ushort)terrainType,
+                v0x = (int) (SCALE_FACTOR * - vertices[ triangles[i    ]].x),
+                v0y = (int) (SCALE_FACTOR *   vertices[ triangles[i    ]].y),
+                v0z = (int) (SCALE_FACTOR *   vertices[ triangles[i    ]].z),
+                v1x = (int) (SCALE_FACTOR * - vertices[ triangles[i + 2]].x),
+                v1y = (int) (SCALE_FACTOR *   vertices[ triangles[i + 2]].y),
+                v1z = (int) (SCALE_FACTOR *   vertices[ triangles[i + 2]].z),
+                v2x = (int) (SCALE_FACTOR * - vertices[ triangles[i + 1]].x),
+                v2y = (int) (SCALE_FACTOR *   vertices[ triangles[i + 1]].y),
+                v2z = (int) (SCALE_FACTOR *   vertices[ triangles[i + 1]].z),
+            });
+        }
+    }
+    // public static void CreateAndAppendSurfaces(List<SM64Surface> outSurfaces, int[] triangles, Vector3[] vertices, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
+    //     for (var i = 0; i <  triangles.Length; i += 3) {
+    //         outSurfaces.Add(new SM64Surface {
+    //             force = 0,
+    //             type = (short)surfaceType,
+    //             terrain = (ushort)terrainType,
+    //             v0x = (int) Mathf.Clamp(SCALE_FACTOR * - vertices[ triangles[i    ]].x, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v0y = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i    ]].y, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v0z = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i    ]].z, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v1x = (int) Mathf.Clamp(SCALE_FACTOR * - vertices[ triangles[i + 2]].x, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v1y = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 2]].y, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v1z = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 2]].z, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v2x = (int) Mathf.Clamp(SCALE_FACTOR * - vertices[ triangles[i + 1]].x, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v2y = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 1]].y, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //             v2z = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 1]].z, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
+    //         });
+    //     }
+    // }
 
     public static uint SurfaceObjectCreate(Vector3 position, Quaternion rotation, SM64Surface[] surfaces) {
         var surfListHandle = GCHandle.Alloc(surfaces, GCHandleType.Pinned);
