@@ -12,11 +12,22 @@ namespace Kafe.CVRSuperMario64;
 [DefaultExecutionOrder(999999)]
 public class CVRSM64Mario : MonoBehaviour {
 
-    // Serialized Fields
-    [SerializeField] internal Material material = null;
-    [SerializeField] internal bool replaceTextures = true;
-    [SerializeField] internal List<string> propertiesToReplaceWithTexture = new() { "_MainTex" };
+    // Main
     [SerializeField] private CVRSpawnable spawnable;
+    [SerializeField] private bool advancedOptions = false;
+
+    // Material & Textures
+    [SerializeField] private Material material = null;
+    [SerializeField] private bool replaceTextures = true;
+    [SerializeField] private List<string> propertiesToReplaceWithTexture = new() { "_MainTex" };
+
+    // Animators
+    [SerializeField] private List<Animator> animators = new();
+
+    // Camera override
+    [SerializeField] private bool overrideCameraPosition = false;
+    [SerializeField] private Transform cameraPositionTransform;
+
 
     // Components
     private CVRPickupObject _pickup;
@@ -57,6 +68,16 @@ public class CVRSM64Mario : MonoBehaviour {
     // Spawnable State Synced Params
     private int _syncedHealthIndex;
     private CVRSpawnableValue _syncedHealth;
+
+    // Animators
+    private enum LocalParameterNames {
+        Lives,
+        HasMod,
+    }
+    private static readonly Dictionary<LocalParameterNames, int> LocalParameters = new() {
+        { LocalParameterNames.Lives, Animator.StringToHash(nameof(LocalParameterNames.Lives)) },
+        { LocalParameterNames.HasMod, Animator.StringToHash(nameof(LocalParameterNames.HasMod)) },
+    };
 
     // Threading
     //private Interop.SM64MarioInputs _currentInputs;
@@ -121,6 +142,26 @@ public class CVRSM64Mario : MonoBehaviour {
 
         // Load the spawnable synced params
         LoadInput(out _syncedHealth, out _syncedHealthIndex, "Health");
+
+        // Check the advanced settings
+        if (advancedOptions) {
+
+            // Check the animators
+            var toNuke = new HashSet<Animator>();
+            foreach (var animator in animators) {
+                if (animator == null || animator.runtimeAnimatorController == null) {
+                    toNuke.Add(animator);
+                }
+                else {
+                    animator.SetBool(LocalParameters[LocalParameterNames.HasMod], true);
+                }
+            }
+            foreach (var animatorToNuke in toNuke) animators.Remove(animatorToNuke);
+            if (toNuke.Count > 0) {
+                var animatorsToNukeStr = toNuke.Select(animToNuke => animToNuke.gameObject.name);
+                MelonLogger.Warning($"Removing animators: {string.Join(", ", animatorsToNukeStr)} because they were null or had no controllers slotted.");
+            }
+        }
 
         // Pickup
         _pickup = GetComponent<CVRPickupObject>();
@@ -326,6 +367,11 @@ public class CVRSM64Mario : MonoBehaviour {
             else {
                 SetLives(_syncedHealth.currentValue);
             }
+
+            // Handle local lives param
+            foreach (var animator in animators) {
+                animator.SetInteger(LocalParameters[LocalParameterNames.Lives], (int) _states[j].Lives);
+            }
         }
 
         _marioMesh.vertices = _lerpPositionBuffer;
@@ -369,12 +415,18 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     private Vector3 GetCameraLookDirection() {
+
+        // If we're overriding the camera position transform use it instead.
+        if (overrideCameraPosition && cameraPositionTransform != null) {
+            return cameraPositionTransform.forward;
+        }
+
         // Use our own camera
         if (spawnable.IsMine()) {
             return PlayerSetup.Instance.GetActiveCamera().transform.forward;
         }
 
-        // Use the remote player viewpoint
+        // Use the remote player viewpoint. This value will be overwritten after with the prop face angle sync
         if (_ownerViewPoint.Value) {
             return _ownerViewPoint.Value.transform.forward;
         }
