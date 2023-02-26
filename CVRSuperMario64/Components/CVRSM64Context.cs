@@ -164,6 +164,12 @@ public class CVRSM64CContext : MonoBehaviour {
         Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
     }
 
+    public static void UpdateMarioCount() {
+        lock (_instance._marios) {
+            MarioInputModule.Instance.controllingMarios = _instance._marios.Count(m => m.IsMine());
+        }
+    }
+
     public static void RegisterMario(CVRSM64Mario mario) {
         EnsureInstanceExists();
 
@@ -171,8 +177,6 @@ public class CVRSM64CContext : MonoBehaviour {
             if (_instance._marios.Contains(mario)) return;
 
             _instance._marios.Add(mario);
-
-            MarioInputModule.Instance.controllingMarios = _instance._marios.Count(m => m.IsMine());
 
             if (CVRSuperMario64.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
         }
@@ -185,8 +189,6 @@ public class CVRSM64CContext : MonoBehaviour {
             if (!_instance._marios.Contains(mario)) return;
 
             _instance._marios.Remove(mario);
-
-            MarioInputModule.Instance.controllingMarios = _instance._marios.Count(m => m.IsMine());
 
             if (_instance._marios.Count == 0) {
                 Interop.StopMusic();

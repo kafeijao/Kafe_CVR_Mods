@@ -394,6 +394,13 @@ internal static class Interop {
         sm64_mario_take_damage(marioId, damage, 0, marioPos.x, marioPos.y, marioPos.z);
     }
 
+    public static void MarioSetVelocity(uint marioId, SM64MarioState previousState, SM64MarioState currentState) {
+        sm64_set_mario_velocity(marioId,
+            currentState.position[0] - previousState.position[0],
+            currentState.position[1] - previousState.position[1],
+            currentState.position[2] - previousState.position[2]);
+    }
+
     public static void CreateAndAppendSurfaces(List<SM64Surface> outSurfaces, int[] triangles, Vector3[] vertices, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         for (var i = 0; i <  triangles.Length; i += 3) {
             outSurfaces.Add(new SM64Surface {

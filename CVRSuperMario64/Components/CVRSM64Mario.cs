@@ -52,6 +52,7 @@ public class CVRSM64Mario : MonoBehaviour {
     // Internal
     private uint _marioId;
     private bool _enabled;
+    private bool _wasPickedUp;
 
     // Spawnable Inputs
     private int _inputHorizontalIndex;
@@ -176,11 +177,14 @@ public class CVRSM64Mario : MonoBehaviour {
             gameObject.AddComponent<CVRSM64Mario>();
         }
 
+        CVRSM64CContext.UpdateMarioCount();
+
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
     }
 
     private void OnEnable() {
         CVRSM64CContext.RegisterMario(this);
+        CVRSM64CContext.UpdateMarioCount();
 
         var initPos = transform.position;
         _marioId = Interop.MarioCreate(new Vector3(-initPos.x, initPos.y, initPos.z) * Interop.SCALE_FACTOR);
@@ -256,6 +260,7 @@ public class CVRSM64Mario : MonoBehaviour {
         if (Interop.isGlobalInit) {
             CVRSM64CContext.UnregisterMario(this);
             Interop.MarioDelete(_marioId);
+            CVRSM64CContext.UpdateMarioCount();
         }
 
         _enabled = false;
@@ -322,8 +327,19 @@ public class CVRSM64Mario : MonoBehaviour {
         inputs.buttonB = GetButtonHeld(Button.Kick) ? (byte)1 : (byte)0;
         inputs.buttonZ = GetButtonHeld(Button.Stomp) ? (byte)1 : (byte)0;
 
+        var justDropped = false;
+        if (spawnable.IsMine() && _pickup != null && _pickup.IsGrabbedByMe() != _wasPickedUp) {
+            if (_wasPickedUp) justDropped = true;
+            _wasPickedUp = _pickup.IsGrabbedByMe();
+        }
+
         lock (_lock) {
+            if (justDropped) {
+                Interop.MarioSetVelocity(_marioId, _states[_buffIndex], _states[1 - _buffIndex]);
+            }
+
             _states[_buffIndex] = Interop.MarioTick(_marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer);
+
             _buffIndex = 1 - _buffIndex;
         }
 
