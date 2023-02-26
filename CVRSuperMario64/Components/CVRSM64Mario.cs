@@ -44,6 +44,8 @@ public class CVRSM64Mario : MonoBehaviour {
     private Vector2[] _uvBuffer;
     private int _buffIndex;
     private Interop.SM64MarioState[] _states;
+    private ushort _numTrianglesUsed;
+    private ushort _previousNumTrianglesUsed;
 
     // Renderer
     private GameObject _marioRendererObject;
@@ -338,7 +340,21 @@ public class CVRSM64Mario : MonoBehaviour {
                 Interop.MarioSetVelocity(_marioId, _states[_buffIndex], _states[1 - _buffIndex]);
             }
 
-            _states[_buffIndex] = Interop.MarioTick(_marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer);
+            _states[_buffIndex] = Interop.MarioTick(_marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer, out _numTrianglesUsed);
+
+            // If the tris count changes, reset the buffers
+            if (_previousNumTrianglesUsed != _numTrianglesUsed) {
+                for (var i = _numTrianglesUsed * 3; i < _positionBuffers[_buffIndex].Length; i++) {
+                    _positionBuffers[_buffIndex][i] = Vector3.zero;
+                    _normalBuffers[_buffIndex][i] = Vector3.zero;
+                }
+                _positionBuffers[_buffIndex].CopyTo(_positionBuffers[1 - _buffIndex], 0);
+                _normalBuffers[_buffIndex].CopyTo(_normalBuffers[1 - _buffIndex], 0);
+                _positionBuffers[_buffIndex].CopyTo(_lerpPositionBuffer, 0);
+                _normalBuffers[_buffIndex].CopyTo(_lerpNormalBuffer, 0);
+
+                _previousNumTrianglesUsed = _numTrianglesUsed;
+            }
 
             _buffIndex = 1 - _buffIndex;
         }
@@ -367,7 +383,7 @@ public class CVRSM64Mario : MonoBehaviour {
         lock (_lock) {
             var j = 1 - _buffIndex;
 
-            for (var i = 0; i < _lerpPositionBuffer.Length; ++i) {
+            for (var i = 0; i < _numTrianglesUsed * 3; ++i) {
                 _lerpPositionBuffer[i] = Vector3.LerpUnclamped(_positionBuffers[_buffIndex][i], _positionBuffers[j][i], t);
                 _lerpNormalBuffer[i] = Vector3.LerpUnclamped(_normalBuffers[_buffIndex][i], _normalBuffers[j][i], t);
             }

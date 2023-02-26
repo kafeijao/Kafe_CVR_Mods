@@ -76,8 +76,8 @@ public enum CapFlags {
     MARIO_VANISH_CAP                = 0x00000002,
     MARIO_METAL_CAP                 = 0x00000004,
     MARIO_WING_CAP                  = 0x00000008,
-    MARIO_CAP_ON_HEAD               = 0x00000010,
-    MARIO_CAP_IN_HAND               = 0x00000020,
+    // MARIO_CAP_ON_HEAD               = 0x00000010,
+    // MARIO_CAP_IN_HAND               = 0x00000020,
 }
 
 [Flags]

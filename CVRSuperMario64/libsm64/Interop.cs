@@ -347,15 +347,15 @@ internal static class Interop {
     }
 
     public static SM64MarioState MarioTick(uint marioId, SM64MarioInputs inputs, Vector3[] positionBuffer,
-        Vector3[] normalBuffer, Vector3[] colorBuffer, Vector2[] uvBuffer) {
-        SM64MarioState outState = new SM64MarioState();
+        Vector3[] normalBuffer, Vector3[] colorBuffer, Vector2[] uvBuffer, out ushort numTrianglesUsed) {
+        var outState = new SM64MarioState();
 
         var posHandle = GCHandle.Alloc(positionBuffer, GCHandleType.Pinned);
         var normHandle = GCHandle.Alloc(normalBuffer, GCHandleType.Pinned);
         var colorHandle = GCHandle.Alloc(colorBuffer, GCHandleType.Pinned);
         var uvHandle = GCHandle.Alloc(uvBuffer, GCHandleType.Pinned);
 
-        SM64MarioGeometryBuffers buff = new SM64MarioGeometryBuffers {
+        var buff = new SM64MarioGeometryBuffers {
             position = posHandle.AddrOfPinnedObject(),
             normal = normHandle.AddrOfPinnedObject(),
             color = colorHandle.AddrOfPinnedObject(),
@@ -363,6 +363,8 @@ internal static class Interop {
         };
 
         sm64_mario_tick(marioId, ref inputs, ref outState, ref buff);
+
+        numTrianglesUsed = buff.numTrianglesUsed;
 
         posHandle.Free();
         normHandle.Free();
@@ -419,24 +421,6 @@ internal static class Interop {
             });
         }
     }
-    // public static void CreateAndAppendSurfaces(List<SM64Surface> outSurfaces, int[] triangles, Vector3[] vertices, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
-    //     for (var i = 0; i <  triangles.Length; i += 3) {
-    //         outSurfaces.Add(new SM64Surface {
-    //             force = 0,
-    //             type = (short)surfaceType,
-    //             terrain = (ushort)terrainType,
-    //             v0x = (int) Mathf.Clamp(SCALE_FACTOR * - vertices[ triangles[i    ]].x, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v0y = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i    ]].y, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v0z = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i    ]].z, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v1x = (int) Mathf.Clamp(SCALE_FACTOR * - vertices[ triangles[i + 2]].x, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v1y = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 2]].y, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v1z = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 2]].z, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v2x = (int) Mathf.Clamp(SCALE_FACTOR * - vertices[ triangles[i + 1]].x, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v2y = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 1]].y, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //             v2z = (int) Mathf.Clamp(SCALE_FACTOR *   vertices[ triangles[i + 1]].z, -SM64_MAX_VERTEX_DISTANCE, SM64_MAX_VERTEX_DISTANCE),
-    //         });
-    //     }
-    // }
 
     public static uint SurfaceObjectCreate(Vector3 position, Quaternion rotation, SM64Surface[] surfaces) {
         var surfListHandle = GCHandle.Alloc(surfaces, GCHandleType.Pinned);
