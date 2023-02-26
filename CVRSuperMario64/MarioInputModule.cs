@@ -1,10 +1,16 @@
-﻿using ABI_RC.Core.Savior;
+﻿using ABI_RC.Core;
+using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
+using HarmonyLib;
 using UnityEngine;
+
+#if DEBUG
+using Valve.VR;
+#endif
 
 namespace Kafe.CVRSuperMario64;
 
 public class MarioInputModule : CVRInputModule {
-
     internal static MarioInputModule Instance;
 
     private CVRInputManager _inputManager;
@@ -18,10 +24,22 @@ public class MarioInputModule : CVRInputModule {
     public bool kick;
     public bool stomp;
 
+    // VR Input stuff
+    #if DEBUG
+    private SteamVR_Action_Vector2 _vrLookAction;
+    #endif
+
     public new void Start() {
         _inputManager = CVRInputManager.Instance;
         Instance = this;
         base.Start();
+
+        #if DEBUG
+        // Traverse BS
+        var vrInput = Traverse.Create(typeof(InputModuleSteamVR)).Field<InputModuleSteamVR>("Instance").Value;
+        var vrInputTraverse = Traverse.Create(vrInput);
+        _vrLookAction = vrInputTraverse.Field<SteamVR_Action_Vector2>("vrLookAction").Value;
+        #endif
     }
 
     private bool CanMove() {
@@ -29,7 +47,6 @@ public class MarioInputModule : CVRInputModule {
     }
 
     public override void UpdateInput() {
-
         if (controllingMarios > 0 && Input.GetKeyDown(KeyCode.LeftShift)) {
             canMoveOverride = true;
         }
@@ -59,11 +76,19 @@ public class MarioInputModule : CVRInputModule {
             _inputManager.jump = false;
             _inputManager.interactRightValue = 0f;
             _inputManager.gripRightValue = 0f;
+
+            #if DEBUG
+            // Lets attempt to do a left hand only movement
+            if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
+                _inputManager.movementVector.z = CVRTools.AxisDeadZone(
+                    _vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
+                    MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
+            }
+            #endif
         }
     }
 
     public override void UpdateImportantInput() {
-
         // Prevent Mario from moving while we're using the menu
         horizontal = 0;
         vertical = 0;
