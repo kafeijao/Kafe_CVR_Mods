@@ -177,10 +177,6 @@ public class CVRSM64Mario : MonoBehaviour {
         }
 
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
-
-        if (spawnable != null && spawnable.IsMine()) {
-            MarioInputModule.Instance.controllingMarios++;
-        }
     }
 
     private void OnEnable() {
@@ -195,10 +191,12 @@ public class CVRSM64Mario : MonoBehaviour {
         var renderer = _marioRendererObject.AddComponent<MeshRenderer>();
         var meshFilter = _marioRendererObject.AddComponent<MeshFilter>();
 
-        _states = new Interop.SM64MarioState[2] {
-            new Interop.SM64MarioState(),
-            new Interop.SM64MarioState()
-        };
+        lock (_lock) {
+            _states = new Interop.SM64MarioState[2] {
+                new Interop.SM64MarioState(),
+                new Interop.SM64MarioState()
+            };
+        }
 
         // If not material is set, let's set our fallback one
         if (material == null) {
@@ -245,9 +243,6 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     private void OnDestroy() {
-        if (spawnable != null && spawnable.IsMine()) {
-            MarioInputModule.Instance.controllingMarios--;
-        }
         OnDisable();
     }
 
@@ -311,7 +306,7 @@ public class CVRSM64Mario : MonoBehaviour {
     //     UpdateCurrentInputs();
     // }
 
-    public void ContextFixedUpdateSynced() {
+    public void ContextFixedUpdateSynced(List<CVRSM64Mario> marios) {
         var inputs = new Interop.SM64MarioInputs();
         var look = GetCameraLookDirection();
         look.y = 0;
@@ -327,7 +322,20 @@ public class CVRSM64Mario : MonoBehaviour {
         inputs.buttonB = GetButtonHeld(Button.Kick) ? (byte)1 : (byte)0;
         inputs.buttonZ = GetButtonHeld(Button.Stomp) ? (byte)1 : (byte)0;
 
-        _states[_buffIndex] = Interop.MarioTick(_marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer);
+        lock (_lock) {
+            _states[_buffIndex] = Interop.MarioTick(_marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer);
+            _buffIndex = 1 - _buffIndex;
+        }
+
+        // Check if we're taking damage
+        lock (marios) {
+            var attackingMario = marios.FirstOrDefault(mario =>
+                mario != this && mario.GetCurrentState().IsAttacking() &&
+                Vector3.Distance(mario.transform.position, this.transform.position) <= 0.1f);
+            if (attackingMario != null) {
+                TakeDamage(attackingMario.transform.position, 1);
+            }
+        }
 
         for (var i = 0; i < _colorBuffer.Length; ++i) {
             _colorBufferColors[i] = new Color(_colorBuffer[i].x, _colorBuffer[i].y, _colorBuffer[i].z, 1);
@@ -335,8 +343,6 @@ public class CVRSM64Mario : MonoBehaviour {
 
         _marioMesh.colors = _colorBufferColors;
         _marioMesh.uv = _uvBuffer;
-
-        _buffIndex = 1 - _buffIndex;
     }
 
     public void ContextUpdateSynced() {
@@ -351,7 +357,7 @@ public class CVRSM64Mario : MonoBehaviour {
             }
 
             // Handle the position and rotation
-            if (spawnable.IsMine() && !IsPositionOverriden()) {
+            if (spawnable.IsMine() && !IsBeingGrabbedByMe()) {
                 transform.position = Vector3.LerpUnclamped(_states[_buffIndex].UnityPosition, _states[j].UnityPosition, t);
                 transform.rotation = Quaternion.LerpUnclamped(_states[_buffIndex].UnityRotation, _states[j].UnityRotation, t);
             }
@@ -381,6 +387,12 @@ public class CVRSM64Mario : MonoBehaviour {
         _marioMesh.RecalculateTangents();
     }
 
+    private Interop.SM64MarioState GetCurrentState() {
+        lock (_lock) {
+            return _states[1 - _buffIndex];
+        }
+    }
+
     public void SetPosition(Vector3 pos) {
         if (!_enabled) return;
         Interop.MarioSetPosition(_marioId, pos);
@@ -396,9 +408,16 @@ public class CVRSM64Mario : MonoBehaviour {
         Interop.MarioSetLives(_marioId, lives);
     }
 
-    private bool IsPositionOverriden() {
+    public void TakeDamage(Vector3 worldPosition, uint damage) {
+        if (!_enabled) return;
+        Interop.MarioTakeDamage(_marioId, worldPosition, damage);
+    }
+
+    private bool IsBeingGrabbedByMe() {
         return _pickup != null && _pickup.IsGrabbedByMe();
     }
+
+    public bool IsMine() => spawnable.IsMine();
 
     private Vector2 GetJoystickAxes() {
         // Update the spawnable sync values and send the values
@@ -471,16 +490,4 @@ public class CVRSM64Mario : MonoBehaviour {
 
         return false;
     }
-
-    #if DEBUG
-    private void Update() {
-        if (Input.GetKeyDown(KeyCode.End)) {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 0.5f);
-            foreach (Collider collider in hitColliders) {
-                if (!Utils.IsGoodCollider(collider)) continue;
-                MelonLogger.Msg("Collider within 0.5 units: " + collider.gameObject.name);
-            }
-        }
-    }
-    #endif
 }

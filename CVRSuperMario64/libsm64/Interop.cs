@@ -114,6 +114,8 @@ internal static class Interop {
         public Quaternion UnityRotation => Quaternion.Euler(0f, Mathf.Repeat((-Mathf.Rad2Deg * faceAngle) + 180f, 360f) - 180f, 0f);
 
         public float Lives => health / SM64_HEALTH_PER_LIFE;
+
+        public bool IsAttacking() => (action & (uint) ActionFlags.ACT_FLAG_ATTACKING) != 0;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -168,9 +170,6 @@ internal static class Interop {
     [DllImport("sm64")]
     static extern void sm64_set_mario_faceangle(uint marioId, float y);
 
-    [DllImport("sm64")]
-    static extern void sm64_set_mario_health(uint marioId, ushort health);
-
 
     [DllImport("sm64")]
     static extern void sm64_audio_init(IntPtr rom);
@@ -187,6 +186,12 @@ internal static class Interop {
     [DllImport("sm64")]
     static extern void sm64_stop_background_music(ushort seqId);
 
+    [DllImport("sm64")]
+    static extern void sm64_play_sound_global(int soundBits);
+
+    [DllImport("sm64")]
+    static extern void sm64_play_sound(int soundBits, IntPtr pos);
+
 
 
     [DllImport("sm64")]
@@ -199,6 +204,49 @@ internal static class Interop {
 
     [DllImport("sm64")]
     static extern void sm64_mario_interact_cap(uint marioId, uint capFlag, ushort capTime, byte playMusic);
+
+    [DllImport("sm64")]
+    static extern void sm64_mario_extend_cap(uint marioId, ushort capTime);
+
+
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_state(uint marioId, uint flags);
+
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_action(uint marioId, uint action);
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_action(uint marioId, uint action, uint actionArg);
+
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_invincibility(uint marioId, short timer);
+
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_velocity(uint marioId, float x, float y, float z);
+
+
+    [DllImport("sm64")]
+    static extern void sm64_mario_take_damage(uint marioId, uint damage, uint subtype, float x, float y, float z);
+
+    [DllImport("sm64")]
+    static extern void sm64_mario_attack(uint marioId, float x, float y, float z, float hitboxHeight);
+
+
+    [DllImport("sm64")]
+    static extern void sm64_mario_heal(uint marioId, byte healCounter);
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_health(uint marioId, ushort health);
+
+
+    [DllImport("sm64")]
+    static extern void sm64_mario_kill(uint marioId);
+
+
 
 
     [DllImport("sm64")]
@@ -331,8 +379,19 @@ internal static class Interop {
         return numSamples;
     }
 
+    public static void PlaySound(int soundBits, float pos) {
+        var posPointer = GCHandle.Alloc(pos, GCHandleType.Pinned);
+        sm64_play_sound(soundBits, posPointer.AddrOfPinnedObject());
+        posPointer.Free();
+    }
+
     public static void MarioDelete(uint marioId) {
         sm64_mario_delete(marioId);
+    }
+
+    public static void MarioTakeDamage(uint marioId, Vector3 unityPosition, uint damage) {
+        var marioPos = unityPosition.ToMarioPosition();
+        sm64_mario_take_damage(marioId, damage, 0, marioPos.x, marioPos.y, marioPos.z);
     }
 
     public static void CreateAndAppendSurfaces(List<SM64Surface> outSurfaces, int[] triangles, Vector3[] vertices, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
