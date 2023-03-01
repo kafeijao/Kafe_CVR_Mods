@@ -35,6 +35,10 @@ internal static class Interop {
 
     public const float SM64_HEALTH_PER_LIFE = 0x100;
 
+    public const byte SECONDS_MULTIPLIER = 40;
+
+    public const int SM64_LEVEL_RESET_VALUE = -10000;
+
     // It seems a collider can't be too big, otherwise it will be ignored
     // This seems like too much of a pain to fix rn, let the future me worry about it
     public const int SM64_MAX_VERTEX_DISTANCE = 250000 * (int) SCALE_FACTOR;
@@ -294,17 +298,23 @@ internal static class Interop {
         // sm64_register_debug_print_function(Marshal.GetFunctionPointerForDelegate(callbackDelegate));
         // #endif
 
-
-        Color32[] cols = new Color32[SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT];
+        var cols = new Color32[SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT];
         marioTexture = new Texture2D(SM64_TEXTURE_WIDTH, SM64_TEXTURE_HEIGHT);
-        for (int ix = 0; ix < SM64_TEXTURE_WIDTH; ix++)
-        for (int iy = 0; iy < SM64_TEXTURE_HEIGHT; iy++) {
-            cols[ix + SM64_TEXTURE_WIDTH * iy] = new Color32(
+        for (var ix = 0; ix < SM64_TEXTURE_WIDTH; ix++)
+        for (var iy = 0; iy < SM64_TEXTURE_HEIGHT; iy++) {
+            var color = new Color32(
                 textureData[4 * (ix + SM64_TEXTURE_WIDTH * iy) + 0],
                 textureData[4 * (ix + SM64_TEXTURE_WIDTH * iy) + 1],
                 textureData[4 * (ix + SM64_TEXTURE_WIDTH * iy) + 2],
                 textureData[4 * (ix + SM64_TEXTURE_WIDTH * iy) + 3]
             );
+            // Make the 100% transparent colors white. So we can multiply with the vertex colors.
+            if (color.a == 0) {
+                color.r = 1;
+                color.g = 1;
+                color.b = 1;
+            }
+            cols[ix + SM64_TEXTURE_WIDTH * iy] = color;
         }
 
         marioTexture.SetPixels32(cols);
@@ -448,14 +458,24 @@ internal static class Interop {
         sm64_surface_object_delete(id);
     }
 
-    public static void MarioCap(uint marioId, CapFlags capFlags, ushort capTime = 0, bool playCapMusic = true) {
-        // Untested (seems broken)
-        sm64_mario_interact_cap(marioId, (uint)capFlags, capTime, playCapMusic ? (byte) 1 : (byte) 0);
+    public static void MarioCap(uint marioId, CapFlags capFlags, float durationSeconds = 0, bool playCapMusic = true) {
+        sm64_mario_interact_cap(marioId, (uint)capFlags, (ushort)(durationSeconds * SECONDS_MULTIPLIER), playCapMusic ? (byte) 1 : (byte) 0);
     }
 
-    public static void SetWaterLevel(uint marioId, float waterLevelY) {
-        // Unity Y (height) world coord, which will be filled with water
-        sm64_set_mario_water_level(marioId, (int) (SCALE_FACTOR * waterLevelY));
+    public static void MarioCapExtend(uint marioId, float durationSeconds) {
+        sm64_mario_extend_cap(marioId, (ushort)(durationSeconds * SECONDS_MULTIPLIER));
+    }
+
+    public static void SetLevelModifier(uint marioId, CVRSM64LevelModifier.ModifierType modifierType, float unityLevelY) {
+        switch (modifierType) {
+            // Unity Y (height) world coord, which will be filled with water/gas
+            case CVRSM64LevelModifier.ModifierType.Water:
+                sm64_set_mario_water_level(marioId, (int) (SCALE_FACTOR * unityLevelY));
+                break;
+            case CVRSM64LevelModifier.ModifierType.Gas:
+                sm64_set_mario_gas_level(marioId, (int) (SCALE_FACTOR * unityLevelY));
+                break;
+        }
     }
 
     public static void SetGasLevel(uint marioId, float gasLevelY) {

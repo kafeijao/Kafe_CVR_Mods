@@ -18,7 +18,7 @@ public class CVRSM64ColliderStatic : MonoBehaviour {
     // private uint _surfaceObjectId;
     //
     // private void OnEnable() {
-    //     CVRSM64CContext.EnsureInstanceExists();
+    //     CVRSM64Context.EnsureInstanceExists();
     //     var col = GetComponent<Collider>();
     //     var surfaces = Utils.GetScaledSurfaces(col, new List<Interop.SM64Surface>(), surfaceType, terrainType, true).ToArray();
     //     _surfaceObjectId = Interop.SurfaceObjectCreate(transform.position, transform.rotation, surfaces.ToArray());
@@ -68,7 +68,7 @@ public class CVRSM64ColliderStatic : MonoBehaviour {
                     MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
                                     $"all static colliders. You might notice some lag spike...");
                     #endif
-                    CVRSM64CContext.QueueStaticSurfacesUpdate();
+                    CVRSM64Context.QueueStaticSurfacesUpdate();
                 }
             }
             catch (Exception e) {
@@ -86,7 +86,7 @@ public class CVRSM64ColliderStatic : MonoBehaviour {
                     MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been deleted, we need to reload " +
                                     $"all static colliders. You might notice some lag spike...");
                     #endif
-                    CVRSM64CContext.QueueStaticSurfacesUpdate();
+                    CVRSM64Context.QueueStaticSurfacesUpdate();
                 }
             }
             catch (Exception e) {

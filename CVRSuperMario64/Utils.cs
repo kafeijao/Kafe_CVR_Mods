@@ -355,4 +355,20 @@ internal static class Utils {
 
             return surfaces;
     }
+
+    public enum MarioCapType {
+        None,
+        VanishCap,
+        MetalCap,
+        WingCap,
+    }
+
+    public static bool HasCapType(uint flags, MarioCapType capType) {
+        switch (capType) {
+            case MarioCapType.VanishCap: return (flags & (uint)CapFlags.MARIO_VANISH_CAP) != 0;
+            case MarioCapType.MetalCap: return (flags & (uint)CapFlags.MARIO_METAL_CAP) != 0;
+            case MarioCapType.WingCap: return (flags & (uint)CapFlags.MARIO_WING_CAP) != 0;
+        }
+        return capType == MarioCapType.None;
+    }
 }

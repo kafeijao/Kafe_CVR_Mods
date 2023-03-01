@@ -40,6 +40,8 @@ public class MarioInputModule : CVRInputModule {
         var vrInputTraverse = Traverse.Create(vrInput);
         _vrLookAction = vrInputTraverse.Field<SteamVR_Action_Vector2>("vrLookAction").Value;
         #endif
+
+        CVRSM64Context.UpdateMarioCount();
     }
 
     private bool CanMove() {

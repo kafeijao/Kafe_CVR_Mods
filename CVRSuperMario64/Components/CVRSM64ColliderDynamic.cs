@@ -26,7 +26,7 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
 
 
     private void OnEnable() {
-        CVRSM64CContext.RegisterSurfaceObject(this);
+        CVRSM64Context.RegisterSurfaceObject(this);
 
         LastPosition = transform.position;
         LastRotation = transform.rotation;
@@ -43,7 +43,7 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
     private void OnDisable() {
 
         if (Interop.isGlobalInit) {
-            CVRSM64CContext.UnregisterSurfaceObject(this);
+            CVRSM64Context.UnregisterSurfaceObject(this);
             Interop.SurfaceObjectDelete(_surfaceObjectId);
         }
 

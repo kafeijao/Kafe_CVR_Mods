@@ -136,6 +136,8 @@ public class CVRSuperMario64 : MelonMod {
         // Add our CCK component to the whitelist
         var whitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
         whitelist.Add(typeof(CVRSM64Mario));
+        whitelist.Add(typeof(CVRSM64Interactable));
+        whitelist.Add(typeof(CVRSM64LevelModifier));
         whitelist.Add(typeof(CVRSM64ColliderStatic));
         whitelist.Add(typeof(CVRSM64ColliderDynamic));
 

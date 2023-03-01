@@ -2,12 +2,13 @@ using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
 
-public class CVRSM64CContext : MonoBehaviour {
+public class CVRSM64Context : MonoBehaviour {
 
-    private static CVRSM64CContext _instance = null;
+    private static CVRSM64Context _instance = null;
 
     private readonly List<CVRSM64Mario> _marios = new();
     private readonly List<CVRSM64ColliderDynamic> _surfaceObjects = new();
+    private readonly List<CVRSM64LevelModifier> _levelModifierObjects = new();
 
     // Audio
     private AudioSource _audioSource;
@@ -133,6 +134,8 @@ public class CVRSM64CContext : MonoBehaviour {
         }
 
         lock (_marios) {
+            CVRSM64LevelModifier.ContextTick(_marios);
+
             foreach (var o in _marios) {
                 o.ContextFixedUpdateSynced(_marios);
             }
@@ -149,7 +152,7 @@ public class CVRSM64CContext : MonoBehaviour {
 
         var contextGo = new GameObject("SM64_CONTEXT");
         contextGo.hideFlags |= HideFlags.HideInHierarchy;
-        _instance = contextGo.AddComponent<CVRSM64CContext>();
+        _instance = contextGo.AddComponent<CVRSM64Context>();
     }
 
     public static void QueueStaticSurfacesUpdate() {
@@ -165,6 +168,7 @@ public class CVRSM64CContext : MonoBehaviour {
     }
 
     public static void UpdateMarioCount() {
+        if (_instance == null || MarioInputModule.Instance == null) return;
         lock (_instance._marios) {
             MarioInputModule.Instance.controllingMarios = _instance._marios.Count(m => m.IsMine());
         }
@@ -179,6 +183,8 @@ public class CVRSM64CContext : MonoBehaviour {
             _instance._marios.Add(mario);
 
             if (CVRSuperMario64.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
+
+            CVRSM64LevelModifier.MarkForUpdate();
         }
     }
 
