@@ -11,6 +11,12 @@ Copy-Item $cvrPath$0HarmonydllPath -Destination $scriptDir"\ManagedLibs"
 Copy-Item $cvrPath$melonLoaderdllPath -Destination $scriptDir"\ManagedLibs"
 Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $scriptDir"\ManagedLibs"
 
+Write-Host "Copied all libraries!"
+Write-Host ""
+Write-Host "Press any key to strip the Dlls using NStrip"
+$HOST.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | OUT-NULL
+$HOST.UI.RawUI.Flushinputbuffer()
+
 Write-Host "Nstrip convert all private/protected stuff to public, yay"
 
 $dllsToStrip=@('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','UnityEngine.CoreModule.dll','Cohtml.Runtime.dll')
@@ -24,5 +30,5 @@ foreach($dllFile in $dllsToStrip)
 Write-Host "Process Completed"
 Write-Host ""
 Write-Host "Press any key to exit"
-$HOST.UI.RawUI.ReadKey(“NoEcho,IncludeKeyDown”) | OUT-NULL
+$HOST.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | OUT-NULL
 $HOST.UI.RawUI.Flushinputbuffer()
