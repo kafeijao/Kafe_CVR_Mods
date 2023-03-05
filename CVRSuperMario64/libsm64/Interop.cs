@@ -43,6 +43,8 @@ internal static class Interop {
     // This seems like too much of a pain to fix rn, let the future me worry about it
     public const int SM64_MAX_VERTEX_DISTANCE = 250000 * (int) SCALE_FACTOR;
 
+    public const float SM64_DEG2ANGLE = 182.04459f;
+
     // Was having weird crashes, I think it's due the audio ticks and mario ticks being called from diff threads
     private static readonly object Lock = new();
 
@@ -175,6 +177,9 @@ internal static class Interop {
     static extern void sm64_set_mario_position(uint marioId, float x, float y, float z);
 
     [DllImport("sm64")]
+    static extern void sm64_set_mario_angle(uint marioId, float x, float y, float z);
+
+    [DllImport("sm64")]
     static extern void sm64_set_mario_faceangle(uint marioId, float y);
 
 
@@ -234,6 +239,9 @@ internal static class Interop {
 
     [DllImport("sm64")]
     static extern void sm64_set_mario_velocity(uint marioId, float x, float y, float z);
+
+    [DllImport("sm64")]
+    static extern void sm64_set_mario_forward_velocity(uint marioId, float vel);
 
 
     [DllImport("sm64")]
@@ -426,6 +434,15 @@ internal static class Interop {
             currentState.position[2] - previousState.position[2]);
     }
 
+    public static void MarioSetVelocity(uint marioId, Vector3 unityVelocity) {
+        var marioVelocity = unityVelocity.ToMarioPosition();
+        sm64_set_mario_velocity(marioId, marioVelocity.x, marioVelocity.y, marioVelocity.z);
+    }
+
+    public static void MarioSetForwardVelocity(uint marioId, float unityVelocity) {
+        sm64_set_mario_forward_velocity(marioId, unityVelocity * SCALE_FACTOR);
+    }
+
     public static void CreateAndAppendSurfaces(List<SM64Surface> outSurfaces, int[] triangles, Vector3[] vertices, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         for (var i = 0; i <  triangles.Length; i += 3) {
             outSurfaces.Add(new SM64Surface {
@@ -501,12 +518,17 @@ internal static class Interop {
         sm64_set_mario_position(marioId, marioPos.x, marioPos.y, marioPos.z);
     }
 
-    public static void MarioSetRotation(uint marioId, Quaternion rot) {
+    public static void MarioSetFaceAngle(uint marioId, Quaternion rot) {
         var angleInDegrees = rot.eulerAngles.y;
         if (angleInDegrees > 180f) {
             angleInDegrees -= 360f;
         }
         sm64_set_mario_faceangle(marioId, -Mathf.Deg2Rad * angleInDegrees);
+    }
+
+    public static void MarioSetRotation(uint marioId, Quaternion rotation) {
+        var marioRotation = rotation.eulerAngles.ToMarioRotation();
+        sm64_set_mario_angle(marioId, marioRotation.x, marioRotation.y, marioRotation.z);
     }
 
     public static void MarioSetHealthPoints(uint marioId, float healthPoints) {
@@ -520,5 +542,13 @@ internal static class Interop {
 
     public static void MarioSetAction(uint marioId, ActionFlags actionFlags) {
         sm64_set_mario_action(marioId, (uint) actionFlags);
+    }
+
+    public static void MarioSetAction(uint marioId, uint actionFlags) {
+        sm64_set_mario_action(marioId, actionFlags);
+    }
+
+    public static void MarioSetState(uint marioId, uint flags) {
+        sm64_set_mario_state(marioId, flags);
     }
 }

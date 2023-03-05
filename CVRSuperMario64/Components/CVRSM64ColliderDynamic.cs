@@ -12,7 +12,7 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
     [SerializeField] private SM64TerrainType terrainType = SM64TerrainType.Grass;
     [SerializeField] private SM64SurfaceType surfaceType = SM64SurfaceType.Default;
 
-    [SerializeField] private bool ignoreForSpawner = true;
+    // [SerializeField] private bool ignoreForSpawner = true;
 
     private uint _surfaceObjectId;
 
@@ -43,14 +43,14 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
         if (!_started || !_enabled) return;
 
         // Check if the collider is inside of a mario we control, and ignore if that's the case
-        if (ignoreForSpawner) {
-            var parentMario = GetComponentInParent<CVRSM64Mario>();
-            if (parentMario != null && parentMario.IsMine()) {
-                MelonLogger.Msg($"[{nameof(CVRSM64ColliderDynamic)}] Ignoring collider {gameObject.name} because it's on our own mario!");
-                Destroy(this);
-                return;
-            }
-        }
+        // if (ignoreForSpawner) {
+        //     var parentMario = GetComponentInParent<CVRSM64Mario>();
+        //     if (parentMario != null && parentMario.IsMine()) {
+        //         MelonLogger.Msg($"[{nameof(CVRSM64ColliderDynamic)}] Ignoring collider {gameObject.name} because it's on our own mario!");
+        //         Destroy(this);
+        //         return;
+        //     }
+        // }
 
         CVRSM64Context.RegisterSurfaceObject(this);
 

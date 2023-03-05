@@ -87,6 +87,9 @@ public enum ActionFlags : uint {
     ACT_FLAG_ATTACKING              = 0x00800000,
     ACT_FLAG_IDLE                   = 0x00400000,
     ACT_FLAG_SHORT_HITBOX           = 0x00008000,
+    ACT_GRABBED                     = 0x00020370,
+    ACT_FLYING                      = 0x10880899,
+    ACT_THROWN_FORWARD              = 0x010208BD,
 }
 
 [Flags]

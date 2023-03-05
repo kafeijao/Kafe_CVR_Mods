@@ -152,11 +152,15 @@ public class CVRSM64Mario : MonoBehaviour {
             return;
         }
 
+        #if DEBUG
         MelonLogger.Msg($"Initializing a SM64Mario Spawnable...");
+        #endif
 
         // Check for Spawnable component
         if (spawnable != null) {
+            #if DEBUG
             MelonLogger.Msg($"SM64Mario Spawnable was set! We don't need to look for it!");
+            #endif
         }
         else {
             spawnable = GetComponent<CVRSpawnable>();
@@ -166,7 +170,10 @@ public class CVRSM64Mario : MonoBehaviour {
                 Destroy(this);
                 return;
             }
+
+            #if DEBUG
             MelonLogger.Msg($"SM64Mario Spawnable was missing, but we look at the game object and found one!");
+            #endif
         }
 
 
@@ -229,13 +236,17 @@ public class CVRSM64Mario : MonoBehaviour {
         // Check for the SM64Mario component
         var mario = GetComponent<CVRSM64Mario>();
         if (mario == null) {
+            #if DEBUG
             MelonLogger.Msg($"Adding the ${nameof(CVRSM64Mario)} Component...");
+            #endif
             gameObject.AddComponent<CVRSM64Mario>();
         }
 
         CVRSM64Context.UpdateMarioCount();
 
+        #if DEBUG
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
+        #endif
 
         _initialized = true;
     }
@@ -262,11 +273,15 @@ public class CVRSM64Mario : MonoBehaviour {
 
         // If not material is set, let's set our fallback one
         if (material == null) {
+            #if DEBUG
             MelonLogger.Msg($"CVRSM64Mario didn't have a material, assigning the default material...");
+            #endif
             material = CVRSuperMario64.GetMarioMaterial();
         }
         else {
+            #if DEBUG
             MelonLogger.Msg($"CVRSM64Mario had a material! Using the existing one...");
+            #endif
         }
 
         // Create a new instance of the material, so marios don't interfere with each other
@@ -403,17 +418,7 @@ public class CVRSM64Mario : MonoBehaviour {
         inputs.buttonB = GetButtonHeld(Button.Kick) ? (byte)1 : (byte)0;
         inputs.buttonZ = GetButtonHeld(Button.Stomp) ? (byte)1 : (byte)0;
 
-        var justDropped = false;
-        if (spawnable.IsMine() && _pickup != null && _pickup.IsGrabbedByMe() != _wasPickedUp) {
-            if (_wasPickedUp) justDropped = true;
-            _wasPickedUp = _pickup.IsGrabbedByMe();
-        }
-
         lock (_lock) {
-            if (justDropped) {
-                Interop.MarioSetVelocity(MarioId, _states[_buffIndex], _states[1 - _buffIndex]);
-            }
-
             _states[_buffIndex] = Interop.MarioTick(MarioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer, out _numTrianglesUsed);
 
             // If the tris count changes, reset the buffers
@@ -439,6 +444,12 @@ public class CVRSM64Mario : MonoBehaviour {
 
         if (spawnable.IsMine()) {
 
+            if (_pickup != null && _pickup.IsGrabbedByMe() != _wasPickedUp) {
+                if (_wasPickedUp) Throw();
+                else Hold();
+                _wasPickedUp = _pickup.IsGrabbedByMe();
+            }
+
             // Send the current flags and action to remotes
             spawnable.SetValue(_syncParameters[SyncedParameterNames.Flags].Item1, Convert.ToSingle(currentStateFlags));
             spawnable.SetValue(_syncParameters[SyncedParameterNames.Action].Item1, Convert.ToSingle(currentStateAction));
@@ -451,6 +462,10 @@ public class CVRSM64Mario : MonoBehaviour {
             // Grab the current flags and action from the owner
             var syncedFlags = Convert.ToUInt32(_syncParameters[SyncedParameterNames.Flags].Item2.currentValue);
             var syncedAction = Convert.ToUInt32(_syncParameters[SyncedParameterNames.Action].Item2.currentValue);
+
+            // This seems to be kinda broken, maybe revisit syncing the WHOLE state instead
+            // if (currentStateFlags != syncedFlags) SetState(syncedAction);
+            // if (currentStateAction != syncedAction) SetAction(syncedAction);
 
             // Trigger the cap if the synced values have cap (if we already have the cape it will ignore)
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.VanishCap)) {
@@ -520,7 +535,7 @@ public class CVRSM64Mario : MonoBehaviour {
             }
             else {
                 SetPosition(transform.position);
-                SetRotation(transform.rotation);
+                SetFaceAngle(transform.rotation);
             }
 
             // Handle other synced params
@@ -647,6 +662,12 @@ public class CVRSM64Mario : MonoBehaviour {
         }
     }
 
+    private Interop.SM64MarioState GetPreviousState() {
+        lock (_lock) {
+            return _states[_buffIndex];
+        }
+    }
+
     public void SetPosition(Vector3 pos) {
         if (!_enabled) return;
         Interop.MarioSetPosition(MarioId, pos);
@@ -655,6 +676,11 @@ public class CVRSM64Mario : MonoBehaviour {
     public void SetRotation(Quaternion rot) {
         if (!_enabled) return;
         Interop.MarioSetRotation(MarioId, rot);
+    }
+
+    public void SetFaceAngle(Quaternion rot) {
+        if (!_enabled) return;
+        Interop.MarioSetFaceAngle(MarioId, rot);
     }
 
     public void SetHealthPoints(float healthPoints) {
@@ -701,13 +727,49 @@ public class CVRSM64Mario : MonoBehaviour {
         }
     }
 
+    private void SetAction(ActionFlags actionFlags) {
+        Interop.MarioSetAction(MarioId, actionFlags);
+    }
+
+    private void SetAction(uint actionFlags) {
+        Interop.MarioSetAction(MarioId, actionFlags);
+    }
+
+    private void SetState(uint flags) {
+        Interop.MarioSetState(MarioId, flags);
+    }
+
+    private void SetVelocity(Vector3 unityVelocity) {
+        Interop.MarioSetVelocity(MarioId, unityVelocity);
+    }
+
+    private void SetForwardVelocity(float unityVelocity) {
+        Interop.MarioSetForwardVelocity(MarioId, unityVelocity);
+    }
+
+    private void Hold() {
+        if (IsDead()) return;
+        SetAction(ActionFlags.ACT_GRABBED);
+    }
+
+    private void Throw() {
+        if (IsDead()) return;
+        var currentState = GetCurrentState();
+        var throwVelocityFlat = currentState.UnityPosition - GetPreviousState().UnityPosition;
+        SetFaceAngle(Quaternion.LookRotation(throwVelocityFlat));
+        var hasWingCap = Utils.HasCapType(currentState.flags, Utils.MarioCapType.WingCap);
+        SetAction(hasWingCap ? ActionFlags.ACT_FLYING : ActionFlags.ACT_THROWN_FORWARD);
+        SetVelocity(throwVelocityFlat);
+        SetForwardVelocity(throwVelocityFlat.magnitude);
+    }
+
     public void Heal(byte healthPoints) {
         if (!_enabled) return;
 
         if (IsDead()) {
-            // Revive
+            // Revive (not working)
             Interop.MarioSetHealthPoints(MarioId, healthPoints + 1);
-            Interop.MarioSetAction(MarioId, ActionFlags.ACT_FLAG_IDLE);
+            SetAction(ActionFlags.ACT_FLAG_IDLE);
         }
         else {
             Interop.MarioHeal(MarioId, healthPoints);
