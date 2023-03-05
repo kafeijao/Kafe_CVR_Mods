@@ -25,21 +25,17 @@ public class MarioInputModule : CVRInputModule {
     public bool stomp;
 
     // VR Input stuff
-    #if DEBUG
-    private SteamVR_Action_Vector2 _vrLookAction;
-    #endif
+    private Traverse<string> _rightHandControllerNameTraverse;
 
     public new void Start() {
         _inputManager = CVRInputManager.Instance;
         Instance = this;
         base.Start();
 
-        #if DEBUG
         // Traverse BS
-        var vrInput = Traverse.Create(typeof(InputModuleSteamVR)).Field<InputModuleSteamVR>("Instance").Value;
+        var vrInput = Traverse.Create(typeof(InputModuleOpenXR)).Field<InputModuleOpenXR>("Instance").Value;
         var vrInputTraverse = Traverse.Create(vrInput);
-        _vrLookAction = vrInputTraverse.Field<SteamVR_Action_Vector2>("vrLookAction").Value;
-        #endif
+        _rightHandControllerNameTraverse = vrInputTraverse.Field<string>("_rightHandControllerName");
 
         CVRSM64Context.UpdateMarioCount();
     }
@@ -79,14 +75,27 @@ public class MarioInputModule : CVRInputModule {
             _inputManager.interactRightValue = 0f;
             _inputManager.gripRightValue = 0f;
 
-            #if DEBUG
-            // Lets attempt to do a left hand only movement
-            if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
-                _inputManager.movementVector.z = CVRTools.AxisDeadZone(
-                    _vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
-                    MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
+            // Lets attempt to do a right hand only movement
+            var vrRightHand = InputModuleOpenXR.Controls.VRRightHand;
+            var rightHandThumbstick = vrRightHand.Primary2DAxis.ReadValue<Vector2>();
+
+            if (MetaPort.Instance.isUsingVr) {
+                if (_rightHandControllerNameTraverse.Value != null && _rightHandControllerNameTraverse.Value.Contains("Vive")) {
+                    var _viveAdvancedModeRight = false;
+                    if (MetaPort.Instance.settings.GetSettingsBool("ControlViveAdvancedControls")) {
+                        if (vrRightHand.Primary2DAxisClick.WasPressedThisFrame()) _viveAdvancedModeRight = true;
+                        if (vrRightHand.Primary2DAxisTouch.WasReleasedThisFrame()) _viveAdvancedModeRight = false;
+                    }
+                    else {
+                        _viveAdvancedModeRight = vrRightHand.Primary2DAxisClick.IsPressed();
+                    }
+                    var z = Mathf.Min(CVRTools.AxisDeadZone(vrRightHand.Primary2DAxis.ReadValue<Vector2>().y, MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneLeft") / 100f) * 1.25f, 1f) * (_viveAdvancedModeRight ? 1.0f : 0.0f) * 2.0f;
+                    _inputManager.movementVector.z += z;
+                }
+                else {
+                    _inputManager.movementVector.z += CVRTools.AxisDeadZone(rightHandThumbstick.y, MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneLeft") / 100f);
+                }
             }
-            #endif
         }
     }
 
