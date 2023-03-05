@@ -7,5 +7,6 @@ FodyWeavers.xsd
 /.vscode
 NStrip.exe
 lib_names
+lib_names.xml
 ManagedLibs/*.dll
 ManagedLibs/*.db

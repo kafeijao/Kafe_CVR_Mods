@@ -8,10 +8,13 @@ xcopy /f /y "%CVRPATH%\MelonLoader\MelonLoader.dll" "%~dp0ManagedLibs\"
 xcopy /f /s /y "%CVRPATH%\ChilloutVR_Data\Managed" "%~dp0ManagedLibs\"
 
 
-@REM echo Generating file with all lib names
-@REM echo 0Harmony>lib_names
-@REM echo MelonLoader>>lib_names
-@REM for %%f in ("%CVRPATH%\ChilloutVR_Data\Managed\*") do echo %%~nf>>lib_names
+echo Saving XML ready libs for the Build.props file
+echo ^<Project^>^<ItemGroup^> > lib_names.xml
+echo ^<Reference Include="0Harmony"^>^<HintPath^>$(MsBuildThisFileDirectory)\ManagedLibs\0Harmony.dll^</HintPath^>^<Private^>False^</Private^>^</Reference^> >> lib_names.xml
+echo ^<Reference Include="MelonLoader"^>^<HintPath^>$(MsBuildThisFileDirectory)\ManagedLibs\MelonLoader.dll^</HintPath^>^<Private^>False^</Private^>^</Reference^> >> lib_names.xml
+for %%f in ("%CVRPATH%\ChilloutVR_Data\Managed\*") do echo ^<Reference Include="%%~nf"^>^<HintPath^>$(MsBuildThisFileDirectory)\ManagedLibs\%%~nf.dll^</HintPath^>^<Private^>False^</Private^>^</Reference^> >> lib_names.xml
+echo ^</ItemGroup^>^</Project^> >> lib_names.xml
+
 
 echo Press Enter to NStrip the files
 pause
