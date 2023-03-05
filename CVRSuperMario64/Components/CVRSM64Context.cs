@@ -1,3 +1,5 @@
+using ABI_RC.Core.Player;
+using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
@@ -17,6 +19,10 @@ public class CVRSM64Context : MonoBehaviour {
     private readonly short[] _audioBuffer = new short[BufferSize];
     private readonly float[] _processedAudioBuffer = new float[BufferSize];
 
+
+    // Melon prefs
+    private int _maxMariosAnimatedPerPerson;
+
     private void Awake() {
 
         SetAudioSource();
@@ -28,6 +34,14 @@ public class CVRSM64Context : MonoBehaviour {
         CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue == oldValue) return;
             Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
+        });
+
+        // Setup melon pref updates
+        _maxMariosAnimatedPerPerson = CVRSuperMario64.MeMaxMariosAnimatedPerPerson.Value;
+        CVRSuperMario64.MeMaxMariosAnimatedPerPerson.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            _maxMariosAnimatedPerPerson = newValue;
+            UpdatePlayerMariosState();
+            MelonLogger.Msg($"Changed the Max Marios animated per player from {oldValue} to {newValue}.");
         });
     }
 
@@ -116,7 +130,6 @@ public class CVRSM64Context : MonoBehaviour {
     //     _gameThread?.Join();
     // }
 
-
     private void Update() {
         lock (_marios) {
             foreach (var o in _marios) {
@@ -174,6 +187,20 @@ public class CVRSM64Context : MonoBehaviour {
         }
     }
 
+    private static void UpdatePlayerMariosState() {
+        if (_instance == null) return;
+
+        lock (_instance._marios) {
+            foreach (var playerMarios in _instance._marios.GroupBy(m => m.GetOwnerId())) {
+                if (playerMarios.First().IsMine()) continue;
+                var maxMarios = _instance._maxMariosAnimatedPerPerson;
+                foreach (var playerMario in playerMarios) {
+                    playerMario.SetIsOverMaxCount(--maxMarios <= 0);
+                }
+            }
+        }
+    }
+
     public static void RegisterMario(CVRSM64Mario mario) {
         EnsureInstanceExists();
 
@@ -181,6 +208,7 @@ public class CVRSM64Context : MonoBehaviour {
             if (_instance._marios.Contains(mario)) return;
 
             _instance._marios.Add(mario);
+            UpdatePlayerMariosState();
 
             if (CVRSuperMario64.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
 
@@ -195,6 +223,7 @@ public class CVRSM64Context : MonoBehaviour {
             if (!_instance._marios.Contains(mario)) return;
 
             _instance._marios.Remove(mario);
+            UpdatePlayerMariosState();
 
             if (_instance._marios.Count == 0) {
                 Interop.StopMusic();

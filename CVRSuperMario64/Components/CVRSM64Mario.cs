@@ -43,6 +43,7 @@ public class CVRSM64Mario : MonoBehaviour {
     // Components
     private CVRPickupObject _pickup;
     private CVRPlayerEntity _owner;
+    private Transform _localPlayerTransform;
     private Traverse<RemoteHeadPoint> _ownerViewPoint;
 
     // Mario State
@@ -60,12 +61,20 @@ public class CVRSM64Mario : MonoBehaviour {
 
     // Renderer
     private GameObject _marioRendererObject;
+    private MeshRenderer _marioMeshRenderer;
     private Mesh _marioMesh;
 
     // Internal
-    [NonSerialized] public uint marioId;
+    [NonSerialized] public uint MarioId;
     [NonSerialized] private bool _enabled;
+    [NonSerialized] private bool _initialized;
     [NonSerialized] private bool _wasPickedUp;
+    [NonSerialized] private bool _initializedByRemote;
+
+    // Bypasses
+    [NonSerialized] private bool _wasBypassed;
+    [NonSerialized] private bool _isOverMaxCount;
+    [NonSerialized] private bool _isOverMaxDistance;
 
     // Spawnable Inputs
     private int _inputHorizontalIndex;
@@ -89,23 +98,38 @@ public class CVRSM64Mario : MonoBehaviour {
 
     // Animators
     private enum LocalParameterNames {
-        Lives,
+        HealthPoints,
         HasMod,
         HasMetalCap,
         HasWingCap,
         HasVanishCap,
+        IsMine,
+        IsBypassed,
     }
     private static readonly Dictionary<LocalParameterNames, int> LocalParameters = new() {
-        { LocalParameterNames.Lives, Animator.StringToHash(nameof(LocalParameterNames.Lives)) },
+        { LocalParameterNames.HealthPoints, Animator.StringToHash(nameof(LocalParameterNames.HealthPoints)) },
         { LocalParameterNames.HasMod, Animator.StringToHash(nameof(LocalParameterNames.HasMod)) },
         { LocalParameterNames.HasMetalCap, Animator.StringToHash(nameof(LocalParameterNames.HasMetalCap)) },
         { LocalParameterNames.HasWingCap, Animator.StringToHash(nameof(LocalParameterNames.HasWingCap)) },
         { LocalParameterNames.HasVanishCap, Animator.StringToHash(nameof(LocalParameterNames.HasVanishCap)) },
+        { LocalParameterNames.IsMine, Animator.StringToHash(nameof(LocalParameterNames.IsMine)) },
+        { LocalParameterNames.IsBypassed, Animator.StringToHash(nameof(LocalParameterNames.IsBypassed)) },
     };
 
     // Threading
     //private Interop.SM64MarioInputs _currentInputs;
     private readonly object _lock = new();
+
+    // Melon prefs
+    private static float _skipFarMarioDistance;
+
+    static CVRSM64Mario() {
+        _skipFarMarioDistance = CVRSuperMario64.MeSkipFarMarioDistance.Value;
+        CVRSuperMario64.MeSkipFarMarioDistance.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            _skipFarMarioDistance = newValue;
+            MelonLogger.Msg($"Changed the distance that will skip animating other marios {oldValue} to {newValue}.");
+        });
+    }
 
     private void LoadInput(out CVRSpawnableValue parameter, out int index, string inputName) {
         try {
@@ -181,6 +205,9 @@ public class CVRSM64Mario : MonoBehaviour {
                 }
                 else {
                     animator.SetBool(LocalParameters[LocalParameterNames.HasMod], true);
+                    if (spawnable.IsMine()) {
+                        animator.SetBool(LocalParameters[LocalParameterNames.IsMine], true);
+                    }
                 }
             }
             foreach (var animatorToNuke in toNuke) animators.Remove(animatorToNuke);
@@ -192,9 +219,12 @@ public class CVRSM64Mario : MonoBehaviour {
 
         // Pickup
         _pickup = GetComponent<CVRPickupObject>();
-        if (!spawnable.IsMine() && _pickup != null) {
-            Destroy(_pickup);
+        if (_pickup != null && !IsMine()) {
+            _pickup.enabled = false;
         }
+
+        // Player setup transform
+        _localPlayerTransform = PlayerSetup.Instance.transform;
 
         // Check for the SM64Mario component
         var mario = GetComponent<CVRSM64Mario>();
@@ -206,6 +236,8 @@ public class CVRSM64Mario : MonoBehaviour {
         CVRSM64Context.UpdateMarioCount();
 
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
+
+        _initialized = true;
     }
 
     private void OnEnable() {
@@ -213,12 +245,12 @@ public class CVRSM64Mario : MonoBehaviour {
         CVRSM64Context.UpdateMarioCount();
 
         var initPos = transform.position;
-        marioId = Interop.MarioCreate(new Vector3(-initPos.x, initPos.y, initPos.z) * Interop.SCALE_FACTOR);
+        MarioId = Interop.MarioCreate(new Vector3(-initPos.x, initPos.y, initPos.z) * Interop.SCALE_FACTOR);
 
         _marioRendererObject = new GameObject("MARIO");
         _marioRendererObject.hideFlags |= HideFlags.HideInHierarchy;
 
-        var renderer = _marioRendererObject.AddComponent<MeshRenderer>();
+        _marioMeshRenderer = _marioRendererObject.AddComponent<MeshRenderer>();
         var meshFilter = _marioRendererObject.AddComponent<MeshFilter>();
 
         lock (_lock) {
@@ -242,13 +274,13 @@ public class CVRSM64Mario : MonoBehaviour {
         _colorNormal = new Color(material.color.r, material.color.g, material.color.b, material.color.a);
         _colorVanish = new Color(material.color.r, material.color.g, material.color.b, VanishOpacity);
 
-        renderer.material = material;
+        _marioMeshRenderer.material = material;
 
         // Replace the material's texture with mario's textures
         if (replaceTextures) {
             foreach (var propertyToReplaceWithTexture in propertiesToReplaceWithTexture) {
                 try {
-                    renderer.sharedMaterial.SetTexture(propertyToReplaceWithTexture, Interop.marioTexture);
+                    _marioMeshRenderer.sharedMaterial.SetTexture(propertyToReplaceWithTexture, Interop.marioTexture);
                 }
                 catch (Exception e) {
                     MelonLogger.Error($"Attempting to replace the texture in the shader property name {propertyToReplaceWithTexture}...");
@@ -290,7 +322,7 @@ public class CVRSM64Mario : MonoBehaviour {
 
         if (Interop.isGlobalInit) {
             CVRSM64Context.UnregisterMario(this);
-            Interop.MarioDelete(marioId);
+            Interop.MarioDelete(MarioId);
             CVRSM64Context.UpdateMarioCount();
         }
 
@@ -343,6 +375,19 @@ public class CVRSM64Mario : MonoBehaviour {
     // }
 
     public void ContextFixedUpdateSynced(List<CVRSM64Mario> marios) {
+
+        if (!_enabled || !_initialized) return;
+
+        // Janky remote sync check
+        if (!IsMine() && !_initializedByRemote) {
+            if (_syncParameters[SyncedParameterNames.Health].Item2.currentValue != 0) _initializedByRemote = true;
+            else return;
+        }
+
+        UpdateIsOverMaxDistance();
+
+        if (_wasBypassed) return;
+
         var inputs = new Interop.SM64MarioInputs();
         var look = GetCameraLookDirection();
         look.y = 0;
@@ -366,10 +411,10 @@ public class CVRSM64Mario : MonoBehaviour {
 
         lock (_lock) {
             if (justDropped) {
-                Interop.MarioSetVelocity(marioId, _states[_buffIndex], _states[1 - _buffIndex]);
+                Interop.MarioSetVelocity(MarioId, _states[_buffIndex], _states[1 - _buffIndex]);
             }
 
-            _states[_buffIndex] = Interop.MarioTick(marioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer, out _numTrianglesUsed);
+            _states[_buffIndex] = Interop.MarioTick(MarioId, inputs, _positionBuffers[_buffIndex], _normalBuffers[_buffIndex], _colorBuffer, _uvBuffer, out _numTrianglesUsed);
 
             // If the tris count changes, reset the buffers
             if (_previousNumTrianglesUsed != _numTrianglesUsed) {
@@ -452,6 +497,12 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     public void ContextUpdateSynced() {
+        if (!_enabled || !_initialized) return;
+
+        if (!IsMine() && !_initializedByRemote) return;
+
+        if (_wasBypassed) return;
+
         var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
 
         lock (_lock) {
@@ -474,15 +525,15 @@ public class CVRSM64Mario : MonoBehaviour {
 
             // Handle other synced params
             if (spawnable.IsMine()) {
-                spawnable.SetValue(_syncParameters[SyncedParameterNames.Health].Item1, _states[j].Lives);
+                spawnable.SetValue(_syncParameters[SyncedParameterNames.Health].Item1, _states[j].HealthPoints);
             }
             else {
-                SetLives(_syncParameters[SyncedParameterNames.Health].Item2.currentValue);
+                SetHealthPoints(_syncParameters[SyncedParameterNames.Health].Item2.currentValue);
             }
 
-            // Handle local lives param
+            // Handle local healthPoints param
             foreach (var animator in animators) {
-                animator.SetInteger(LocalParameters[LocalParameterNames.Lives], (int) _states[j].Lives);
+                animator.SetInteger(LocalParameters[LocalParameterNames.HealthPoints], (int) _states[j].HealthPoints);
             }
         }
 
@@ -492,56 +543,6 @@ public class CVRSM64Mario : MonoBehaviour {
         _marioMesh.RecalculateBounds();
         _marioMesh.RecalculateTangents();
     }
-
-    private Interop.SM64MarioState GetCurrentState() {
-        lock (_lock) {
-            return _states[1 - _buffIndex];
-        }
-    }
-
-    public void SetPosition(Vector3 pos) {
-        if (!_enabled) return;
-        Interop.MarioSetPosition(marioId, pos);
-    }
-
-    public void SetRotation(Quaternion rot) {
-        if (!_enabled) return;
-        Interop.MarioSetRotation(marioId, rot);
-    }
-
-    public void SetLives(float lives) {
-        if (!_enabled) return;
-        Interop.MarioSetLives(marioId, lives);
-    }
-
-    public void TakeDamage(Vector3 worldPosition, uint damage) {
-        if (!_enabled) return;
-        Interop.MarioTakeDamage(marioId, worldPosition, damage);
-    }
-
-    internal void WearCap(uint flags, Utils.MarioCapType capType) {
-        if (Utils.HasCapType(flags, capType)) return;
-        switch (capType) {
-            case Utils.MarioCapType.VanishCap:
-                // Original game is 15 seconds
-                Interop.MarioCap(marioId, CapFlags.MARIO_VANISH_CAP, 40f);
-                break;
-            case Utils.MarioCapType.MetalCap:
-                // Originally game is 15 seconds
-                Interop.MarioCap(marioId, CapFlags.MARIO_METAL_CAP, 40f);
-                break;
-            case Utils.MarioCapType.WingCap:
-                // Originally game is 40 seconds
-                Interop.MarioCap(marioId, CapFlags.MARIO_WING_CAP, 40f);
-                break;
-        }
-    }
-
-    private bool IsBeingGrabbedByMe() {
-        return _pickup != null && _pickup.IsGrabbedByMe();
-    }
-
-    public bool IsMine() => spawnable.IsMine();
 
     private Vector2 GetJoystickAxes() {
         // Update the spawnable sync values and send the values
@@ -613,5 +614,122 @@ public class CVRSM64Mario : MonoBehaviour {
         }
 
         return false;
+    }
+
+    public void SetIsOverMaxCount(bool isOverTheMaxCount) {
+        _isOverMaxCount = isOverTheMaxCount;
+        UpdateIsBypassed();
+    }
+
+    private void UpdateIsOverMaxDistance() {
+        // Check the distance to see if we should ignore the updates
+        _isOverMaxDistance = !IsMine() && Vector3.Distance(transform.position, _localPlayerTransform.position) > _skipFarMarioDistance;
+        UpdateIsBypassed();
+    }
+
+    private void UpdateIsBypassed() {
+        var isBypassed = _isOverMaxDistance || _isOverMaxCount;
+        if (isBypassed == _wasBypassed) return;
+        _wasBypassed = isBypassed;
+
+        // Handle local bypassed parameter
+        foreach (var animator in animators) {
+            animator.SetBool(LocalParameters[LocalParameterNames.IsBypassed], isBypassed);
+        }
+
+        // Enable/Disable the mario's mesh renderer
+        _marioMeshRenderer.enabled = !isBypassed;
+    }
+
+    private Interop.SM64MarioState GetCurrentState() {
+        lock (_lock) {
+            return _states[1 - _buffIndex];
+        }
+    }
+
+    public void SetPosition(Vector3 pos) {
+        if (!_enabled) return;
+        Interop.MarioSetPosition(MarioId, pos);
+    }
+
+    public void SetRotation(Quaternion rot) {
+        if (!_enabled) return;
+        Interop.MarioSetRotation(MarioId, rot);
+    }
+
+    public void SetHealthPoints(float healthPoints) {
+        if (!_enabled) return;
+        Interop.MarioSetHealthPoints(MarioId, healthPoints);
+    }
+
+    public void TakeDamage(Vector3 worldPosition, uint damage) {
+        if (!_enabled) return;
+        Interop.MarioTakeDamage(MarioId, worldPosition, damage);
+    }
+
+    internal void WearCap(uint flags, Utils.MarioCapType capType) {
+        if (!_enabled) return;
+
+        if (Utils.HasCapType(flags, capType)) return;
+        switch (capType) {
+            case Utils.MarioCapType.VanishCap:
+                // Original game is 15 seconds
+                Interop.MarioCap(MarioId, CapFlags.MARIO_VANISH_CAP, 40f);
+                break;
+            case Utils.MarioCapType.MetalCap:
+                // Originally game is 15 seconds
+                Interop.MarioCap(MarioId, CapFlags.MARIO_METAL_CAP, 40f);
+                break;
+            case Utils.MarioCapType.WingCap:
+                // Originally game is 40 seconds
+                Interop.MarioCap(MarioId, CapFlags.MARIO_WING_CAP, 40f);
+                break;
+        }
+    }
+
+    private bool IsBeingGrabbedByMe() {
+        return _pickup != null && _pickup.IsGrabbedByMe();
+    }
+
+    public bool IsMine() => spawnable.IsMine();
+
+    public string GetOwnerId() => spawnable.ownerId;
+
+    private bool IsDead() {
+        lock (_lock) {
+            return GetCurrentState().health < 1 * Interop.SM64_HEALTH_PER_HEALTH_POINT;
+        }
+    }
+
+    public void Heal(byte healthPoints) {
+        if (!_enabled) return;
+
+        if (IsDead()) {
+            // Revive
+            Interop.MarioSetHealthPoints(MarioId, healthPoints + 1);
+            Interop.MarioSetAction(MarioId, ActionFlags.ACT_FLAG_IDLE);
+        }
+        else {
+            Interop.MarioHeal(MarioId, healthPoints);
+        }
+    }
+
+    public void PickupCoin(CVRSM64InteractableParticles.ParticleType coinType) {
+        if (!_enabled) return;
+
+        switch (coinType) {
+            case CVRSM64InteractableParticles.ParticleType.GoldCoin:
+                Interop.MarioHeal(MarioId, 1);
+                Interop.PlaySoundGlobal(SoundBitsKeys.SOUND_GENERAL_COIN);
+                break;
+            case CVRSM64InteractableParticles.ParticleType.BlueCoin:
+                Interop.PlaySoundGlobal(SoundBitsKeys.SOUND_GENERAL_COIN);
+                Interop.MarioHeal(MarioId, 5);
+                break;
+            case CVRSM64InteractableParticles.ParticleType.RedCoin:
+                Interop.PlaySoundGlobal(SoundBitsKeys.SOUND_GENERAL_RED_COIN);
+                Interop.MarioHeal(MarioId, 2);
+                break;
+        }
     }
 }

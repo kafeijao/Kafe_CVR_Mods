@@ -6,13 +6,13 @@ using MelonLoader;
 
 namespace Kafe.CVRSuperMario64;
 
+[DefaultExecutionOrder(888888)]
 public class CVRSM64ColliderDynamic : MonoBehaviour {
 
     [SerializeField] private SM64TerrainType terrainType = SM64TerrainType.Grass;
     [SerializeField] private SM64SurfaceType surfaceType = SM64SurfaceType.Default;
 
-    public SM64TerrainType TerrainType => terrainType;
-    public SM64SurfaceType SurfaceType => surfaceType;
+    [SerializeField] private bool ignoreForSpawner = true;
 
     private uint _surfaceObjectId;
 
@@ -24,8 +24,34 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
 
     private bool HasChanges { get; set; }
 
+    [NonSerialized] private bool _enabled;
+    [NonSerialized] private bool _started;
+
+    private void Start() {
+        _started = true;
+        Initialize();
+    }
 
     private void OnEnable() {
+        _enabled = true;
+        Initialize();
+    }
+
+    private void Initialize() {
+
+        // Only initialize when both Start and OnEnable ran
+        if (!_started || !_enabled) return;
+
+        // Check if the collider is inside of a mario we control, and ignore if that's the case
+        if (ignoreForSpawner) {
+            var parentMario = GetComponentInParent<CVRSM64Mario>();
+            if (parentMario != null && parentMario.IsMine()) {
+                MelonLogger.Msg($"[{nameof(CVRSM64ColliderDynamic)}] Ignoring collider {gameObject.name} because it's on our own mario!");
+                Destroy(this);
+                return;
+            }
+        }
+
         CVRSM64Context.RegisterSurfaceObject(this);
 
         LastPosition = transform.position;
@@ -41,6 +67,10 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
     }
 
     private void OnDisable() {
+
+        if (!_started || !_enabled) return;
+
+        _enabled = false;
 
         if (Interop.isGlobalInit) {
             CVRSM64Context.UnregisterSurfaceObject(this);

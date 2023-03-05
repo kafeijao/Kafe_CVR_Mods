@@ -33,7 +33,7 @@ internal static class Interop {
     public const int SM64_TEXTURE_HEIGHT = 64;
     public const int SM64_GEO_MAX_TRIANGLES = 1024;
 
-    public const float SM64_HEALTH_PER_LIFE = 0x100;
+    public const float SM64_HEALTH_PER_HEALTH_POINT = 0x100;
 
     public const byte SECONDS_MULTIPLIER = 40;
 
@@ -42,6 +42,9 @@ internal static class Interop {
     // It seems a collider can't be too big, otherwise it will be ignored
     // This seems like too much of a pain to fix rn, let the future me worry about it
     public const int SM64_MAX_VERTEX_DISTANCE = 250000 * (int) SCALE_FACTOR;
+
+    // Was having weird crashes, I think it's due the audio ticks and mario ticks being called from diff threads
+    private static readonly object Lock = new();
 
     private static readonly ushort[] MUSICS = {
         (ushort) MusicSeqId.SEQ_MENU_TITLE_SCREEN,
@@ -117,7 +120,7 @@ internal static class Interop {
 
         public Quaternion UnityRotation => Quaternion.Euler(0f, Mathf.Repeat((-Mathf.Rad2Deg * faceAngle) + 180f, 360f) - 180f, 0f);
 
-        public float Lives => health / SM64_HEALTH_PER_LIFE;
+        public float HealthPoints => health / SM64_HEALTH_PER_HEALTH_POINT;
 
         public bool IsAttacking() => (action & (uint) ActionFlags.ACT_FLAG_ATTACKING) != 0;
     }
@@ -372,7 +375,9 @@ internal static class Interop {
             uv = uvHandle.AddrOfPinnedObject()
         };
 
-        sm64_mario_tick(marioId, ref inputs, ref outState, ref buff);
+        lock (Lock) {
+            sm64_mario_tick(marioId, ref inputs, ref outState, ref buff);
+        }
 
         numTrianglesUsed = buff.numTrianglesUsed;
 
@@ -385,15 +390,23 @@ internal static class Interop {
     }
 
     public static uint AudioTick(short[] audioBuffer, uint numDesiredSamples, uint numQueuedSamples = 0) {
-        var audioBufferPointer = GCHandle.Alloc(audioBuffer, GCHandleType.Pinned);
-        var numSamples = sm64_audio_tick(numQueuedSamples, numDesiredSamples, audioBufferPointer.AddrOfPinnedObject());
-        audioBufferPointer.Free();
-        return numSamples;
+        lock (Lock) {
+            var audioBufferPointer = GCHandle.Alloc(audioBuffer, GCHandleType.Pinned);
+            var numSamples = sm64_audio_tick(numQueuedSamples, numDesiredSamples, audioBufferPointer.AddrOfPinnedObject());
+            audioBufferPointer.Free();
+            return numSamples;
+        }
     }
 
-    public static void PlaySound(int soundBits, float pos) {
-        var posPointer = GCHandle.Alloc(pos, GCHandleType.Pinned);
-        sm64_play_sound(soundBits, posPointer.AddrOfPinnedObject());
+    public static void PlaySoundGlobal(SoundBitsKeys soundBitsKey) {
+        sm64_play_sound_global((int) Utils.SoundBits[soundBitsKey]);
+    }
+
+    public static void PlaySound(SoundBitsKeys soundBitsKey, Vector3 unityPosition) {
+        var marioPos = unityPosition.ToMarioPosition();
+        var position = new float[] { marioPos.x, marioPos.y, marioPos.z };
+        var posPointer = GCHandle.Alloc(position, GCHandleType.Pinned);
+        sm64_play_sound((int) Utils.SoundBits[soundBitsKey], posPointer.AddrOfPinnedObject());
         posPointer.Free();
     }
 
@@ -496,7 +509,16 @@ internal static class Interop {
         sm64_set_mario_faceangle(marioId, -Mathf.Deg2Rad * angleInDegrees);
     }
 
-    public static void MarioSetLives(uint marioId, float lives) {
-        sm64_set_mario_health(marioId, (ushort) (lives * SM64_HEALTH_PER_LIFE));
+    public static void MarioSetHealthPoints(uint marioId, float healthPoints) {
+        sm64_set_mario_health(marioId, (ushort) (healthPoints * SM64_HEALTH_PER_HEALTH_POINT));
+    }
+
+    public static void MarioHeal(uint marioId, byte healthPoints) {
+        // It was healing 0.25 with 1, so we multiplied by 4 EZ FIX
+        sm64_mario_heal(marioId, (byte)(healthPoints*4));
+    }
+
+    public static void MarioSetAction(uint marioId, ActionFlags actionFlags) {
+        sm64_set_mario_action(marioId, (uint) actionFlags);
     }
 }

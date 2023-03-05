@@ -1,11 +1,20 @@
 # CVRSuperMario64
 
-Attempt of [LibSM64](https://github.com/libsm64/libsm64) integration with CVR. I
-used [this repo](https://github.com/libsm64/libsm64-unity-dev) as a starting point.
+Mod to integrate the [libsm64](https://github.com/libsm64/libsm64) into CVR. It allows to spawn a Mario prop and control
+it (both in Desktop and VR). Since we're running the actual reverse engineered SM64 engine it should behave exactly like
+in the original game.
 
-Suggested as a meme idea by [AstroDoge](https://github.com/AstroDogeDX) and then Noachi. Two people make a meme idea
-juicy I guess x)
+This was suggested as a meme idea by [AstroDoge](https://github.com/AstroDogeDX) and then Noachi. Two people make a meme
+idea juicy I guess x)
 
+---
+
+## CVR Super Mario 64 SDK
+
+There should be public props in CVR that you can use right away. Or if you want to get adventurous you can create your
+own. I also create a [CCK for this mod](https://github.com/kafeijao/Kafe_CVR_CCKs/tree/master/CVRSuperMario64). It
+allows you to create entities used by the mod. Like your own Mario Prop (you can use custom material/shaders), make
+levels with terrain types etc, create interactables to you can trigger the Mario Caps or spawn coins.
 
 ---
 
@@ -34,10 +43,27 @@ juicy I guess x)
 - [ ] Offload the heavy work to a thread.
 - [x] Add support to configure terrain types.
 - [x] Add support for moving colliders.
-- [ ] Add marios collision?
-- [ ] Add support for coins?
+- [x] Add support for coins?
 - [ ] Add support for enemies?
-- [ ] Add Mario pvp?
+- [x] Add Mario pvp?
+
+---
+
+## Credits
+
+- [libSM64](https://github.com/libsm64/libsm64) For the amazing library
+- [libSM64 Unity plugin](https://github.com/libsm64/libsm64-unity-dev) For an example on how to integrate with unity.
+  This was my starting point!
+
+---
+
+## Building Instructions for sm64.dll
+
+If you want to build the `libsm64/Plugins/sm64.dll` follow the instructions
+at: [libsm64](https://github.com/libsm64/libsm64).
+
+The `libsm64/Plugins/sm64.dll.info` file should have information of which commit I used to build the current supported
+version of the dll.
 
 ---
 

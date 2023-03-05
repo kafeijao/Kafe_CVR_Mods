@@ -59,7 +59,7 @@ public class CVRSM64LevelModifier : MonoBehaviour {
             if (Mathf.Approximately(_lastLevel, float.MinValue)) return;
             lock (marios) {
                 foreach (var mario in marios) {
-                    Interop.SetLevelModifier(mario.marioId, _lastModifierType, float.MinValue);
+                    Interop.SetLevelModifier(mario.MarioId, _lastModifierType, float.MinValue);
                 }
             }
             _lastLevel = float.MinValue;
@@ -76,7 +76,7 @@ public class CVRSM64LevelModifier : MonoBehaviour {
         var highestLevel = maxLevelModifier.transform.position.y;
 
         // Highest level hasn't changed, lets ignore (unless we're forcing the update)
-        if ((maxLevelModifier.modifierType == _lastModifierType && Mathf.Approximately(highestLevel, _lastLevel)) || _forceUpdate) {
+        if (maxLevelModifier.modifierType == _lastModifierType && Mathf.Approximately(highestLevel, _lastLevel) && !_forceUpdate) {
             return;
         }
 
@@ -86,7 +86,7 @@ public class CVRSM64LevelModifier : MonoBehaviour {
 
         lock (marios) {
             foreach (var mario in marios) {
-                Interop.SetLevelModifier(mario.marioId, _lastModifierType, highestLevel);
+                Interop.SetLevelModifier(mario.MarioId, _lastModifierType, highestLevel);
             }
         }
 

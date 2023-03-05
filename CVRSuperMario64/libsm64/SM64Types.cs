@@ -82,9 +82,22 @@ public enum CapFlags {
 }
 
 [Flags]
-public enum ActionFlags {
+public enum ActionFlags : uint {
     ACT_FLAG_INVULNERABLE           = 0x00020000,
     ACT_FLAG_ATTACKING              = 0x00800000,
     ACT_FLAG_IDLE                   = 0x00400000,
     ACT_FLAG_SHORT_HITBOX           = 0x00008000,
+}
+
+[Flags]
+public enum SoundBitsKeys {
+    SOUND_GENERAL_COIN,
+    SOUND_GENERAL_COIN_WATER,
+    SOUND_GENERAL_COIN_SPURT,
+    SOUND_GENERAL_COIN_SPURT_2,
+    SOUND_GENERAL_COIN_SPURT_EU,
+    SOUND_GENERAL_COIN_DROP,
+    SOUND_GENERAL_RED_COIN,
+    SOUND_MENU_COIN_ITS_A_ME_MARIO,
+    SOUND_MENU_COLLECT_RED_COIN,
 }

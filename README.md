@@ -15,6 +15,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [ProfilesExtended](ProfilesExtended) *in-depth url*
 - [BetterLipsync](BetterLipsync) *in-depth url*
 - [EyeMovementFix](EyeMovementFix) *in-depth url*
+- [CVRSuperMario64](CVRSuperMario64) *in-depth url*
 
 ---
 
@@ -134,6 +135,23 @@ Mod to attempt to fix some of the current issues with the eye movement. This wil
 eye movement but only for the local client.
 
 Check [Eye Movement Fix In-Dept](EyeMovementFix) for more info.
+
+---
+
+### CVR Super Mario 64
+
+Mod to integrate the [libsm64](https://github.com/libsm64/libsm64) into CVR. It allows to spawn a Mario prop and control
+it (both in Desktop and VR). Since we're running the actual reverse engineered SM64 engine it should behave exactly like
+in the original game.
+
+As a little extra it also supports multiplayer, mario pvp, mario-player interactions (punch people), and others.
+
+There should be public props in CVR that you can use right away. Or if you want to get adventurous you can create your
+own. I also create a [CCK for this mod](https://github.com/kafeijao/Kafe_CVR_CCKs/tree/master/CVRSuperMario64). It
+allows you to create entities used by the mod. Like your own Mario Prop (you can use custom material/shaders), make
+levels with terrain types etc, create interactables to you can trigger the Mario Caps or spawn coins.
+
+Check [CVR Super Mario 64 In-Dept](CVRSuperMario64) for more info.
 
 ---
 

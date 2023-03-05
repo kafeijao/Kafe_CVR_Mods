@@ -101,6 +101,7 @@ internal static class Utils {
 
     private static readonly int UILayer = LayerMask.NameToLayer("UI");
     private static readonly int UIInternalLayer = LayerMask.NameToLayer("UI Internal");
+    private static readonly int PlayerCloneLayer = LayerMask.NameToLayer("PlayerClone");
     private static readonly int PlayerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
     private static readonly int PlayerNetworkLayer = LayerMask.NameToLayer("PlayerNetwork");
     private static readonly int IgnoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
@@ -113,7 +114,9 @@ internal static class Utils {
             && col.gameObject.activeInHierarchy
             // Ignore other mario's colliders
             && col.GetComponentInChildren<CVRSM64Mario>() == null
+            && col.GetComponentInParent<CVRSM64Mario>() == null
             // Ignore the some layers
+            && col.gameObject.layer != PlayerCloneLayer
             && col.gameObject.layer != PlayerLocalLayer
             && col.gameObject.layer != PlayerNetworkLayer
             && col.gameObject.layer != IgnoreRaycastLayer
@@ -370,5 +373,28 @@ internal static class Utils {
             case MarioCapType.WingCap: return (flags & (uint)CapFlags.MARIO_WING_CAP) != 0;
         }
         return capType == MarioCapType.None;
+    }
+
+    public static readonly Dictionary<SoundBitsKeys, uint> SoundBits = new() {
+        { SoundBitsKeys.SOUND_GENERAL_COIN,              SoundArgLoad(3, 8, 0x11, 0x80, 8) },
+        { SoundBitsKeys.SOUND_GENERAL_COIN_WATER,        SoundArgLoad(3, 8, 0x12, 0x80, 8) },
+        { SoundBitsKeys.SOUND_GENERAL_COIN_SPURT,        SoundArgLoad(3, 0, 0x30, 0x00, 8) },
+        { SoundBitsKeys.SOUND_GENERAL_COIN_SPURT_2,      SoundArgLoad(3, 8, 0x30, 0x00, 8) },
+        { SoundBitsKeys.SOUND_GENERAL_COIN_SPURT_EU,     SoundArgLoad(3, 8, 0x30, 0x20, 8) },
+        { SoundBitsKeys.SOUND_GENERAL_COIN_DROP,         SoundArgLoad(3, 0, 0x36, 0x40, 8) },
+        { SoundBitsKeys.SOUND_GENERAL_RED_COIN,          SoundArgLoad(3, 0, 0x68, 0x90, 8) },
+        { SoundBitsKeys.SOUND_MENU_COIN_ITS_A_ME_MARIO,  SoundArgLoad(7, 0, 0x14, 0x00, 8) },
+        { SoundBitsKeys.SOUND_MENU_COLLECT_RED_COIN,     SoundArgLoad(7, 8, 0x28, 0x90, 8) },
+    };
+
+    private static uint SoundArgLoad(uint bank, uint playFlags, uint soundID, uint priority, uint flags2) {
+        // Sound Magic Definition:
+        // First Byte (Upper Nibble): Sound Bank (not the same as audio bank!)
+        // First Byte (Lower Nibble): Bitflags for audio playback?
+        // Second Byte: Sound ID
+        // Third Byte: Priority
+        // Fourth Byte (Upper Nibble): More bitflags
+        // Fourth Byte (Lower Nibble): Sound Status (this is set to SOUND_STATUS_PLAYING when passed to the audio driver.)
+        return (bank << 28) | (playFlags << 24) | (soundID << 16) | (priority << 8) | (flags2 << 4) | 1;
     }
 }
