@@ -10,7 +10,6 @@ namespace Kafe.CVRSuperMario64;
 public class CVRSuperMario64 : MelonMod {
 
     private static MelonPreferences_Category _melonCategory;
-    private static MelonPreferences_Entry<bool> MeAlwaysReplaceLib;
     internal static MelonPreferences_Entry<bool> MeDisableAudio;
     internal static MelonPreferences_Entry<float> MeAudioPitch;
     internal static MelonPreferences_Entry<float> MeAudioVolume;
@@ -38,10 +37,6 @@ public class CVRSuperMario64 : MelonMod {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(CVRSuperMario64));
-
-        MeAlwaysReplaceLib = _melonCategory.CreateEntry("AlwaysReplaceLib", true,
-            description: "Whether to always replace the sm64.dll lib on start or not. Only disable if you know what " +
-                         "you're doing!");
 
         MeDisableAudio = _melonCategory.CreateEntry("DisableAudio", false,
             description: "Whether to disable the game audio or not.");
@@ -75,17 +70,10 @@ public class CVRSuperMario64 : MelonMod {
         var dstPath = Path.GetFullPath(Path.Combine("ChilloutVR_Data", "Plugins", "x86_64", dllName));
 
         try {
-            var sm64LibFileInfo = new FileInfo(dstPath);
-            if (!sm64LibFileInfo.Exists || MeAlwaysReplaceLib.Value) {
-                MelonLogger.Msg($"Copying the sm64.dll to {dstPath}");
-                using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(dllName);
-                using var fileStream = File.Open(dstPath, FileMode.Create, FileAccess.Write);
-                resourceStream!.CopyTo(fileStream);
-            }
-            else {
-                MelonLogger.Msg($"The lib sm64.dll already exists at {dstPath}, we won't overwrite...");
-                return;
-            }
+            MelonLogger.Msg($"Copying the sm64.dll to {dstPath}");
+            using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(dllName);
+            using var fileStream = File.Open(dstPath, FileMode.Create, FileAccess.Write);
+            resourceStream!.CopyTo(fileStream);
         }
         catch (IOException ex) {
             MelonLogger.Error("Failed to copy native library: " + ex.Message);

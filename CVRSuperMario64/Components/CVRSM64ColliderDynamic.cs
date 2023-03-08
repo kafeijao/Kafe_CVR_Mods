@@ -66,6 +66,10 @@ public class CVRSM64ColliderDynamic : MonoBehaviour {
         #endif
     }
 
+    private void OnDestroy() {
+        OnDisable();
+    }
+
     private void OnDisable() {
 
         if (!_started || !_enabled) return;

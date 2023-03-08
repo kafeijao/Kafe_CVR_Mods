@@ -113,4 +113,8 @@ public class CVRSM64LevelModifier : MonoBehaviour {
         MelonLogger.Msg($"[{nameof(CVRSM64LevelModifier)}] {gameObject.name} Disabled!");
         #endif
     }
+
+    private void OnDestroy() {
+        OnDisable();
+    }
 }

@@ -1,3 +1,4 @@
+using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
 
@@ -107,7 +108,7 @@ internal static class Utils {
     private static readonly int IgnoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
     private static readonly int MirrorReflectionLayer = LayerMask.NameToLayer("MirrorReflection");
 
-    internal static bool IsGoodCollider(Collider col) {
+    private static bool IsGoodCollider(Collider col) {
         return
             // Ignore disabled
             col.enabled
@@ -115,6 +116,8 @@ internal static class Utils {
             // Ignore other mario's colliders
             && col.GetComponentInChildren<CVRSM64Mario>() == null
             && col.GetComponentInParent<CVRSM64Mario>() == null
+            // Ignore colliders in pickup scripts
+            && col.GetComponentInParent<CVRPickupObject>() == null
             // Ignore the some layers
             && col.gameObject.layer != PlayerCloneLayer
             && col.gameObject.layer != PlayerLocalLayer
@@ -127,7 +130,7 @@ internal static class Utils {
             && !col.isTrigger;
     }
 
-    internal static void TransformAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
+    private static void TransformAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         Vector3[] vertices = {
             b.transform.TransformPoint(b.center + new Vector3(-b.size.x, -b.size.y, -b.size.z) * 0.5f),
             b.transform.TransformPoint(b.center + new Vector3(b.size.x, -b.size.y, -b.size.z) * 0.5f),
@@ -158,7 +161,7 @@ internal static class Utils {
         Interop.CreateAndAppendSurfaces(outSurfaces, tris, vertices, surfaceType, terrainType);
     }
 
-    internal static void ScaleAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
+    private static void ScaleAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         Vector3[] vertices = {
             Vector3.Scale(b.transform.lossyScale, b.center + new Vector3(-b.size.x, -b.size.y, -b.size.z) * 0.5f),
             Vector3.Scale(b.transform.lossyScale, b.center + new Vector3(b.size.x, -b.size.y, -b.size.z) * 0.5f),
@@ -189,15 +192,15 @@ internal static class Utils {
         Interop.CreateAndAppendSurfaces(outSurfaces, tris, vertices, surfaceType, terrainType);
     }
 
-    internal static Vector3 TransformPoint(SphereCollider s, Vector3 point) {
+    private static Vector3 TransformPoint(SphereCollider s, Vector3 point) {
         return s.transform.TransformPoint(point * s.radius * 2 + s.center);
     }
 
-    internal static Vector3 ScalePoint(SphereCollider s, Vector3 point) {
+    private static Vector3 ScalePoint(SphereCollider s, Vector3 point) {
         return Vector3.Scale(s.transform.lossyScale, point * s.radius * 2 + s.center);
     }
 
-    internal static Vector3 TransformPoint(CapsuleCollider c, Vector3 point) {
+    private static Vector3 TransformPoint(CapsuleCollider c, Vector3 point) {
         // Calculate the height and radius as if we were on the direction y (i == 1)
         for (int i = 0; i < 3; i++) {
             point[i] *= i == 1 ? Mathf.Max(c.height, c.radius * 2) / 2 : c.radius * 2;
@@ -220,7 +223,7 @@ internal static class Utils {
         return c.transform.TransformPoint(alignedCapsule + c.center);
     }
 
-    internal static Vector3 ScalePoint(CapsuleCollider c, Vector3 point) {
+    private static Vector3 ScalePoint(CapsuleCollider c, Vector3 point) {
         // Calculate the height and radius as if we were on the direction y (i == 1)
         for (int i = 0; i < 3; i++) {
             point[i] *= i == 1 ? Mathf.Max(c.height, c.radius * 2) / 2 : c.radius * 2;
@@ -279,7 +282,7 @@ internal static class Utils {
         return surfaces.ToArray();
     }
 
-    internal static List<Interop.SM64Surface> GetTransformedSurfaces(Collider collider, List<Interop.SM64Surface> surfaces, SM64SurfaceType surfaceType, SM64TerrainType terrainType, bool bypassPolygonLimit) {
+    private static List<Interop.SM64Surface> GetTransformedSurfaces(Collider collider, List<Interop.SM64Surface> surfaces, SM64SurfaceType surfaceType, SM64TerrainType terrainType, bool bypassPolygonLimit) {
 
         switch (collider) {
             case BoxCollider boxCollider:

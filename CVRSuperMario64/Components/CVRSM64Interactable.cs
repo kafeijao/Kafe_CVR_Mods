@@ -47,4 +47,8 @@ public class CVRSM64Interactable : MonoBehaviour {
         MelonLogger.Msg($"[{nameof(CVRSM64Interactable)}] {gameObject.name} Disabled!");
         #endif
     }
+
+    private void OnDestroy() {
+        OnDisable();
+    }
 }
