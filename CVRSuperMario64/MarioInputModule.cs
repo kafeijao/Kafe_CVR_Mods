@@ -1,12 +1,11 @@
 ﻿using ABI_RC.Core;
+using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using HarmonyLib;
 using UnityEngine;
 
-#if DEBUG
 using Valve.VR;
-#endif
 
 namespace Kafe.CVRSuperMario64;
 
@@ -79,14 +78,17 @@ public class MarioInputModule : CVRInputModule {
             _inputManager.interactRightValue = 0f;
             _inputManager.gripRightValue = 0f;
 
-            #if DEBUG
-            // Lets attempt to do a left hand only movement
-            if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
-                _inputManager.movementVector.z = CVRTools.AxisDeadZone(
-                    _vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
-                    MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
+            // Thanks NotAKidS for finding the issue and suggesting the fix!
+            if (!ViewManager.Instance.isGameMenuOpen() &&
+                !Traverse.Create(CVR_MenuManager.Instance).Field<bool>("_quickMenuOpen").Value) {
+
+                // Lets attempt to do a left hand only movement
+                if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
+                    _inputManager.movementVector.z = CVRTools.AxisDeadZone(
+                        _vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
+                        MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
+                }
             }
-            #endif
         }
     }
 
