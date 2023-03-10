@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
+using ABI_RC.Systems.Camera;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -21,8 +22,10 @@ public class CVRSuperMario64 : MelonMod {
 
     // Asset bundle
     private static Material _marioMaterialCached;
+    private static Sprite _marioSpriteCached;
     private const string LibSM64AssetBundleName = "libsm64.assetbundle";
     private const string MarioMaterialAssetPath = "Assets/Content/Material/DefaultMario.mat";
+    private const string MarioTextureAssetPath = "Assets/Content/Texture/Mario_Head_256.png";
 
     // Rom
     private const string SuperMario64UsZ64RomHashHex = "20b854b239203baf6c961b850a4a51a2";
@@ -91,9 +94,14 @@ public class CVRSuperMario64 : MelonMod {
             }
             resourceStream.CopyTo(memoryStream);
             var assetBundle = AssetBundle.LoadFromMemory(memoryStream.ToArray());
+            // Load Material
             var mat = assetBundle.LoadAsset<Material>(MarioMaterialAssetPath);
             mat.hideFlags |= HideFlags.DontUnloadUnusedAsset;
             _marioMaterialCached = mat;
+            // Load Sprite
+            var sprite = assetBundle.LoadAsset<Sprite>(MarioTextureAssetPath);
+            sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset;
+            _marioSpriteCached = sprite;
         }
         catch (Exception ex) {
             MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
@@ -151,6 +159,10 @@ public class CVRSuperMario64 : MelonMod {
         return _marioMaterialCached;
     }
 
+    public static Sprite GetMarioSprite() {
+        return _marioSpriteCached;
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
@@ -158,6 +170,15 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPatch(typeof(CVRInputManager), "Start")]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
             __instance.gameObject.AddComponent<MarioInputModule>();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PortableCamera), "Start")]
+        public static void After_PortableCamera_Start(PortableCamera __instance) {
+            var mod = new MarioCameraMod();
+            __instance.RegisterMod(mod);
+            __instance.RequireUpdate(mod);
+            __instance.UpdateOptionsDisplay();
         }
     }
 }

@@ -182,7 +182,9 @@ public class CVRSM64Context : MonoBehaviour {
     public static void UpdateMarioCount() {
         if (_instance == null || MarioInputModule.Instance == null) return;
         lock (_instance._marios) {
-            MarioInputModule.Instance.controllingMarios = _instance._marios.Count(m => m.IsMine());
+            var ourMarios = _instance._marios.FindAll(m => m.IsMine());
+            MarioInputModule.Instance.controllingMarios = ourMarios.Count;
+            MarioCameraMod.Instance.UpdateOurMarios(ourMarios);
         }
     }
 
@@ -203,6 +205,7 @@ public class CVRSM64Context : MonoBehaviour {
     public static void RegisterMario(CVRSM64Mario mario) {
         EnsureInstanceExists();
 
+        // Note: Don't use mario.IsMine() or mario.IsDead() here, they're still not initialized!
         lock (_instance._marios) {
             if (_instance._marios.Contains(mario)) return;
 

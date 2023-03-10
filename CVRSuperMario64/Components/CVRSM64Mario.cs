@@ -28,6 +28,10 @@ public class CVRSM64Mario : MonoBehaviour {
     [SerializeField] private bool overrideCameraPosition = false;
     [SerializeField] private Transform cameraPositionTransform = null;
 
+    // Camera Mod Override
+    [SerializeField] private Transform cameraModTransform = null;
+    [SerializeField] private List<Renderer> cameraModTransformRenderersToHide = new();
+
     // Material Properties
     private const float VanishOpacity = 0.5f;
     private Color _colorNormal;
@@ -93,6 +97,7 @@ public class CVRSM64Mario : MonoBehaviour {
         Health,
         Flags,
         Action,
+        HasCameraMod,
     }
     private readonly Dictionary<SyncedParameterNames, Tuple<int, CVRSpawnableValue>> _syncParameters = new();
 
@@ -232,6 +237,10 @@ public class CVRSM64Mario : MonoBehaviour {
 
         // Player setup transform
         _localPlayerTransform = PlayerSetup.Instance.transform;
+
+        // Ensure the list of renderers is not null and has no null values
+        cameraModTransformRenderersToHide ??= new List<Renderer>();
+        cameraModTransformRenderersToHide.RemoveAll(r => r == null);
 
         // Check for the SM64Mario component
         var mario = GetComponent<CVRSM64Mario>();
@@ -540,7 +549,17 @@ public class CVRSM64Mario : MonoBehaviour {
 
             // Handle other synced params
             if (spawnable.IsMine()) {
+
+                // Handle health sync
                 spawnable.SetValue(_syncParameters[SyncedParameterNames.Health].Item1, _states[j].HealthPoints);
+
+                // Handle controlling mario with camera mod sub-sync sync
+                if (MarioCameraMod.Instance.IsControllingMario(this)) {
+                    if (advancedOptions && cameraModTransform != null) {
+                        var camTransform = MarioCameraMod.Instance.GetCameraTransform();
+                        cameraModTransform.SetPositionAndRotation(camTransform.position, camTransform.rotation);
+                    }
+                }
             }
             else {
                 SetHealthPoints(_syncParameters[SyncedParameterNames.Health].Item2.currentValue);
@@ -578,6 +597,15 @@ public class CVRSM64Mario : MonoBehaviour {
         // If we're overriding the camera position transform use it instead.
         if (overrideCameraPosition && cameraPositionTransform != null) {
             return cameraPositionTransform.forward;
+        }
+
+        // If we're using the CVR Camera Mod
+        if (spawnable.IsMine()) {
+            if (MarioCameraMod.Instance.IsControllingMario(this)) {
+                spawnable.SetValue(_syncParameters[SyncedParameterNames.HasCameraMod].Item1, 1f);
+                return MarioCameraMod.Instance.GetCameraTransform().forward;
+            }
+            spawnable.SetValue(_syncParameters[SyncedParameterNames.HasCameraMod].Item1, 0f);
         }
 
         // Use our own camera
@@ -794,4 +822,6 @@ public class CVRSM64Mario : MonoBehaviour {
                 break;
         }
     }
+
+    public List<Renderer> GetRenderersToHideFromCamera() => cameraModTransformRenderersToHide;
 }
