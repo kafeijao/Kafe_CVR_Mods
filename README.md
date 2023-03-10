@@ -16,6 +16,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [BetterLipsync](BetterLipsync) *in-depth url*
 - [EyeMovementFix](EyeMovementFix) *in-depth url*
 - [CVRSuperMario64](CVRSuperMario64) *in-depth url*
+- [Instances](Instances) *in-depth url*
 
 ---
 
@@ -152,6 +153,14 @@ allows you to create entities used by the mod. Like your own Mario Prop (you can
 levels with terrain types etc, create interactables to you can trigger the Mario Caps or spawn coins.
 
 Check [CVR Super Mario 64 In-Dept](CVRSuperMario64) for more info.
+
+---
+
+### Instances
+
+Instances is a mod for ChilloutVR that enhances the management of world instances. With this mod, you can quickly rejoin the last instance you were in before logging out (as long as it still exists), and easily revisit the last 8 instances you've visited with just a single click. Note that to use the history feature, you need to have the BTKUILib mod installed.
+
+Check [Instances](Instances) for more info.
 
 ---
 
