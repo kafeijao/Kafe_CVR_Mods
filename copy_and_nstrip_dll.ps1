@@ -1,6 +1,10 @@
 $0HarmonydllPath="\MelonLoader\0Harmony.dll"
 $melonLoaderdllPath="\MelonLoader\MelonLoader.dll"
 $cvrManagedDataPath="\ChilloutVR_Data\Managed"
+
+# Third Party Dependencies
+$btkuiLibPath="\Mods\BTKUILib.dll"
+
 $cvrPath=$env:CVRPATH
 
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
@@ -10,6 +14,10 @@ Write-Host "Copy all dll from the game so we can work and modify them"
 Copy-Item $cvrPath$0HarmonydllPath -Destination $scriptDir"\ManagedLibs"
 Copy-Item $cvrPath$melonLoaderdllPath -Destination $scriptDir"\ManagedLibs"
 Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $scriptDir"\ManagedLibs"
+
+if (Test-Path "$cvrPath$btkuiLibPath" -PathType Leaf) {
+    Copy-Item $cvrPath$btkuiLibPath -Destination $scriptDir"\ManagedLibs"
+}
 
 Write-Host "Copied all libraries!"
 Write-Host ""

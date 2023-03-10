@@ -7,6 +7,9 @@ xcopy /f /y "%CVRPATH%\MelonLoader\0Harmony.dll" "%~dp0ManagedLibs\"
 xcopy /f /y "%CVRPATH%\MelonLoader\MelonLoader.dll" "%~dp0ManagedLibs\"
 xcopy /f /s /y "%CVRPATH%\ChilloutVR_Data\Managed" "%~dp0ManagedLibs\"
 
+if exist "%CVRPATH%\Mods\BTKUILib.dll" (
+    xcopy /f /y "%CVRPATH%\Mods\BTKUILib.dll" "%~dp0ManagedLibs\"
+)
 
 @REM echo Generating file with all lib names
 @REM echo 0Harmony>lib_names

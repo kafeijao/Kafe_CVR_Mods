@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheClapper", "TheClapper\Th
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CVRSuperMario64", "CVRSuperMario64\CVRSuperMario64.csproj", "{7BDE8363-27E1-4EC3-85C8-59AF92F04EB2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Instances", "Instances\Instances.csproj", "{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,9 @@ Global
 		{7BDE8363-27E1-4EC3-85C8-59AF92F04EB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BDE8363-27E1-4EC3-85C8-59AF92F04EB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BDE8363-27E1-4EC3-85C8-59AF92F04EB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
