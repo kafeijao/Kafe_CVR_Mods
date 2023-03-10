@@ -125,6 +125,9 @@ internal static class Interop {
         public float HealthPoints => health / SM64_HEALTH_PER_HEALTH_POINT;
 
         public bool IsAttacking() => (action & (uint) ActionFlags.ACT_FLAG_ATTACKING) != 0;
+        public bool IsFlyingOrSwimming() => (action & (uint) ActionFlags.ACT_FLAG_SWIMMING_OR_FLYING) != 0;
+        public bool IsSwimming() => (action & (uint) ActionFlags.ACT_FLAG_SWIMMING) != 0;
+        public bool IsFlying() => (action & (uint) ActionFlags.ACT_FLYING) != 0;
     }
 
     [StructLayout(LayoutKind.Sequential)]

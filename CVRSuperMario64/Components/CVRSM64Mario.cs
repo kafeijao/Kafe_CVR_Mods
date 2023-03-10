@@ -824,4 +824,22 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     public List<Renderer> GetRenderersToHideFromCamera() => cameraModTransformRenderersToHide;
+
+    public bool IsFirstPerson() {
+        lock (_lock) {
+            return GetCurrentState().IsFlyingOrSwimming();
+        }
+    }
+
+    public bool IsSwimming() {
+        lock (_lock) {
+            return GetCurrentState().IsSwimming();
+        }
+    }
+
+    public bool IsFlying() {
+        lock (_lock) {
+            return GetCurrentState().IsFlying();
+        }
+    }
 }

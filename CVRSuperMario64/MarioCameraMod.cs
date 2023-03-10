@@ -17,7 +17,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     private CVRSM64Mario _currentMario;
     private bool _wasNullAlready;
 
-    private float _radius;
+    private float _distance;
     private float _elevation;
 
 
@@ -30,6 +30,9 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     private SphereCollider _collider;
     private Rigidbody _rigidbody;
     private CVRPickupObject _pickup;
+
+    // First person
+    private Vector3 _velocity = Vector3.zero;
 
 
     public MarioCameraMod() {
@@ -110,7 +113,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         nextMarioButton.Load();
 
         var radiusSetting = camera.@interface.AddAndGetSetting(PortableCameraSettingType.Float);
-        radiusSetting.FloatChanged = f => _radius = f;
+        radiusSetting.FloatChanged = f => _distance = f;
         radiusSetting.SettingName = "MarioCamDistance";
         radiusSetting.DisplayName = "Mario Camera Distance";
         radiusSetting.isExpertSetting = false;
@@ -152,17 +155,32 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
         if (Input.GetKeyDown(KeyCode.E)) _portableCamera.MakePhoto();
 
-        var m = _currentMario.transform.position;
-        var n = _camera.position;
-        m.y = 0;
-        n.y = 0;
-        n = (n - m).normalized * _radius;
-        n = Quaternion.AngleAxis( MarioInputModule.Instance.horizontal, Vector3.up ) * n;
-        n += m;
-        n.y = _currentMario.transform.position.y + _elevation;
+        if (_currentMario.IsFirstPerson()) {
 
-        _camera.transform.position = n;
-        _camera.transform.LookAt( _currentMario.transform.position );
+            var multiplier = _currentMario.IsSwimming() ? 3 : 2;
+
+            // Calculate the camera position based on the target position and the camera height and distance
+            var targetPosition = _currentMario.transform.position + Vector3.up * _elevation / multiplier - _currentMario.transform.forward * _distance / multiplier;
+            // Damp the camera movement to make it smooth
+            _camera.transform.position = Vector3.SmoothDamp(_camera.transform.position, targetPosition, ref _velocity, 0.3f);
+            // Look at the target
+            _camera.transform.LookAt(_currentMario.transform);
+        }
+        else {
+            var m = _currentMario.transform.position;
+            var n = _camera.position;
+            m.y = 0;
+            n.y = 0;
+            n = (n - m).normalized * _distance;
+            n = Quaternion.AngleAxis( MarioInputModule.Instance.horizontal, Vector3.up ) * n;
+            n += m;
+            n.y = _currentMario.transform.position.y + _elevation;
+            _camera.transform.position = n;
+            _camera.transform.LookAt( _currentMario.transform.position );
+        }
+
+
+
 
         _portableCamera.RefreshFadeOut();
     }
