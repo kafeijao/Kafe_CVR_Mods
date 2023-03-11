@@ -30,14 +30,14 @@ public class CVRSM64Context : MonoBehaviour {
 
         // Update context's colliders
         Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
-        CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        Config.MeIgnoreCollidersHigherThanPolygons.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue == oldValue) return;
             Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
         });
 
         // Setup melon pref updates
-        _maxMariosAnimatedPerPerson = CVRSuperMario64.MeMaxMariosAnimatedPerPerson.Value;
-        CVRSuperMario64.MeMaxMariosAnimatedPerPerson.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        _maxMariosAnimatedPerPerson = Config.MeMaxMariosAnimatedPerPerson.Value;
+        Config.MeMaxMariosAnimatedPerPerson.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             _maxMariosAnimatedPerPerson = newValue;
             UpdatePlayerMariosState();
             MelonLogger.Msg($"Changed the Max Marios animated per player from {oldValue} to {newValue}.");
@@ -49,11 +49,11 @@ public class CVRSM64Context : MonoBehaviour {
         _audioSource = gameObject.AddComponent<AudioSource>();
         _audioSource.spatialBlend = 0f;
 
-        _audioSource.volume = CVRSuperMario64.MeAudioVolume.Value;
-        CVRSuperMario64.MeAudioVolume.OnEntryValueChanged.Subscribe((_, newValue) => _audioSource.volume = newValue);
+        _audioSource.volume = Config.MeAudioVolume.Value;
+        Config.MeAudioVolume.OnEntryValueChanged.Subscribe((_, newValue) => _audioSource.volume = newValue);
 
-        _audioSource.pitch = CVRSuperMario64.MeAudioPitch.Value;
-        CVRSuperMario64.MeAudioPitch.OnEntryValueChanged.Subscribe((_, newValue) => _audioSource.pitch = newValue);
+        _audioSource.pitch = Config.MeAudioPitch.Value;
+        Config.MeAudioPitch.OnEntryValueChanged.Subscribe((_, newValue) => _audioSource.pitch = newValue);
 
         _audioSource.loop = true;
         _audioSource.Play();
@@ -70,7 +70,7 @@ public class CVRSM64Context : MonoBehaviour {
     private void OnAudioFilterRead(float[] data, int channels) {
 
         // Disable audio, it can get annoying
-        if (CVRSuperMario64.MeDisableAudio.Value) return;
+        if (Config.MeDisableAudio.Value) return;
 
         var samplesRemaining = data.Length;
         while (samplesRemaining > 0) {
@@ -87,8 +87,8 @@ public class CVRSM64Context : MonoBehaviour {
     private void Start() {
 
         // Game ticks via invoking
-        InvokeRepeating(nameof(SM64GameTick), 0, CVRSuperMario64.MeGameTickMs.Value / 1000f);
-        CVRSuperMario64.MeGameTickMs.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        InvokeRepeating(nameof(SM64GameTick), 0, Config.MeGameTickMs.Value / 1000f);
+        Config.MeGameTickMs.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue == oldValue) return;
             CancelInvoke(nameof(SM64GameTick));
             InvokeRepeating(nameof(SM64GameTick), 0, newValue / 1000f);
@@ -212,7 +212,7 @@ public class CVRSM64Context : MonoBehaviour {
             _instance._marios.Add(mario);
             UpdatePlayerMariosState();
 
-            if (CVRSuperMario64.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
+            if (Config.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
 
             CVRSM64LevelModifier.MarkForUpdate();
         }

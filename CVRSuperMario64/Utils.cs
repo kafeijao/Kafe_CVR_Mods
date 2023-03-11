@@ -303,9 +303,9 @@ internal static class Utils {
                     return surfaces;
                 }
 
-                if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value) {
+                if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > Config.MeIgnoreCollidersHigherThanPolygons.Value) {
                     MelonLogger.Warning($"[MeshCollider] {meshCollider.name} has {meshCollider.sharedMesh.triangles.Length} triangles, " +
-                                    $"which is more than the configured limit ({CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
+                                    $"which is more than the configured limit ({Config.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
                     return surfaces;
                 }
 
@@ -342,9 +342,9 @@ internal static class Utils {
                         return surfaces;
                     }
 
-                    if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value) {
+                    if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > Config.MeIgnoreCollidersHigherThanPolygons.Value) {
                         MelonLogger.Warning($"[MeshCollider] {meshCollider.name} has {meshCollider.sharedMesh.triangles.Length} triangles, " +
-                                        $"which is more than the configured limit ({CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
+                                        $"which is more than the configured limit ({Config.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
                         return surfaces;
                     }
 

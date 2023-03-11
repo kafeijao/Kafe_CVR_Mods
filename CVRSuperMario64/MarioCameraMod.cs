@@ -45,6 +45,11 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     }
 
     public bool IsControllingMario(CVRSM64Mario mario) => _isEnabled && _portableCamera.IsActive() && mario == _currentMario;
+    public static bool IsControllingAMario(out CVRSM64Mario mario) {
+        mario = Instance._currentMario;
+        return Instance._isEnabled && Instance._portableCamera.IsActive() && Instance._currentMario != null;
+    }
+
     public Transform GetCameraTransform() => _camera.transform;
 
     private readonly List<Renderer> _renderersToTurnOn = new();

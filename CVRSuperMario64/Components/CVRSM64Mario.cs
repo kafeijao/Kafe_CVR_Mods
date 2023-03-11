@@ -129,8 +129,8 @@ public class CVRSM64Mario : MonoBehaviour {
     private static float _skipFarMarioDistance;
 
     static CVRSM64Mario() {
-        _skipFarMarioDistance = CVRSuperMario64.MeSkipFarMarioDistance.Value;
-        CVRSuperMario64.MeSkipFarMarioDistance.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        _skipFarMarioDistance = Config.MeSkipFarMarioDistance.Value;
+        Config.MeSkipFarMarioDistance.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             _skipFarMarioDistance = newValue;
             MelonLogger.Msg($"Changed the distance that will skip animating other marios {oldValue} to {newValue}.");
         });
@@ -666,7 +666,10 @@ public class CVRSM64Mario : MonoBehaviour {
 
     private void UpdateIsOverMaxDistance() {
         // Check the distance to see if we should ignore the updates
-        _isOverMaxDistance = !IsMine() && Vector3.Distance(transform.position, _localPlayerTransform.position) > _skipFarMarioDistance;
+        _isOverMaxDistance =
+            !IsMine()
+            && Vector3.Distance(transform.position, _localPlayerTransform.position) > _skipFarMarioDistance
+            && (!MarioCameraMod.IsControllingAMario(out var mario) || Vector3.Distance(transform.position, mario.transform.position) > _skipFarMarioDistance);
         UpdateIsBypassed();
     }
 
