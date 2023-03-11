@@ -74,6 +74,7 @@ public class CVRSM64Mario : MonoBehaviour {
     [NonSerialized] private bool _initialized;
     [NonSerialized] private bool _wasPickedUp;
     [NonSerialized] private bool _initializedByRemote;
+    [NonSerialized] private bool _isDying;
 
     // Bypasses
     [NonSerialized] private bool _wasBypassed;
@@ -465,6 +466,15 @@ public class CVRSM64Mario : MonoBehaviour {
 
             // Check Interactables (trigger mario caps)
             CVRSM64Interactable.MarioTick(this, currentStateFlags);
+
+            // Check for deaths, so we delete the prop
+            if (!_isDying && IsDead()) {
+                _isDying = true;
+                Invoke(nameof(DeleteMario), 15f);
+                #if DEBUG
+                MelonLogger.Msg($"One of our Marios died, the prop will be deleted in 15 seconds...");
+                #endif
+            }
         }
         else {
 
@@ -755,6 +765,12 @@ public class CVRSM64Mario : MonoBehaviour {
     private bool IsDead() {
         lock (_lock) {
             return GetCurrentState().health < 1 * Interop.SM64_HEALTH_PER_HEALTH_POINT;
+        }
+    }
+
+    private void DeleteMario() {
+        lock (_lock) {
+            spawnable.Delete();
         }
     }
 
