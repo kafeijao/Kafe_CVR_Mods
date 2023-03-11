@@ -250,6 +250,8 @@ internal static class Utils {
     internal static Interop.SM64Surface[] GetAllStaticSurfaces() {
         var surfaces = new List<Interop.SM64Surface>();
 
+        var meshColliders = new List<MeshCollider>();
+
         foreach (var obj in UnityEngine.Object.FindObjectsOfType<Collider>()) {
 
             var cvrSM64ColliderStatic = obj.GetComponent<CVRSM64ColliderStatic>();
@@ -276,7 +278,49 @@ internal static class Utils {
             //MelonLogger.Msg($"[GoodCollider] {obj.name}");
             #endif
 
-            GetTransformedSurfaces(obj, surfaces, surfaceType, terrainType, hasDedicatedComponent);
+            if (obj is MeshCollider meshCollider && !hasDedicatedComponent) {
+                // Let's do some more processing to the mesh colliders without dedicated components
+                meshColliders.Add(meshCollider);
+            }
+            else {
+                // Everything else, let's just add (probably a bad idea)
+                GetTransformedSurfaces(obj, surfaces, surfaceType, terrainType, hasDedicatedComponent);
+            }
+        }
+
+        // Ignore all meshes colliders with a null shared mesh, or non-readable
+        var nonReadableMeshColliders = meshColliders.Where(meshCollider => meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable).ToList();
+        #if DEBUG
+        foreach (var nonReadableMeshCollider in nonReadableMeshColliders) {
+            MelonLogger.Warning($"[MeshCollider] {nonReadableMeshCollider.name} Mesh is null or not readable, " +
+                                "so we won't be able to use this as a collider for Mario :(");
+        }
+        #endif
+        meshColliders.RemoveAll(meshCollider => meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable);
+
+        // Sort the meshColliders list by the length of their triangles array in ascending order
+        meshColliders.Sort((a, b) => a.sharedMesh.triangles.Length.CompareTo(b.sharedMesh.triangles.Length));
+
+        // Add the mesh colliders until we reach the max mesh collider polygon limit
+        var totalMeshColliderTris = 0;
+        foreach (var meshCollider in meshColliders) {
+            var meshTrisCount = meshCollider.sharedMesh.triangles.Length / 3;
+            var newTotalMeshColliderTris = totalMeshColliderTris + meshTrisCount;
+            if (newTotalMeshColliderTris > Config.MeMaxMeshColliderTotalTris.Value) {
+                #if DEBUG
+                MelonLogger.Warning($"[MeshCollider] {meshCollider.name} will be ignored because it exceeds the " +
+                                    $"maximum mesh collider total tris count. Tris: {meshTrisCount}, Total Tris: " +
+                                    $"{newTotalMeshColliderTris}/{Config.MeMaxMeshColliderTotalTris.Value}");
+                #endif
+            }
+            else {
+                GetTransformedSurfaces(meshCollider, surfaces, SM64SurfaceType.Default, SM64TerrainType.Grass, false);
+                #if DEBUG
+                MelonLogger.Msg($"[MeshCollider] {meshCollider.name} will be added. Tris: {meshTrisCount}, Total " +
+                                $"Tris: {newTotalMeshColliderTris}/{Config.MeMaxMeshColliderTotalTris.Value}");
+                #endif
+            }
+            totalMeshColliderTris = newTotalMeshColliderTris;
         }
 
         return surfaces.ToArray();
@@ -293,24 +337,16 @@ internal static class Utils {
                 break;
             case MeshCollider meshCollider:
 
-                #if DEBUG
-                MelonLogger.Msg($"[MeshCollider] {meshCollider.name} Readable: {meshCollider.sharedMesh.isReadable}, SubMeshCount: {meshCollider.sharedMesh.subMeshCount}, TrisCount: {meshCollider.sharedMesh.triangles.Length}");
-                #endif
-
-                if (!meshCollider.sharedMesh.isReadable) {
-                    MelonLogger.Warning(
-                        $"[MeshCollider] {meshCollider.name} Mesh is not readable, so we won't be able to use this as a collider for Mario :(");
-                    return surfaces;
-                }
-
-                if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > Config.MeIgnoreCollidersHigherThanPolygons.Value) {
-                    MelonLogger.Warning($"[MeshCollider] {meshCollider.name} has {meshCollider.sharedMesh.triangles.Length} triangles, " +
-                                    $"which is more than the configured limit ({Config.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
+                if (meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable) {
+                    #if DEBUG
+                    MelonLogger.Warning($"[MeshCollider] {meshCollider.name} Mesh is null or not readable, so we won't be able to use this as a collider for Mario :(");
+                    #endif
                     return surfaces;
                 }
 
                 // Todo: Handle when meshes are too big (colliders stop working).
                 // Planes scaled to 60 60 60 will break. While 50 50 50 will work.
+                // Edit: Seems to be related how big each polygon is (cubes break sooner than planes(more polys))
 
                 TransformAndGetSurfaces(surfaces, meshCollider.sharedMesh, surfaceType, terrainType, x => meshCollider.transform.TransformPoint(x));
                 break;
@@ -337,14 +373,10 @@ internal static class Utils {
                     break;
                 case MeshCollider meshCollider:
 
-                    if (!meshCollider.sharedMesh.isReadable) {
-                        MelonLogger.Warning($"[MeshCollider] {meshCollider.name} Mesh is not readable, so we won't be able to use this as a collider for Mario :(");
-                        return surfaces;
-                    }
-
-                    if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > Config.MeIgnoreCollidersHigherThanPolygons.Value) {
-                        MelonLogger.Warning($"[MeshCollider] {meshCollider.name} has {meshCollider.sharedMesh.triangles.Length} triangles, " +
-                                        $"which is more than the configured limit ({Config.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
+                    if (meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable) {
+                        #if DEBUG
+                        MelonLogger.Warning($"[MeshCollider] {meshCollider.name} Mesh is null or not readable, so we won't be able to use this as a collider for Mario :(");
+                        #endif
                         return surfaces;
                     }
 

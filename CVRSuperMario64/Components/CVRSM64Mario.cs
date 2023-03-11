@@ -75,6 +75,7 @@ public class CVRSM64Mario : MonoBehaviour {
     [NonSerialized] private bool _wasPickedUp;
     [NonSerialized] private bool _initializedByRemote;
     [NonSerialized] private bool _isDying;
+    [NonSerialized] private bool _isNuked;
 
     // Bypasses
     [NonSerialized] private bool _wasBypassed;
@@ -401,7 +402,7 @@ public class CVRSM64Mario : MonoBehaviour {
 
     public void ContextFixedUpdateSynced(List<CVRSM64Mario> marios) {
 
-        if (!_enabled || !_initialized) return;
+        if (!_enabled || !_initialized || _isNuked) return;
 
         // Janky remote sync check
         if (!IsMine() && !_initializedByRemote) {
@@ -470,10 +471,7 @@ public class CVRSM64Mario : MonoBehaviour {
             // Check for deaths, so we delete the prop
             if (!_isDying && IsDead()) {
                 _isDying = true;
-                Invoke(nameof(DeleteMario), 15f);
-                #if DEBUG
-                MelonLogger.Msg($"One of our Marios died, the prop will be deleted in 15 seconds...");
-                #endif
+                Invoke(nameof(SetMarioAsNuked), 15f);
             }
         }
         else {
@@ -531,7 +529,7 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     public void ContextUpdateSynced() {
-        if (!_enabled || !_initialized) return;
+        if (!_enabled || !_initialized || _isNuked) return;
 
         if (!IsMine() && !_initializedByRemote) return;
 
@@ -768,9 +766,15 @@ public class CVRSM64Mario : MonoBehaviour {
         }
     }
 
-    private void DeleteMario() {
+    private void SetMarioAsNuked() {
         lock (_lock) {
-            spawnable.Delete();
+            _isNuked = true;
+            var deleteMario = Config.MeDeleteMarioAfterDead.Value;
+            #if DEBUG
+            MelonLogger.Msg($"One of our Marios died, it has been 15 seconds and we're going to " +
+                            $"{(deleteMario ? "delete the mario" : "stopping its engine updates")}.");
+            #endif
+            if (deleteMario) spawnable.Delete();
         }
     }
 

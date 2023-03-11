@@ -9,10 +9,11 @@ public static class Config {
     internal static MelonPreferences_Entry<float> MeAudioPitch;
     internal static MelonPreferences_Entry<float> MeAudioVolume;
     internal static MelonPreferences_Entry<int> MeGameTickMs;
-    internal static MelonPreferences_Entry<int> MeIgnoreCollidersHigherThanPolygons;
     internal static MelonPreferences_Entry<bool> MePlayRandomMusicOnMarioJoin;
     internal static MelonPreferences_Entry<float> MeSkipFarMarioDistance;
     internal static MelonPreferences_Entry<int> MeMaxMariosAnimatedPerPerson;
+    internal static MelonPreferences_Entry<int> MeMaxMeshColliderTotalTris;
+    internal static MelonPreferences_Entry<bool> MeDeleteMarioAfterDead;
 
     public static void InitializeMelonPrefs() {
 
@@ -30,9 +31,6 @@ public static class Config {
         MeGameTickMs = _melonCategory.CreateEntry("GameTickMs", 25,
             description: "The game ticks frequency in Milliseconds.");
 
-        MeIgnoreCollidersHigherThanPolygons = _melonCategory.CreateEntry("IgnoreCollidersHigherThanPolygons", 10000,
-            description: "Ignore colliders with a poly count higher than.");
-
         MePlayRandomMusicOnMarioJoin = _melonCategory.CreateEntry("PlayRandomMusicOnMarioJoin", true,
             description: "Whether to play a random music when a mario joins or not.");
         MePlayRandomMusicOnMarioJoin.OnEntryValueChanged.Subscribe((_, newValue) => {
@@ -44,6 +42,12 @@ public static class Config {
 
         MeSkipFarMarioDistance = _melonCategory.CreateEntry("SkipFarMarioDistance", 5f,
             description: "The max distance that we're going to calculate the mario animations for other people.");
+
+        MeMaxMeshColliderTotalTris = _melonCategory.CreateEntry("MaxMeshColliderTotalTris", 75000,
+            description: "The max total number of collision tris loaded from automatically generated static mesh colliders.");
+
+        MeDeleteMarioAfterDead = _melonCategory.CreateEntry("DeleteMarioAfterDead", true,
+            description: "Whether to automatically delete our marios after 15 seconds of being dead or not.");
     }
 
 }

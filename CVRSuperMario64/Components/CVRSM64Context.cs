@@ -30,7 +30,7 @@ public class CVRSM64Context : MonoBehaviour {
 
         // Update context's colliders
         Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
-        Config.MeIgnoreCollidersHigherThanPolygons.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        Config.MeMaxMeshColliderTotalTris.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue == oldValue) return;
             Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());
         });
