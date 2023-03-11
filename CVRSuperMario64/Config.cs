@@ -43,7 +43,7 @@ public static class Config {
         MeSkipFarMarioDistance = _melonCategory.CreateEntry("SkipFarMarioDistance", 5f,
             description: "The max distance that we're going to calculate the mario animations for other people.");
 
-        MeMaxMeshColliderTotalTris = _melonCategory.CreateEntry("MaxMeshColliderTotalTris", 75000,
+        MeMaxMeshColliderTotalTris = _melonCategory.CreateEntry("MaxMeshColliderTotalTris", 50000,
             description: "The max total number of collision tris loaded from automatically generated static mesh colliders.");
 
         MeDeleteMarioAfterDead = _melonCategory.CreateEntry("DeleteMarioAfterDead", true,
