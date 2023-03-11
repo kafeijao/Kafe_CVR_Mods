@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.ComponentModel;
 using ABI_RC.Core;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.EventSystem;
@@ -25,7 +24,7 @@ public class Instances : MelonMod {
     private const string InstancesConfigFile = "InstancesModConfig.json";
     private const int CurrentConfigVersion = 1;
 
-    private const int MaxInstanceHistoryLimit = 8;
+    private const int MaxInstanceHistoryLimit = 12;
 
     public static event Action InstancesConfigChanged;
     public static event Action<JsonConfigInstance, bool> InstanceSelected;
@@ -110,12 +109,28 @@ public class Instances : MelonMod {
         SaveConfig();
     }
 
-    private static void UpdateLastInstance(string worldId, string instanceId, string instanceName) {
+    private static IEnumerator UpdateLastInstance(string worldId, string instanceId, string instanceName) {
+
         // Already have this instance saved
-        if (Config.LastInstance?.InstanceId == instanceId) return;
+        if (Config.LastInstance?.InstanceId == instanceId) yield break;
+
+        // Grab the image url of the world, if we already had it
+        var worldImageUrl = Config.RecentInstances.FirstOrDefault(i => i.WorldId == worldId && i.WorldImageUrl != null)
+            ?.WorldImageUrl;
+
+        // Get the instance's world image url
+        if (worldImageUrl == null) {
+            var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceId });
+            yield return new WaitUntil(() => task.IsCompleted);
+            var instanceDetails = task.Result;
+            if (instanceDetails?.Data != null) {
+                worldImageUrl = instanceDetails.Data.World.ImageUrl;
+            }
+        }
 
         var instanceInfo = new JsonConfigInstance {
             WorldId = worldId,
+            WorldImageUrl = worldImageUrl,
             InstanceId = instanceId,
             InstanceName = instanceName,
         };
@@ -132,6 +147,18 @@ public class Instances : MelonMod {
         SaveConfig();
     }
 
+    private static void UpdateWorldImageUrl(string worldId, string worldImageUrl) {
+        if (Config.LastInstance.WorldId == worldId) {
+            Config.LastInstance.WorldImageUrl = worldImageUrl;
+        }
+        foreach (var recentInstance in Config.RecentInstances) {
+            if (recentInstance.WorldId == worldId) {
+                recentInstance.WorldImageUrl = worldImageUrl;
+            }
+        }
+        SaveConfig();
+    }
+
     public record JsonConfig {
         public int ConfigVersion = CurrentConfigVersion;
         public JsonConfigInstance LastInstance = null;
@@ -140,6 +167,7 @@ public class Instances : MelonMod {
 
     public record JsonConfigInstance {
         public string WorldId;
+        public string WorldImageUrl = null;
         public string InstanceId;
         public string InstanceName;
     }
@@ -151,12 +179,6 @@ public class Instances : MelonMod {
         var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceInfo.InstanceId });
         yield return new WaitUntil(() => task.IsCompleted);
         var instanceDetails = task.Result;
-
-        foreach(PropertyDescriptor descriptor in TypeDescriptor.GetProperties(instanceDetails)) {
-            string name = descriptor.Name;
-            object value = descriptor.GetValue(instanceDetails);
-            MelonLogger.Msg($"{name}={value}");
-        }
 
         if (instanceDetails?.Data == null) {
             if (isInitial) {
@@ -173,7 +195,11 @@ public class Instances : MelonMod {
             InvalidateInstance(instanceInfo);
         }
         else {
-            // Load the last instance we were in
+            // Update the world image url
+            instanceInfo.WorldImageUrl = instanceDetails.Data.World.ImageUrl;
+            UpdateWorldImageUrl(instanceInfo.WorldImageUrl, instanceDetails.Data.World.ImageUrl);
+
+            // Load into the instance
             MelonLogger.Msg($"The previous instance {instanceInfo.InstanceName} is still up! Attempting to join...");
             ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id, instanceDetails.Data.World.Id);
         }
@@ -212,7 +238,7 @@ public class Instances : MelonMod {
         [HarmonyPatch(typeof(RichPresence), "PopulateLastMessage")]
         public static void After_RichPresence_PopulateLastMessage() {
             try {
-                UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName);
+                MelonCoroutines.Start(UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName));
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_PopulateLastMessage)}");

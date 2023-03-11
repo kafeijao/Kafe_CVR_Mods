@@ -23,10 +23,10 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
-[assembly: MelonOptionalDependencies("BTKUILib")]
+[assembly: MelonAdditionalDependencies("BTKUILib")]
 
 namespace Kafe.Instances.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.1";
+    public const string Version = "0.0.2";
     public const string Author = "kafeijao";
 }

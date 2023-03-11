@@ -9,7 +9,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\InstancesBTKUIIcon.png" />
+        <EmbeddedResource Include="Resources\InstancesBTKUIIcon.png">
+            <LogicalName>resources.BTKUIIcon.png</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
 
 </Project>
