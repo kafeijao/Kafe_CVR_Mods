@@ -4,7 +4,7 @@ $melonLoaderdllPath = "\MelonLoader\MelonLoader.dll"
 $cvrManagedDataPath = "\ChilloutVR_Data\Managed"
 
 $cvrPath = $env:CVRPATH
-$cvrExecutable = "ChilloutVR.exee"
+$cvrExecutable = "ChilloutVR.exe"
 $cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"
 
 if ($cvrPath -and (Test-Path "$cvrPath\$cvrExecutable")) {
