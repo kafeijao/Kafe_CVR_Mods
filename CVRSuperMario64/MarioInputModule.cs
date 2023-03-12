@@ -24,21 +24,17 @@ public class MarioInputModule : CVRInputModule {
     public bool stomp;
 
     // VR Input stuff
-    #if DEBUG
     private SteamVR_Action_Vector2 _vrLookAction;
-    #endif
 
     public new void Start() {
         _inputManager = CVRInputManager.Instance;
         Instance = this;
         base.Start();
 
-        #if DEBUG
         // Traverse BS
         var vrInput = Traverse.Create(typeof(InputModuleSteamVR)).Field<InputModuleSteamVR>("Instance").Value;
         var vrInputTraverse = Traverse.Create(vrInput);
         _vrLookAction = vrInputTraverse.Field<SteamVR_Action_Vector2>("vrLookAction").Value;
-        #endif
 
         CVRSM64Context.UpdateMarioCount();
     }

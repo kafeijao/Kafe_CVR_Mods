@@ -21,13 +21,13 @@ public class CVRSM64Interactable : MonoBehaviour {
         foreach (var interactable in InteractableObjects) {
             if (Vector3.Distance(interactable.transform.position, mario.transform.position) > 0.1) continue;
             if (interactable.interactableType == InteractableType.VanishCap) {
-                mario.WearCap(currentStateFlags, Utils.MarioCapType.VanishCap);
+                mario.WearCap(currentStateFlags, Utils.MarioCapType.VanishCap, true);
             }
             if (interactable.interactableType == InteractableType.MetalCap) {
-                mario.WearCap(currentStateFlags, Utils.MarioCapType.MetalCap);
+                mario.WearCap(currentStateFlags, Utils.MarioCapType.MetalCap, true);
             }
             if (interactable.interactableType == InteractableType.WingCap) {
-                mario.WearCap(currentStateFlags, Utils.MarioCapType.WingCap);
+                mario.WearCap(currentStateFlags, Utils.MarioCapType.WingCap, true);
             }
         }
     }

@@ -24,9 +24,9 @@ public class CVRSM64Context : MonoBehaviour {
 
     private void Awake() {
 
-        SetAudioSource();
-
         Interop.GlobalInit(CVRSuperMario64.SuperMario64UsZ64RomBytes);
+
+        SetAudioSource();
 
         // Update context's colliders
         Interop.StaticSurfacesLoad(Utils.GetAllStaticSurfaces());

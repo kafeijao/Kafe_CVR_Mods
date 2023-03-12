@@ -487,13 +487,13 @@ public class CVRSM64Mario : MonoBehaviour {
 
             // Trigger the cap if the synced values have cap (if we already have the cape it will ignore)
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.VanishCap)) {
-                WearCap(currentStateFlags, Utils.MarioCapType.VanishCap);
+                WearCap(currentStateFlags, Utils.MarioCapType.VanishCap, false);
             }
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.MetalCap)) {
-                WearCap(currentStateFlags, Utils.MarioCapType.MetalCap);
+                WearCap(currentStateFlags, Utils.MarioCapType.MetalCap, false);
             }
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.WingCap)) {
-                WearCap(currentStateFlags, Utils.MarioCapType.WingCap);
+                WearCap(currentStateFlags, Utils.MarioCapType.WingCap, false);
             }
         }
 
@@ -734,22 +734,22 @@ public class CVRSM64Mario : MonoBehaviour {
         Interop.MarioTakeDamage(MarioId, worldPosition, damage);
     }
 
-    internal void WearCap(uint flags, Utils.MarioCapType capType) {
+    internal void WearCap(uint flags, Utils.MarioCapType capType, bool playMusic) {
         if (!_enabled) return;
 
         if (Utils.HasCapType(flags, capType)) return;
         switch (capType) {
             case Utils.MarioCapType.VanishCap:
                 // Original game is 15 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_VANISH_CAP, 40f);
+                Interop.MarioCap(MarioId, CapFlags.MARIO_VANISH_CAP, 40f, playMusic);
                 break;
             case Utils.MarioCapType.MetalCap:
                 // Originally game is 15 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_METAL_CAP, 40f);
+                Interop.MarioCap(MarioId, CapFlags.MARIO_METAL_CAP, 40f, playMusic);
                 break;
             case Utils.MarioCapType.WingCap:
                 // Originally game is 40 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_WING_CAP, 40f);
+                Interop.MarioCap(MarioId, CapFlags.MARIO_WING_CAP, 40f, playMusic);
                 break;
         }
     }

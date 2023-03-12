@@ -501,7 +501,7 @@ internal static class Interop {
         sm64_surface_object_delete(id);
     }
 
-    public static void MarioCap(uint marioId, CapFlags capFlags, float durationSeconds = 0, bool playCapMusic = true) {
+    public static void MarioCap(uint marioId, CapFlags capFlags, float durationSeconds, bool playCapMusic) {
         sm64_mario_interact_cap(marioId, (uint)capFlags, (ushort)(durationSeconds * SECONDS_MULTIPLIER), playCapMusic ? (byte) 1 : (byte) 0);
     }
 
