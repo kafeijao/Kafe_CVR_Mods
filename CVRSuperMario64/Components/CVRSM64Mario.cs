@@ -254,6 +254,7 @@ public class CVRSM64Mario : MonoBehaviour {
         }
 
         CVRSM64Context.UpdateMarioCount();
+        CVRSM64Context.UpdatePlayerMariosState();
 
         #if DEBUG
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
@@ -682,6 +683,7 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     private void UpdateIsBypassed() {
+        if (!_initialized) return;
         var isBypassed = _isOverMaxDistance || _isOverMaxCount;
         if (isBypassed == _wasBypassed) return;
         _wasBypassed = isBypassed;

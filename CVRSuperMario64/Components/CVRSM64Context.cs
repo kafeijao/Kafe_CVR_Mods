@@ -188,7 +188,7 @@ public class CVRSM64Context : MonoBehaviour {
         }
     }
 
-    private static void UpdatePlayerMariosState() {
+    public static void UpdatePlayerMariosState() {
         if (_instance == null) return;
 
         lock (_instance._marios) {
@@ -196,7 +196,7 @@ public class CVRSM64Context : MonoBehaviour {
                 if (playerMarios.First().IsMine()) continue;
                 var maxMarios = _instance._maxMariosAnimatedPerPerson;
                 foreach (var playerMario in playerMarios) {
-                    playerMario.SetIsOverMaxCount(--maxMarios <= 0);
+                    playerMario.SetIsOverMaxCount(maxMarios-- <= 0);
                 }
             }
         }
@@ -210,7 +210,6 @@ public class CVRSM64Context : MonoBehaviour {
             if (_instance._marios.Contains(mario)) return;
 
             _instance._marios.Add(mario);
-            UpdatePlayerMariosState();
 
             if (Config.MePlayRandomMusicOnMarioJoin.Value) Interop.PlayRandomMusic();
 
