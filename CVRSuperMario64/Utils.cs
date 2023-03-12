@@ -291,8 +291,9 @@ internal static class Utils {
         // Ignore all meshes colliders with a null shared mesh, or non-readable
         var nonReadableMeshColliders = meshColliders.Where(meshCollider => meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable).ToList();
         #if DEBUG
-        foreach (var nonReadableMeshCollider in nonReadableMeshColliders) {
-            MelonLogger.Warning($"[MeshCollider] {nonReadableMeshCollider.name} Mesh is null or not readable, " +
+        foreach (var invalidMeshCollider in nonReadableMeshColliders) {
+            MelonLogger.Warning($"[MeshCollider] {invalidMeshCollider.name} Mesh is " +
+                                $"{(invalidMeshCollider.sharedMesh == null ? "null" : "non-readable")}, " +
                                 "so we won't be able to use this as a collider for Mario :(");
         }
         #endif
