@@ -98,6 +98,12 @@ public class CVRSuperMario64 : MelonMod {
             return;
         }
 
+        // Check for BTKUILib
+        if (RegisteredMelons.Any(m => m.Info.Name == "BTKUILib")) {
+            MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
+            Config.InitializeBTKUI();
+        }
+
         // Add our CCK component to the whitelist
         var propWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
         propWhitelist.Add(typeof(CVRSM64Mario));
