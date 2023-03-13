@@ -71,7 +71,7 @@ public enum MusicSeqId {
 }
 
 [Flags]
-public enum CapFlags {
+public enum FlagsFlags {
     MARIO_NORMAL_CAP                = 0x00000001,
     MARIO_VANISH_CAP                = 0x00000002,
     MARIO_METAL_CAP                 = 0x00000004,
@@ -79,6 +79,7 @@ public enum CapFlags {
     MARIO_SPECIAL_CAP               = MARIO_VANISH_CAP | MARIO_METAL_CAP | MARIO_WING_CAP,
     // MARIO_CAP_ON_HEAD               = 0x00000010,
     // MARIO_CAP_IN_HAND               = 0x00000020,
+    MARIO_TELEPORTING               = 0x00000080,
 }
 
 [Flags]
@@ -92,6 +93,8 @@ public enum ActionFlags : uint {
     ACT_FLAG_SWIMMING               = 0x00002000,
     ACT_FLAG_SWIMMING_OR_FLYING     = 0x10000000,
     ACT_THROWN_FORWARD              = 0x010208BD,
+    ACT_TELEPORT_FADE_OUT           = 0x00001336,
+    ACT_TELEPORT_FADE_IN            = 0x00001337,
 }
 
 [Flags]

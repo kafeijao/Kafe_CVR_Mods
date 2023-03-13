@@ -36,6 +36,7 @@ public class CVRSM64Mario : MonoBehaviour {
     private const float VanishOpacity = 0.5f;
     private Color _colorNormal;
     private Color _colorVanish;
+    private Color _colorInvisible;
     private readonly int _colorProperty = Shader.PropertyToID("_Color");
     private readonly List<int> _metallicProperties = new() {
         Shader.PropertyToID("_Metallic"),
@@ -77,6 +78,10 @@ public class CVRSM64Mario : MonoBehaviour {
     [NonSerialized] private bool _isDying;
     [NonSerialized] private bool _isNuked;
 
+    // Teleporters
+    [NonSerialized] private float _startedTeleporting = float.MinValue;
+    [NonSerialized] private Transform _teleportTarget;
+
     // Bypasses
     [NonSerialized] private bool _wasBypassed;
     [NonSerialized] private bool _isOverMaxCount;
@@ -112,6 +117,7 @@ public class CVRSM64Mario : MonoBehaviour {
         HasVanishCap,
         IsMine,
         IsBypassed,
+        IsTeleporting,
     }
     private static readonly Dictionary<LocalParameterNames, int> LocalParameters = new() {
         { LocalParameterNames.HealthPoints, Animator.StringToHash(nameof(LocalParameterNames.HealthPoints)) },
@@ -121,6 +127,7 @@ public class CVRSM64Mario : MonoBehaviour {
         { LocalParameterNames.HasVanishCap, Animator.StringToHash(nameof(LocalParameterNames.HasVanishCap)) },
         { LocalParameterNames.IsMine, Animator.StringToHash(nameof(LocalParameterNames.IsMine)) },
         { LocalParameterNames.IsBypassed, Animator.StringToHash(nameof(LocalParameterNames.IsBypassed)) },
+        { LocalParameterNames.IsTeleporting, Animator.StringToHash(nameof(LocalParameterNames.IsTeleporting)) },
     };
 
     // Threading
@@ -300,6 +307,7 @@ public class CVRSM64Mario : MonoBehaviour {
         material = new Material(material);
         _colorNormal = new Color(material.color.r, material.color.g, material.color.b, material.color.a);
         _colorVanish = new Color(material.color.r, material.color.g, material.color.b, VanishOpacity);
+        _colorInvisible = new Color(material.color.r, material.color.g, material.color.b, 0f);
 
         _marioMeshRenderer.material = material;
 
@@ -467,7 +475,10 @@ public class CVRSM64Mario : MonoBehaviour {
             spawnable.SetValue(_syncParameters[SyncedParameterNames.Action].Item1, Convert.ToSingle(currentStateAction));
 
             // Check Interactables (trigger mario caps)
-            CVRSM64Interactable.MarioTick(this, currentStateFlags);
+            CVRSM64Interactable.HandleInteractables(this, currentStateFlags);
+
+            // Check Teleporters
+            CVRSM64Teleporter.HandleTeleporters(this, currentStateFlags, ref _startedTeleporting, ref _teleportTarget);
 
             // Check for deaths, so we delete the prop
             if (!_isDying && IsDead()) {
@@ -495,20 +506,40 @@ public class CVRSM64Mario : MonoBehaviour {
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.WingCap)) {
                 WearCap(currentStateFlags, Utils.MarioCapType.WingCap, false);
             }
+
+            // Trigger teleport for remotes
+            if (Utils.IsTeleporting(syncedFlags) != Utils.IsTeleporting(GetCurrentState().flags)) {
+                if (Utils.IsTeleporting(syncedFlags)) TeleportStart();
+                else TeleportEnd();
+            }
         }
 
         // Update Caps material and animator's parameters
         var hasVanishCap = Utils.HasCapType(currentStateFlags, Utils.MarioCapType.VanishCap);
         var hasWingCap = Utils.HasCapType(currentStateFlags, Utils.MarioCapType.WingCap);
         var hasMetalCap = Utils.HasCapType(currentStateFlags, Utils.MarioCapType.MetalCap);
-        material.SetColor(_colorProperty, hasVanishCap ? _colorVanish : _colorNormal);
-        foreach (var metallicProperty in _metallicProperties) {
-            material.SetFloat(metallicProperty, hasMetalCap ? 1f : 0f);
+        var isTeleporting = Utils.IsTeleporting(currentStateFlags);
+
+        // Handle teleporting fading in
+        if (Time.time > _startedTeleporting && Time.time <= _startedTeleporting + CVRSM64Teleporter.TeleportDuration) {
+            material.color = Color.Lerp(_colorNormal, _colorInvisible, Mathf.Clamp(Time.time-_startedTeleporting, 0f, 1f));
         }
+        // Handle teleport fading out
+        else if (Time.time > _startedTeleporting + CVRSM64Teleporter.TeleportDuration && Time.time <= _startedTeleporting + 2 * CVRSM64Teleporter.TeleportDuration) {
+            material.color = Color.Lerp(_colorInvisible, _colorNormal, Mathf.Clamp(Time.time-_startedTeleporting-CVRSM64Teleporter.TeleportDuration, 0f, 1f));
+        }
+        else {
+            material.SetColor(_colorProperty, hasVanishCap ? _colorVanish : _colorNormal);
+            foreach (var metallicProperty in _metallicProperties) {
+                material.SetFloat(metallicProperty, hasMetalCap ? 1f : 0f);
+            }
+        }
+
         foreach (var animator in animators) {
             animator.SetBool(LocalParameters[LocalParameterNames.HasVanishCap], hasVanishCap);
             animator.SetBool(LocalParameters[LocalParameterNames.HasWingCap], hasWingCap);
             animator.SetBool(LocalParameters[LocalParameterNames.HasMetalCap], hasMetalCap);
+            animator.SetBool(LocalParameters[LocalParameterNames.IsTeleporting], isTeleporting);
         }
 
         // Check if we're taking damage
@@ -741,15 +772,15 @@ public class CVRSM64Mario : MonoBehaviour {
         switch (capType) {
             case Utils.MarioCapType.VanishCap:
                 // Original game is 15 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_VANISH_CAP, 40f, playMusic);
+                Interop.MarioCap(MarioId, FlagsFlags.MARIO_VANISH_CAP, 40f, playMusic);
                 break;
             case Utils.MarioCapType.MetalCap:
                 // Originally game is 15 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_METAL_CAP, 40f, playMusic);
+                Interop.MarioCap(MarioId, FlagsFlags.MARIO_METAL_CAP, 40f, playMusic);
                 break;
             case Utils.MarioCapType.WingCap:
                 // Originally game is 40 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_WING_CAP, 40f, playMusic);
+                Interop.MarioCap(MarioId, FlagsFlags.MARIO_WING_CAP, 40f, playMusic);
                 break;
         }
     }
@@ -803,6 +834,16 @@ public class CVRSM64Mario : MonoBehaviour {
     private void Hold() {
         if (IsDead()) return;
         SetAction(ActionFlags.ACT_GRABBED);
+    }
+
+    public void TeleportStart() {
+        if (IsDead()) return;
+        SetAction(ActionFlags.ACT_TELEPORT_FADE_OUT);
+    }
+
+    public void TeleportEnd() {
+        if (IsDead()) return;
+        SetAction(ActionFlags.ACT_TELEPORT_FADE_IN);
     }
 
     private void Throw() {

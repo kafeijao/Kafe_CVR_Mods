@@ -104,7 +104,7 @@ public class CVRSuperMario64 : MelonMod {
             Config.InitializeBTKUI();
         }
 
-        // Add our CCK component to the whitelist
+        // Add our CCK component to the prop whitelist
         var propWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
         propWhitelist.Add(typeof(CVRSM64Mario));
         propWhitelist.Add(typeof(CVRSM64Interactable));
@@ -112,6 +112,9 @@ public class CVRSuperMario64 : MelonMod {
         propWhitelist.Add(typeof(CVRSM64ColliderStatic));
         propWhitelist.Add(typeof(CVRSM64ColliderDynamic));
         propWhitelist.Add(typeof(CVRSM64InteractableParticles));
+        propWhitelist.Add(typeof(CVRSM64Teleporter));
+
+        // Add our CCK component to the avatar whitelist
         var avatarWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_avatarWhitelist").Value;
         avatarWhitelist.Add(typeof(CVRSM64ColliderDynamic));
 

@@ -404,11 +404,15 @@ internal static class Utils {
 
     public static bool HasCapType(uint flags, MarioCapType capType) {
         switch (capType) {
-            case MarioCapType.VanishCap: return (flags & (uint)CapFlags.MARIO_VANISH_CAP) != 0;
-            case MarioCapType.MetalCap: return (flags & (uint)CapFlags.MARIO_METAL_CAP) != 0;
-            case MarioCapType.WingCap: return (flags & (uint)CapFlags.MARIO_WING_CAP) != 0;
+            case MarioCapType.VanishCap: return (flags & (uint)FlagsFlags.MARIO_VANISH_CAP) != 0;
+            case MarioCapType.MetalCap: return (flags & (uint)FlagsFlags.MARIO_METAL_CAP) != 0;
+            case MarioCapType.WingCap: return (flags & (uint)FlagsFlags.MARIO_WING_CAP) != 0;
         }
         return capType == MarioCapType.None;
+    }
+
+    public static bool IsTeleporting(uint flags) {
+         return (flags & (uint)FlagsFlags.MARIO_TELEPORTING) != 0;
     }
 
     public static readonly Dictionary<SoundBitsKeys, uint> SoundBits = new() {
