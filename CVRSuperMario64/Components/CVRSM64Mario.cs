@@ -508,9 +508,8 @@ public class CVRSM64Mario : MonoBehaviour {
             }
 
             // Trigger teleport for remotes
-            if (Utils.IsTeleporting(syncedFlags) != Utils.IsTeleporting(GetCurrentState().flags)) {
-                if (Utils.IsTeleporting(syncedFlags)) TeleportStart();
-                else TeleportEnd();
+            if (Utils.IsTeleporting(syncedFlags) && Time.time > _startedTeleporting + 5 * CVRSM64Teleporter.TeleportDuration) {
+                _startedTeleporting = Time.time;
             }
         }
 
