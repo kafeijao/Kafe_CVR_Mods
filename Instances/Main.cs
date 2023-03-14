@@ -217,8 +217,8 @@ public class Instances : MelonMod {
                 CVRTools.ConfigureHudAffinity();
                 AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
 
-                // Let's attempt to join the last instance
-                if (MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null) {
+                // Let's attempt to join the last instance, but only if shift key is not being held down
+                if (MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null && !Input.GetKey(KeyCode.LeftShift)) {
                     OnInstanceSelected(Config.LastInstance, true);
                     return false;
                 }
