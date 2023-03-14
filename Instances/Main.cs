@@ -16,9 +16,6 @@ namespace Kafe.Instances;
 
 public class Instances : MelonMod {
 
-    private static MelonPreferences_Category _melonCategory;
-    internal static MelonPreferences_Entry<bool> MeRejoinLastInstanceOnGameRestart;
-
     internal static JsonConfig Config;
 
     private const string InstancesConfigFile = "InstancesModConfig.json";
@@ -27,21 +24,20 @@ public class Instances : MelonMod {
     private const int MaxInstanceHistoryLimit = 12;
 
     public static event Action InstancesConfigChanged;
-    public static event Action<JsonConfigInstance, bool> InstanceSelected;
+    public static event Action<string, bool> InstanceSelected;
 
     private static bool _isChangingInstance;
 
-    internal static void OnInstanceSelected(JsonConfigInstance instanceInfo, bool isInitial = false) {
-        InstanceSelected?.Invoke(instanceInfo, isInitial);
+    private const string GroupId = "SFW";
+
+
+    internal static void OnInstanceSelected(string instanceId, bool isInitial = false) {
+        InstanceSelected?.Invoke(instanceId, isInitial);
     }
 
     public override void OnInitializeMelon() {
 
-        // Melon Config
-        _melonCategory = MelonPreferences.CreateCategory(nameof(Instances));
-
-        MeRejoinLastInstanceOnGameRestart = _melonCategory.CreateEntry("RejoinLastInstanceOnRestart", true,
-            description: "Whether to join the last instance (if still available) when restarting the game or not.");
+        ModConfig.InitializeMelonPrefs();
 
         // Load The config
         var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", InstancesConfigFile));
@@ -72,16 +68,16 @@ public class Instances : MelonMod {
         // Check for BTKUILib
         if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "BTKUILib") != null) {
             MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
-            var btkuiLib = new InstancesBTKUI();
+            ModConfig.InitializeBTKUI();
         }
         else {
             MelonLogger.Warning($"BTKUILib mod NOT detected! You won't have access to the Instances History feature!");
         }
 
-        InstanceSelected += (instanceInfo, isInitial) => {
+        InstanceSelected += (instanceId, isInitial) => {
             // Lets wait for the previous attempt to succeed/fail
             if (_isChangingInstance) return;
-            MelonCoroutines.Start(LoadIntoInstance(instanceInfo, isInitial));
+            MelonCoroutines.Start(LoadIntoInstance(instanceId, isInitial));
         };
 
         #if DEBUG
@@ -98,14 +94,14 @@ public class Instances : MelonMod {
         InstancesConfigChanged?.Invoke();
     }
 
-    private static void InvalidateInstance(JsonConfigInstance instanceInfo) {
+    private static void InvalidateInstance(string instanceId) {
         #if DEBUG
-        MelonLogger.Msg($"[InvalidateInstance] Invalidating instance {instanceInfo.InstanceName}...");
+        MelonLogger.Msg($"[InvalidateInstance] Invalidating instance {instanceId}...");
         #endif
-        if (Config.LastInstance?.InstanceId == instanceInfo.InstanceId) {
+        if (Config.LastInstance?.InstanceId == instanceId) {
             Config.LastInstance = null;
         }
-        Config.RecentInstances.RemoveAll(i => i.InstanceId == instanceInfo.InstanceId);
+        Config.RecentInstances.RemoveAll(i => i.InstanceId == instanceId);
         SaveConfig();
     }
 
@@ -148,7 +144,7 @@ public class Instances : MelonMod {
     }
 
     private static void UpdateWorldImageUrl(string worldId, string worldImageUrl) {
-        if (Config.LastInstance.WorldId == worldId) {
+        if (Config.LastInstance != null && Config.LastInstance.WorldId == worldId) {
             Config.LastInstance.WorldImageUrl = worldImageUrl;
         }
         foreach (var recentInstance in Config.RecentInstances) {
@@ -172,39 +168,89 @@ public class Instances : MelonMod {
         public string InstanceName;
     }
 
-    private static IEnumerator LoadIntoInstance(JsonConfigInstance instanceInfo, bool isInitial) {
+    private static IEnumerator LoadIntoInstance(string instanceId, bool isInitial) {
 
         _isChangingInstance = true;
 
-        var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceInfo.InstanceId });
+        var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceId });
         yield return new WaitUntil(() => task.IsCompleted);
         var instanceDetails = task.Result;
 
         if (instanceDetails?.Data == null) {
+
+            if (instanceDetails != null) {
+                MelonLogger.Warning($"The previous instance {instanceId} can't be found, Reason: {instanceDetails.Message}");
+            }
+
             if (isInitial) {
-                // If failed to find the instance -> Load the offline instance home world
-                MelonLogger.Msg($"The previous instance {instanceInfo.InstanceName} can't be found :( Sending you to your offline home world.");
-                Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
+
+                // We failed to get the last instance, let's give it a try to loading into an online initial instance
+                if (ModConfig.MeStartInAnOnlineInstance.Value) {
+                    yield return CreateInitialOnlineInstance();
+                }
+                // Otherwise let's just load to our offline world
+                else {
+                    // If failed to find the instance -> Load the offline instance home world
+                    MelonLogger.Msg($"Sending you to your offline home world.");
+                    Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
+                }
             }
             else {
-                // User clicked on an instance that is no longer valid
+                // User clicked on an instance that is no longer valid, or the initial instance we created borked
+                MelonLogger.Msg($"Instance {instanceId} has not been found.");
                 CohtmlHud.Instance.ViewDropTextImmediate("", "Instance not Available",
                     "The instance you're trying to join doesn't was deleted or you don't have permission...");
             }
             // Let's invalidate the attempted instance
-            InvalidateInstance(instanceInfo);
+            InvalidateInstance(instanceId);
         }
         else {
             // Update the world image url
-            instanceInfo.WorldImageUrl = instanceDetails.Data.World.ImageUrl;
-            UpdateWorldImageUrl(instanceInfo.WorldImageUrl, instanceDetails.Data.World.ImageUrl);
+            UpdateWorldImageUrl(instanceDetails.Data.World.Id, instanceDetails.Data.World.ImageUrl);
 
             // Load into the instance
-            MelonLogger.Msg($"The previous instance {instanceInfo.InstanceName} is still up! Attempting to join...");
+            MelonLogger.Msg($"The previous instance {instanceDetails.Data.Name} is still up! Attempting to join...");
             ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id, instanceDetails.Data.World.Id);
         }
 
         _isChangingInstance = false;
+    }
+
+    private static IEnumerator CreateInitialOnlineInstance() {
+
+        var createInstanceTask = ApiConnection.MakeRequest<InstanceCreateResponse>(ApiConnection.ApiOperation.InstanceCreate, new {
+            worldId = MetaPort.Instance.homeWorldGuid,
+            privacy = ModConfig.MeStartingInstancePrivacyType.Value.ToString(),
+            region = (int) ModConfig.MeStartingInstanceRegion.Value,
+            groupId = GroupId,
+        });
+        yield return new WaitUntil(() => createInstanceTask.IsCompleted);
+
+        var createInstancedInfo = createInstanceTask.Result;
+
+        if (createInstancedInfo != null) {
+
+            // Failed to create the instance
+            if (createInstancedInfo.Data == null) {
+                MelonLogger.Warning($"Failed to create an Initial Online instance. Reason: {createInstancedInfo.Message}");
+            }
+            // Created the instance, let's join it!
+            else {
+                #if DEBUG
+                MelonLogger.Warning($"Created an Online Instance: [{createInstancedInfo.Data.Region}][{createInstancedInfo.Data.Id}] {createInstancedInfo.Data.Name}");
+                #endif
+
+                // They also wait on the UI for 300 ms... It seems it takes a while before we can request the instance details
+                yield return new WaitForSeconds(0.35f);
+
+                yield return LoadIntoInstance(createInstancedInfo.Data.Id, false);
+                yield break;
+            }
+        }
+
+        // If failed to create the instance -> Load the offline instance home world
+        MelonLogger.Msg($"Failed to create an Initial Online Instance :( Sending you to your offline home world.");
+        Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
     }
 
     [HarmonyPatch]
@@ -217,10 +263,20 @@ public class Instances : MelonMod {
                 CVRTools.ConfigureHudAffinity();
                 AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
 
-                // Let's attempt to join the last instance, but only if shift key is not being held down
-                if (MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null && !Input.GetKey(KeyCode.LeftShift)) {
-                    OnInstanceSelected(Config.LastInstance, true);
-                    return false;
+                // If shift is hold, let's just go to our offline instance
+                if (!Input.GetKey(KeyCode.LeftShift)) {
+
+                    // Let's attempt to join the last instance
+                    if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null) {
+                        OnInstanceSelected(Config.LastInstance.InstanceId, true);
+                        return false;
+                    }
+
+                    // Otherwise let's join our home world, but in an online instance
+                    if (ModConfig.MeStartInAnOnlineInstance.Value) {
+                        MelonCoroutines.Start(CreateInitialOnlineInstance());
+                        return false;
+                    }
                 }
 
                 Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
