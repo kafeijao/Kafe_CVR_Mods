@@ -38,7 +38,7 @@ public class LoginProfiles : MelonMod {
     private static class HarmonyPatches {
 
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(AuthUIManager), "Start")]
+        [HarmonyPatch(typeof(AuthUIManager), nameof(AuthUIManager.Start))]
         private static IEnumerable<CodeInstruction> Transpiler_AuthUIManager_Start(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
 
         [HarmonyTranspiler]
@@ -47,7 +47,7 @@ public class LoginProfiles : MelonMod {
         private static IEnumerable<CodeInstruction> Transpiler_AuthUIManager_Authenticate(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
 
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(MetaPort), "Awake")]
+        [HarmonyPatch(typeof(MetaPort), nameof(MetaPort.Awake))]
         private static IEnumerable<CodeInstruction> Transpiler_MetaPort_Awake(IEnumerable<CodeInstruction> instructions) => ReplaceAutoLoginTranspiler(instructions);
 
         [HarmonyTranspiler]

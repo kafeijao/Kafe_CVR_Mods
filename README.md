@@ -171,11 +171,14 @@ Check [Instances](Instances) for more info.
 
 In order to build this project follow the instructions (thanks [@Daky](https://github.com/dakyneko)):
 
-- (1) If your ChilloutVR folder is `C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR` you can ignore this step.
-Otherwise follow the instructions bellow to [Set CVR Folder Environment Variable](#set-cvr-folder-environment-variable)
-- (2) Run `copy_and_nstrip_dll.ps1` on the Power Shell. This will copy the required CVR, MelonLoader, and Mod DLLs into 
-this project's `/ManagedLibs`. Note if some of the required mods are not found, it will display the url from the CVR 
-Modding Group API so you can download.
+- (1) Install `NStrip.exe` from https://github.com/BepInEx/NStrip into this directory (or into your PATH). This tools
+  converts all assembly symbols to public ones! If you don't strip the dlls, you won't be able to compile some mods.
+- (2) If your ChilloutVR folder is `C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR` you can ignore this step.
+  Otherwise follow the instructions bellow
+  to [Set CVR Folder Environment Variable](#set-cvr-folder-environment-variable)
+- (3) Run `copy_and_nstrip_dll.ps1` on the Power Shell. This will copy the required CVR, MelonLoader, and Mod DLLs into
+  this project's `/ManagedLibs`. Note if some of the required mods are not found, it will display the url from the CVR
+  Modding Group API so you can download.
 
 ### Set CVR Folder Environment Variable
 

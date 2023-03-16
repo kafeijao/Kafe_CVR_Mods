@@ -94,6 +94,39 @@ if ($missingMods.Count -gt 0) {
 Write-Host ""
 Write-Host "Copied all libraries!"
 Write-Host ""
+Write-Host "Press any key to strip the Dlls using NStrip"
+$HOST.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | OUT-NULL
+$HOST.UI.RawUI.Flushinputbuffer()
+
+Write-Host "NStrip Convert all private/protected stuff to public. Requires <AllowUnsafeBlocks>true></AllowUnsafeBlocks>"
+
+# Create an array to hold the file names to strip
+$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll')
+
+# Check if NStrip.exe exists in the current directory
+if(Test-Path -Path ".\NStrip.exe") {
+    $nStripPath = ".\NStrip.exe"
+}
+else {
+    # Try to locate NStrip.exe in the PATH
+    $nStripPath = Get-Command -Name NStrip.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    if($nStripPath -eq $null) {
+        # Display an error message if NStrip.exe could not be found
+        Write-Host "Could not find NStrip.exe in the current directory nor in the PATH." -ForegroundColor Red
+        Write-Host "Visit https://github.com/bbepis/NStrip/releases/latest to grab a copy." -ForegroundColor Red
+        return
+    }
+}
+
+# Loop through each DLL file to strip and call NStrip.exe
+foreach($dllFile in $dllsToStrip) {
+    $dllPath = Join-Path -Path $managedLibsFolder -ChildPath $dllFile
+    & $nStripPath -p -n $dllPath $dllPath
+}
+
+Write-Host ""
+Write-Host "Copied all libraries and stripped the DLLs!"
+Write-Host ""
 Write-Host "Press any key to exit"
 $HOST.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | OUT-NULL
 $HOST.UI.RawUI.Flushinputbuffer()
