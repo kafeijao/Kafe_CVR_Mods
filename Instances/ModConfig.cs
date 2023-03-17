@@ -94,12 +94,12 @@ public static class ModConfig {
         var joinInitialOnline = categorySettings.AddToggle("Start on Online Home World",
             "Should we create an online instance of your Home World when starting the game? Joining last " +
             "instance takes priority if active.",
-            MeRejoinLastInstanceOnGameRestart.Value);
+            MeStartInAnOnlineInstance.Value);
         joinInitialOnline.OnValueUpdated += b => {
-            if (b == MeRejoinLastInstanceOnGameRestart.Value) return;
-            MeRejoinLastInstanceOnGameRestart.Value = b;
+            if (b == MeStartInAnOnlineInstance.Value) return;
+            MeStartInAnOnlineInstance.Value = b;
         };
-        MeRejoinLastInstanceOnGameRestart.OnEntryValueChanged.Subscribe((_, newValue) => {
+        MeStartInAnOnlineInstance.OnEntryValueChanged.Subscribe((_, newValue) => {
             if (joinInitialOnline.ToggleValue == newValue) return;
             joinInitialOnline.ToggleValue = newValue;
         });
