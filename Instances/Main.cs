@@ -303,6 +303,9 @@ public class Instances : MelonMod {
                         return false;
                     }
                 }
+                else {
+                    MelonLogger.Msg("Since you pressed Left Shift during the game start, you'll be thrown into an offline Instance!");
+                }
 
                 Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
             }
