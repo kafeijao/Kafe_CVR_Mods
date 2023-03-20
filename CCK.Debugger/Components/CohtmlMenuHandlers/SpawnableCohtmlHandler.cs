@@ -142,7 +142,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         var propCount = PropsData.Count;
 
         var propCurrentIndex = propCount > 0 ? (PropsData.CurrentObjectIndex + 1) : 0;
-        _core?.UpdateCore(propCount > 1, $"({propCurrentIndex}/{propCount})", propCount > 0);
+        _core?.UpdateCore(propCount > 1, $"{propCurrentIndex}/{propCount}", propCount > 0);
 
         currentSpawnablePropData = PropsData.CurrentObject;
         currentSpawnable = currentSpawnablePropData?.Spawnable;

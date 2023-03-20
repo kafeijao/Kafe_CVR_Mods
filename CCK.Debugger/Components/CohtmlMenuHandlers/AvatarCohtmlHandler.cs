@@ -196,7 +196,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             isAnimatorInitialized = puppetMasterTraverse.Field<Animator>("_animator").Value != null;
         }
 
-        _core?.UpdateCore(playerCount > 1, $"({PlayerEntities.CurrentObjectIndex+1}/{playerCount})", true);
+        _core?.UpdateCore(playerCount > 1, $"{PlayerEntities.CurrentObjectIndex+1}/{playerCount}", true);
     }
 
     private void SetupAvatarBase(bool isLoaded, bool isLocal, bool isAvatarDisabled, bool isInitialized, CVRPlayerEntity currentPlayer) {

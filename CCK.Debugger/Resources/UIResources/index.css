@@ -6,38 +6,118 @@
 html, body {
     width: 100%;
     height: 100%;
+    /*overflow: hidden;*/
 }
 
-#cck-debugger {
-
-    width: 100%;
-    height: 100%;
+#cck-debugger-container {
+    color: white;
 
     font-size: 3.5vw;
 
-    overflow-y: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+}
 
+#cck-debugger-left-panel {
     background: rgba(0, 0, 0, 0.75);
-
     color: white;
 
+    width: 15%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#cck-debugger-right-panel {
+    background: rgba(0, 0, 0, 0.75);
+
+    width: 83%;
+    height: 100%;
+
     display: block;
+    /*display: flex;*/
+    /*flex-direction: column;*/
+    /*flex-wrap: nowrap;*/
+    /*justify-content: flex-start;*/
+    /*align-items: center;*/
+
+    /*overflow: hidden;*/
 }
 
 #cck-debugger-header {
-    font-size: 8vw;
+    font-size: 7vw;
     display: flex;
     justify-content: center;
+    align-items: center;
+
+    height: 150px;
+}
+
+#cck-debugger-menu {
+    width: 100%;
+    height: auto;
+    /*overflow-y: scroll;*/
+    /*overflow: hidden;*/
+    overflow: scroll !important;
 }
 
 #cck-debugger-controls {
-    font-size: 6vw;
-    justify-content: center;
+    font-size: 5vw;
+
+    height: 150px;
+
+    margin-bottom: 25px;
+}
+
+#cck-debugger-controls-buttons {
+    font-size: 5vw;
     display: flex;
+    justify-content: space-between;
+}
+
+#cck-debugger-control-button {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+}
+
+#cck-debugger-buttons {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    height: auto;
+}
+
+.cck-debugger-button {
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 100px;
+    height: 100px;
+    background-position: center;
+    text-align: center;
+    margin: 10px 0 10px 0;
+}
+
+.cck-debugger-section-root {
+    margin-left: 1vw;
+    filter: hue-rotate(45deg);
 }
 
 .cck-debugger-section {
-    margin-left: 5vw;
+    margin-left: 3vw;
     filter: hue-rotate(45deg);
 }
 
@@ -57,25 +137,12 @@ html, body {
     display: flex;
 }
 
-.cck-debugger-button:hover {
+.cck-debugger-button:hover, .cck-debugger-control-button:hover {
     filter: drop-shadow(2px 2px 6px white) drop-shadow(-2px -2px 6px white);
 }
+
 .cck-debugger-button.on:hover {
     filter: drop-shadow(2px 2px 6px palevioletred) drop-shadow(-2px -2px 6px palevioletred);
-}
-
-#cck-debugger-buttons {
-    display: flex;
-    justify-content: center;
-}
-
-.cck-debugger-button {
-    background-repeat: no-repeat;
-    background-size: contain;
-    width: 100px;
-    height: 100px;
-    background-position: center;
-    text-align: center;
 }
 
 .cck-debugger-button.on {
@@ -93,6 +160,7 @@ html, body {
 }
 #cck-debugger-button-pin {
     background-image: url("Images/Buttons/Pin.png");
+    margin-bottom: 50px;
 }
 #cck-debugger-button-pointer {
     background-image: url("Images/Buttons/Pointer.png");
@@ -111,6 +179,7 @@ html, body {
 }
 #cck-debugger-button-power {
     background-image: url("Images/Buttons/Power.png");
+    margin-bottom: 50px;
 }
 #cck-debugger-button-mod1 {
     background-image: url("Images/Buttons/Mod1.png");

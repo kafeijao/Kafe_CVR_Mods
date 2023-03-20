@@ -86,11 +86,11 @@ let cckDebugger = {
         buttonNode.classList.toggle("hidden", !button['IsVisible']);
         buttonNode.classList.toggle('on', button['IsOn']);
     },
-    onSectionCreation: function(parent, section) {
+    onSectionCreation: function(parent, section, isRoot = false) {
         // Properties: Id [int], Title [string], Value [string], Collapsable [bool], SubSections [Section[]]
 
         // Create the section on the parent provided
-        const sectionNode = cckDebugger.onSectionHandler(parent, section);
+        const sectionNode = cckDebugger.onSectionHandler(parent, section, isRoot);
         const hasSubsections = section['SubSections'].length > 0;
         const isCollapsable = section['Collapsable'];
 
@@ -137,7 +137,7 @@ let cckDebugger = {
 
         return sectionNode;
     },
-    onSectionHandler: function(parent, section) {
+    onSectionHandler: function(parent, section, isRoot = false) {
         // Properties: Id [int], Title [string], Collapsable [bool], Value [string]
         const sectionId = section['Id'];
         let root, prefixClosed, prefixOpened, key, separator, value, sectionInfo;
@@ -150,7 +150,7 @@ let cckDebugger = {
         else {
             // Create the section container
             root = document.createElement('div');
-            root.classList.add("cck-debugger-section")
+            root.classList.add(isRoot ? "cck-debugger-section-root" : "cck-debugger-section")
 
             // Create the subsection
             sectionInfo = document.createElement('div');
@@ -226,7 +226,7 @@ engine.on('CCKDebuggerCoreUpdate', (coreJson) => {
 
     // Handle the creation of the sections recursively (using depth first)
     for (let section of core['Sections']) {
-        cckDebugger.onSectionCreation(cckDebugger.menuRoot, section)
+        cckDebugger.onSectionCreation(cckDebugger.menuRoot, section, true)
     }
 });
 
