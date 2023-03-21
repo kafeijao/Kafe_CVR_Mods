@@ -46,13 +46,6 @@ html, body {
     height: 100%;
 
     display: block;
-    /*display: flex;*/
-    /*flex-direction: column;*/
-    /*flex-wrap: nowrap;*/
-    /*justify-content: flex-start;*/
-    /*align-items: center;*/
-
-    /*overflow: hidden;*/
 }
 
 #cck-debugger-header {
@@ -61,21 +54,40 @@ html, body {
     justify-content: center;
     align-items: center;
 
-    height: 150px;
+    height: 9%;
+}
+
+.cck-debugger-scroll-view {
+    height: 91%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.cck-debugger-scroll-marker-v {
+    position: absolute;
+    background-color: white;
+    width: 10px;
+    right: -20%;
+
+    /*Going to be overridden by style*/
+    top: 0;
+    height: 100%;
+}
+
+.cck-debugger-scroll-content {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+    width: 100%;
 }
 
 #cck-debugger-menu {
-    width: 100%;
-    height: auto;
-    /*overflow-y: scroll;*/
-    /*overflow: hidden;*/
-    overflow: scroll !important;
 }
 
 #cck-debugger-controls {
     font-size: 5vw;
 
-    height: 150px;
+    height: 9%;
 
     margin-bottom: 25px;
 }

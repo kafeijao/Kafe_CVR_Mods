@@ -121,6 +121,7 @@ let cckDebugger = {
 
             // Add the click event to the section to show/hide the prefix on the section key, and hide/show the children
             const clickEvent = (event) => {
+                if (scrollerComponents.wasJustDragged) return;
                 prefixClosed.classList.toggle("hidden");
                 prefixOpened.classList.toggle("hidden");
                 sectionNode.classList.toggle('has-hidden-children');
@@ -312,6 +313,180 @@ engine.on('CCKDebuggerModReady', () => {
     console.log("CCK Debugger is initialized and ready!")
 });
 
+// Handle scroll bars in js because cohtml funny
+const scrollerComponents = {
+
+    scrollViews: [],
+
+    // Globals
+    scrollTarget: null,
+
+    mouseScrolling: false,
+    pauseScrolling: false,
+
+    startY: 0,
+    startScrollY: 0,
+    oldY: 0,
+    speedY: 0,
+
+    startX: 0,
+    startScrollX: 0,
+    oldX: 0,
+    speedX: 0,
+
+    scrollWheelTarget: null,
+
+    mouseDebounceToken: null,
+
+    wasJustDragged: false,
+
+    initializeScrollerBars: () => {
+        const scrollViews = document.querySelectorAll(".cck-debugger-scroll-view");
+        for (let i = 0; i < scrollViews.length; i++) {
+            // scrollerComponents.scrollViews[scrollerComponents.scrollViews.length] = new scrollerComponents.scroll_view(scrollView);
+            scrollerComponents.scrollViews.push(new scrollerComponents.scroll_view(scrollViews[i]));
+        }
+    },
+
+    defVal: (_val, _defVal) => {
+        return (typeof(_val) !== "undefined") ? (_val !== "" ? _val : _defVal) : _defVal;
+    },
+
+    scroll_view: function(_obj) {
+        this.obj = _obj;
+        // this.content = cvr(_obj).find(".scroll-content").first();
+        this.content = _obj.querySelector(".cck-debugger-scroll-content");
+        this.viewHeight = 0;
+        this.contentHeight = 0;
+
+        const self = this;
+
+        this.update = function() {
+            self.viewHeight = scrollerComponents.defVal(self.obj.scrollHeight, 1.0);
+            self.contentHeight = scrollerComponents.defVal(self.content.scrollHeight, 1.0);
+
+            // console.log(`Heights: ${self.viewHeight} - ${self.contentHeight}`);
+
+            const factor = self.viewHeight / self.contentHeight;
+            let style = "";
+            if (factor < 1.0) {
+                style = "height: "+(factor*100)+"%;";
+            }
+            else {
+                style = "height: 0;";
+            }
+
+            //console.log(`Style: ${style}`);
+
+            const offset = self.content.scrollTop;
+            const max_offset = self.contentHeight - self.viewHeight;
+            const scrollPercent = offset / max_offset;
+            style += "top: "+((1.0 - factor) * scrollPercent* 100)+"%;";
+
+            // cvr(self.obj).find(".scroll-marker-v").attr("style", style);
+            self.obj.querySelector(".cck-debugger-scroll-marker-v").setAttribute("style", style);
+        }
+
+        self.update();
+
+        return {
+            update: this.update
+        }
+    },
+
+    initialize: () => {
+
+        document.addEventListener('mousedown', function(e) {
+            // if(e.target.hasAttribute("data-x")) {
+            //     return;
+            // }
+
+            scrollerComponents.mouseDebounceToken = setTimeout(() => {
+
+                scrollerComponents.scrollTarget = e.target.closest('.cck-debugger-scroll-content');
+                scrollerComponents.startY = e.clientY;
+                scrollerComponents.startX = e.clientX;
+                if (scrollerComponents.scrollTarget !== null) {
+                    scrollerComponents.mouseScrolling = true;
+                    scrollerComponents.startScrollY = scrollerComponents.scrollTarget.scrollTop;
+                    scrollerComponents.startScrollX = scrollerComponents.scrollTarget.scrollLeft;
+                }
+
+                scrollerComponents.mouseDebounceToken = null;
+
+            }, 200);
+
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (scrollerComponents.scrollTarget !== null && scrollerComponents.mouseScrolling && !scrollerComponents.pauseScrolling) {
+                scrollerComponents.scrollTarget.scrollTop = scrollerComponents.startScrollY - e.clientY + scrollerComponents.startY;
+                scrollerComponents.scrollTarget.scrollLeft = scrollerComponents.startScrollX - e.clientX + scrollerComponents.startX;
+                scrollerComponents.speedY = e.clientY - scrollerComponents.oldY;
+                scrollerComponents.speedX = e.clientX - scrollerComponents.oldX;
+                scrollerComponents.oldY = e.clientY;
+                scrollerComponents.oldX = e.clientX;
+                //console.log(`Mouse Move: ${scrollerComponents.scrollTarget.scrollTop} => ${scrollerComponents.startScrollY} - ${e.clientY} + ${scrollerComponents.startY} = ${scrollerComponents.startScrollY - e.clientY + scrollerComponents.startY}`);
+                UpdateScrollViews();
+            }
+
+            scrollerComponents.scrollWheelTarget = e.target.closest('.cck-debugger-scroll-content');
+        });
+
+        document.addEventListener('mouseup', function(e) {
+
+            if (scrollerComponents.mouseDebounceToken === null) {
+
+                scrollerComponents.mouseScrolling = false;
+                if (scrollerComponents.scrollTarget != null) {
+                    scrollerComponents.startScrollY = scrollerComponents.scrollTarget.scrollTop;
+                    scrollerComponents.startScrollX = scrollerComponents.scrollTarget.scrollLeft;
+                }
+
+                scrollerComponents.wasJustDragged = true;
+                setTimeout(() => scrollerComponents.wasJustDragged = false, 10);
+
+            }
+            else {
+                clearTimeout(scrollerComponents.mouseDebounceToken);
+                scrollerComponents.mouseDebounceToken = null;
+            }
+
+        });
+
+        window.setInterval(function() {
+            if (!scrollerComponents.mouseScrolling && scrollerComponents.scrollTarget != null && (Math.abs(scrollerComponents.speedY) > 0.01 || Math.abs(scrollerComponents.speedX) > 0.01) && !scrollerComponents.pauseScrolling) {
+                scrollerComponents.speedY *= 0.95;
+                scrollerComponents.speedX *= 0.95;
+
+                scrollerComponents.scrollTarget.scrollTop -= scrollerComponents.speedY;
+                scrollerComponents.scrollTarget.scrollLeft -= scrollerComponents.speedX;
+                UpdateScrollViews();
+            }
+            else if (!scrollerComponents.mouseScrolling && scrollerComponents.scrollTarget != null) {
+                scrollerComponents.scrollTarget = null;
+            }
+        }, 10);
+
+        window.addEventListener('wheel', function(e) {
+            if (scrollerComponents.scrollWheelTarget != null) {
+                scrollerComponents.scrollWheelTarget.scrollTop += e.deltaY;
+                scrollerComponents.scrollWheelTarget.scrollLeft += e.deltaX;
+                UpdateScrollViews();
+            }
+        });
+
+        function UpdateScrollViews() {
+            for (const scrollerComponent of scrollerComponents.scrollViews) {
+                scrollerComponent.update();
+            }
+        }
+
+        scrollerComponents.initializeScrollerBars();
+    }
+}
+
+scrollerComponents.initialize();
 
 // Tell the game we're ready (needs to be executed at the end of the file).
 // The game will reply by sending the event CCKDebuggerModReady
