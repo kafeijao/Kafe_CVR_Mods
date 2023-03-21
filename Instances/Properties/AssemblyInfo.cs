@@ -1,18 +1,19 @@
 ﻿using System.Reflection;
-using ProfilesExtended.Properties;
+using Kafe.Instances;
+using Kafe.Instances.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(ProfilesExtended))]
+[assembly: AssemblyTitle(nameof(Instances))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(ProfilesExtended))]
+[assembly: AssemblyProduct(nameof(Instances))]
 
 [assembly: MelonInfo(
-    typeof(ProfilesExtended.ProfilesExtended),
-    nameof(ProfilesExtended),
+    typeof(Instances),
+    nameof(Kafe.Instances),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -22,9 +23,10 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonAdditionalDependencies("BTKUILib")]
 
-namespace ProfilesExtended.Properties;
+namespace Kafe.Instances.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.2";
+    public const string Version = "0.0.4";
     public const string Author = "kafeijao";
 }

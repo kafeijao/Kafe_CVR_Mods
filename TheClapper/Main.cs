@@ -12,6 +12,7 @@ public class TheClapper : MelonMod {
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<bool> PreventClappingFriends;
     private static MelonPreferences_Entry<bool> _showVisualizerAfterOpenHands;
+    private static MelonPreferences_Entry<float> _showVisualizerDelay;
 
     private static ParticleSystem _particleSystem;
     private static ParticleSystemRenderer _particleSystemRenderer;
@@ -28,6 +29,14 @@ public class TheClapper : MelonMod {
         _showVisualizerAfterOpenHands = _melonCategory.CreateEntry("ShowVisualizersAfterOpenHands", true,
             description: "Whether or not to show visualizers of where to clap. The visualizers appear 1 second " +
                          "after having both hands with the open hand gesture.");
+
+        _showVisualizerDelay = _melonCategory.CreateEntry("ShowVisualizersDelayInSeconds", 1f,
+            description: "Delay the visualizers take to show up. Use 0 for instant.");
+
+        _showVisualizerDelay.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (newValue < 0) _showVisualizerDelay.Value = Mathf.Abs(newValue);
+            _wasPreparingClap = false;
+        });
     }
 
     private static bool _isInitialized;
@@ -44,7 +53,7 @@ public class TheClapper : MelonMod {
 
         if (isPreparingClap) {
             if (!_wasPreparingClap) {
-                _preparingTime = Time.time + 1f;
+                _preparingTime = Time.time + _showVisualizerDelay.Value;
                 _wasPreparingClap = true;
             }
             else if (Time.time > _preparingTime) {

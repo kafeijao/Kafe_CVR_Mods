@@ -2,12 +2,16 @@
 using ABI_RC.Core.Player.AvatarTracking.Local;
 using ABI_RC.Core.Player.AvatarTracking.Remote;
 using ABI.CCK.Components;
+using EyeMovementFix.CCK;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
 #if DEBUG
+using ABI_RC.Core.Savior;
 using CCK.Debugger.Components;
+using CCKDebugger = CCK.Debugger;
+using CCK.Debugger.Components.GameObjectVisualizers;
 #endif
 
 namespace EyeMovementFix;
@@ -20,8 +24,7 @@ public class BetterEyeController : MonoBehaviour {
     public static readonly Dictionary<CVRAvatar, Quaternion> OriginalLeftEyeLocalRotation = new();
     public static readonly Dictionary<CVRAvatar, Quaternion> OriginalRightEyeLocalRotation = new();
 
-    private const float MaxVerticalAngle = 25f;
-    private const float MaxHorizontalAngle = 25f;
+    private EyeRotationLimits _eyeRotationLimits;
 
     private CVRAvatar _avatar;
 
@@ -148,13 +151,16 @@ public class BetterEyeController : MonoBehaviour {
         #endif
     }
 
-    private static void Initialize(CVRAvatar avatar, CVREyeController eyeController, Transform head, Transform leftRealEye, Transform rightRealEye) {
+    private static void Initialize(CVRAvatar avatar, Animator animator, CVREyeController eyeController, Transform head, Transform leftRealEye, Transform rightRealEye) {
 
         // Initialize our better eye controller
         var betterEyeController = eyeController.gameObject.AddComponent<BetterEyeController>();
         BetterControllers[eyeController] = betterEyeController;
         betterEyeController.cvrEyeController = eyeController;
         betterEyeController._avatar = avatar;
+
+        // Fetch and load the eye rotation limits
+        LoadRotationLimits(avatar, animator, betterEyeController);
 
         // Todo: Improve this crap
         if (eyeController.isLocal) {
@@ -208,6 +214,50 @@ public class BetterEyeController : MonoBehaviour {
         }
     }
 
+    private static void LoadRotationLimits(CVRAvatar avatar, Animator animator, BetterEyeController betterEyeController) {
+
+        // Look for the EyeRotationLimit Script
+        betterEyeController._eyeRotationLimits = avatar.GetComponent<EyeRotationLimits>();
+
+        #if DEBUG
+        if (betterEyeController._eyeRotationLimits != null) MelonLogger.Msg($"Found avatar EyeRotationLimits in the avatar!");
+        #endif
+
+        if (betterEyeController._eyeRotationLimits != null) return;
+
+        // If there is no script, created with defaults (25)
+        betterEyeController._eyeRotationLimits = avatar.gameObject.AddComponent<EyeRotationLimits>();
+
+        // If there are bone muscle limits, get them and apply over the defaults!
+        var humanBones = animator.avatar.humanDescription.human;
+        foreach (var humanBone in humanBones) {
+
+            // Ignore default muscle values values
+            if (humanBone.limit.useDefaultValues) continue;
+
+            if (humanBone.humanName == HumanBodyBones.LeftEye.ToString()) {
+                betterEyeController._eyeRotationLimits.LeftEyeMinY = humanBone.limit.min.z;
+                betterEyeController._eyeRotationLimits.LeftEyeMaxY = humanBone.limit.max.z;
+                betterEyeController._eyeRotationLimits.LeftEyeMinX = -humanBone.limit.max.y;
+                betterEyeController._eyeRotationLimits.LeftEyeMaxX = -humanBone.limit.min.y;
+
+                #if DEBUG
+                MelonLogger.Msg($"Found avatar Left Eye Muscle Limits on the avatar!");
+                #endif
+            }
+            else if (humanBone.humanName == HumanBodyBones.RightEye.ToString()) {
+                betterEyeController._eyeRotationLimits.RightEyeMinY = humanBone.limit.min.z;
+                betterEyeController._eyeRotationLimits.RightEyeMaxY = humanBone.limit.max.z;
+                betterEyeController._eyeRotationLimits.RightEyeMinX = humanBone.limit.min.y;
+                betterEyeController._eyeRotationLimits.RightEyeMaxX = humanBone.limit.max.y;
+
+                #if DEBUG
+                MelonLogger.Msg($"Found avatar Right Eye Muscle Limits on the avatar!");
+                #endif
+            }
+        }
+    }
+
     private void Start() {
 
 #if DEBUG
@@ -227,7 +277,7 @@ public class BetterEyeController : MonoBehaviour {
         }
 
 
-        CCK.Debugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent += OnCCKDebuggerAvatarChanged;
+        CCKDebugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent += OnCCKDebuggerAvatarChanged;
 #endif
 
         if (enabled) initialized = true;
@@ -265,9 +315,13 @@ public class BetterEyeController : MonoBehaviour {
         }
     }
 
-    private static float NormalizeAngleToPercent(float angle, float maxAngle) {
-        var normal = Mathf.InverseLerp(-maxAngle, maxAngle, angle);
-        return Mathf.Lerp(-1f, 1f, normal);
+    private static float NormalizeAngleToPercent(float angle, float minAngle, float maxAngle) {
+        if (angle >= 0) {
+            return Mathf.Lerp(0, 1f, Mathf.InverseLerp(0, maxAngle, angle));
+        }
+        else {
+            return Mathf.Lerp(-1f, 0, Mathf.InverseLerp(minAngle, 0, angle));
+        }
     }
 
     private void UpdateEyeRotation(BetterEye eye, Quaternion lookRotation) {
@@ -277,8 +331,15 @@ public class BetterEyeController : MonoBehaviour {
         var wrapperLocalRotation = eye.FakeEyeWrapper.localRotation.eulerAngles;
         if (wrapperLocalRotation.x > 180f) wrapperLocalRotation.x -= 360f;
         if (wrapperLocalRotation.y > 180f) wrapperLocalRotation.y -= 360f;
-        wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, -MaxVerticalAngle, MaxVerticalAngle);
-        wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, -MaxHorizontalAngle, MaxHorizontalAngle);
+
+        if (eye.IsLeft) {
+            wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, _eyeRotationLimits.LeftEyeMinY, _eyeRotationLimits.LeftEyeMaxY);
+            wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, _eyeRotationLimits.LeftEyeMinX, _eyeRotationLimits.LeftEyeMaxX);
+        }
+        else {
+            wrapperLocalRotation.x = Mathf.Clamp(wrapperLocalRotation.x, _eyeRotationLimits.RightEyeMinY, _eyeRotationLimits.RightEyeMaxY);
+            wrapperLocalRotation.y = Mathf.Clamp(wrapperLocalRotation.y, _eyeRotationLimits.RightEyeMinX, _eyeRotationLimits.RightEyeMaxX);
+        }
 
         #if DEBUG
         var previousLocal = eye.FakeEyeWrapper.localRotation;
@@ -296,7 +357,9 @@ public class BetterEyeController : MonoBehaviour {
         // Set the eye angle (we're setting twice if we have 2 eyes, but the values should be the same anyway)
         // This will give values different than cvr. I've opted to have the looking forward angle to be 0
         // And then goes between [-1;0] and [0;+1], instead of [335-360] and [0-25] (cvr default)
-        cvrEyeController.eyeAngle.Set(NormalizeAngleToPercent(wrapperLocalRotation.y, MaxHorizontalAngle), NormalizeAngleToPercent(wrapperLocalRotation.x, MaxVerticalAngle));
+        cvrEyeController.eyeAngle.Set(
+            NormalizeAngleToPercent(wrapperLocalRotation.y, _eyeRotationLimits.LeftEyeMinX, _eyeRotationLimits.LeftEyeMaxX),
+            NormalizeAngleToPercent(wrapperLocalRotation.x, _eyeRotationLimits.LeftEyeMinY, _eyeRotationLimits.LeftEyeMaxY));
     }
 
     private void UpdateEyeRotations() {
@@ -306,14 +369,16 @@ public class BetterEyeController : MonoBehaviour {
 
         var target = _lastTarget?.Position ?? Vector3.zero;
 
-
         // Calculate the look direction
-        var forward = target - viewpoint.position;
+        var forwardViewpoint = target - viewpoint.position;
 
-        Quaternion lookRotation;
-        if (forward == Vector3.zero) {
+        var lookRotationLeft = Quaternion.identity;
+        var lookRotationRight = Quaternion.identity;
+
+        if (forwardViewpoint == Vector3.zero) {
             // If we're already aligned, just grab the rotation
-            lookRotation = _hasLeftEye ? _leftEye.FakeEyeWrapper.rotation : _rightEye.FakeEyeWrapper.rotation;
+            if (_hasLeftEye) lookRotationLeft = _leftEye.FakeEyeWrapper.rotation;
+            if (_hasRightEye) lookRotationRight = _rightEye.FakeEyeWrapper.rotation;
 
             #if DEBUG
             _debug4 = $"Grabbed rotation because already aligned... {Time.frameCount}";
@@ -321,7 +386,9 @@ public class BetterEyeController : MonoBehaviour {
         }
         else {
             // Otherwise let's calculate the direction
-            lookRotation = Quaternion.LookRotation(forward, viewpoint.up);
+            //lookRotation = Quaternion.LookRotation(forward, viewpoint.up);
+            if (_hasLeftEye) lookRotationLeft = Quaternion.LookRotation(target - _leftEye.FakeEye.position, _leftEye.FakeEyeViewpointOffset.up);
+            if (_hasRightEye) lookRotationRight = Quaternion.LookRotation(target - _rightEye.FakeEye.position, _leftEye.FakeEyeViewpointOffset.up);
 
             #if DEBUG
             _debug4 = $"Calculated look at like a chad...{Time.frameCount}";
@@ -331,7 +398,7 @@ public class BetterEyeController : MonoBehaviour {
         //_debug1 = $"trg: {target:F2} view: {viewpoint.position:F2}, forward: {forward:F2} {Time.frameCount}";
 
 
-        var isBehind = viewpoint.InverseTransformDirection(forward).z < 0;
+        var isBehind = viewpoint.InverseTransformDirection(forwardViewpoint).z < 0;
 
         var isLooking = target != Vector3.zero;
 
@@ -352,12 +419,12 @@ public class BetterEyeController : MonoBehaviour {
 
         // Otherwise we update the wrapper rotations to match looking at the target
         else {
-            if (_hasLeftEye) UpdateEyeRotation(_leftEye, lookRotation);
-            if (_hasRightEye) UpdateEyeRotation(_rightEye, lookRotation);
+            if (_hasLeftEye) UpdateEyeRotation(_leftEye, lookRotationLeft);
+            if (_hasRightEye) UpdateEyeRotation(_rightEye, lookRotationRight);
 
             #if DEBUG
-            _rightEyeAttempted = lookRotation;
-            _leftEyeAttempted = lookRotation;
+            _rightEyeAttempted = lookRotationLeft;
+            _leftEyeAttempted = lookRotationRight;
             #endif
         }
 
@@ -375,7 +442,7 @@ public class BetterEyeController : MonoBehaviour {
         }
 
         #if DEBUG
-        CCK.Debugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent -= OnCCKDebuggerAvatarChanged;
+        CCKDebugger.Components.CohtmlMenuHandlers.AvatarCohtmlHandler.AvatarChangeEvent -= OnCCKDebuggerAvatarChanged;
         #endif
     }
 
@@ -399,13 +466,69 @@ public class BetterEyeController : MonoBehaviour {
         _leftEyeUpdate = _rightEye.FakeEyeWrapper.rotation;
     }
 
+    private bool _clickedGetTarget;
+
     private void LateUpdate() {
+
+        // I want to execute this in late update, because it's when I do it, and also it's when it's gonna be right
+        if (_clickedGetTarget) {
+            _clickedGetTarget = false;
+
+            TargetCandidate.UpdateTargetCandidates();
+            foreach (Transform trx in MetaPort.Instance.transform) {
+                if (trx.gameObject.name == "[EyeMovementFixDebugTargets]") {
+                    Destroy(trx);
+                }
+            }
+            var go = new GameObject("[EyeMovementFixDebugTargets]");
+            go.transform.SetParent(MetaPort.Instance.transform);
+            foreach (var candidate in TargetCandidate.TargetCandidates) {
+                var goo = new GameObject($"[EyeMovementFixDebugTargets] {candidate.GetName()}");
+                goo.transform.SetParent(go.transform);
+                goo.transform.position = candidate.Position;
+                var bv = BoneVisualizer.Create(goo, 1);
+                bv.enabled = true;
+            }
+
+            FindAndSetNewTarget(cvrEyeController);
+        }
+
         if (!initialized) return;
+
         _viewpointPositionLateUpdate = viewpoint.position;
         _viewpointRotationLateUpdate = viewpoint.rotation;
 
         _rightEyeLateUpdate = _leftEye.FakeEyeWrapper.rotation;
         _leftEyeLateUpdate = _rightEye.FakeEyeWrapper.rotation;
+
+
+
+        if (!_isDebuggingLines) return;
+
+        void DrawRay(LineRenderer lineRenderer, Vector3 position, Vector3 forward, float distance = 2) {
+            lineRenderer.positionCount = 2;
+            lineRenderer.SetPosition(0, position);
+            lineRenderer.SetPosition(1, forward * distance + position);
+        }
+
+        var targetPos = _lastTarget?.Position ?? Vector3.zero;
+
+        // Calculate the look direction
+        var forward = targetPos - viewpoint.position;
+
+        // Green
+        DrawRay(_debugLineRenderers[0], viewpoint.position, viewpoint.forward);
+
+        // Red
+        DrawRay(_debugLineRenderers[1], viewpoint.position, forward);
+
+        // Blue
+        DrawRay(_debugLineRenderers[2], _leftEye.FakeEyeWrapper.position, _leftEye.FakeEyeWrapper.forward);
+        DrawRay(_debugLineRenderers[3], _rightEye.FakeEyeWrapper.position, _rightEye.FakeEyeWrapper.forward);
+
+        // Cyan
+        DrawRay(_debugLineRenderers[4], _leftEye.FakeEye.position, _leftEye.FakeEye.forward);
+        DrawRay(_debugLineRenderers[5], _rightEye.FakeEye.position, _rightEye.FakeEye.forward);
     }
 
     private void OnCCKDebuggerAvatarChanged(Core core, bool isLocal, CVRPlayerEntity remotePlayer, GameObject avatarGameObject, Animator avatarAnimator) {
@@ -425,7 +548,9 @@ public class BetterEyeController : MonoBehaviour {
             button.IsOn = debuggingButton.IsOn;
             button.IsVisible = debuggingButton.IsOn;
         };
-        getTarget.ClickHandler = button => FindAndSetNewTarget(cvrEyeController);
+        getTarget.ClickHandler = button => {
+            _clickedGetTarget = true;
+        };
 
         var eyeSection = core.AddSection("[EyeMovementFix] View Point positions", true);
 
@@ -471,6 +596,7 @@ public class BetterEyeController : MonoBehaviour {
     private void ToggleDebugging() {
         isDebugging = !isDebugging;
     }
+
     private void ToggleDebuggingVisualizers() {
         _isDebuggingLines = !_isDebuggingLines;
     }
@@ -481,36 +607,8 @@ public class BetterEyeController : MonoBehaviour {
     private readonly Color[] _debugColors = { Color.green, Color.red, Color.blue, Color.blue, Color.cyan, Color.cyan };
 
     private void OnRenderObject() {
-
         _rightEyeOnRender = _leftEye.FakeEyeWrapper.rotation;
         _leftEyeOnRender = _rightEye.FakeEyeWrapper.rotation;
-
-        if (!initialized || !_isDebuggingLines) return;
-
-        void DrawRay(LineRenderer lineRenderer, Vector3 position, Vector3 forward, float distance = 2) {
-            lineRenderer.positionCount = 2;
-            lineRenderer.SetPosition(0, position);
-            lineRenderer.SetPosition(1, forward * distance + position);
-        }
-
-        var targetPos = _lastTarget?.Position ?? Vector3.zero;
-
-        // Calculate the look direction
-        var forward = targetPos - viewpoint.position;
-
-        // Green
-        DrawRay(_debugLineRenderers[0], viewpoint.position, viewpoint.forward);
-
-        // Red
-        DrawRay(_debugLineRenderers[1], viewpoint.position, forward);
-
-        // Blue
-        DrawRay(_debugLineRenderers[2], _leftEye.FakeEyeWrapper.position, _leftEye.FakeEyeWrapper.forward);
-        DrawRay(_debugLineRenderers[3], _rightEye.FakeEyeWrapper.position, _rightEye.FakeEyeWrapper.forward);
-
-        // Cyan
-        DrawRay(_debugLineRenderers[4], _leftEye.FakeEye.position, _leftEye.FakeEye.forward);
-        DrawRay(_debugLineRenderers[5], _rightEye.FakeEye.position, _rightEye.FakeEye.forward);
     }
 #endif
 
@@ -583,7 +681,7 @@ public class BetterEyeController : MonoBehaviour {
                 if ((__instance.isLocal && head == null) || leftEye == null && rightEye == null) return;
 
                 // Initialize the controller
-                Initialize(___avatar, __instance, head, leftEye, rightEye);
+                Initialize(___avatar, animator, __instance, head, leftEye, rightEye);
 
             }
             catch (Exception e) {

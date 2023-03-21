@@ -1,7 +1,9 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Util.AssetFiltering;
 using ABI.CCK.Components;
+using EyeMovementFix.CCK;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -29,6 +31,9 @@ public class EyeMovementFix : MelonMod {
             description: "Whether or not to ignore mirrors created by portable mirror mod. When portable mirrors " +
                          "are active, they create targets for the eye movement. But since I use the mirror to mostly " +
                          "see what I'm doing, makes no sense to target players in the portable mirror.");
+
+        // Add our CCK component to the whitelist
+        Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_avatarWhitelist").Value.Add(typeof(EyeRotationLimits));
 
         // Check for portable mirror
         _hasPortableMirror = RegisteredMelons.FirstOrDefault(m => m.Info.Name == "PortableMirrorMod") != null;
