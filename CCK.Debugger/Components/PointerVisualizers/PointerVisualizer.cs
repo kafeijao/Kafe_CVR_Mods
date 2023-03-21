@@ -1,9 +1,9 @@
 ﻿using ABI.CCK.Components;
-using CCK.Debugger.Resources;
-using CCK.Debugger.Utils;
+using Kafe.CCK.Debugger.Resources;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.PointerVisualizers;
+namespace Kafe.CCK.Debugger.Components.PointerVisualizers;
 
 [DefaultExecutionOrder(999999)]
 public abstract class PointerVisualizer : MonoBehaviour {

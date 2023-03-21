@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace CCK.Debugger.Entities;
+namespace Kafe.CCK.Debugger.Entities;
 
 public abstract class ParameterEntrySection {
     public abstract string GetValue();

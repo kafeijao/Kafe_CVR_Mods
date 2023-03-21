@@ -1,7 +1,7 @@
 ﻿using MelonLoader;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.PointerVisualizers;
+namespace Kafe.CCK.Debugger.Components.PointerVisualizers;
 
 public class PointerSphereVisualizer : PointerVisualizer {
 

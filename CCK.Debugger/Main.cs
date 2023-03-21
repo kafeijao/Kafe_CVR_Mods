@@ -5,12 +5,12 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
-using CCK.Debugger.Components;
 using HarmonyLib;
+using Kafe.CCK.Debugger.Components;
 using MelonLoader;
 using UnityEngine;
 
-namespace CCK.Debugger;
+namespace Kafe.CCK.Debugger;
 
 public class CCKDebugger : MelonMod {
 
@@ -19,15 +19,10 @@ public class CCKDebugger : MelonMod {
     private const string CouiPath = @"ChilloutVR_Data\StreamingAssets\Cohtml\UIResources\CCKDebugger";
     private const string CouiManifestResourcePrefix = @"CCK.Debugger.Resources.UIResources.";
 
-    private static MelonPreferences_Category _melonCategory;
-    private static MelonPreferences_Entry<bool> _melonEntryOverwriteUIResources;
-
     public override void OnInitializeMelon() {
 
         // Melon Config
-        _melonCategory = MelonPreferences.CreateCategory(nameof(CCKDebugger));
-        _melonEntryOverwriteUIResources = _melonCategory.CreateEntry("OverwriteUIResources", true,
-            description: "Whether the mod should overwrite all Cohtml UI resources when loading or not.");
+        Config.InitializeMelonPrefs();
 
         // Check if it is in debug mode (to test functionalities that are waiting for bios to be enabled)
         // Keeping it hard-ish to enable so people don't abuse it
@@ -43,7 +38,7 @@ public class CCKDebugger : MelonMod {
             if (TestMode) MelonLogger.Msg("Test Mode is ENABLED!");
         }
 
-        if (_melonEntryOverwriteUIResources.Value) {
+        if (Config.MeOverwriteUIResources.Value) {
             // Copy the UI Resources from the assembly to the CVR Cohtml UI folder
             // Warning: The file and folder names inside of UIResources cannot contain dot characters "." nor "-" (except on
             // the extensions that must include a dot ".", and always require an extension, example "index.js"
@@ -60,7 +55,7 @@ public class CCKDebugger : MelonMod {
 
                 // Create folder if doesn't exist and save into a file
                 var directoryPath = Path.GetDirectoryName(resourceFullPath);
-                Directory.CreateDirectory(directoryPath);
+                Directory.CreateDirectory(directoryPath!);
                 var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(manifestResourceName);
                 if (resourceStream == null) {
                     var ex = $"Failed to find the Resource {manifestResourceName} in the Assembly.";
@@ -76,6 +71,16 @@ public class CCKDebugger : MelonMod {
             MelonLogger.Msg("Skipping copying the Cohtml resources as define in the configuration... You should " +
                             "only see this message if you are manually editing the Cohtml UI Resources!");
         }
+
+        // Check for BTKUILib
+        if (RegisteredMelons.Any(m => m.Info.Name == "BTKUILib")) {
+            MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
+            Config.InitializeBTKUI();
+        }
+
+        #if DEBUG
+        MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
+        #endif
     }
 
     public override void OnLateUpdate() {

@@ -1,8 +1,8 @@
 ﻿using ABI.CCK.Components;
-using CCK.Debugger.Utils;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.TriggerVisualizers;
+namespace Kafe.CCK.Debugger.Components.TriggerVisualizers;
 
 public class TriggerAvatarVisualizer : TriggerVisualizer {
 

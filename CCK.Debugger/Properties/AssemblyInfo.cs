@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using CCK.Debugger.Properties;
+using Kafe.CCK.Debugger.Properties;
 using MelonLoader;
 
 
@@ -11,7 +11,7 @@ using MelonLoader;
 [assembly: AssemblyProduct(AssemblyInfoParams.Name)]
 
 [assembly: MelonInfo(
-    typeof(CCK.Debugger.CCKDebugger),
+    typeof(Kafe.CCK.Debugger.CCKDebugger),
     AssemblyInfoParams.Name,
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
@@ -22,8 +22,9 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonOptionalDependencies("BTKUILib")]
 
-namespace CCK.Debugger.Properties;
+namespace Kafe.CCK.Debugger.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "2.0.0";
     public const string Author = "kafeijao";

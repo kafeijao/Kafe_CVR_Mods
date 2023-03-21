@@ -1,10 +1,10 @@
 ﻿using ABI.CCK.Components;
-using CCK.Debugger.Resources;
-using CCK.Debugger.Utils;
+using Kafe.CCK.Debugger.Resources;
+using Kafe.CCK.Debugger.Utils;
 using MelonLoader;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.TriggerVisualizers;
+namespace Kafe.CCK.Debugger.Components.TriggerVisualizers;
 
 [DefaultExecutionOrder(999999)]
 public abstract class TriggerVisualizer : MonoBehaviour {

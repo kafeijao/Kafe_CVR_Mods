@@ -3,15 +3,15 @@ using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
-using CCK.Debugger.Components.CohtmlMenuHandlers;
 using cohtml;
 using cohtml.Net;
 using HarmonyLib;
+using Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
 using MelonLoader;
 using Newtonsoft.Json;
 using UnityEngine;
 
-namespace CCK.Debugger.Components;
+namespace Kafe.CCK.Debugger.Components;
 
 public class CohtmlMenuController : MonoBehaviour {
 
@@ -176,13 +176,13 @@ public class CohtmlMenuController : MonoBehaviour {
         _cohtmlView.View.Reload();
     }
 
-    private void UpdateMenuState() {
+    internal void UpdateMenuState() {
         _errored = false;
 
         if (!Initialized) return;
 
         // Menu should not be running if set to the quick menu and the menu is not opened
-        var isMenuEnabled = _currentMenuParent != MenuTarget.QuickMenu || Events.QuickMenu.IsQuickMenuOpened;
+        var isMenuEnabled = (_currentMenuParent != MenuTarget.QuickMenu || Events.QuickMenu.IsQuickMenuOpened) && !Config.MeIsHidden.Value;
 
         if (!isMenuEnabled) {
             // Clear the highlight when the menu is not enabled

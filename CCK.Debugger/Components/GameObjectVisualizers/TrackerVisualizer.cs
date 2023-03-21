@@ -1,10 +1,10 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Systems.IK;
-using CCK.Debugger.Utils;
 using HarmonyLib;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.GameObjectVisualizers;
+namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class TrackerVisualizer : GameObjectVisualizer {
 

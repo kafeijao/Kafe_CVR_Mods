@@ -2,7 +2,7 @@
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI.CCK.Components;
 
-namespace CCK.Debugger.Events;
+namespace Kafe.CCK.Debugger.Events;
 
 internal static class Avatar {
 

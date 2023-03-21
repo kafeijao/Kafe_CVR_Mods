@@ -1,14 +1,13 @@
-﻿using System.Collections.ObjectModel;
-using ABI_RC.Core.Savior;
-using CCK.Debugger.Components.CohtmlMenuHandlers;
-using CCK.Debugger.Components.GameObjectVisualizers;
-using CCK.Debugger.Components.PointerVisualizers;
-using CCK.Debugger.Components.TriggerVisualizers;
+﻿using ABI_RC.Core.Savior;
+using Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
+using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
+using Kafe.CCK.Debugger.Components.PointerVisualizers;
+using Kafe.CCK.Debugger.Components.TriggerVisualizers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using UnityEngine;
 
-namespace CCK.Debugger.Components;
+namespace Kafe.CCK.Debugger.Components;
 
 public class Core {
 
@@ -132,6 +131,12 @@ public class Core {
         button = null;
         var found = Instance?._buttons?.TryGetValue(type, out button);
         return found.HasValue && found.Value;
+    }
+
+    public static void PinToQuickMenu() {
+        // Unpin from World or Hud if pinned
+        if (GetButton(Button.ButtonType.Pin, out var pinButton) && pinButton is { IsOn: true }) pinButton.Click();
+        else if (GetButton(Button.ButtonType.Hud, out var hudButton) && hudButton is { IsOn: true }) hudButton.Click();
     }
 
     public void UpdateCore(bool showControls, string controlsInfo, bool showSections) {

@@ -2,6 +2,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <Reference Include="BTKUILib">
+            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
         <EmbeddedResource Include="Resources\UIResources\**" />
         <EmbeddedResource Include="Resources\AssetBundles\cckdebugger" />
     </ItemGroup>

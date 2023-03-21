@@ -1,6 +1,6 @@
 ﻿using MelonLoader;
 
-namespace CCK.Debugger.Utils;
+namespace Kafe.CCK.Debugger.Utils;
 
 public class LooseList<T> : List<T> {
 

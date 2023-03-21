@@ -1,10 +1,10 @@
 ﻿using System.Globalization;
 using ABI_RC.Core.Savior;
-using CCK.Debugger.Components.GameObjectVisualizers;
 using HarmonyLib;
+using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 using Valve.VR;
 
-namespace CCK.Debugger.Components.CohtmlMenuHandlers;
+namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
 
 public class MiscCohtmlHandler : ICohtmlHandler {
 
@@ -22,7 +22,7 @@ public class MiscCohtmlHandler : ICohtmlHandler {
             button.IsOn = hasTrackersActive;
             button.IsVisible = MetaPort.Instance.isUsingVr;
         };
-        trackerButton.ClickHandler = button => TrackerVisualizer.ToggleTrackers(button.IsOn);
+        trackerButton.ClickHandler = button => TrackerVisualizer.ToggleTrackers(!button.IsOn);
 
         // FingerCurls
         var im = CVRInputManager.Instance;

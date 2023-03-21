@@ -1,8 +1,8 @@
-﻿using CCK.Debugger.Resources;
-using CCK.Debugger.Utils;
+﻿using Kafe.CCK.Debugger.Resources;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.GameObjectVisualizers;
+namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 [DefaultExecutionOrder(999999)]
 public abstract class GameObjectVisualizer : MonoBehaviour {

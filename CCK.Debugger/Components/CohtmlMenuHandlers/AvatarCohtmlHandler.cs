@@ -3,15 +3,15 @@ using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
-using CCK.Debugger.Components.GameObjectVisualizers;
-using CCK.Debugger.Components.PointerVisualizers;
-using CCK.Debugger.Components.TriggerVisualizers;
-using CCK.Debugger.Entities;
-using CCK.Debugger.Utils;
 using HarmonyLib;
+using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
+using Kafe.CCK.Debugger.Components.PointerVisualizers;
+using Kafe.CCK.Debugger.Components.TriggerVisualizers;
+using Kafe.CCK.Debugger.Entities;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.CohtmlMenuHandlers;
+namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
 
 public class AvatarCohtmlHandler : ICohtmlHandler {
 
@@ -228,7 +228,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             button.IsOn = hasTrackersActive;
             button.IsVisible = MetaPort.Instance.isUsingVr && isLocal;
         };
-        trackerButton.ClickHandler = button => TrackerVisualizer.ToggleTrackers(button.IsOn);
+        trackerButton.ClickHandler = button => TrackerVisualizer.ToggleTrackers(!button.IsOn);
         boneButton.StateUpdater = button => button.IsOn = CurrentEntityBoneList.Count > 0 && CurrentEntityBoneList.All(vis => vis.enabled);
         boneButton.ClickHandler = button => {
             button.IsOn = !button.IsOn;

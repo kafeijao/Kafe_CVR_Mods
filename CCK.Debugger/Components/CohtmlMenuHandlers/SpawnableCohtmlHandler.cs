@@ -1,14 +1,14 @@
 ﻿using System.Globalization;
 using ABI_RC.Core.Util;
 using ABI.CCK.Components;
-using CCK.Debugger.Components.PointerVisualizers;
-using CCK.Debugger.Components.TriggerVisualizers;
-using CCK.Debugger.Entities;
-using CCK.Debugger.Utils;
 using HarmonyLib;
+using Kafe.CCK.Debugger.Components.PointerVisualizers;
+using Kafe.CCK.Debugger.Components.TriggerVisualizers;
+using Kafe.CCK.Debugger.Entities;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.CohtmlMenuHandlers;
+namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
 
 public class SpawnableCohtmlHandler : ICohtmlHandler {
 

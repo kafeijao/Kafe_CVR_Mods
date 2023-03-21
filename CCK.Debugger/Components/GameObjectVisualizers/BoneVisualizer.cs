@@ -1,8 +1,8 @@
-﻿using CCK.Debugger.Components.CohtmlMenuHandlers;
-using CCK.Debugger.Utils;
+﻿using Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.GameObjectVisualizers;
+namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class BoneVisualizer : GameObjectVisualizer {
 

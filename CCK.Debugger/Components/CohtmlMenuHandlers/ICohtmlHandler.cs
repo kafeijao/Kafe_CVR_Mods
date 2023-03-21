@@ -1,9 +1,9 @@
-﻿using CCK.Debugger.Components.GameObjectVisualizers;
-using CCK.Debugger.Components.PointerVisualizers;
-using CCK.Debugger.Components.TriggerVisualizers;
+﻿using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
+using Kafe.CCK.Debugger.Components.PointerVisualizers;
+using Kafe.CCK.Debugger.Components.TriggerVisualizers;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.CohtmlMenuHandlers;
+namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
 
 public abstract class ICohtmlHandler {
 

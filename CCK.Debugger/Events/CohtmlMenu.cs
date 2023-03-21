@@ -1,7 +1,7 @@
-﻿using CCK.Debugger.Components;
+﻿using Kafe.CCK.Debugger.Components;
 using MelonLoader;
 
-namespace CCK.Debugger.Events;
+namespace Kafe.CCK.Debugger.Events;
 
 public static class DebuggerMenuCohtml {
 

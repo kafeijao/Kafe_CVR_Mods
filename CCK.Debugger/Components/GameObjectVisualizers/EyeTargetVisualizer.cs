@@ -1,8 +1,8 @@
 ﻿using ABI_RC.Core.Player;
-using CCK.Debugger.Utils;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.GameObjectVisualizers;
+namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class EyeTargetVisualizer : GameObjectVisualizer {
 
