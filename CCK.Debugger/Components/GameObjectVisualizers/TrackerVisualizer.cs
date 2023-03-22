@@ -45,10 +45,14 @@ public class TrackerVisualizer : GameObjectVisualizer {
     }
 
     private static void DisableAllTrackerVisualizers() {
+        var activeTrackers = new HashSet<TrackerVisualizer>();
         foreach (var visualizer in VisualizersActive) {
             if (visualizer.Value is TrackerVisualizer trackerVisualizer) {
-                trackerVisualizer.enabled = false;
+                activeTrackers.Add(trackerVisualizer);
             }
+        }
+        foreach (var trackerVisualizer in activeTrackers) {
+            trackerVisualizer.enabled = false;
         }
         // Disable controller visualizers
         IKSystem.Instance.leftHandModel.SetActive(false);

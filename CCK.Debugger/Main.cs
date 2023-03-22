@@ -77,6 +77,9 @@ public class CCKDebugger : MelonMod {
             MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
             Config.InitializeBTKUI();
         }
+        else {
+            MelonLogger.Warning("We optionally support BTKUILib, it allows to restore the menu to the quick menu. Consider installing the BTKUILib Mod.");
+        }
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
