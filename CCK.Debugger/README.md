@@ -46,9 +46,14 @@ prevent disappearing when you close the menu).
 
 ## Todo
 
-- [ ] Current playing animations by layer.
-- [ ] `CVR Pointer`, `CVR Advanced Avatar Settings Trigger`, and `CVR Spawnable Trigger` debug.
 - [ ] `Dynamic Bone` colliders and radius visualization.
+- [ ] `Magica Cloth` colliders and radius visualization.
+
+---
+
+## Credits
+
+- Thanks [AstroDoge](https://github.com/AstroDogeDX) for helping me delving into the depths of hell (cohtml).
 
 ---
 

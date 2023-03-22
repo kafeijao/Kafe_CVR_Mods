@@ -2,7 +2,7 @@
 using HighlightPlus;
 using UnityEngine;
 
-namespace CCK.Debugger.Utils; 
+namespace Kafe.CCK.Debugger.Utils; 
 
 public static class Highlighter {
     

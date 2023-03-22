@@ -1,36 +1,38 @@
-﻿using CCK.Debugger.Utils;
+﻿using Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.GameObjectVisualizers;
+namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class BoneVisualizer : GameObjectVisualizer {
 
-    public static bool Create(GameObject target, out BoneVisualizer visualizer, float scale) {
+    public static BoneVisualizer Create(GameObject target, float scale) {
 
         // Check if the component already exists, if so ignore the creation request but enable it
-        if (target.TryGetComponent(out visualizer)) {
+        if (target.TryGetComponent(out BoneVisualizer visualizer)) {
             visualizer.SetupVisualizer(scale);
-            return true;
+            return visualizer;
         }
 
         visualizer = target.AddComponent<BoneVisualizer>();
         visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target, visualizer);
         visualizer.SetupVisualizer(scale);
+
         visualizer.enabled = false;
-        return true;
+        return visualizer;
     }
 
     protected override void SetupVisualizer(float scale = 1f) {
 
         // Set transform components
-        var visualizerTransform = _visualizerGo.transform;
+        var visualizerTransform = VisualizerGo.transform;
         visualizerTransform.localPosition = Vector3.zero;
         visualizerTransform.localRotation = Quaternion.identity;
         visualizerTransform.localScale = Misc.GetScaleFromAbsolute(transform, 5.0f);
         visualizerTransform.transform.localScale *= scale;
 
         // Make them darker than trackers
-        _material.SetColor(Misc.MatOutlineColor, new Color(0.65f, 0.65f, 0.65f, 1f));
+        Material.SetColor(Misc.MatOutlineColor, new Color(0.65f, 0.65f, 0.65f, 1f));
     }
 
     private static readonly HumanBodyBones[] AvailableBones = {

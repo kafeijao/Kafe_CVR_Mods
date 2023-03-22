@@ -1,0 +1,15 @@
+﻿{
+  "name": "CCK.Debugger",
+  "core": {
+    "showControls": false,
+    "interactables": []
+  },
+  "interactable": {
+    "type": "pin",
+    // menu_next, menu_previous,
+    // entry_next, entry_previous,
+    // pin, hud, grab, pointer, trigger, reset, bone, tracker,
+    "isOn": true,
+    "visible": true
+  }
+}

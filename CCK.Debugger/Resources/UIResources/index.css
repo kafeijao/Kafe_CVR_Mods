@@ -1,0 +1,216 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    /*overflow: hidden;*/
+}
+
+#cck-debugger-container {
+    color: white;
+
+    font-size: 3.5vw;
+
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#cck-debugger-left-panel {
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+
+    width: 15%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#cck-debugger-right-panel {
+    background: rgba(0, 0, 0, 0.75);
+
+    width: 83%;
+    height: 100%;
+
+    display: block;
+}
+
+#cck-debugger-header {
+    font-size: 7vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    height: 9%;
+}
+
+.cck-debugger-scroll-view {
+    height: 91%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.cck-debugger-scroll-marker-v {
+    position: absolute;
+    background-color: white;
+    width: 10px;
+    right: -20%;
+
+    /*Going to be overridden by style*/
+    top: 0;
+    height: 100%;
+}
+
+.cck-debugger-scroll-content {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+    width: 100%;
+}
+
+#cck-debugger-menu {
+}
+
+#cck-debugger-controls {
+    font-size: 5vw;
+
+    height: 9%;
+
+    margin-bottom: 25px;
+}
+
+#cck-debugger-controls-buttons {
+    font-size: 5vw;
+    display: flex;
+    justify-content: space-between;
+}
+
+#cck-debugger-control-button {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+}
+
+#cck-debugger-buttons {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    height: auto;
+}
+
+.cck-debugger-button {
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 100px;
+    height: 100px;
+    background-position: center;
+    text-align: center;
+    margin: 10px 0 10px 0;
+}
+
+.cck-debugger-section-root {
+    margin-left: 1vw;
+    filter: hue-rotate(45deg);
+}
+
+.cck-debugger-section {
+    margin-left: 3vw;
+    filter: hue-rotate(45deg);
+}
+
+.cck-debugger-section-has-children {
+    margin-bottom: 2vw;
+}
+
+.cck-debugger-section-key {
+    color: deepskyblue;
+}
+
+.cck-debugger-section-value {
+    color: lightgrey;
+}
+
+.cck-debugger-section-info {
+    display: flex;
+}
+
+.cck-debugger-button:hover, .cck-debugger-control-button:hover {
+    filter: drop-shadow(2px 2px 6px white) drop-shadow(-2px -2px 6px white);
+}
+
+.cck-debugger-button.on:hover {
+    filter: drop-shadow(2px 2px 6px palevioletred) drop-shadow(-2px -2px 6px palevioletred);
+}
+
+.cck-debugger-button.on {
+    filter: drop-shadow(5px 5px 5px deeppink) drop-shadow(-5px -5px 5px deeppink);
+}
+
+#cck-debugger-button-bone {
+    background-image: url("Images/Buttons/Bone.png");
+}
+#cck-debugger-button-grab {
+    background-image: url("Images/Buttons/Grab.png");
+}
+#cck-debugger-button-hud {
+    background-image: url("Images/Buttons/Hud.png");
+}
+#cck-debugger-button-pin {
+    background-image: url("Images/Buttons/Pin.png");
+    margin-bottom: 50px;
+}
+#cck-debugger-button-pointer {
+    background-image: url("Images/Buttons/Pointer.png");
+}
+#cck-debugger-button-reset {
+    background-image: url("Images/Buttons/Reset.png");
+}
+#cck-debugger-button-tracker {
+    background-image: url("Images/Buttons/Tracker.png");
+}
+#cck-debugger-button-trigger {
+    background-image: url("Images/Buttons/Trigger.png");
+}
+#cck-debugger-button-eye {
+    background-image: url("Images/Buttons/Eye.png");
+}
+#cck-debugger-button-power {
+    background-image: url("Images/Buttons/Power.png");
+    margin-bottom: 50px;
+}
+#cck-debugger-button-mod1 {
+    background-image: url("Images/Buttons/Mod1.png");
+}
+#cck-debugger-button-mod2 {
+    background-image: url("Images/Buttons/Mod2.png");
+}
+#cck-debugger-button-mod3 {
+    background-image: url("Images/Buttons/Mod3.png");
+}
+
+.hidden {
+    display: none;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.cck-debugger-section-key-button:hover {
+    filter: hue-rotate(45deg);
+}

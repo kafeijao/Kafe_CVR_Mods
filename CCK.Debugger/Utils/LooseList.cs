@@ -1,22 +1,11 @@
 ﻿using MelonLoader;
 
-namespace CCK.Debugger.Utils;
+namespace Kafe.CCK.Debugger.Utils;
 
 public class LooseList<T> : List<T> {
 
     public T CurrentObject { get; private set; }
     public int CurrentObjectIndex { get; private set; }
-
-    private bool _hasChanged;
-    public bool HasChanged {
-        get => _hasChanged;
-        set {
-            // Ignore if it didn't change
-            //if (_hasChanged == value) return;
-            _hasChanged = value;
-            Events.DebuggerMenu.OnSwitchInspectedEntity(!_hasChanged);
-        }
-    }
 
     private readonly IEnumerable<T> _source;
     private readonly Func<T, bool> _sourceEntryIsValid;
@@ -30,7 +19,6 @@ public class LooseList<T> : List<T> {
         _source = source;
         _sourceEntryIsValid = sourceEntryIsValid;
         _initializeWithDefault = initializeWithDefault;
-        HasChanged = true;
 
         // Add handlers for increment changes
         Events.DebuggerMenu.ControlsNextPage += () => {
@@ -39,6 +27,15 @@ public class LooseList<T> : List<T> {
         Events.DebuggerMenu.ControlsPreviousPage += () => {
             if (ListenPageChangeEvents) _pageIncrement = -1;
         };
+    }
+
+    public void Reset() {
+        CurrentObjectIndex = 0;
+        // Detect current object changes
+        if (!EqualityComparer<T>.Default.Equals(default, CurrentObject)) {
+            CurrentObject = default;
+            Events.DebuggerMenu.OnEntityChange();
+        }
     }
 
     public void UpdateViaSource() {
@@ -55,8 +52,7 @@ public class LooseList<T> : List<T> {
 
             // If there are no elements, end it here
             if (Count == 0) {
-                CurrentObject = default;
-                CurrentObjectIndex = 0;
+                Reset();
                 return;
             }
 
@@ -71,10 +67,11 @@ public class LooseList<T> : List<T> {
             CurrentObjectIndex = (currIndex + _pageIncrement + Count) % Count;
             _pageIncrement = 0;
 
-            // Detect current object changes
-            if (!EqualityComparer<T>.Default.Equals(this[CurrentObjectIndex], CurrentObject)) HasChanged = true;
+            if (EqualityComparer<T>.Default.Equals(this[CurrentObjectIndex], CurrentObject)) return;
 
+            // Update if there are current object changes
             CurrentObject = this[CurrentObjectIndex];
+            Events.DebuggerMenu.OnEntityChange();
         }
         catch (Exception e) {
             MelonLogger.Error("Something went wrong when updating our loose list.");

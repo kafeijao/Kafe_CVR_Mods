@@ -1,7 +1,6 @@
-﻿using MelonLoader;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace CCK.Debugger.Resources;
+namespace Kafe.CCK.Debugger.Resources;
 
 public enum ShaderType {
     NeitriDistanceFadeOutline,

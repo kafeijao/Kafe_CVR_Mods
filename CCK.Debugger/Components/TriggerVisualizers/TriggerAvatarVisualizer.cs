@@ -1,16 +1,16 @@
 ﻿using ABI.CCK.Components;
-using CCK.Debugger.Utils;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.TriggerVisualizers;
+namespace Kafe.CCK.Debugger.Components.TriggerVisualizers;
 
 public class TriggerAvatarVisualizer : TriggerVisualizer {
 
     private CVRAdvancedAvatarSettingsTrigger _trigger;
 
-    private const float _fadeDuration = .35f;
+    private const float FadeDuration = .35f;
 
-    private bool triggered;
+    private bool _triggered;
     private float _durationInverse;
     private float _timer;
     private Color _triggerColor;
@@ -23,42 +23,44 @@ public class TriggerAvatarVisualizer : TriggerVisualizer {
 
         Events.Avatar.AasTriggerTriggered += trigger => {
             if (_trigger.enterTasks.Contains(trigger)) {
-                _durationInverse = 1f / _fadeDuration;
+                _durationInverse = 1f / FadeDuration;
                 _timer = 0;
                 _triggerColor = Color.green;
-                triggered = true;
+                _triggered = true;
             }
             if (_trigger.exitTasks.Contains(trigger)) {
-                _durationInverse = 1f / _fadeDuration;
+                _durationInverse = 1f / FadeDuration;
                 _timer = 0;
                 _triggerColor = Color.red;
-                triggered = true;
+                _triggered = true;
             }
         };
 
         Events.Avatar.AasStayTriggerTriggered += trigger => {
             // Lets let the fades play instead of replacing all the time with this trigger
-            if (triggered) return;
+            if (_triggered) return;
 
             if (_trigger.stayTasks.Contains(trigger)) {
-                _durationInverse = 1f / _fadeDuration;
+                _durationInverse = 1f / FadeDuration;
                 _timer = 0;
                 _triggerColor = Color.yellow;
-                triggered = true;
+                _triggered = true;
             }
         };
     }
 
     private void Update() {
+        if (!Initialized) return;
+
         // Update the size and position to match the trigger
         VisualizerGo.transform.localScale = TriggerCollider.size;
         VisualizerGo.transform.localPosition = TriggerCollider.center;
 
         // Pop in and then fade effect
-        if (!triggered) return;
+        if (!_triggered) return;
         var effectPercentage = _timer * _durationInverse;
         if (effectPercentage > 1f) {
-            triggered = false;
+            _triggered = false;
         }
         MaterialStandard.SetColor(Misc.MatMainColor, Color.Lerp(_triggerColor, Misc.ColorWhiteFade, effectPercentage));
         MaterialNeitri.SetFloat(Misc.MatOutlineWidth, Mathf.Lerp(1f, 0.8f, effectPercentage));

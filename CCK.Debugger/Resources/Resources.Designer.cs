@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace CCK.Debugger.Resources {
+namespace Kafe.CCK.Debugger.Resources {
     using System;
     
     
