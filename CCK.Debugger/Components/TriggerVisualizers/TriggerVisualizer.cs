@@ -118,11 +118,11 @@ public abstract class TriggerVisualizer : MonoBehaviour {
 
     private void UpdateState() {
         if (!Initialized) return;
-        VisualizerGo.SetActive(enabled);
-        if (enabled && !VisualizersActive.ContainsKey(TriggerBehavior)) {
+        VisualizerGo.SetActive(isActiveAndEnabled);
+        if (isActiveAndEnabled && !VisualizersActive.ContainsKey(TriggerBehavior)) {
             VisualizersActive.Add(TriggerBehavior, this);
         }
-        else if (!enabled && VisualizersActive.ContainsKey(TriggerBehavior)) {
+        else if (!isActiveAndEnabled && VisualizersActive.ContainsKey(TriggerBehavior)) {
             VisualizersActive.Remove(TriggerBehavior);
         }
     }

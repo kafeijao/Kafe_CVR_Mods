@@ -127,11 +127,11 @@ public abstract class PointerVisualizer : MonoBehaviour {
 
     private void UpdateState() {
         if (!Initialized) return;
-        VisualizerGo.SetActive(enabled);
-        if (enabled && !VisualizersActive.ContainsKey(Pointer)) {
+        VisualizerGo.SetActive(isActiveAndEnabled);
+        if (isActiveAndEnabled && !VisualizersActive.ContainsKey(Pointer)) {
             VisualizersActive.Add(Pointer, this);
         }
-        else if (!enabled && VisualizersActive.ContainsKey(Pointer)) {
+        else if (!isActiveAndEnabled && VisualizersActive.ContainsKey(Pointer)) {
             VisualizersActive.Remove(Pointer);
         }
     }
