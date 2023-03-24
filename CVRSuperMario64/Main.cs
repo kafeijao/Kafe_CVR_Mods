@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
+using ABI_RC.Systems.Camera;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -9,21 +10,12 @@ namespace Kafe.CVRSuperMario64;
 
 public class CVRSuperMario64 : MelonMod {
 
-    private static MelonPreferences_Category _melonCategory;
-    private static MelonPreferences_Entry<bool> MeAlwaysReplaceLib;
-    internal static MelonPreferences_Entry<bool> MeDisableAudio;
-    internal static MelonPreferences_Entry<float> MeAudioPitch;
-    internal static MelonPreferences_Entry<float> MeAudioVolume;
-    internal static MelonPreferences_Entry<int> MeGameTickMs;
-    internal static MelonPreferences_Entry<int> MeIgnoreCollidersHigherThanPolygons;
-    internal static MelonPreferences_Entry<bool> MePlayRandomMusicOnMarioJoin;
-    internal static MelonPreferences_Entry<float> MeSkipFarMarioDistance;
-    internal static MelonPreferences_Entry<int> MeMaxMariosAnimatedPerPerson;
-
     // Asset bundle
     private static Material _marioMaterialCached;
+    private static Sprite _marioSpriteCached;
     private const string LibSM64AssetBundleName = "libsm64.assetbundle";
     private const string MarioMaterialAssetPath = "Assets/Content/Material/DefaultMario.mat";
+    private const string MarioTextureAssetPath = "Assets/Content/Texture/Mario_Head_256.png";
 
     // Rom
     private const string SuperMario64UsZ64RomHashHex = "20b854b239203baf6c961b850a4a51a2";
@@ -35,57 +27,17 @@ public class CVRSuperMario64 : MelonMod {
 
     public override void OnInitializeMelon() {
 
-
-        // Melon Config
-        _melonCategory = MelonPreferences.CreateCategory(nameof(CVRSuperMario64));
-
-        MeAlwaysReplaceLib = _melonCategory.CreateEntry("AlwaysReplaceLib", true,
-            description: "Whether to always replace the sm64.dll lib on start or not. Only disable if you know what " +
-                         "you're doing!");
-
-        MeDisableAudio = _melonCategory.CreateEntry("DisableAudio", false,
-            description: "Whether to disable the game audio or not.");
-
-        MeAudioVolume = _melonCategory.CreateEntry("AudioVolume", 0.1f,
-            description: "The audio volume.");
-
-        MeAudioPitch = _melonCategory.CreateEntry("AudioPitch", 0.74f,
-            description: "The audio pitch of the game sounds.");
-
-        MeGameTickMs = _melonCategory.CreateEntry("GameTickMs", 25,
-            description: "The game ticks frequency in Milliseconds.");
-
-        MeIgnoreCollidersHigherThanPolygons = _melonCategory.CreateEntry("IgnoreCollidersHigherThanPolygons", 10000,
-            description: "Ignore colliders with a poly count higher than.");
-
-        MePlayRandomMusicOnMarioJoin = _melonCategory.CreateEntry("PlayRandomMusicOnMarioJoin", true,
-            description: "Whether to play a random music when a mario joins or not.");
-        MePlayRandomMusicOnMarioJoin.OnEntryValueChanged.Subscribe((_, newValue) => {
-            if (!newValue) Interop.StopMusic();
-        });
-
-        MeMaxMariosAnimatedPerPerson = _melonCategory.CreateEntry("MaxMariosAnimatedPerPerson", 3,
-            description: "The max number of marios other people can control at the same time.");
-
-        MeSkipFarMarioDistance = _melonCategory.CreateEntry("SkipFarMarioDistance", 15f,
-            description: "The max distance that we're going to calculate the mario animations for other people.");
+        Config.InitializeMelonPrefs();
 
         // Extract the native binary to the plugins folder
         const string dllName = "sm64.dll";
         var dstPath = Path.GetFullPath(Path.Combine("ChilloutVR_Data", "Plugins", "x86_64", dllName));
 
         try {
-            var sm64LibFileInfo = new FileInfo(dstPath);
-            if (!sm64LibFileInfo.Exists || MeAlwaysReplaceLib.Value) {
-                MelonLogger.Msg($"Copying the sm64.dll to {dstPath}");
-                using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(dllName);
-                using var fileStream = File.Open(dstPath, FileMode.Create, FileAccess.Write);
-                resourceStream!.CopyTo(fileStream);
-            }
-            else {
-                MelonLogger.Msg($"The lib sm64.dll already exists at {dstPath}, we won't overwrite...");
-                return;
-            }
+            MelonLogger.Msg($"Copying the sm64.dll to {dstPath}");
+            using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(dllName);
+            using var fileStream = File.Open(dstPath, FileMode.Create, FileAccess.Write);
+            resourceStream!.CopyTo(fileStream);
         }
         catch (IOException ex) {
             MelonLogger.Error("Failed to copy native library: " + ex.Message);
@@ -103,9 +55,14 @@ public class CVRSuperMario64 : MelonMod {
             }
             resourceStream.CopyTo(memoryStream);
             var assetBundle = AssetBundle.LoadFromMemory(memoryStream.ToArray());
+            // Load Material
             var mat = assetBundle.LoadAsset<Material>(MarioMaterialAssetPath);
             mat.hideFlags |= HideFlags.DontUnloadUnusedAsset;
             _marioMaterialCached = mat;
+            // Load Sprite
+            var sprite = assetBundle.LoadAsset<Sprite>(MarioTextureAssetPath);
+            sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset;
+            _marioSpriteCached = sprite;
         }
         catch (Exception ex) {
             MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
@@ -141,7 +98,13 @@ public class CVRSuperMario64 : MelonMod {
             return;
         }
 
-        // Add our CCK component to the whitelist
+        // Check for BTKUILib
+        if (RegisteredMelons.Any(m => m.Info.Name == "BTKUILib")) {
+            MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
+            Config.InitializeBTKUI();
+        }
+
+        // Add our CCK component to the prop whitelist
         var propWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
         propWhitelist.Add(typeof(CVRSM64Mario));
         propWhitelist.Add(typeof(CVRSM64Interactable));
@@ -149,6 +112,9 @@ public class CVRSuperMario64 : MelonMod {
         propWhitelist.Add(typeof(CVRSM64ColliderStatic));
         propWhitelist.Add(typeof(CVRSM64ColliderDynamic));
         propWhitelist.Add(typeof(CVRSM64InteractableParticles));
+        propWhitelist.Add(typeof(CVRSM64Teleporter));
+
+        // Add our CCK component to the avatar whitelist
         var avatarWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_avatarWhitelist").Value;
         avatarWhitelist.Add(typeof(CVRSM64ColliderDynamic));
 
@@ -163,6 +129,10 @@ public class CVRSuperMario64 : MelonMod {
         return _marioMaterialCached;
     }
 
+    public static Sprite GetMarioSprite() {
+        return _marioSpriteCached;
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
@@ -170,6 +140,15 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPatch(typeof(CVRInputManager), "Start")]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
             __instance.gameObject.AddComponent<MarioInputModule>();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PortableCamera), "Start")]
+        public static void After_PortableCamera_Start(PortableCamera __instance) {
+            var mod = new MarioCameraMod();
+            __instance.RegisterMod(mod);
+            __instance.RequireUpdate(mod);
+            __instance.UpdateOptionsDisplay();
         }
     }
 }

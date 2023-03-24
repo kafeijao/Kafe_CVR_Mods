@@ -1,3 +1,4 @@
+using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
 
@@ -107,7 +108,7 @@ internal static class Utils {
     private static readonly int IgnoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
     private static readonly int MirrorReflectionLayer = LayerMask.NameToLayer("MirrorReflection");
 
-    internal static bool IsGoodCollider(Collider col) {
+    private static bool IsGoodCollider(Collider col) {
         return
             // Ignore disabled
             col.enabled
@@ -115,6 +116,8 @@ internal static class Utils {
             // Ignore other mario's colliders
             && col.GetComponentInChildren<CVRSM64Mario>() == null
             && col.GetComponentInParent<CVRSM64Mario>() == null
+            // Ignore colliders in pickup scripts
+            && col.GetComponentInParent<CVRPickupObject>() == null
             // Ignore the some layers
             && col.gameObject.layer != PlayerCloneLayer
             && col.gameObject.layer != PlayerLocalLayer
@@ -127,7 +130,7 @@ internal static class Utils {
             && !col.isTrigger;
     }
 
-    internal static void TransformAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
+    private static void TransformAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         Vector3[] vertices = {
             b.transform.TransformPoint(b.center + new Vector3(-b.size.x, -b.size.y, -b.size.z) * 0.5f),
             b.transform.TransformPoint(b.center + new Vector3(b.size.x, -b.size.y, -b.size.z) * 0.5f),
@@ -158,7 +161,7 @@ internal static class Utils {
         Interop.CreateAndAppendSurfaces(outSurfaces, tris, vertices, surfaceType, terrainType);
     }
 
-    internal static void ScaleAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
+    private static void ScaleAndGetSurfaces(List<Interop.SM64Surface> outSurfaces, BoxCollider b, SM64SurfaceType surfaceType, SM64TerrainType terrainType) {
         Vector3[] vertices = {
             Vector3.Scale(b.transform.lossyScale, b.center + new Vector3(-b.size.x, -b.size.y, -b.size.z) * 0.5f),
             Vector3.Scale(b.transform.lossyScale, b.center + new Vector3(b.size.x, -b.size.y, -b.size.z) * 0.5f),
@@ -189,15 +192,15 @@ internal static class Utils {
         Interop.CreateAndAppendSurfaces(outSurfaces, tris, vertices, surfaceType, terrainType);
     }
 
-    internal static Vector3 TransformPoint(SphereCollider s, Vector3 point) {
+    private static Vector3 TransformPoint(SphereCollider s, Vector3 point) {
         return s.transform.TransformPoint(point * s.radius * 2 + s.center);
     }
 
-    internal static Vector3 ScalePoint(SphereCollider s, Vector3 point) {
+    private static Vector3 ScalePoint(SphereCollider s, Vector3 point) {
         return Vector3.Scale(s.transform.lossyScale, point * s.radius * 2 + s.center);
     }
 
-    internal static Vector3 TransformPoint(CapsuleCollider c, Vector3 point) {
+    private static Vector3 TransformPoint(CapsuleCollider c, Vector3 point) {
         // Calculate the height and radius as if we were on the direction y (i == 1)
         for (int i = 0; i < 3; i++) {
             point[i] *= i == 1 ? Mathf.Max(c.height, c.radius * 2) / 2 : c.radius * 2;
@@ -220,7 +223,7 @@ internal static class Utils {
         return c.transform.TransformPoint(alignedCapsule + c.center);
     }
 
-    internal static Vector3 ScalePoint(CapsuleCollider c, Vector3 point) {
+    private static Vector3 ScalePoint(CapsuleCollider c, Vector3 point) {
         // Calculate the height and radius as if we were on the direction y (i == 1)
         for (int i = 0; i < 3; i++) {
             point[i] *= i == 1 ? Mathf.Max(c.height, c.radius * 2) / 2 : c.radius * 2;
@@ -246,6 +249,8 @@ internal static class Utils {
 
     internal static Interop.SM64Surface[] GetAllStaticSurfaces() {
         var surfaces = new List<Interop.SM64Surface>();
+
+        var meshColliders = new List<MeshCollider>();
 
         foreach (var obj in UnityEngine.Object.FindObjectsOfType<Collider>()) {
 
@@ -273,13 +278,56 @@ internal static class Utils {
             //MelonLogger.Msg($"[GoodCollider] {obj.name}");
             #endif
 
-            GetTransformedSurfaces(obj, surfaces, surfaceType, terrainType, hasDedicatedComponent);
+            if (obj is MeshCollider meshCollider && !hasDedicatedComponent) {
+                // Let's do some more processing to the mesh colliders without dedicated components
+                meshColliders.Add(meshCollider);
+            }
+            else {
+                // Everything else, let's just add (probably a bad idea)
+                GetTransformedSurfaces(obj, surfaces, surfaceType, terrainType, hasDedicatedComponent);
+            }
+        }
+
+        // Ignore all meshes colliders with a null shared mesh, or non-readable
+        var nonReadableMeshColliders = meshColliders.Where(meshCollider => meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable).ToList();
+        #if DEBUG
+        foreach (var invalidMeshCollider in nonReadableMeshColliders) {
+            MelonLogger.Warning($"[MeshCollider] {invalidMeshCollider.name} Mesh is " +
+                                $"{(invalidMeshCollider.sharedMesh == null ? "null" : "non-readable")}, " +
+                                "so we won't be able to use this as a collider for Mario :(");
+        }
+        #endif
+        meshColliders.RemoveAll(meshCollider => meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable);
+
+        // Sort the meshColliders list by the length of their triangles array in ascending order
+        meshColliders.Sort((a, b) => a.sharedMesh.triangles.Length.CompareTo(b.sharedMesh.triangles.Length));
+
+        // Add the mesh colliders until we reach the max mesh collider polygon limit
+        var totalMeshColliderTris = 0;
+        foreach (var meshCollider in meshColliders) {
+            var meshTrisCount = meshCollider.sharedMesh.triangles.Length / 3;
+            var newTotalMeshColliderTris = totalMeshColliderTris + meshTrisCount;
+            if (newTotalMeshColliderTris > Config.MeMaxMeshColliderTotalTris.Value) {
+                #if DEBUG
+                MelonLogger.Warning($"[MeshCollider] {meshCollider.name} will be ignored because it exceeds the " +
+                                    $"maximum mesh collider total tris count. Tris: {meshTrisCount}, Total Tris: " +
+                                    $"{newTotalMeshColliderTris}/{Config.MeMaxMeshColliderTotalTris.Value}");
+                #endif
+            }
+            else {
+                GetTransformedSurfaces(meshCollider, surfaces, SM64SurfaceType.Default, SM64TerrainType.Grass, false);
+                #if DEBUG
+                MelonLogger.Msg($"[MeshCollider] {meshCollider.name} will be added. Tris: {meshTrisCount}, Total " +
+                                $"Tris: {newTotalMeshColliderTris}/{Config.MeMaxMeshColliderTotalTris.Value}");
+                #endif
+            }
+            totalMeshColliderTris = newTotalMeshColliderTris;
         }
 
         return surfaces.ToArray();
     }
 
-    internal static List<Interop.SM64Surface> GetTransformedSurfaces(Collider collider, List<Interop.SM64Surface> surfaces, SM64SurfaceType surfaceType, SM64TerrainType terrainType, bool bypassPolygonLimit) {
+    private static List<Interop.SM64Surface> GetTransformedSurfaces(Collider collider, List<Interop.SM64Surface> surfaces, SM64SurfaceType surfaceType, SM64TerrainType terrainType, bool bypassPolygonLimit) {
 
         switch (collider) {
             case BoxCollider boxCollider:
@@ -290,24 +338,16 @@ internal static class Utils {
                 break;
             case MeshCollider meshCollider:
 
-                #if DEBUG
-                MelonLogger.Msg($"[MeshCollider] {meshCollider.name} Readable: {meshCollider.sharedMesh.isReadable}, SubMeshCount: {meshCollider.sharedMesh.subMeshCount}, TrisCount: {meshCollider.sharedMesh.triangles.Length}");
-                #endif
-
-                if (!meshCollider.sharedMesh.isReadable) {
-                    MelonLogger.Warning(
-                        $"[MeshCollider] {meshCollider.name} Mesh is not readable, so we won't be able to use this as a collider for Mario :(");
-                    return surfaces;
-                }
-
-                if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value) {
-                    MelonLogger.Warning($"[MeshCollider] {meshCollider.name} has {meshCollider.sharedMesh.triangles.Length} triangles, " +
-                                    $"which is more than the configured limit ({CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
+                if (meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable) {
+                    #if DEBUG
+                    MelonLogger.Warning($"[MeshCollider] {meshCollider.name} Mesh is null or not readable, so we won't be able to use this as a collider for Mario :(");
+                    #endif
                     return surfaces;
                 }
 
                 // Todo: Handle when meshes are too big (colliders stop working).
                 // Planes scaled to 60 60 60 will break. While 50 50 50 will work.
+                // Edit: Seems to be related how big each polygon is (cubes break sooner than planes(more polys))
 
                 TransformAndGetSurfaces(surfaces, meshCollider.sharedMesh, surfaceType, terrainType, x => meshCollider.transform.TransformPoint(x));
                 break;
@@ -334,14 +374,10 @@ internal static class Utils {
                     break;
                 case MeshCollider meshCollider:
 
-                    if (!meshCollider.sharedMesh.isReadable) {
-                        MelonLogger.Warning($"[MeshCollider] {meshCollider.name} Mesh is not readable, so we won't be able to use this as a collider for Mario :(");
-                        return surfaces;
-                    }
-
-                    if (!bypassPolygonLimit && meshCollider.sharedMesh.triangles.Length > CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value) {
-                        MelonLogger.Warning($"[MeshCollider] {meshCollider.name} has {meshCollider.sharedMesh.triangles.Length} triangles, " +
-                                        $"which is more than the configured limit ({CVRSuperMario64.MeIgnoreCollidersHigherThanPolygons.Value}), so this mesh will be ignored!");
+                    if (meshCollider.sharedMesh == null || !meshCollider.sharedMesh.isReadable) {
+                        #if DEBUG
+                        MelonLogger.Warning($"[MeshCollider] {meshCollider.name} Mesh is null or not readable, so we won't be able to use this as a collider for Mario :(");
+                        #endif
                         return surfaces;
                     }
 
@@ -368,11 +404,15 @@ internal static class Utils {
 
     public static bool HasCapType(uint flags, MarioCapType capType) {
         switch (capType) {
-            case MarioCapType.VanishCap: return (flags & (uint)CapFlags.MARIO_VANISH_CAP) != 0;
-            case MarioCapType.MetalCap: return (flags & (uint)CapFlags.MARIO_METAL_CAP) != 0;
-            case MarioCapType.WingCap: return (flags & (uint)CapFlags.MARIO_WING_CAP) != 0;
+            case MarioCapType.VanishCap: return (flags & (uint)FlagsFlags.MARIO_VANISH_CAP) != 0;
+            case MarioCapType.MetalCap: return (flags & (uint)FlagsFlags.MARIO_METAL_CAP) != 0;
+            case MarioCapType.WingCap: return (flags & (uint)FlagsFlags.MARIO_WING_CAP) != 0;
         }
         return capType == MarioCapType.None;
+    }
+
+    public static bool IsTeleporting(uint flags) {
+         return (flags & (uint)FlagsFlags.MARIO_TELEPORTING) != 0;
     }
 
     public static readonly Dictionary<SoundBitsKeys, uint> SoundBits = new() {

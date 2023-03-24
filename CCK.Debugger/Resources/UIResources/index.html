@@ -1,0 +1,38 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>CCK.Debugger</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="../cohtml.js"></script>
+</head>
+
+<body>
+<div id="cck-debugger-container">
+    <div id="cck-debugger-left-panel">
+        <div id="cck-debugger-controls">
+            <p id="cck-debugger-controls-info">0/0</p>
+            <div id="cck-debugger-controls-buttons">
+                <p id="cck-debugger-controls-previous" class="cck-debugger-control-button">&lt;</p>
+                <p id="cck-debugger-controls-next" class="cck-debugger-control-button">&gt;</p>
+            </div>
+        </div>
+        <div id="cck-debugger-buttons"></div>
+    </div>
+    <div id="cck-debugger-right-panel">
+        <div id="cck-debugger-header">
+            <p id="cck-debugger-menu-previous" class="cck-debugger-control-button">&lt;</p>&nbsp;
+            <p id="cck-debugger-menu-title">MenuName</p>&nbsp;
+            <p id="cck-debugger-menu-next" class="cck-debugger-control-button">&gt;</p>
+        </div>
+        <div class="cck-debugger-scroll-view">
+            <div class="cck-debugger-scroll-marker-v"></div>
+            <div id="cck-debugger-menu" class="cck-debugger-scroll-content"></div>
+        </div>
+    </div>
+</div>
+<script src="index.js"></script>
+</body>
+</html>

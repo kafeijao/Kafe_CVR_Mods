@@ -2,10 +2,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <Reference Include="BTKUILib">
+            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+    
+    <ItemGroup>
         <EmbeddedResource Include="libsm64\Plugins\sm64.dll">
             <LogicalName>sm64.dll</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="Resources/libsm64.assetbundle">
+        <EmbeddedResource Include="Resources\libsm64.assetbundle">
             <LogicalName>libsm64.assetbundle</LogicalName>
         </EmbeddedResource>
     </ItemGroup>

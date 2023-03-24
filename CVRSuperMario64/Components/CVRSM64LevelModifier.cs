@@ -80,6 +80,15 @@ public class CVRSM64LevelModifier : MonoBehaviour {
             return;
         }
 
+        // Reset the old type
+        if (maxLevelModifier.modifierType != _lastModifierType) {
+            lock (marios) {
+                foreach (var mario in marios) {
+                    Interop.SetLevelModifier(mario.MarioId, _lastModifierType, float.MinValue);
+                }
+            }
+        }
+
         _lastModifierType = maxLevelModifier.modifierType;
         _lastLevel = highestLevel;
         _forceUpdate = false;
@@ -112,5 +121,9 @@ public class CVRSM64LevelModifier : MonoBehaviour {
         #if DEBUG
         MelonLogger.Msg($"[{nameof(CVRSM64LevelModifier)}] {gameObject.name} Disabled!");
         #endif
+    }
+
+    private void OnDestroy() {
+        OnDisable();
     }
 }

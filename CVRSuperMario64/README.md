@@ -36,16 +36,37 @@ levels with terrain types etc, create interactables to you can trigger the Mario
 
 ---
 
+## Features
+
+- Play as Mario interacting with ChilloutVR Worlds with the Super Mario 64 engine running to control it.
+- Synchronized Marios across people with the mod.
+- Attack other Marios.
+- Best effort attempt to integrate with CVR world colliders. Depending on the mesh settings/amount might not work/lag.
+- Provide Dedicated components for more versatility to make content interact with Mario.
+
+---
+
+## Public Props
+
+I've published some props to get people started, you can make your own props by using
+the [CCK for this mod](https://github.com/kafeijao/Kafe_CVR_CCKs/tree/master/CVRSuperMario64). You can search for them
+in-game in the props tab.
+
+- **SM64 Mario** - Spawns a Mario that you can control.
+- **SM64 Interactable Caps** - Spawns a platform with the 3 Caps for mario, Wing, Metal, and Vanish Cap. Stand on top of
+the respective cubes to trigger them.
+- **SM64 Colliders Dynamic** - Static Colliders that can interact with Mario. Some have special attributes.
+- **SM64 Colliders Dynamic** - Movable Colliders that can interact with Mario. Some have special attributes.
+- **SM64 Level Modifier - Water/Gas** - Sets the height level for water/gas. This is global for everyone.
+- **SM64 Interactable Particles - Coins** - Plane that spawns coins that Mario can pickup, coins heal Mario.
+- **SM64 Teleporters** - A one and two ways teleporters.
+
+---
+
 ## Todos
 
-- [x] Fix the sync between players.
-- [x] Fix frame rate.
 - [ ] Offload the heavy work to a thread.
-- [x] Add support to configure terrain types.
-- [x] Add support for moving colliders.
-- [x] Add support for coins?
-- [ ] Add support for enemies?
-- [x] Add Mario pvp?
+- [ ] Add support for custom damage interactables.
 
 ---
 

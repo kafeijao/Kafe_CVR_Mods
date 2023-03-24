@@ -28,10 +28,15 @@ public class CVRSM64Mario : MonoBehaviour {
     [SerializeField] private bool overrideCameraPosition = false;
     [SerializeField] private Transform cameraPositionTransform = null;
 
+    // Camera Mod Override
+    [SerializeField] private Transform cameraModTransform = null;
+    [SerializeField] private List<Renderer> cameraModTransformRenderersToHide = new();
+
     // Material Properties
     private const float VanishOpacity = 0.5f;
     private Color _colorNormal;
     private Color _colorVanish;
+    private Color _colorInvisible;
     private readonly int _colorProperty = Shader.PropertyToID("_Color");
     private readonly List<int> _metallicProperties = new() {
         Shader.PropertyToID("_Metallic"),
@@ -70,6 +75,12 @@ public class CVRSM64Mario : MonoBehaviour {
     [NonSerialized] private bool _initialized;
     [NonSerialized] private bool _wasPickedUp;
     [NonSerialized] private bool _initializedByRemote;
+    [NonSerialized] private bool _isDying;
+    [NonSerialized] private bool _isNuked;
+
+    // Teleporters
+    [NonSerialized] private float _startedTeleporting = float.MinValue;
+    [NonSerialized] private Transform _teleportTarget;
 
     // Bypasses
     [NonSerialized] private bool _wasBypassed;
@@ -93,6 +104,7 @@ public class CVRSM64Mario : MonoBehaviour {
         Health,
         Flags,
         Action,
+        HasCameraMod,
     }
     private readonly Dictionary<SyncedParameterNames, Tuple<int, CVRSpawnableValue>> _syncParameters = new();
 
@@ -105,6 +117,7 @@ public class CVRSM64Mario : MonoBehaviour {
         HasVanishCap,
         IsMine,
         IsBypassed,
+        IsTeleporting,
     }
     private static readonly Dictionary<LocalParameterNames, int> LocalParameters = new() {
         { LocalParameterNames.HealthPoints, Animator.StringToHash(nameof(LocalParameterNames.HealthPoints)) },
@@ -114,6 +127,7 @@ public class CVRSM64Mario : MonoBehaviour {
         { LocalParameterNames.HasVanishCap, Animator.StringToHash(nameof(LocalParameterNames.HasVanishCap)) },
         { LocalParameterNames.IsMine, Animator.StringToHash(nameof(LocalParameterNames.IsMine)) },
         { LocalParameterNames.IsBypassed, Animator.StringToHash(nameof(LocalParameterNames.IsBypassed)) },
+        { LocalParameterNames.IsTeleporting, Animator.StringToHash(nameof(LocalParameterNames.IsTeleporting)) },
     };
 
     // Threading
@@ -124,8 +138,8 @@ public class CVRSM64Mario : MonoBehaviour {
     private static float _skipFarMarioDistance;
 
     static CVRSM64Mario() {
-        _skipFarMarioDistance = CVRSuperMario64.MeSkipFarMarioDistance.Value;
-        CVRSuperMario64.MeSkipFarMarioDistance.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        _skipFarMarioDistance = Config.MeSkipFarMarioDistance.Value;
+        Config.MeSkipFarMarioDistance.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             _skipFarMarioDistance = newValue;
             MelonLogger.Msg($"Changed the distance that will skip animating other marios {oldValue} to {newValue}.");
         });
@@ -233,6 +247,10 @@ public class CVRSM64Mario : MonoBehaviour {
         // Player setup transform
         _localPlayerTransform = PlayerSetup.Instance.transform;
 
+        // Ensure the list of renderers is not null and has no null values
+        cameraModTransformRenderersToHide ??= new List<Renderer>();
+        cameraModTransformRenderersToHide.RemoveAll(r => r == null);
+
         // Check for the SM64Mario component
         var mario = GetComponent<CVRSM64Mario>();
         if (mario == null) {
@@ -243,6 +261,7 @@ public class CVRSM64Mario : MonoBehaviour {
         }
 
         CVRSM64Context.UpdateMarioCount();
+        CVRSM64Context.UpdatePlayerMariosState();
 
         #if DEBUG
         MelonLogger.Msg($"A SM64Mario Spawnable was initialize! Is ours: {spawnable.IsMine()}");
@@ -288,6 +307,7 @@ public class CVRSM64Mario : MonoBehaviour {
         material = new Material(material);
         _colorNormal = new Color(material.color.r, material.color.g, material.color.b, material.color.a);
         _colorVanish = new Color(material.color.r, material.color.g, material.color.b, VanishOpacity);
+        _colorInvisible = new Color(material.color.r, material.color.g, material.color.b, 0f);
 
         _marioMeshRenderer.material = material;
 
@@ -391,7 +411,7 @@ public class CVRSM64Mario : MonoBehaviour {
 
     public void ContextFixedUpdateSynced(List<CVRSM64Mario> marios) {
 
-        if (!_enabled || !_initialized) return;
+        if (!_enabled || !_initialized || _isNuked) return;
 
         // Janky remote sync check
         if (!IsMine() && !_initializedByRemote) {
@@ -455,7 +475,16 @@ public class CVRSM64Mario : MonoBehaviour {
             spawnable.SetValue(_syncParameters[SyncedParameterNames.Action].Item1, Convert.ToSingle(currentStateAction));
 
             // Check Interactables (trigger mario caps)
-            CVRSM64Interactable.MarioTick(this, currentStateFlags);
+            CVRSM64Interactable.HandleInteractables(this, currentStateFlags);
+
+            // Check Teleporters
+            CVRSM64Teleporter.HandleTeleporters(this, currentStateFlags, ref _startedTeleporting, ref _teleportTarget);
+
+            // Check for deaths, so we delete the prop
+            if (!_isDying && IsDead()) {
+                _isDying = true;
+                Invoke(nameof(SetMarioAsNuked), 15f);
+            }
         }
         else {
 
@@ -469,13 +498,18 @@ public class CVRSM64Mario : MonoBehaviour {
 
             // Trigger the cap if the synced values have cap (if we already have the cape it will ignore)
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.VanishCap)) {
-                WearCap(currentStateFlags, Utils.MarioCapType.VanishCap);
+                WearCap(currentStateFlags, Utils.MarioCapType.VanishCap, false);
             }
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.MetalCap)) {
-                WearCap(currentStateFlags, Utils.MarioCapType.MetalCap);
+                WearCap(currentStateFlags, Utils.MarioCapType.MetalCap, false);
             }
             if (Utils.HasCapType(syncedFlags, Utils.MarioCapType.WingCap)) {
-                WearCap(currentStateFlags, Utils.MarioCapType.WingCap);
+                WearCap(currentStateFlags, Utils.MarioCapType.WingCap, false);
+            }
+
+            // Trigger teleport for remotes
+            if (Utils.IsTeleporting(syncedFlags) && Time.time > _startedTeleporting + 5 * CVRSM64Teleporter.TeleportDuration) {
+                _startedTeleporting = Time.time;
             }
         }
 
@@ -483,14 +517,28 @@ public class CVRSM64Mario : MonoBehaviour {
         var hasVanishCap = Utils.HasCapType(currentStateFlags, Utils.MarioCapType.VanishCap);
         var hasWingCap = Utils.HasCapType(currentStateFlags, Utils.MarioCapType.WingCap);
         var hasMetalCap = Utils.HasCapType(currentStateFlags, Utils.MarioCapType.MetalCap);
-        material.SetColor(_colorProperty, hasVanishCap ? _colorVanish : _colorNormal);
-        foreach (var metallicProperty in _metallicProperties) {
-            material.SetFloat(metallicProperty, hasMetalCap ? 1f : 0f);
+        var isTeleporting = Utils.IsTeleporting(currentStateFlags);
+
+        // Handle teleporting fading in
+        if (Time.time > _startedTeleporting && Time.time <= _startedTeleporting + CVRSM64Teleporter.TeleportDuration) {
+            material.color = Color.Lerp(_colorNormal, _colorInvisible, Mathf.Clamp(Time.time-_startedTeleporting, 0f, 1f));
         }
+        // Handle teleport fading out
+        else if (Time.time > _startedTeleporting + CVRSM64Teleporter.TeleportDuration && Time.time <= _startedTeleporting + 2 * CVRSM64Teleporter.TeleportDuration) {
+            material.color = Color.Lerp(_colorInvisible, _colorNormal, Mathf.Clamp(Time.time-_startedTeleporting-CVRSM64Teleporter.TeleportDuration, 0f, 1f));
+        }
+        else {
+            material.SetColor(_colorProperty, hasVanishCap ? _colorVanish : _colorNormal);
+            foreach (var metallicProperty in _metallicProperties) {
+                material.SetFloat(metallicProperty, hasMetalCap ? 1f : 0f);
+            }
+        }
+
         foreach (var animator in animators) {
             animator.SetBool(LocalParameters[LocalParameterNames.HasVanishCap], hasVanishCap);
             animator.SetBool(LocalParameters[LocalParameterNames.HasWingCap], hasWingCap);
             animator.SetBool(LocalParameters[LocalParameterNames.HasMetalCap], hasMetalCap);
+            animator.SetBool(LocalParameters[LocalParameterNames.IsTeleporting], isTeleporting);
         }
 
         // Check if we're taking damage
@@ -512,7 +560,7 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     public void ContextUpdateSynced() {
-        if (!_enabled || !_initialized) return;
+        if (!_enabled || !_initialized || _isNuked) return;
 
         if (!IsMine() && !_initializedByRemote) return;
 
@@ -540,7 +588,17 @@ public class CVRSM64Mario : MonoBehaviour {
 
             // Handle other synced params
             if (spawnable.IsMine()) {
+
+                // Handle health sync
                 spawnable.SetValue(_syncParameters[SyncedParameterNames.Health].Item1, _states[j].HealthPoints);
+
+                // Handle controlling mario with camera mod sub-sync sync
+                if (MarioCameraMod.Instance.IsControllingMario(this)) {
+                    if (advancedOptions && cameraModTransform != null) {
+                        var camTransform = MarioCameraMod.Instance.GetCameraTransform();
+                        cameraModTransform.SetPositionAndRotation(camTransform.position, camTransform.rotation);
+                    }
+                }
             }
             else {
                 SetHealthPoints(_syncParameters[SyncedParameterNames.Health].Item2.currentValue);
@@ -578,6 +636,15 @@ public class CVRSM64Mario : MonoBehaviour {
         // If we're overriding the camera position transform use it instead.
         if (overrideCameraPosition && cameraPositionTransform != null) {
             return cameraPositionTransform.forward;
+        }
+
+        // If we're using the CVR Camera Mod
+        if (spawnable.IsMine()) {
+            if (MarioCameraMod.Instance.IsControllingMario(this)) {
+                spawnable.SetValue(_syncParameters[SyncedParameterNames.HasCameraMod].Item1, 1f);
+                return MarioCameraMod.Instance.GetCameraTransform().forward;
+            }
+            spawnable.SetValue(_syncParameters[SyncedParameterNames.HasCameraMod].Item1, 0f);
         }
 
         // Use our own camera
@@ -638,11 +705,15 @@ public class CVRSM64Mario : MonoBehaviour {
 
     private void UpdateIsOverMaxDistance() {
         // Check the distance to see if we should ignore the updates
-        _isOverMaxDistance = !IsMine() && Vector3.Distance(transform.position, _localPlayerTransform.position) > _skipFarMarioDistance;
+        _isOverMaxDistance =
+            !IsMine()
+            && Vector3.Distance(transform.position, _localPlayerTransform.position) > _skipFarMarioDistance
+            && (!MarioCameraMod.IsControllingAMario(out var mario) || Vector3.Distance(transform.position, mario.transform.position) > _skipFarMarioDistance);
         UpdateIsBypassed();
     }
 
     private void UpdateIsBypassed() {
+        if (!_initialized) return;
         var isBypassed = _isOverMaxDistance || _isOverMaxCount;
         if (isBypassed == _wasBypassed) return;
         _wasBypassed = isBypassed;
@@ -693,22 +764,22 @@ public class CVRSM64Mario : MonoBehaviour {
         Interop.MarioTakeDamage(MarioId, worldPosition, damage);
     }
 
-    internal void WearCap(uint flags, Utils.MarioCapType capType) {
+    internal void WearCap(uint flags, Utils.MarioCapType capType, bool playMusic) {
         if (!_enabled) return;
 
         if (Utils.HasCapType(flags, capType)) return;
         switch (capType) {
             case Utils.MarioCapType.VanishCap:
                 // Original game is 15 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_VANISH_CAP, 40f);
+                Interop.MarioCap(MarioId, FlagsFlags.MARIO_VANISH_CAP, 40f, playMusic);
                 break;
             case Utils.MarioCapType.MetalCap:
                 // Originally game is 15 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_METAL_CAP, 40f);
+                Interop.MarioCap(MarioId, FlagsFlags.MARIO_METAL_CAP, 40f, playMusic);
                 break;
             case Utils.MarioCapType.WingCap:
                 // Originally game is 40 seconds
-                Interop.MarioCap(MarioId, CapFlags.MARIO_WING_CAP, 40f);
+                Interop.MarioCap(MarioId, FlagsFlags.MARIO_WING_CAP, 40f, playMusic);
                 break;
         }
     }
@@ -724,6 +795,18 @@ public class CVRSM64Mario : MonoBehaviour {
     private bool IsDead() {
         lock (_lock) {
             return GetCurrentState().health < 1 * Interop.SM64_HEALTH_PER_HEALTH_POINT;
+        }
+    }
+
+    private void SetMarioAsNuked() {
+        lock (_lock) {
+            _isNuked = true;
+            var deleteMario = Config.MeDeleteMarioAfterDead.Value;
+            #if DEBUG
+            MelonLogger.Msg($"One of our Marios died, it has been 15 seconds and we're going to " +
+                            $"{(deleteMario ? "delete the mario" : "stopping its engine updates")}.");
+            #endif
+            if (deleteMario) spawnable.Delete();
         }
     }
 
@@ -750,6 +833,16 @@ public class CVRSM64Mario : MonoBehaviour {
     private void Hold() {
         if (IsDead()) return;
         SetAction(ActionFlags.ACT_GRABBED);
+    }
+
+    public void TeleportStart() {
+        if (IsDead()) return;
+        SetAction(ActionFlags.ACT_TELEPORT_FADE_OUT);
+    }
+
+    public void TeleportEnd() {
+        if (IsDead()) return;
+        SetAction(ActionFlags.ACT_TELEPORT_FADE_IN);
     }
 
     private void Throw() {
@@ -792,6 +885,26 @@ public class CVRSM64Mario : MonoBehaviour {
                 Interop.PlaySoundGlobal(SoundBitsKeys.SOUND_GENERAL_RED_COIN);
                 Interop.MarioHeal(MarioId, 2);
                 break;
+        }
+    }
+
+    public List<Renderer> GetRenderersToHideFromCamera() => cameraModTransformRenderersToHide;
+
+    public bool IsFirstPerson() {
+        lock (_lock) {
+            return GetCurrentState().IsFlyingOrSwimming();
+        }
+    }
+
+    public bool IsSwimming() {
+        lock (_lock) {
+            return GetCurrentState().IsSwimming();
+        }
+    }
+
+    public bool IsFlying() {
+        lock (_lock) {
+            return GetCurrentState().IsFlying();
         }
     }
 }

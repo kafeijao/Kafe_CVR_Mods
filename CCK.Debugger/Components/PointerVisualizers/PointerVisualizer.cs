@@ -1,14 +1,13 @@
 ﻿using ABI.CCK.Components;
-using CCK.Debugger.Resources;
-using CCK.Debugger.Utils;
-using MelonLoader;
+using Kafe.CCK.Debugger.Resources;
+using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
-namespace CCK.Debugger.Components.PointerVisualizers;
+namespace Kafe.CCK.Debugger.Components.PointerVisualizers;
 
+[DefaultExecutionOrder(999999)]
 public abstract class PointerVisualizer : MonoBehaviour {
-
-    private static readonly Dictionary<CVRPointer, PointerVisualizer> VisualizersAll = new();
+    protected static readonly Dictionary<CVRPointer, PointerVisualizer> VisualizersAll = new();
     private static readonly Dictionary<CVRPointer, PointerVisualizer> VisualizersActive = new();
 
     private const string GameObjectName = "[CCK.Debugger] Pointer Visualizer";
@@ -16,63 +15,71 @@ public abstract class PointerVisualizer : MonoBehaviour {
     private Material _materialStandard;
     private Material _materialNeitri;
 
-    private CVRPointer _pointer;
+    protected CVRPointer Pointer;
     protected GameObject VisualizerGo;
 
-    public static bool CreateVisualizer(CVRPointer pointer, out PointerVisualizer visualizer) {
+    protected bool Initialized { get; set; }
+
+    public static PointerVisualizer CreateVisualizer(CVRPointer pointer) {
 
         // Check if the component already exists, if so ignore the creation request but enable it
-        if (pointer.TryGetComponent(out visualizer)) return true;
-
-        // Ignore pointers without colliders (should never happen ?)
-        if (!pointer.TryGetComponent(out Collider collider)) return false;
-
-        // Instantiate the proper visualizer for each collider type
-        switch (collider) {
-
-            case SphereCollider sphereCollider:
-                var sphereVisualizer = pointer.gameObject.AddComponent<PointerSphereVisualizer>();
-                sphereVisualizer.PointerCollider = sphereCollider;
-                visualizer = sphereVisualizer;
-                visualizer.InitializeVisualizer(pointer, Utils.Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
-                break;
-
-            case BoxCollider boxCollider:
-                var boxVisualizer = pointer.gameObject.AddComponent<PointerBoxVisualizer>();
-                boxVisualizer.PointerCollider = boxCollider;
-                visualizer = boxVisualizer;
-                visualizer.InitializeVisualizer(pointer, Utils.Misc.GetPrimitiveMesh(PrimitiveType.Cube));
-                break;
-
-            case CapsuleCollider capsuleCollider:
-                var capsuleVisualizer = pointer.gameObject.AddComponent<PointerCapsuleVisualizer>();
-                capsuleVisualizer.PointerCollider = capsuleCollider;
-                visualizer = capsuleVisualizer;
-                visualizer.InitializeVisualizer(pointer, Utils.Misc.GetPrimitiveMesh(PrimitiveType.Capsule));
-                break;
-
-            case MeshCollider meshCollider:
-                var meshVisualizer = pointer.gameObject.AddComponent<PointerMeshVisualizer>();
-                visualizer = meshVisualizer;
-                visualizer.InitializeVisualizer(pointer, meshCollider.sharedMesh);
-                break;
-
-            default:
-                // CVR only support those collider types, so we're going to ignore everything else
-                return false;
+        if (pointer.TryGetComponent(out PointerVisualizer visualizer)) {
+            return visualizer;
         }
 
+        // If there is no collider, assume the type to be a sphere (which is the collider type CVRPointer will add)
+        if (!pointer.TryGetComponent(out Collider collider)) {
+            visualizer = pointer.gameObject.AddComponent<PointerSphereVisualizer>();
+            visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
+            // We're adding PointerCollider reference later when the visualizer is initialized (Start event)
+        }
+
+        // Otherwise just instantiate the proper type of visualizer for each collider type
+        else {
+            switch (collider) {
+
+                case SphereCollider sphereCollider:
+                    var sphereVisualizer = pointer.gameObject.AddComponent<PointerSphereVisualizer>();
+                    sphereVisualizer.PointerCollider = sphereCollider;
+                    visualizer = sphereVisualizer;
+                    visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
+                    break;
+
+                case BoxCollider boxCollider:
+                    var boxVisualizer = pointer.gameObject.AddComponent<PointerBoxVisualizer>();
+                    boxVisualizer.PointerCollider = boxCollider;
+                    visualizer = boxVisualizer;
+                    visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Cube));
+                    break;
+
+                case CapsuleCollider capsuleCollider:
+                    var capsuleVisualizer = pointer.gameObject.AddComponent<PointerCapsuleVisualizer>();
+                    capsuleVisualizer.PointerCollider = capsuleCollider;
+                    visualizer = capsuleVisualizer;
+                    visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Capsule));
+                    break;
+
+                case MeshCollider meshCollider:
+                    var meshVisualizer = pointer.gameObject.AddComponent<PointerMeshVisualizer>();
+                    visualizer = meshVisualizer;
+                    visualizer.InitializeVisualizer(pointer, meshCollider.sharedMesh);
+                    break;
+
+                default:
+                    // CVR only support those collider types, so we're going to ignore everything else
+                    throw new NotImplementedException($"CCK.Debugger does not support pointers with colliders of " +
+                                                      $"type: {collider.GetType()}. Report to the mod creator if " +
+                                                      $"you think this is a bug.");
+            }
+        }
+
+        visualizer.Pointer = pointer;
         visualizer.enabled = false;
-        return true;
+        return visualizer;
     }
 
-    private bool IsInitialized() => VisualizerGo != null;
-
-
     private void InitializeVisualizer(CVRPointer pointer, Mesh mesh) {
-        VisualizerGo = new GameObject(GameObjectName);
-
-        _pointer = pointer;
+        VisualizerGo = new GameObject(GameObjectName) { layer = pointer.gameObject.layer };
 
         // Create mesh filter
         var sphereMeshFilter = VisualizerGo.AddComponent<MeshFilter>();
@@ -113,25 +120,30 @@ public abstract class PointerVisualizer : MonoBehaviour {
     }
 
     protected virtual void Start() {
-        VisualizersAll[_pointer] = this;
+        VisualizersAll[Pointer] = this;
+        Initialized = true;
+        UpdateState();
+    }
+
+    private void UpdateState() {
+        if (!Initialized) return;
+        VisualizerGo.SetActive(isActiveAndEnabled);
+        if (isActiveAndEnabled && !VisualizersActive.ContainsKey(Pointer)) {
+            VisualizersActive.Add(Pointer, this);
+        }
+        else if (!isActiveAndEnabled && VisualizersActive.ContainsKey(Pointer)) {
+            VisualizersActive.Remove(Pointer);
+        }
     }
 
     private void OnDestroy() {
-        VisualizersActive.Remove(_pointer);
-        VisualizersAll.Remove(_pointer);
+        if (VisualizersActive.ContainsKey(Pointer)) VisualizersActive.Remove(Pointer);
+        if (VisualizersAll.ContainsKey(Pointer)) VisualizersAll.Remove(Pointer);
     }
 
-    private void OnEnable() {
-        if (!IsInitialized()) return;
-        VisualizerGo.SetActive(true);
-        VisualizersActive.Add(_pointer, this);
-    }
+    private void OnEnable() => UpdateState();
 
-    private void OnDisable() {
-        if (!IsInitialized()) return;
-        VisualizerGo.SetActive(false);
-        VisualizersActive.Remove(_pointer);
-    }
+    private void OnDisable() => UpdateState();
 
     internal static bool HasActive() => VisualizersActive.Count > 0;
 

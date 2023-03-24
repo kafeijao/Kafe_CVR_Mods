@@ -9,9 +9,9 @@ using UnityEngine;
 
 #if DEBUG
 using ABI_RC.Core.Savior;
-using CCK.Debugger.Components;
-using CCKDebugger = CCK.Debugger;
-using CCK.Debugger.Components.GameObjectVisualizers;
+using Kafe.CCK.Debugger.Components;
+using CCKDebugger = Kafe.CCK.Debugger;
+using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 #endif
 
 namespace EyeMovementFix;
@@ -42,6 +42,7 @@ public class BetterEyeController : MonoBehaviour {
     public bool initialized;
     private float _getNextTargetAt;
     private TargetCandidate _lastTarget;
+    private bool _wasViewpointNull = false;
 
     private class BetterEye {
         public bool IsLeft;
@@ -366,6 +367,27 @@ public class BetterEyeController : MonoBehaviour {
 
         // If setting the eyes is disabled, prevent updates
         if (!_avatar.useEyeMovement) return;
+
+        // Log an issue with the viewpoint being null
+        if (viewpoint == null) {
+            if (!_wasViewpointNull) {
+                var avatarId = "N/A";
+                if (_avatar != null && _avatar.transform != null && _avatar.transform.parent != null && _avatar.transform.parent.parent != null) {
+                    avatarId = _avatar.transform.parent.parent.name;
+                }
+                MelonLogger.Warning($"[UpdateEyeRotations] The avatar with the id: {avatarId} had viewpoint set to null... Disabling Eye Tracking...");
+                _wasViewpointNull = true;
+            }
+            return;
+        }
+        if (_wasViewpointNull) {
+            var avatarId = "N/A";
+            if (_avatar != null && _avatar.transform != null && _avatar.transform.parent != null && _avatar.transform.parent.parent != null) {
+                avatarId = _avatar.transform.parent.parent.name;
+            }
+            MelonLogger.Warning($"[UpdateEyeRotations] The avatar with the id: {avatarId} had viewpoint set to null, BUT NOT ITS FINE... Resuming Eye tracking...");
+            _wasViewpointNull = false;
+        }
 
         var target = _lastTarget?.Position ?? Vector3.zero;
 

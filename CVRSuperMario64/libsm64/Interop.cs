@@ -125,6 +125,9 @@ internal static class Interop {
         public float HealthPoints => health / SM64_HEALTH_PER_HEALTH_POINT;
 
         public bool IsAttacking() => (action & (uint) ActionFlags.ACT_FLAG_ATTACKING) != 0;
+        public bool IsFlyingOrSwimming() => (action & (uint) ActionFlags.ACT_FLAG_SWIMMING_OR_FLYING) != 0;
+        public bool IsSwimming() => (action & (uint) ActionFlags.ACT_FLAG_SWIMMING) != 0;
+        public bool IsFlying() => (action & (uint) ActionFlags.ACT_FLYING) != 0;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -338,21 +341,27 @@ internal static class Interop {
     }
 
     public static void GlobalTerminate() {
-        sm64_global_terminate();
-        StopMusic();
-        marioTexture = null;
-        isGlobalInit = false;
+        lock (Lock) {
+            StopMusic();
+            sm64_global_terminate();
+            marioTexture = null;
+            isGlobalInit = false;
+        }
     }
 
     public static void PlayRandomMusic() {
-        StopMusic();
-        sm64_play_music(0, MUSICS[UnityEngine.Random.Range (0, MUSICS.Length)], 0);
+        lock (Lock) {
+            StopMusic();
+            sm64_play_music(0, MUSICS[UnityEngine.Random.Range (0, MUSICS.Length)], 0);
+        }
     }
 
     public static void StopMusic() {
         // Stop all music that was queued
-        while (sm64_get_current_background_music() is var currentMusic && currentMusic != (ushort) MusicSeqId.SEQ_NONE) {
-            sm64_stop_background_music(currentMusic);
+        lock (Lock) {
+            while (sm64_get_current_background_music() is var currentMusic && currentMusic != (ushort) MusicSeqId.SEQ_NONE) {
+                sm64_stop_background_music(currentMusic);
+            }
         }
     }
 
@@ -407,14 +416,18 @@ internal static class Interop {
     }
 
     public static void PlaySoundGlobal(SoundBitsKeys soundBitsKey) {
-        sm64_play_sound_global((int) Utils.SoundBits[soundBitsKey]);
+        lock (Lock) {
+            sm64_play_sound_global((int) Utils.SoundBits[soundBitsKey]);
+        }
     }
 
     public static void PlaySound(SoundBitsKeys soundBitsKey, Vector3 unityPosition) {
         var marioPos = unityPosition.ToMarioPosition();
         var position = new float[] { marioPos.x, marioPos.y, marioPos.z };
         var posPointer = GCHandle.Alloc(position, GCHandleType.Pinned);
-        sm64_play_sound((int) Utils.SoundBits[soundBitsKey], posPointer.AddrOfPinnedObject());
+        lock (Lock) {
+            sm64_play_sound((int) Utils.SoundBits[soundBitsKey], posPointer.AddrOfPinnedObject());
+        }
         posPointer.Free();
     }
 
@@ -488,8 +501,8 @@ internal static class Interop {
         sm64_surface_object_delete(id);
     }
 
-    public static void MarioCap(uint marioId, CapFlags capFlags, float durationSeconds = 0, bool playCapMusic = true) {
-        sm64_mario_interact_cap(marioId, (uint)capFlags, (ushort)(durationSeconds * SECONDS_MULTIPLIER), playCapMusic ? (byte) 1 : (byte) 0);
+    public static void MarioCap(uint marioId, FlagsFlags flagsFlags, float durationSeconds, bool playCapMusic) {
+        sm64_mario_interact_cap(marioId, (uint)flagsFlags, (ushort)(durationSeconds * SECONDS_MULTIPLIER), playCapMusic ? (byte) 1 : (byte) 0);
     }
 
     public static void MarioCapExtend(uint marioId, float durationSeconds) {
@@ -497,20 +510,19 @@ internal static class Interop {
     }
 
     public static void SetLevelModifier(uint marioId, CVRSM64LevelModifier.ModifierType modifierType, float unityLevelY) {
+        var marioYValue = (int)(SCALE_FACTOR * unityLevelY);
+        if (Mathf.Approximately(unityLevelY, float.MinValue)) {
+            marioYValue = (int)(-2500*SCALE_FACTOR);
+        }
         switch (modifierType) {
             // Unity Y (height) world coord, which will be filled with water/gas
             case CVRSM64LevelModifier.ModifierType.Water:
-                sm64_set_mario_water_level(marioId, (int) (SCALE_FACTOR * unityLevelY));
+                sm64_set_mario_water_level(marioId, marioYValue);
                 break;
             case CVRSM64LevelModifier.ModifierType.Gas:
-                sm64_set_mario_gas_level(marioId, (int) (SCALE_FACTOR * unityLevelY));
+                sm64_set_mario_gas_level(marioId, marioYValue);
                 break;
         }
-    }
-
-    public static void SetGasLevel(uint marioId, float gasLevelY) {
-        // Unity Y (height) world coord, which will be filled with gas
-        sm64_set_mario_gas_level(marioId, (int) (SCALE_FACTOR * gasLevelY));
     }
 
     public static void MarioSetPosition(uint marioId, Vector3 pos) {
