@@ -130,10 +130,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\DarkRift.Server.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="DissonanceVoip">
-            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\DissonanceVoip.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="endel.nativewebsocket">
             <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\endel.nativewebsocket.dll</HintPath>
             <Private>False</Private>
@@ -626,6 +622,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Services.Core.Threading.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Unity.Services.Vivox">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Services.Vivox.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Unity.Subsystem.Registration">
             <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Unity.Subsystem.Registration.dll</HintPath>
             <Private>False</Private>
@@ -988,6 +988,10 @@
         </Reference>
         <Reference Include="Valve.Newtonsoft.Json">
             <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="VivoxUnity">
+            <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\VivoxUnity.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
