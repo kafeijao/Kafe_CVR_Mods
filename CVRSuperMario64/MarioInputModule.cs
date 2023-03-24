@@ -2,7 +2,6 @@
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using HarmonyLib;
 using UnityEngine;
 
 using Valve.VR;
@@ -11,8 +10,6 @@ namespace Kafe.CVRSuperMario64;
 
 public class MarioInputModule : CVRInputModule {
     internal static MarioInputModule Instance;
-
-    private CVRInputManager _inputManager;
 
     public int controllingMarios;
     public bool canMoveOverride = false;
@@ -23,18 +20,10 @@ public class MarioInputModule : CVRInputModule {
     public bool kick;
     public bool stomp;
 
-    // VR Input stuff
-    private SteamVR_Action_Vector2 _vrLookAction;
-
     public new void Start() {
         _inputManager = CVRInputManager.Instance;
         Instance = this;
         base.Start();
-
-        // Traverse BS
-        var vrInput = Traverse.Create(typeof(InputModuleSteamVR)).Field<InputModuleSteamVR>("Instance").Value;
-        var vrInputTraverse = Traverse.Create(vrInput);
-        _vrLookAction = vrInputTraverse.Field<SteamVR_Action_Vector2>("vrLookAction").Value;
 
         CVRSM64Context.UpdateMarioCount();
     }
@@ -75,13 +64,12 @@ public class MarioInputModule : CVRInputModule {
             _inputManager.gripRightValue = 0f;
 
             // Thanks NotAKidS for finding the issue and suggesting the fix!
-            if (!ViewManager.Instance.isGameMenuOpen() &&
-                !Traverse.Create(CVR_MenuManager.Instance).Field<bool>("_quickMenuOpen").Value) {
+            if (!ViewManager.Instance.isGameMenuOpen() && !CVR_MenuManager.Instance._quickMenuOpen) {
 
-                // Lets attempt to do a left hand only movement
+                // Lets attempt to do a left hand only movement (let's ignore vive wants because it messes the jump)
                 if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
                     _inputManager.movementVector.z = CVRTools.AxisDeadZone(
-                        _vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
+                        InputModuleSteamVR.Instance.vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
                         MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
                 }
             }
