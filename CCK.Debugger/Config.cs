@@ -13,7 +13,7 @@ public static class Config {
 
     public static void InitializeMelonPrefs() {
 
-        _melonCategory = MelonPreferences.CreateCategory(AssemblyInfoParams.Name);
+        _melonCategory = MelonPreferences.CreateCategory(nameof(CCKDebugger));
 
         MeOverwriteUIResources = _melonCategory.CreateEntry("OverwriteUIResources", true,
             description: "Whether the mod should overwrite all Cohtml UI resources when loading or not.");

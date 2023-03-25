@@ -51,10 +51,17 @@ html, body {
 #cck-debugger-header {
     font-size: 7vw;
     display: flex;
-    justify-content: center;
+    /*justify-content: center;*/
+    justify-content: space-between;
     align-items: center;
 
     height: 9%;
+}
+
+#cck-debugger-menu-next, #cck-debugger-menu-previous {
+    font-size: 9vw;
+    padding-left: 2vw;
+    padding-right: 2vw;
 }
 
 .cck-debugger-scroll-view {
@@ -85,17 +92,25 @@ html, body {
 }
 
 #cck-debugger-controls {
+    height: 12.5%;
+    width: 100%;
+    text-align: center;
+}
+
+#cck-debugger-controls-info {
     font-size: 5vw;
-
-    height: 9%;
-
-    margin-bottom: 25px;
 }
 
 #cck-debugger-controls-buttons {
-    font-size: 5vw;
+    width: 100%;
+    font-size: 7vw;
     display: flex;
     justify-content: space-between;
+}
+
+#cck-debugger-controls-previous, #cck-debugger-controls-next {
+    padding-left: 2vw;
+    padding-right: 2vw;
 }
 
 #cck-debugger-control-button {
@@ -164,41 +179,77 @@ html, body {
 #cck-debugger-button-bone {
     background-image: url("Images/Buttons/Bone.png");
 }
+#cck-debugger-button-bone.on:hover {
+    filter: drop-shadow(2px 2px 6px rgb(179, 163, 93)) drop-shadow(-2px -2px 6px rgb(179, 163, 93));
+}
+#cck-debugger-button-bone.on {
+    filter: drop-shadow(5px 5px 5px rgb(230, 214, 144)) drop-shadow(-5px -5px 5px rgb(230, 214, 144));
+}
+
 #cck-debugger-button-grab {
     background-image: url("Images/Buttons/Grab.png");
 }
+#cck-debugger-button-grab.on:hover {
+    filter: drop-shadow(2px 2px 6px rgb(0,185, 0)) drop-shadow(-2px -2px 6px rgb(0,185, 0));
+}
+#cck-debugger-button-grab.on {
+    filter: drop-shadow(5px 5px 5px rgb(0,255, 0)) drop-shadow(-5px -5px 5px rgb(0,255, 0));
+}
+
 #cck-debugger-button-hud {
     background-image: url("Images/Buttons/Hud.png");
 }
+
 #cck-debugger-button-pin {
     background-image: url("Images/Buttons/Pin.png");
     margin-bottom: 50px;
 }
+
 #cck-debugger-button-pointer {
     background-image: url("Images/Buttons/Pointer.png");
 }
+#cck-debugger-button-pointer.on:hover {
+    filter: drop-shadow(2px 2px 6px rgb(0, 100, 185)) drop-shadow(-2px -2px 6px rgb(0, 100, 185));
+}
+#cck-debugger-button-pointer.on {
+    filter: drop-shadow(5px 5px 5px rgb(0, 175, 255)) drop-shadow(-5px -5px 5px rgb(0, 175, 255));
+}
+
 #cck-debugger-button-reset {
     background-image: url("Images/Buttons/Reset.png");
 }
+
 #cck-debugger-button-tracker {
     background-image: url("Images/Buttons/Tracker.png");
 }
+
 #cck-debugger-button-trigger {
     background-image: url("Images/Buttons/Trigger.png");
 }
+#cck-debugger-button-trigger.on:hover {
+    filter: drop-shadow(2px 2px 6px rgb(185, 165, 0)) drop-shadow(-2px -2px 6px rgb(185, 165, 0));
+}
+#cck-debugger-button-trigger.on {
+    filter: drop-shadow(5px 5px 5px rgb(255, 225, 0)) drop-shadow(-5px -5px 5px rgb(255, 225, 0));
+}
+
 #cck-debugger-button-eye {
     background-image: url("Images/Buttons/Eye.png");
 }
+
 #cck-debugger-button-power {
     background-image: url("Images/Buttons/Power.png");
     margin-bottom: 50px;
 }
+
 #cck-debugger-button-mod1 {
     background-image: url("Images/Buttons/Mod1.png");
 }
+
 #cck-debugger-button-mod2 {
     background-image: url("Images/Buttons/Mod2.png");
 }
+
 #cck-debugger-button-mod3 {
     background-image: url("Images/Buttons/Mod3.png");
 }
