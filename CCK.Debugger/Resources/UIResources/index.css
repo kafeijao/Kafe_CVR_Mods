@@ -115,12 +115,13 @@ html, body {
 
 .cck-debugger-button {
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size: 2.100000em 2.100000em;
     width: 100px;
     height: 100px;
     background-position: center;
     text-align: center;
     margin: 10px 0 10px 0;
+    padding-right: 2.5em;
 }
 
 .cck-debugger-section-root {
@@ -159,6 +160,11 @@ html, body {
 
 .cck-debugger-button.on {
     filter: drop-shadow(5px 5px 5px deeppink) drop-shadow(-5px -5px 5px deeppink);
+    border-left-width: medium;
+    border-left-color: rgba(0, 255, 255, 1.000000);
+    border-left-style: solid;
+    padding-left: 2.5em;
+    padding-right: 0.0em;
 }
 
 #cck-debugger-button-bone {
