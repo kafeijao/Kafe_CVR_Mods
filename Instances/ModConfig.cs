@@ -166,9 +166,9 @@ public static class ModConfig {
         yield return www.SendWebRequest();
 
         // Log and break if errors
-        if (www.isNetworkError || www.isHttpError) {
+        if (www.result != UnityWebRequest.Result.Success) {
             #if DEBUG
-            MelonLogger.Error($"[LoadIconEnumerator] Error on the {worldImageUrl} image download request...");
+            MelonLogger.Error($"[LoadIconEnumerator] Error on the {worldImageUrl} image download request... Result: {www.result.ToString()}");
             MelonLogger.Error(www.error);
             #endif
             LoadingWorldImages.Remove(worldGuid);

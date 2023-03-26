@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using ABI_RC.Core.Util;
 using ABI.CCK.Components;
-using HarmonyLib;
 using Kafe.CCK.Debugger.Components.PointerVisualizers;
 using Kafe.CCK.Debugger.Components.TriggerVisualizers;
 using Kafe.CCK.Debugger.Entities;
@@ -213,22 +212,19 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         }
 
         // Restore Pickups
-        var pickups = Traverse.Create(currentSpawnable).Field("pickups").GetValue<CVRPickupObject[]>();
-        foreach (var pickup in pickups) {
+        foreach (var pickup in currentSpawnable.pickups) {
             var pickupSection = categoryPickups.AddSection(pickup.name);
             pickupSection.AddSection("GrabbedBy").AddValueGetter(() => GetUsername(pickup.grabbedBy));
         }
 
         // Restore Attachments
-        var attachments = Traverse.Create(currentSpawnable).Field("_attachments").GetValue<List<CVRAttachment>>();
-        foreach (var attachment in attachments) {
+        foreach (var attachment in currentSpawnable._attachments) {
             var attachmentSection = categoryAttachments.AddSection(attachment.name);
 
             attachmentSection.AddSection("Is Attached").AddValueGetter(() => ToString(attachment.IsAttached()));
 
-            var attachmentTransform = Traverse.Create(attachment).Field("_attachedTransform").GetValue<Transform>();
-            attachmentSection.AddSection("GameObject Name").AddValueGetter(() => attachment.IsAttached() && attachmentTransform != null
-                ? attachmentTransform.gameObject.name
+            attachmentSection.AddSection("GameObject Name").AddValueGetter(() => attachment.IsAttached() && attachment._attachedTransform != null
+                ? attachment._attachedTransform.gameObject.name
                 : Na);
         }
 

@@ -4,7 +4,7 @@ using HarmonyLib;
 using MelonLoader;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
-namespace LoginProfiles;
+namespace Kafe.LoginProfiles;
 
 public class LoginProfiles : MelonMod {
 

@@ -105,7 +105,7 @@ public class CVRSuperMario64 : MelonMod {
         }
 
         // Add our CCK component to the prop whitelist
-        var propWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_spawnableWhitelist").Value;
+        var propWhitelist = SharedFilter._spawnableWhitelist;
         propWhitelist.Add(typeof(CVRSM64Mario));
         propWhitelist.Add(typeof(CVRSM64Interactable));
         propWhitelist.Add(typeof(CVRSM64LevelModifier));
@@ -115,7 +115,7 @@ public class CVRSuperMario64 : MelonMod {
         propWhitelist.Add(typeof(CVRSM64Teleporter));
 
         // Add our CCK component to the avatar whitelist
-        var avatarWhitelist = Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_avatarWhitelist").Value;
+        var avatarWhitelist = SharedFilter._avatarWhitelist;
         avatarWhitelist.Add(typeof(CVRSM64ColliderDynamic));
 
         #if DEBUG
@@ -137,13 +137,13 @@ public class CVRSuperMario64 : MelonMod {
     internal class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRInputManager), "Start")]
+        [HarmonyPatch(typeof(CVRInputManager), nameof(CVRInputManager.Start))]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
             __instance.gameObject.AddComponent<MarioInputModule>();
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PortableCamera), "Start")]
+        [HarmonyPatch(typeof(PortableCamera), nameof(PortableCamera.Start))]
         public static void After_PortableCamera_Start(PortableCamera __instance) {
             var mod = new MarioCameraMod();
             __instance.RegisterMod(mod);

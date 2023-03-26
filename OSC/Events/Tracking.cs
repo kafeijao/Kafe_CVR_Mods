@@ -1,10 +1,9 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using HarmonyLib;
+using ABI_RC.Systems.IK;
 using UnityEngine;
-using Valve.VR;
 
-namespace OSC.Events;
+namespace Kafe.OSC.Events;
 
 public enum TrackingDataSource {
     hmd,
@@ -24,7 +23,7 @@ public static class Tracking {
     private static Transform _playerSpaceTransform;
     private static Transform _playerHmdTransform;
 
-    private static readonly Dictionary<VRTracker, bool> TrackerLastState = new();
+    private static readonly Dictionary<TrackingPoint, bool> TrackerLastState = new();
 
     public static event Action<bool, TrackingDataSource, int, string> TrackingDeviceConnected;
     public static event Action<TrackingDataSource, int, string, Vector3, Vector3, float> TrackingDataDeviceUpdated;
@@ -34,22 +33,22 @@ public static class Tracking {
 
         // Set whether the module is enabled and handle the config changes
         _enabled = OSC.Instance.meOSCTrackingModule.Value;
-        OSC.Instance.meOSCTrackingModule.OnValueChanged += (_, newValue) => _enabled = newValue;
+        OSC.Instance.meOSCTrackingModule.OnEntryValueChanged.Subscribe((_, newValue) => _enabled = newValue);
 
         // Set the update rate and handle the config changes
         _updateRate = OSC.Instance.meOSCTrackingModuleUpdateInterval.Value;
         _nextUpdate = _updateRate + Time.time;
-        OSC.Instance.meOSCTrackingModuleUpdateInterval.OnValueChanged += (_, newValue) => {
+        OSC.Instance.meOSCTrackingModuleUpdateInterval.OnEntryValueChanged.Subscribe((_, newValue) => {
             _updateRate = newValue;
             _nextUpdate = Time.time + newValue;
-        };
+        });
 
         // Set the play space transform when it loads
         Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
         Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
-    public static void OnTrackingDataDeviceUpdated(VRTrackerManager trackerManager) {
+    public static void OnTrackingDataDeviceUpdated(IKSystem ikSystem) {
 
         // Ignore if the module is disabled
         if (!_enabled) return;
@@ -58,19 +57,27 @@ public static class Tracking {
             _nextUpdate = Time.time + _updateRate;
 
             // Handle trackers
-            foreach (var vrTracker in trackerManager.trackers) {
+            for (var index = 0; index < ikSystem.AllTrackingPoints.Count; index++) {
+                var trackingPoint = ikSystem.AllTrackingPoints[index];
+                // Todo: Check what isActive means (there is also inUse and isValid, and some more?)
+                var isActive = trackingPoint.isActive;
 
                 // Manage Connected/Disconnected trackers
-                if ((!TrackerLastState.ContainsKey(vrTracker) && vrTracker.active) || (TrackerLastState.ContainsKey(vrTracker) && TrackerLastState[vrTracker] != vrTracker.active)) {
-                    TrackingDeviceConnected?.Invoke(vrTracker.active, GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName);
-                    TrackerLastState[vrTracker] = vrTracker.active;
+                if ((!TrackerLastState.ContainsKey(trackingPoint) && isActive) ||
+                    (TrackerLastState.ContainsKey(trackingPoint) &&
+                     TrackerLastState[trackingPoint] != isActive)) {
+                    TrackingDeviceConnected?.Invoke(isActive, GetSource(trackingPoint),
+                        index, trackingPoint.deviceName);
+                    TrackerLastState[trackingPoint] = isActive;
                 }
 
                 // Ignore inactive trackers
-                if (!vrTracker.active) continue;
+                if (!isActive) continue;
 
-                var transform = vrTracker.transform;
-                TrackingDataDeviceUpdated?.Invoke(GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName, transform.position, transform.rotation.eulerAngles, vrTracker.batteryStatus);
+                var transform = trackingPoint.referenceTransform;
+                TrackingDataDeviceUpdated?.Invoke(GetSource(trackingPoint), index,
+                    trackingPoint.deviceName, transform.position, transform.rotation.eulerAngles,
+                    trackingPoint.batteryPercentage);
             }
 
             // Handle HMD
@@ -93,19 +100,36 @@ public static class Tracking {
         TrackerLastState.Clear();
     }
 
-    private static int GetIndex(VRTracker vrTracker) {
-        return (int)Traverse.Create(vrTracker).Field<SteamVR_TrackedObject>("_trackedObject").Value.index;
-    }
-
-    private static TrackingDataSource GetSource(VRTracker vrTracker) {
-        return vrTracker.role switch {
-            ETrackedControllerRole.Invalid => vrTracker.deviceName == ""
-                ? TrackingDataSource.base_station
-                : TrackingDataSource.unknown,
-            ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
-            ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
-            ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
-            _ => TrackingDataSource.unknown
+    // private static TrackingDataSource GetSource(TrackingPoint trackingPoint) {
+    //     return trackingPoint.assignedRole switch {
+    //         ETrackedControllerRole.Invalid => trackingPoint.deviceName == ""
+    //             ? TrackingDataSource.base_station
+    //             : TrackingDataSource.unknown,
+    //         ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
+    //         ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
+    //         ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
+    //         _ => TrackingDataSource.unknown
+    //     };
+    // }
+    private static TrackingDataSource GetSource(TrackingPoint trackingPoint) {
+        // Todo: Fix this
+        return trackingPoint.assignedRole switch {
+            // TrackingPoint.TrackingRole.Invalid => trackingPoint.deviceName == ""
+            //     ? TrackingDataSource.base_station
+            //     : TrackingDataSource.unknown,
+            // TrackingPoint.TrackingRole.Generic => expr,
+            // TrackingPoint.TrackingRole.LeftFoot => expr,
+            // TrackingPoint.TrackingRole.RightFoot => expr,
+            // TrackingPoint.TrackingRole.LeftKnee => expr,
+            // TrackingPoint.TrackingRole.RightKnee => expr,
+            // TrackingPoint.TrackingRole.Hips => expr,
+            // TrackingPoint.TrackingRole.Chest => expr,
+            // TrackingPoint.TrackingRole.LeftElbow => expr,
+            // TrackingPoint.TrackingRole.RightElbow => expr,
+            // TrackingPoint.TrackingRole.LeftHand => expr,
+            // TrackingPoint.TrackingRole.RightHand => expr,
+            // TrackingPoint.TrackingRole.Head => expr,
+            _ => TrackingDataSource.unknown,
         };
     }
 }

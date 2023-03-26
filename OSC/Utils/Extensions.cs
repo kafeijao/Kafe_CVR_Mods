@@ -1,4 +1,4 @@
-﻿namespace OSC.Utils;
+﻿namespace Kafe.OSC.Utils;
 
 public static class QueueExtensions {
     public static IEnumerable<T> DequeueChunk<T>(this Queue<T> queue, int chunkSize) {

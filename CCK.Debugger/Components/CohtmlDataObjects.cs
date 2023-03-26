@@ -168,10 +168,16 @@ public class Core {
     // Internal
     [JsonIgnore] private readonly Dictionary<int, Section> _sections = new();
     [JsonIgnore] private int _sectionCurrentID = 0;
-    [JsonIgnore] private readonly Queue<int> _sectionFreeIds = new();
+    [JsonIgnore] private readonly List<int> _sectionFreeIds = new();
     public Section CacheSection(Section section) {
         lock (_sections) {
-            section.Id = _sectionFreeIds.TryDequeue(out var reusableID) ? reusableID : _sectionCurrentID++;
+            if (_sectionFreeIds.Count > 0) {
+                section.Id = _sectionFreeIds[0];
+                _sectionFreeIds.RemoveAt(0);
+            }
+            else {
+                section.Id = _sectionCurrentID++;
+            }
             _sections[section.Id] = section;
             return section;
         }
@@ -179,7 +185,7 @@ public class Core {
     public void RemoveCacheSection(Section section) {
         lock (_sections) {
             _sections.Remove(section.Id);
-            _sectionFreeIds.Enqueue(section.Id);
+            _sectionFreeIds.Add(section.Id);
         }
     }
     [JsonIgnore] private readonly Dictionary<Button.ButtonType, Button> _buttons = new();

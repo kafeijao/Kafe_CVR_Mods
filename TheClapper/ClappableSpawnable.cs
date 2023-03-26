@@ -3,7 +3,7 @@ using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
 
-namespace TheClapper;
+namespace Kafe.TheClapper;
 
 public class ClappableSpawnable : Clappable {
 

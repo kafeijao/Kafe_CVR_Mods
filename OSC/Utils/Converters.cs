@@ -1,7 +1,7 @@
 ﻿using MelonLoader;
 using UnityEngine;
 
-namespace OSC.Utils;
+namespace Kafe.OSC.Utils;
 
 public static class Converters {
 

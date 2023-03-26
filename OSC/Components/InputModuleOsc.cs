@@ -3,12 +3,10 @@ using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util;
-using ABI.CCK.Components;
-using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace OSC.Components;
+namespace Kafe.OSC.Components;
 
 public enum AxisNames {
     Horizontal,
@@ -147,15 +145,12 @@ public class InputModuleOSC : CVRInputModule {
         var lookHorizontalComfortValue = comfortLeft ^ comfortRight ? (comfortLeft ? -1f : 1f) : 0f;
         lookHorizontal = Mathf.Clamp( lookHorizontal + InputAxes[AxisNames.LookHorizontal] + lookHorizontalComfortValue, -1f, 1f);
 
-        var playerInVrWithTwoHands = MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.CheckTwoTrackedHands();
-
         // Handle inputs
-
         _thisInputManager.movementVector += new Vector3(horizontal, 0.0f, vertical);
         _thisInputManager.accelerate += Mathf.Clamp(vertical, -1f, 1f);
         _thisInputManager.brake += Mathf.Clamp01(vertical * -1f);
 
-        if (!playerInVrWithTwoHands) {
+        if (!MetaPort.Instance.isUsingVr) {
             _thisInputManager.lookVector += new Vector2(
                 lookHorizontal * (1 + _sensitivity * 0.1f) / 50.0f,
                 InputAxes[AxisNames.LookVertical] * (1 + _sensitivity * 0.1f) / 50.0f);
@@ -201,8 +196,8 @@ public class InputModuleOSC : CVRInputModule {
         }
 
         _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
-        _thisInputManager.mute |= InputButtons[ButtonNames.Voice];
-        _thisInputManager.muteDown |= GetKeyDown(ButtonNames.Voice);
+        _thisInputManager.voice |= InputButtons[ButtonNames.Voice];
+        _thisInputManager.voiceDown |= GetKeyDown(ButtonNames.Voice);
 
         _thisInputManager.interactRightDown |= GetKeyDown(ButtonNames.UseRight);
         _thisInputManager.interactRightUp |= GetKeyUp(ButtonNames.UseRight);
@@ -216,7 +211,7 @@ public class InputModuleOSC : CVRInputModule {
         _thisInputManager.gripRightDown |= GetKeyDown(ButtonNames.GrabRight);
         _thisInputManager.gripRightUp |= GetKeyUp(ButtonNames.GrabRight);
 
-        if (playerInVrWithTwoHands) {
+        if (MetaPort.Instance.isUsingVr) {
             _thisInputManager.gripLeftDown |= GetKeyDown(ButtonNames.GrabLeft);
             _thisInputManager.gripLeftUp |= GetKeyUp(ButtonNames.GrabLeft);
         }
@@ -245,7 +240,7 @@ public class InputModuleOSC : CVRInputModule {
 
         // Drop left controller
         if (GetKeyDown(ButtonNames.DropLeft)) {
-            var pickups = Traverse.Create(CVR_InteractableManager.Instance).Field("pickupList").GetValue<List<CVRPickupObject>>();
+            var pickups = CVR_InteractableManager.Instance.pickupList;
             foreach (var pickup in pickups) {
                 // pickup._controllerRay.hand == true -> Left hand
                 if (!pickup.IsGrabbedByMe() || !pickup._controllerRay.hand) return;
@@ -256,7 +251,7 @@ public class InputModuleOSC : CVRInputModule {
 
         // Drop right controller
         if (GetKeyDown(ButtonNames.DropRight)) {
-            var pickups = Traverse.Create(CVR_InteractableManager.Instance).Field("pickupList").GetValue<List<CVRPickupObject>>();
+            var pickups = CVR_InteractableManager.Instance.pickupList;
             foreach (var pickup in pickups) {
                 // pickup._controllerRay.hand == false -> Right hand
                 if (!pickup.IsGrabbedByMe() || pickup._controllerRay.hand) return;
@@ -297,8 +292,8 @@ public class InputModuleOSC : CVRInputModule {
     public override void UpdateImportantInput() {
         _thisInputManager.mainMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleRight);
         _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
-        _thisInputManager.mute |= InputButtons[ButtonNames.Voice];
-        _thisInputManager.muteDown |= GetKeyDown(ButtonNames.Voice);
+        _thisInputManager.voice |= InputButtons[ButtonNames.Voice];
+        _thisInputManager.voiceDown |= GetKeyDown(ButtonNames.Voice);
         _thisInputManager.scrollValue += InputAxes[AxisNames.MoveHoldFB];
     }
 

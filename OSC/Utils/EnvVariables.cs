@@ -1,6 +1,6 @@
 ﻿using MelonLoader;
 
-namespace OSC.Utils;
+namespace Kafe.OSC.Utils;
 
 internal static class EnvVariables {
 

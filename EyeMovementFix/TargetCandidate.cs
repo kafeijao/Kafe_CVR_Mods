@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.Camera;
@@ -8,7 +9,7 @@ using MelonLoader;
 using NicoKuroKusagi.MemoryManagement;
 using UnityEngine;
 
-namespace EyeMovementFix;
+namespace Kafe.EyeMovementFix;
 
 // Todo: Implement different target candidates using classes
 public sealed class TargetCandidate : IReusable {
@@ -188,46 +189,46 @@ public sealed class TargetCandidate : IReusable {
             return alignmentWeight * alignmentScore + distanceWeight * distanceScore;
         }
 
-        bool HasLineOfSight(TargetCandidate targetCandidate, float targetDistance, out bool inMirror) {
-            // Shoot a raycast that stops at target distance
-            // If collides with a player capsule, assume LOS
-            // If doesnt collide with anything, assume LOS because there was nothing blocking reaching the target
+        // bool HasLineOfSight(TargetCandidate targetCandidate, float targetDistance, out bool inMirror) {
+        //     // Shoot a raycast that stops at target distance
+        //     // If collides with a player capsule, assume LOS
+        //     // If doesnt collide with anything, assume LOS because there was nothing blocking reaching the target
+        //
+        //     // Ignore mirrors and camera (because the raycast won't reach a player lol)
+        //     // And can't look if the ray hit has the mirror script, because not all mirrors have colliders
+        //     // Todo: Think of a way to raycast the mirror reflections
+        //     if (targetCandidate._isCamera || targetCandidate._isMirrorReflection) {
+        //         inMirror = true;
+        //         return true;
+        //     }
+        //     inMirror = false;
+        //
+        //     var targetDirection = (targetCandidate.Position - cvrController.viewPosition).normalized;
+        //
+        //     // If we're shooting the raycast from the local player we don't want to hit ourselves
+        //     var mask = cvrController.isLocal ? DefaultOrRemotePlayersMask : DefaultOrAllPlayersMask;
+        //
+        //     if (Physics.Raycast(viewpoint.position, targetDirection, out var hitInfo, targetDistance, mask)) {
+        //         #if DEBUG
+        //         if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Layer: {LayerMask.LayerToName(hitInfo.collider.gameObject.layer)}, Name: {hitInfo.collider.gameObject.name}");
+        //         #endif
+        //
+        //         // If we hit something other than the default layer we can consider we didn't get blocked
+        //         if (hitInfo.collider.gameObject.layer != DefaultLayer) return true;
+        //
+        //         // Otherwise lets check if the thing we hit got a player descriptor (some player stuff is in the Default Layer)
+        //         return hitInfo.collider.GetComponent<PlayerDescriptor>() != null;
+        //     }
+        //
+        //     #if DEBUG
+        //     if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Did not reach anything (means target wasn't blocked)");
+        //     #endif
+        //
+        //     // Since we limited our raycast to the target's distance, here means the raycast wasn't blocked!
+        //     return true;
+        // }
 
-            // Ignore mirrors and camera (because the raycast won't reach a player lol)
-            // And can't look if the ray hit has the mirror script, because not all mirrors have colliders
-            // Todo: Think of a way to raycast the mirror reflections
-            if (targetCandidate._isCamera || targetCandidate._isMirrorReflection) {
-                inMirror = true;
-                return true;
-            }
-            inMirror = false;
-
-            var targetDirection = (targetCandidate.Position - cvrController.viewPosition).normalized;
-
-            // If we're shooting the raycast from the local player we don't want to hit ourselves
-            var mask = cvrController.isLocal ? DefaultOrRemotePlayersMask : DefaultOrAllPlayersMask;
-
-            if (Physics.Raycast(viewpoint.position, targetDirection, out var hitInfo, targetDistance, mask)) {
-                #if DEBUG
-                if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Layer: {LayerMask.LayerToName(hitInfo.collider.gameObject.layer)}, Name: {hitInfo.collider.gameObject.name}");
-                #endif
-
-                // If we hit something other than the default layer we can consider we didn't get blocked
-                if (hitInfo.collider.gameObject.layer != DefaultLayer) return true;
-
-                // Otherwise lets check if the thing we hit got a player descriptor (some player stuff is in the Default Layer)
-                return hitInfo.collider.GetComponent<PlayerDescriptor>() != null;
-            }
-
-            #if DEBUG
-            if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Did not reach anything (means target wasn't blocked)");
-            #endif
-
-            // Since we limited our raycast to the target's distance, here means the raycast wasn't blocked!
-            return true;
-        }
-
-        float GetTalkingScore(TargetCandidate targetCandidate) {
+        double GetTalkingScore(TargetCandidate targetCandidate) {
             // Attempt to get the talking score of the target
             // It seems like the talker amplitude changes from 0 to 0.1 (max), so this seems like a good approximation
             // Returns 1 when really loud, and 0 when not talking
@@ -236,15 +237,17 @@ public sealed class TargetCandidate : IReusable {
 
                 // See if it's the local player
                 if (targetCandidate._controller.isLocal) {
-                    targetCandidate._username = MetaPort.Instance.username;
-                    return Mathf.InverseLerp(0f, 0.1f, RootLogic.Instance.comms.Players[0].Amplitude);
+                    targetCandidate._username = AuthManager.username;
+                    var participant = PlayerCommsManager.Instance.GetParticipant(MetaPort.Instance.ownerId);
+                    return participant is { SpeechDetected: true } ? participant.AudioEnergy : 0d;
                 }
 
                 // See if it's any other player, check if their avatar holder instances match
                 foreach (var entity in CVRPlayerManager.Instance.NetworkPlayers) {
                     if (targetCandidate._controller.transform.parent != entity.AvatarHolder.transform) continue;
                     targetCandidate._username = entity.Username;
-                    return Mathf.InverseLerp(0f, 0.1f, entity.TalkerAmplitude);
+                    var participant = PlayerCommsManager.Instance.GetParticipant(entity.Uuid);
+                    return participant is { SpeechDetected: true } ? participant.AudioEnergy : 0d;
                 }
             }
 
@@ -394,7 +397,7 @@ public sealed class TargetCandidate : IReusable {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeControllerManager), "Start")]
+        [HarmonyPatch(typeof(CVREyeControllerManager), nameof(CVREyeControllerManager.Start))]
         private static void After_CVREyeControllerManager_Start() {
             // Get the camera pickup instance so we can check if the camera is being held
             _cameraPickup = CVRCamController.Instance.cvrCamera.GetComponent<CVRPickupObject>();

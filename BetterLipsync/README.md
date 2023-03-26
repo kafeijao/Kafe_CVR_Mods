@@ -1,6 +1,13 @@
 # BetterLipsync
 
-Refactor the viseme controller use the 
+> ⚠️ **Discontinued**
+>
+> **The [oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/) was implemented in
+the base game. Therefor there is no need for this mod anymore.**
+
+---
+
+Refactor the viseme controller use the
 [oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).
 
 This might be a bit heavy on the CPU, I've added some settings to experiment. It needs heavy performance improvements (
@@ -10,14 +17,11 @@ This mod will only work locally, it calculates the visemes for your own avatar, 
 
 ## Comparison
 
-
 https://user-images.githubusercontent.com/4409693/206328155-dec1e425-9ed3-468e-b961-19fa313af9eb.mp4
 
 ---
 
-
 https://user-images.githubusercontent.com/4409693/206328174-68288464-3383-428e-b982-be8dd5dfecfe.mp4
-
 
 ## Configuration
 

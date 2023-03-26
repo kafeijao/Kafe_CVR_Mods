@@ -1,7 +1,7 @@
 ﻿using MelonLoader;
 using Rug.Osc;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 public abstract class OscHandler {
     internal abstract void Enable();

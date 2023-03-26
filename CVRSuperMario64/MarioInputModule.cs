@@ -1,16 +1,16 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Savior;
-using HarmonyLib;
 using UnityEngine;
 
 
 namespace Kafe.CVRSuperMario64;
 
 public class MarioInputModule : CVRInputModule {
+
     internal static MarioInputModule Instance;
 
-    private CVRInputManager _inputManager;
+    private InputModuleOpenXR _openXRModule;
 
     public int controllingMarios;
     public bool canMoveOverride = false;
@@ -21,19 +21,11 @@ public class MarioInputModule : CVRInputModule {
     public bool kick;
     public bool stomp;
 
-    // VR Input stuff
-    private Traverse<string> _rightHandControllerNameTraverse;
-
     public new void Start() {
-        _inputManager = CVRInputManager.Instance;
-        Instance = this;
         base.Start();
+        Instance = this;
 
-        // Traverse BS
-        var vrInput = Traverse.Create(typeof(InputModuleOpenXR)).Field<InputModuleOpenXR>("Instance").Value;
-        var vrInputTraverse = Traverse.Create(vrInput);
-        _rightHandControllerNameTraverse = vrInputTraverse.Field<string>("_rightHandControllerName");
-
+        _openXRModule = (InputModuleOpenXR) _inputManager._inputModules.First(m => m is InputModuleOpenXR);
         CVRSM64Context.UpdateMarioCount();
     }
 
@@ -76,31 +68,11 @@ public class MarioInputModule : CVRInputModule {
             var vrRightHand = InputModuleOpenXR.Controls.VRRightHand;
             var rightHandThumbstick = vrRightHand.Primary2DAxis.ReadValue<Vector2>();
             // Thanks NotAKidS for finding the issue and suggesting the fix!
-            if (!ViewManager.Instance.isGameMenuOpen() && !CVR_MenuManager.Instance._quickMenuOpen) {
-
-                if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
-                    if (_rightHandControllerNameTraverse.Value != null &&
-                        _rightHandControllerNameTraverse.Value.Contains("Vive")) {
-                        var _viveAdvancedModeRight = false;
-                        if (MetaPort.Instance.settings.GetSettingsBool("ControlViveAdvancedControls")) {
-                            if (vrRightHand.Primary2DAxisClick.WasPressedThisFrame()) _viveAdvancedModeRight = true;
-                            if (vrRightHand.Primary2DAxisTouch.WasReleasedThisFrame()) _viveAdvancedModeRight = false;
-                        }
-                        else {
-                            _viveAdvancedModeRight = vrRightHand.Primary2DAxisClick.IsPressed();
-                        }
-
-                        var z = Mathf.Min(
-                                    CVRTools.AxisDeadZone(vrRightHand.Primary2DAxis.ReadValue<Vector2>().y,
-                                        MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneLeft") / 100f) * 1.25f,
-                                    1f) *
-                                (_viveAdvancedModeRight ? 1.0f : 0.0f) * 2.0f;
-                        _inputManager.movementVector.z += z;
-                    }
-                    else {
-                        _inputManager.movementVector.z += CVRTools.AxisDeadZone(rightHandThumbstick.y,
-                            MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneLeft") / 100f);
-                    }
+            if (!ViewManager.Instance.isGameMenuOpen() && !CVR_MenuManager.Instance._quickMenuOpen && MetaPort.Instance.isUsingVr) {
+                // Let's ignore vive controls, because they will break movement when jumping
+                if (_openXRModule._rightHandControllerName == null || !_openXRModule._rightHandControllerName.Contains("Vive")) {
+                    _inputManager.movementVector.z += CVRTools.AxisDeadZone(rightHandThumbstick.y,
+                        MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneLeft") / 100f);
                 }
             }
         }

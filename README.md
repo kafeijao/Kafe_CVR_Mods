@@ -13,7 +13,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [FirstPersonHider](FirstPersonHider) *in-depth url*
 - [FreedomFingers](FreedomFingers) *in-depth url*
 - [ProfilesExtended](ProfilesExtended) *in-depth url*
-- [BetterLipsync](BetterLipsync) *in-depth url*
+- ~~[BetterLipsync](BetterLipsync) *in-depth url*~~ *discontinued*
 - [EyeMovementFix](EyeMovementFix) *in-depth url*
 - [CVRSuperMario64](CVRSuperMario64) *in-depth url*
 - [Instances](Instances) *in-depth url*
@@ -122,9 +122,13 @@ Check [Profiles Extended In-Dept](ProfilesExtended) for more info.
 
 ### Better Lipsync
 
+> ⚠️ **Discontinued**
+>
+> This mod's functionality was implemented to the base game.
+
 Mod to replace the viseme controller with the
 [oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).
-Might be a bit heaby on the CPU performance, so beware.
+Might be a bit heavy on the CPU performance, so beware.
 
 Check [Better Lipsync In-Dept](BetterLipsync) for more info.
 

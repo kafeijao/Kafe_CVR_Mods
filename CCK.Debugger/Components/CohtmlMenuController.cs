@@ -311,7 +311,7 @@ public class CohtmlMenuController : MonoBehaviour {
         private static Vector2 _vrQuickMenuLastCoords;
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(ControllerRay), "LateUpdate")]
+        [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
         private static void After_ControllerRay_LateUpdate(ControllerRay __instance) {
             if (_errored) return;
             try {
@@ -395,10 +395,9 @@ public class CohtmlMenuController : MonoBehaviour {
 
                 // Clear targeted candidates and highlights, because we're selecting our menu. I could've used a
                 // transpiler to properly fix this, but Daky hates me if I do
-                var controllerRayTraverse = Traverse.Create(controllerRay);
-                controllerRayTraverse.Method("clearTelepathicGrabTargetHighlight").GetValue();
-                controllerRayTraverse.Field("_telepathicPickupCandidate").SetValue(null);
-                controllerRayTraverse.Field("_telepathicPickupTargeted").SetValue(false);
+                controllerRay.clearTelepathicGrabTargetHighlight();
+                controllerRay._telepathicPickupCandidate = null;
+                controllerRay._telepathicPickupTargeted = false;
 
                 // If the line renderer doesn't exist, ignore
                 if (!controllerRay.lineRenderer) return;
@@ -421,7 +420,7 @@ public class CohtmlMenuController : MonoBehaviour {
 
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_MenuManager), "LateUpdate")]
+        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.LateUpdate))]
         private static void After_CVR_MenuManager_LateUpdate(CVR_MenuManager __instance) {
             if (_errored) return;
             try {
@@ -445,9 +444,8 @@ public class CohtmlMenuController : MonoBehaviour {
             var cckView = Instance._cohtmlView;
             var isCursorLocked = Cursor.lockState == CursorLockMode.Locked;
 
-            var menuManagerTraverse = Traverse.Create(menuManager);
-            var camera = menuManagerTraverse.Field("_camera").GetValue<Camera>();
-            var desktopMouseMode = menuManagerTraverse.Field("_desktopMouseMode").GetValue<bool>();
+            var camera = menuManager._camera;
+            var desktopMouseMode = menuManager._desktopMouseMode;
 
             if (!cckView.enabled || !desktopMouseMode || MetaPort.Instance.isUsingVr || camera == null) return;
 

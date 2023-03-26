@@ -2,13 +2,12 @@
 using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
-using ABI.CCK.Components;
 using ABI.CCK.Scripts;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace ProfilesExtended;
+namespace Kafe.ProfilesExtended;
 
 public class ProfilesExtended : MelonMod {
 
@@ -104,8 +103,7 @@ public class ProfilesExtended : MelonMod {
             }
 
             // Otherwise -> Check if there are tags to be ignored
-            var avatarDescriptor = Traverse.Create(PlayerSetup.Instance).Field("_avatarDescriptor").GetValue<CVRAvatar>();
-            var settings = avatarDescriptor.avatarSettings.settings;
+            var settings = PlayerSetup.Instance._avatarDescriptor.avatarSettings.settings;
 
             // Remove all values which their AAS name includes the character *
             var removedCount = values.RemoveAll(value =>
@@ -123,7 +121,7 @@ public class ProfilesExtended : MelonMod {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(ViewManager), "RegisterEvents")]
+        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.RegisterEvents))]
         private static void BeforeViewManagerRegisterEvents(ViewManager __instance) {
             // We're detecting the Main Menu change parameter events here
             // Lets bind this before the game binds it, otherwise we can't overwrite it later
