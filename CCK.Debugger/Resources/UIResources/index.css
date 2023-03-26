@@ -128,17 +128,6 @@ html, body {
     height: auto;
 }
 
-.cck-debugger-button {
-    background-repeat: no-repeat;
-    background-size: 2.1em 2.1em;
-    width: 100px;
-    height: 100px;
-    background-position: center;
-    text-align: center;
-    margin: 10px 0 10px 0;
-    padding-right: 2.6em;
-}
-
 .cck-debugger-section-root {
     margin-left: 1vw;
     filter: hue-rotate(45deg);
@@ -165,6 +154,18 @@ html, body {
     display: flex;
 }
 
+.cck-debugger-button {
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: auto;
+    height: 90px;
+    background-position: center;
+    text-align: center;
+    margin: 10px 0 10px 0;
+
+    padding: 0 5vw 0 5vw;
+}
+
 .cck-debugger-button:hover, .cck-debugger-control-button:hover {
     filter: drop-shadow(2px 2px 6px white) drop-shadow(-2px -2px 6px white);
 }
@@ -176,10 +177,9 @@ html, body {
 .cck-debugger-button.on {
     filter: drop-shadow(5px 5px 5px deeppink) drop-shadow(-5px -5px 5px deeppink);
     border-left-width: medium;
-    border-left-color: rgba(255, 255, 255, 1.000000);
     border-left-style: solid;
-    padding-left: 2.5em;
-    padding-right: 0.0em;
+    border-right-width: medium;
+    border-right-style: solid;
 }
 
 #cck-debugger-button-bone {
@@ -223,6 +223,7 @@ html, body {
 
 #cck-debugger-button-reset {
     background-image: url("Images/Buttons/Reset.png");
+    margin-top: 50px;
 }
 
 #cck-debugger-button-tracker {
