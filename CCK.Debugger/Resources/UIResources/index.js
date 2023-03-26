@@ -427,7 +427,7 @@ const scrollerComponents = {
                 scrollerComponents.oldY = e.clientY;
                 scrollerComponents.oldX = e.clientX;
                 //console.log(`Mouse Move: ${scrollerComponents.scrollTarget.scrollTop} => ${scrollerComponents.startScrollY} - ${e.clientY} + ${scrollerComponents.startY} = ${scrollerComponents.startScrollY - e.clientY + scrollerComponents.startY}`);
-                UpdateScrollViews();
+                scrollerComponents.UpdateScrollViews();
             }
 
             scrollerComponents.scrollWheelTarget = e.target.closest('.cck-debugger-scroll-content');
@@ -452,6 +452,9 @@ const scrollerComponents = {
                 scrollerComponents.mouseDebounceToken = null;
             }
 
+            // Update the scroll bar when stuff gets collapsed/expanded
+            setTimeout(() => scrollerComponents.UpdateScrollViews(), 10);
+
         });
 
         window.setInterval(function() {
@@ -461,7 +464,7 @@ const scrollerComponents = {
 
                 scrollerComponents.scrollTarget.scrollTop -= scrollerComponents.speedY;
                 scrollerComponents.scrollTarget.scrollLeft -= scrollerComponents.speedX;
-                UpdateScrollViews();
+                scrollerComponents.UpdateScrollViews();
             }
             else if (!scrollerComponents.mouseScrolling && scrollerComponents.scrollTarget != null) {
                 scrollerComponents.scrollTarget = null;
@@ -472,11 +475,11 @@ const scrollerComponents = {
             if (scrollerComponents.scrollWheelTarget != null) {
                 scrollerComponents.scrollWheelTarget.scrollTop += e.deltaY;
                 scrollerComponents.scrollWheelTarget.scrollLeft += e.deltaX;
-                UpdateScrollViews();
+                scrollerComponents.UpdateScrollViews();
             }
         });
 
-        function UpdateScrollViews() {
+        scrollerComponents.UpdateScrollViews = () => {
             for (const scrollerComponent of scrollerComponents.scrollViews) {
                 scrollerComponent.update();
             }
