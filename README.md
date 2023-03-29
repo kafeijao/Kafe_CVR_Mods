@@ -17,6 +17,7 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [EyeMovementFix](EyeMovementFix) *in-depth url*
 - [CVRSuperMario64](CVRSuperMario64) *in-depth url*
 - [Instances](Instances) *in-depth url*
+- [PostProcessingOverrides](PostProcessingOverrides) *in-depth url*
 
 ---
 
@@ -56,6 +57,8 @@ Adds a menu that displays useful information, like `synced`/`local` parameter va
 who's grabbing, which bone is attached to, who's controlling the sync, etc...
 
 You can click on [CCK.Debugger In-Dept](CCK.Debugger) for a more detailed readme (with pictures).
+
+---
 
 ### LoginProfiles
 
@@ -164,6 +167,18 @@ you've visited with just a single click. Note that to use the history feature, y
 installed.
 
 Check [Instances](Instances) for more info.
+
+---
+
+### Post Processing Overrides
+
+Post Processing Overrides is a mod for ChilloutVR that gives the user more control over the world's Post Processing
+configuration. As it allows to Turn On/Off, Force On, and even override settings. It gives you access to a customizable
+global configuration that you can use on worlds, and even make a per world configuration if you want.
+
+It also allows you pick which type of configuration a world starts with by default.
+
+Check [Post Processing Overrides](PostProcessingOverrides) for more info.
 
 ---
 
