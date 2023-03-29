@@ -17,6 +17,7 @@ public class ProfilesExtended : MelonMod {
 
     private static bool _autoProfileEnabled;
     private static string _autoProfileName;
+    private static bool _onlyLoadAASParams;
 
     private static object _coroutineCancellationToken;
 
@@ -62,6 +63,14 @@ public class ProfilesExtended : MelonMod {
             _autoProfileName = autoProfileName.Value;
             QueueSaveAvatarSettingsProfile();
         });
+
+        var onlyLoadAASParams = cat.CreateEntry("OnlyLoadAASParams", true,
+            description: "Whether it should load only AAS parameters when loading a profile, or all parameters in " +
+                         "the animator.");
+        _onlyLoadAASParams = onlyLoadAASParams.Value;
+        onlyLoadAASParams.OnEntryValueChanged.Subscribe((_, newValue) => {
+            _onlyLoadAASParams = newValue;
+        });
     }
 
     private static void QueueSaveAvatarSettingsProfile() {
@@ -103,16 +112,30 @@ public class ProfilesExtended : MelonMod {
                 return;
             }
 
+            var removedString = "";
+
             // Otherwise -> Check if there are tags to be ignored
             var avatarDescriptor = Traverse.Create(PlayerSetup.Instance).Field("_avatarDescriptor").GetValue<CVRAvatar>();
-            var settings = avatarDescriptor.avatarSettings.settings;
 
-            // Remove all values which their AAS name includes the character *
-            var removedCount = values.RemoveAll(value =>
-                settings.Any(setting =>
-                    setting.machineName == value.name && setting.name.Contains(_paramTag)));
+            if (avatarDescriptor.avatarUsesAdvancedSettings) {
+                var settings = avatarDescriptor.avatarSettings.settings;
 
-            MelonLogger.Msg($"Loaded profile {_loadingProfile} while ignoring {removedCount} parameters.");
+                // Remove all values that are not AAS parameters
+                if (_onlyLoadAASParams) {
+                    var removedAAS = values.RemoveAll(value =>
+                        !settings.Exists(setting =>
+                            setting.machineName == value.name));
+                    if (removedAAS > 0) removedString += $"Ignored {removedAAS} animator params because they're not AAS parameters.";
+                }
+
+                // Remove all values which their AAS name includes the character *
+                var removedWildcard = values.RemoveAll(value =>
+                    settings.Any(setting =>
+                        setting.machineName == value.name && setting.name.Contains(_paramTag)));
+                if (removedWildcard > 0) removedString += $"Ignored {removedWildcard} animator params because their AAS contains the {_paramTag} wildcard.";
+            }
+
+            MelonLogger.Msg($"Loaded profile {_loadingProfile}. {removedString}");
         }
 
         [HarmonyPostfix]
