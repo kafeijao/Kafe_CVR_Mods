@@ -8,4 +8,12 @@
         </Reference>
     </ItemGroup>
 
+    <!-- Mods to add compatibility, sorry if you're trying to compile... -->
+    <ItemGroup>
+        <Reference Include="MenuScalePatch">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\MenuScalePatch.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
 </Project>

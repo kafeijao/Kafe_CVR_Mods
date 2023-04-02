@@ -24,6 +24,7 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 [assembly: MelonAdditionalDependencies("BTKUILib")]
+[assembly: MelonOptionalDependencies("ActionMenu", "MenuScalePatch")]
 
 namespace Kafe.QuickMenuAccessibility.Properties;
 internal static class AssemblyInfoParams {

@@ -27,6 +27,11 @@ public class QuickMenuAccessibility : MelonMod {
         #endif
     }
 
+    public override void OnLateInitializeMelon() {
+        // Start the giga hacks
+        OtherModsCompatibilityHacks.Initialize(RegisteredMelons);
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
@@ -75,8 +80,10 @@ public class QuickMenuAccessibility : MelonMod {
 
             // Handle config changes
             _snappedToRightController = ModConfig.MeSwapQuickMenuHands.Value;
+            OtherModsCompatibilityHacks.AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
             ModConfig.MeSwapQuickMenuHands.OnEntryValueChanged.Subscribe((_, snapToRightController) => {
                 _snappedToRightController = snapToRightController;
+                OtherModsCompatibilityHacks.AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
             });
 
             _initialized = true;
@@ -119,6 +126,7 @@ public class QuickMenuAccessibility : MelonMod {
 
                 var leftAnchor = __instance.leftVrController;
                 var rightAnchor = _rightVrAnchor.transform;
+
                 _lastLeftPosOpened = leftAnchor.position;
                 _lastLeftRotOpened = leftAnchor.rotation;
                 _lastRightPosOpened = rightAnchor.position;
@@ -215,6 +223,10 @@ public class QuickMenuAccessibility : MelonMod {
                 if (source == SteamVR_Input_Sources.LeftHand) source = SteamVR_Input_Sources.RightHand;
                 else if (source == SteamVR_Input_Sources.RightHand) source = SteamVR_Input_Sources.LeftHand;
             }
+
+            // Main menu
+            //ViewManager.Instance.UiStateToggle
+
             return source;
         }
 
