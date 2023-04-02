@@ -10,6 +10,7 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<bool> MeSwapQuickMenuHands;
     internal static MelonPreferences_Entry<bool> MeSwampQuickMenuButton;
+    internal static MelonPreferences_Entry<bool> MeDropQuickMenuInWorld;
 
     public static void InitializeMelonPrefs() {
 
@@ -21,6 +22,9 @@ public static class ModConfig {
 
         MeSwampQuickMenuButton = _melonCategory.CreateEntry("SwampQuickMenuButton", true,
             description: "Whether to swap the big menu and quick menu open buttons.");
+
+        MeDropQuickMenuInWorld = _melonCategory.CreateEntry("DropQuickMenuInWorld", false,
+            description: "Whether to drop the quick menu in world space when opened or not.");
     }
 
     public static void InitializeBTKUI() {
@@ -55,6 +59,18 @@ public static class ModConfig {
         MeSwampQuickMenuButton.OnEntryValueChanged.Subscribe((_, newValue) => {
             if (swapQuickMenuButton.ToggleValue == newValue) return;
             swapQuickMenuButton.ToggleValue = newValue;
+        });
+
+        var dropQuickMenuInWorld = cat.AddToggle("Freeze Quick Menu in Place",
+            "When opened, sticks the Quick Menu in World Space. This allows for one hand control.",
+            MeDropQuickMenuInWorld.Value);
+        dropQuickMenuInWorld.OnValueUpdated += b => {
+            if (b == MeDropQuickMenuInWorld.Value) return;
+            MeDropQuickMenuInWorld.Value = b;
+        };
+        MeDropQuickMenuInWorld.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (dropQuickMenuInWorld.ToggleValue == newValue) return;
+            dropQuickMenuInWorld.ToggleValue = newValue;
         });
 
     }

@@ -35,6 +35,12 @@ public class QuickMenuAccessibility : MelonMod {
 
         private static bool _initialized;
 
+        // Save the last opened position/rotations for the left and right hand
+        private static Vector3 _lastLeftPosOpened = Vector3.zero;
+        private static Quaternion _lastLeftRotOpened = Quaternion.identity;
+        private static Vector3 _lastRightPosOpened = Vector3.zero;
+        private static Quaternion _lastRightRotOpened= Quaternion.identity;
+
         private static Vector3 MirrorPosition(Vector3 pos) {
             // Mirror the position offset by negating the X value
             pos.x = -pos.x;
@@ -103,6 +109,28 @@ public class QuickMenuAccessibility : MelonMod {
             }
         }
 
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.ToggleQuickMenu))]
+        public static void After_CVR_MenuManager_ToggleQuickMenu(CVR_MenuManager __instance, bool show) {
+            try {
+                if (!_initialized || !show) return;
+
+                var leftAnchor = __instance.leftVrController;
+                var rightAnchor = _rightVrAnchor.transform;
+                _lastLeftPosOpened = leftAnchor.position;
+                _lastLeftRotOpened = leftAnchor.rotation;
+                _lastRightPosOpened = rightAnchor.position;
+                _lastRightRotOpened = rightAnchor.rotation;
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_LateUpdate)}");
+                MelonLogger.Error(e);
+            }
+        }
+
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.LateUpdate))]
         public static void After_CVR_MenuManager_LateUpdate(CVR_MenuManager __instance) {
@@ -136,6 +164,14 @@ public class QuickMenuAccessibility : MelonMod {
 
                 // Normal updates of the QM position/rotation
                 else if (MetaPort.Instance.isUsingVr && __instance._quickMenuCollider.enabled) {
+
+                    // If we got the option to stuck the QM to the world, lets set the position to the initial one
+                    if (ModConfig.MeDropQuickMenuInWorld.Value) {
+                        var quickMenuTransform = __instance.quickMenu.transform;
+                        quickMenuTransform.position = _snappedToRightController ? _lastRightPosOpened : _lastLeftPosOpened;
+                        quickMenuTransform.rotation = _snappedToRightController ? _lastRightRotOpened : _lastLeftRotOpened;
+                        return;
+                    }
 
                     // If we chose using the right controller, set the position to the right anchor
                     if (_snappedToRightController) {
