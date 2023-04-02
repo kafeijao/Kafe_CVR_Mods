@@ -29,6 +29,8 @@ public class CVRSuperMario64 : MelonMod {
 
         Config.InitializeMelonPrefs();
 
+        Config.LoadJsonConfig();
+
         // Extract the native binary to the plugins folder
         const string dllName = "sm64.dll";
         var dstPath = Path.GetFullPath(Path.Combine("ChilloutVR_Data", "Plugins", "x86_64", dllName));
@@ -46,6 +48,7 @@ public class CVRSuperMario64 : MelonMod {
 
         // Import asset bundle
         try {
+
             MelonLogger.Msg($"Loading the asset bundle...");
             using var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(LibSM64AssetBundleName);
             using var memoryStream = new MemoryStream();
@@ -55,10 +58,12 @@ public class CVRSuperMario64 : MelonMod {
             }
             resourceStream.CopyTo(memoryStream);
             var assetBundle = AssetBundle.LoadFromMemory(memoryStream.ToArray());
+
             // Load Material
             var mat = assetBundle.LoadAsset<Material>(MarioMaterialAssetPath);
             mat.hideFlags |= HideFlags.DontUnloadUnusedAsset;
             _marioMaterialCached = mat;
+
             // Load Sprite
             var sprite = assetBundle.LoadAsset<Sprite>(MarioTextureAssetPath);
             sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset;

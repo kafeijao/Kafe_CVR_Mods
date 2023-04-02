@@ -248,17 +248,23 @@ internal static class Utils {
 
 
     internal static Interop.SM64Surface[] GetAllStaticSurfaces() {
-        var surfaces = new List<Interop.SM64Surface>();
 
+        var surfaces = new List<Interop.SM64Surface>();
         var meshColliders = new List<MeshCollider>();
+
+        // Should attempt to load world colliders for this world?
+        var shouldAutoLoad = Config.ShouldAttemptToLoadWorldColliders();
+        if (!shouldAutoLoad) {
+            MelonLogger.Msg($"[GetAllStaticSurfaces] As per configuration we're skipping auto generating this world's colliders.");
+        }
 
         foreach (var obj in UnityEngine.Object.FindObjectsOfType<Collider>()) {
 
             var cvrSM64ColliderStatic = obj.GetComponent<CVRSM64ColliderStatic>();
             var hasDedicatedComponent = cvrSM64ColliderStatic != null;
 
-            // Ignore bad colliders if we don't have a dedicated component
-            if (!hasDedicatedComponent && !IsGoodCollider(obj)) continue;
+            // Ignore bad colliders if we don't have a dedicated component, or if auto load world colliders is off
+            if (!hasDedicatedComponent && (!shouldAutoLoad || !IsGoodCollider(obj))) continue;
 
             // Ignore the dynamic colliders, those will be handled separately
             var dynamicCollider = obj.GetComponent<CVRSM64ColliderDynamic>();

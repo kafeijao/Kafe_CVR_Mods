@@ -171,7 +171,7 @@ public class CVRSM64Context : MonoBehaviour {
         if (_instance == null) return;
         // If there was a queued update, cancel it first
         _instance.CancelInvoke(nameof(StaticTerrainUpdate));
-        _instance.Invoke(nameof(StaticTerrainUpdate), 2.5f);
+        _instance.Invoke(nameof(StaticTerrainUpdate), 1.5f);
     }
 
     private void StaticTerrainUpdate() {

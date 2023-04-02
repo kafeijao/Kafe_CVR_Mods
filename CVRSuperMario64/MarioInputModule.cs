@@ -20,6 +20,9 @@ public class MarioInputModule : CVRInputModule {
     public bool kick;
     public bool stomp;
 
+    public float cameraRotation;
+    public float cameraPitch;
+
     public new void Start() {
         _inputManager = CVRInputManager.Instance;
         Instance = this;
@@ -47,12 +50,21 @@ public class MarioInputModule : CVRInputModule {
             movementVector.Normalize();
         }
 
+        // Normalize the look vector, this is done after the modules run, but I'm saving the values before so...
+        var lookVector = _inputManager.lookVector;
+        if (lookVector.magnitude > lookVector.normalized.magnitude) {
+            lookVector.Normalize();
+        }
+
         // Save current input
         horizontal = movementVector.x;
         vertical = movementVector.z;
         jump = _inputManager.jump;
         kick = _inputManager.interactRightValue > 0.25f;
         stomp = _inputManager.gripRightValue > 0.25f;
+
+        cameraRotation = lookVector.x;
+        cameraPitch = lookVector.y;
 
         // Prevent moving if we're controlling marios
         if (!CanMove()) {
@@ -62,6 +74,13 @@ public class MarioInputModule : CVRInputModule {
             _inputManager.jump = false;
             _inputManager.interactRightValue = 0f;
             _inputManager.gripRightValue = 0f;
+
+            // Attempt to do a free look control, let's prevent our control from being able to rotate
+            if (MarioCameraMod.IsControllingAMario(out var mario) && MarioCameraMod.IsFreeCamEnabled()) {
+                _inputManager.lookVector = Vector2.zero;
+                // Return because if we're doing the free control we don't want to be able to move around
+                return;
+            }
 
             // Thanks NotAKidS for finding the issue and suggesting the fix!
             if (!ViewManager.Instance.isGameMenuOpen() && !CVR_MenuManager.Instance._quickMenuOpen) {
@@ -83,5 +102,8 @@ public class MarioInputModule : CVRInputModule {
         jump = false;
         kick = false;
         stomp = false;
+
+        cameraRotation = 0f;
+        cameraPitch = 0f;
     }
 }

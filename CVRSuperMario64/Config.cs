@@ -1,5 +1,9 @@
 ﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Savior;
+using ABI.CCK.Components;
+using HarmonyLib;
 using MelonLoader;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
@@ -16,6 +20,72 @@ public static class Config {
     internal static MelonPreferences_Entry<int> MeMaxMariosAnimatedPerPerson;
     internal static MelonPreferences_Entry<int> MeMaxMeshColliderTotalTris;
     internal static MelonPreferences_Entry<bool> MeDeleteMarioAfterDead;
+    internal static MelonPreferences_Entry<bool> MeAttemptToLoadWorldColliders;
+
+
+    private static Action _worldLoaded;
+
+    // Json
+    private static JsonConfig _config;
+
+    private const string MarioConfigFile = "CVRSuperMario64Config.json";
+    private const int CurrentConfigVersion = 1;
+
+    private record JsonConfig {
+        public int ConfigVersion = CurrentConfigVersion;
+        public readonly Dictionary<string, JsonConfigWorld> WorldConfigs = new();
+    }
+
+    private record JsonConfigWorld {
+        public bool LoadWorldColliders = MeAttemptToLoadWorldColliders.Value;
+    }
+
+    private static void CreateDefaultJsonConfig(FileInfo configFile) {
+        var config = new JsonConfig();
+        var jsonContent = JsonConvert.SerializeObject(config, Formatting.Indented);
+        MelonLogger.Msg($"Initializing the config file on {configFile.FullName}...");
+        File.WriteAllText(configFile.FullName, jsonContent);
+        _config = config;
+    }
+
+    private static void SaveJsonConfig() {
+        // Save the current config to file
+        var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", MarioConfigFile));
+        var instancesConfigFile = new FileInfo(instancesConfigPath);
+        instancesConfigFile.Directory?.Create();
+        var jsonContent = JsonConvert.SerializeObject(_config, Formatting.Indented);
+        File.WriteAllText(instancesConfigFile.FullName, jsonContent);
+    }
+
+    public static void LoadJsonConfig() {
+        // Load The config
+        var configPath = Path.GetFullPath(Path.Combine("UserData", MarioConfigFile));
+        var configFile = new FileInfo(configPath);
+        configFile.Directory?.Create();
+
+        // Create default config
+        if (!configFile.Exists) {
+            CreateDefaultJsonConfig(configFile);
+        }
+        // Load the previous config
+        else {
+            try {
+                _config = JsonConvert.DeserializeObject<JsonConfig>(File.ReadAllText(configFile.FullName));
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Something went wrong when to load the {configFile.FullName} config... Recreating the config...");
+                MelonLogger.Error(e);
+                // Recreate the file with the default config...
+                CreateDefaultJsonConfig(configFile);
+            }
+        }
+    }
+
+    public static bool ShouldAttemptToLoadWorldColliders() {
+        return _config.WorldConfigs.TryGetValue(MetaPort.Instance.CurrentWorldId, out var worldConfig)
+            ? worldConfig.LoadWorldColliders
+            : MeAttemptToLoadWorldColliders.Value;
+    }
 
     public static void InitializeMelonPrefs() {
 
@@ -50,6 +120,9 @@ public static class Config {
 
         MeDeleteMarioAfterDead = _melonCategory.CreateEntry("DeleteMarioAfterDead", true,
             description: "Whether to automatically delete our marios after 15 seconds of being dead or not.");
+
+        MeAttemptToLoadWorldColliders = _melonCategory.CreateEntry("AttemptToLoadWorldColliders", true,
+            description: "Default option for whether it should attempt to load world colliders or not when joining new worlds.");
     }
 
     public static void InitializeBTKUI() {
@@ -68,6 +141,26 @@ public static class Config {
             MenuTitle = nameof(CVRSuperMario64),
             MenuSubtitle = "Configure CVR Super Mario 64 Mod",
         };
+
+        var currentWorldCategory = page.AddCategory("Current World");
+
+        var attemptToLoadWorldColliders = currentWorldCategory.AddToggle("Load this World's Colliders",
+            "Whether to attempt to auto generate colliders for this world or not. Some worlds are just too laggy " +
+            "to have their colliders generated... If that's the case disable this and use props to create colliders!",
+            ShouldAttemptToLoadWorldColliders());
+        // Update/Create the value in the config for the current world
+        attemptToLoadWorldColliders.OnValueUpdated += isOn => {
+            if (_config.WorldConfigs.TryGetValue(MetaPort.Instance.CurrentWorldId, out var worldConfig)) {
+                worldConfig.LoadWorldColliders = isOn;
+            }
+            else {
+                _config.WorldConfigs.Add(MetaPort.Instance.CurrentWorldId, new JsonConfigWorld());
+            }
+            SaveJsonConfig();
+            CVRSM64Context.QueueStaticSurfacesUpdate();
+        };
+        // Update the toggle when changing worlds to match the current world setting
+        _worldLoaded += () => attemptToLoadWorldColliders.ToggleValue = ShouldAttemptToLoadWorldColliders();
 
         var audioCategory = page.AddCategory("Audio");
 
@@ -174,4 +267,17 @@ public static class Config {
         });
     }
 
+    [HarmonyPatch]
+    private class HarmonyPatches {
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
+        private static void After_CVRWorld_Awake() {
+            var worldId = MetaPort.Instance.CurrentWorldId;
+            if (_config.WorldConfigs.ContainsKey(worldId)) return;
+            _config.WorldConfigs.Add(worldId, new JsonConfigWorld());
+            SaveJsonConfig();
+            _worldLoaded?.Invoke();
+        }
+    }
 }
