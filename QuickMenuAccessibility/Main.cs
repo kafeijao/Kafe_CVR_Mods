@@ -12,6 +12,8 @@ namespace Kafe.QuickMenuAccessibility;
 
 public class QuickMenuAccessibility : MelonMod {
 
+    public static Action<Transform> AnchorChanged;
+
     public override void OnInitializeMelon() {
 
         ModConfig.InitializeMelonPrefs();
@@ -29,7 +31,26 @@ public class QuickMenuAccessibility : MelonMod {
 
     public override void OnLateInitializeMelon() {
         // Start the giga hacks
-        OtherModsCompatibilityHacks.Initialize(RegisteredMelons);
+
+        // Check for Menu Scale Patch
+        var possibleMenuScalePatch = RegisteredMelons.FirstOrDefault(m => m.Info.Name == "MenuScalePatch");
+        if (possibleMenuScalePatch != null) CompatibilityHacksMenuScalePatch.Initialize(possibleMenuScalePatch);
+
+        // Check for Action Menu
+        var possibleActionMenu = RegisteredMelons.FirstOrDefault(m => m.Info.Name == "Action Menu");
+        if (possibleActionMenu != null) CompatibilityHacksActionMenu.Initialize(HarmonyInstance, possibleActionMenu);
+    }
+
+    public static SteamVR_Input_Sources ApplyAndGetButtonConfig(SteamVR_Input_Sources source) {
+        if (ModConfig.MeSwampQuickMenuButton.Value) {
+            if (source == SteamVR_Input_Sources.LeftHand) source = SteamVR_Input_Sources.RightHand;
+            else if (source == SteamVR_Input_Sources.RightHand) source = SteamVR_Input_Sources.LeftHand;
+        }
+
+        // Main menu
+        //ViewManager.Instance.UiStateToggle
+
+        return source;
     }
 
     [HarmonyPatch]
@@ -80,10 +101,10 @@ public class QuickMenuAccessibility : MelonMod {
 
             // Handle config changes
             _snappedToRightController = ModConfig.MeSwapQuickMenuHands.Value;
-            OtherModsCompatibilityHacks.AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
+            AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
             ModConfig.MeSwapQuickMenuHands.OnEntryValueChanged.Subscribe((_, snapToRightController) => {
                 _snappedToRightController = snapToRightController;
-                OtherModsCompatibilityHacks.AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
+                AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
             });
 
             _initialized = true;
@@ -115,7 +136,6 @@ public class QuickMenuAccessibility : MelonMod {
                 MelonLogger.Error(e);
             }
         }
-
 
 
         [HarmonyPostfix]
@@ -218,24 +238,12 @@ public class QuickMenuAccessibility : MelonMod {
             }
         }
 
-        private static SteamVR_Input_Sources ApplyButtonConfig(SteamVR_Input_Sources source) {
-            if (ModConfig.MeSwampQuickMenuButton.Value) {
-                if (source == SteamVR_Input_Sources.LeftHand) source = SteamVR_Input_Sources.RightHand;
-                else if (source == SteamVR_Input_Sources.RightHand) source = SteamVR_Input_Sources.LeftHand;
-            }
-
-            // Main menu
-            //ViewManager.Instance.UiStateToggle
-
-            return source;
-        }
-
         private static bool GetStateDown(SteamVR_Input_Sources inputSource) {
-            return InputModuleSteamVR.Instance.vrMenuButton.GetStateDown(ApplyButtonConfig(inputSource));
+            return InputModuleSteamVR.Instance.vrMenuButton.GetStateDown(ApplyAndGetButtonConfig(inputSource));
         }
 
         private static bool GetState(SteamVR_Input_Sources inputSource) {
-            return InputModuleSteamVR.Instance.vrMenuButton.GetState(ApplyButtonConfig(inputSource));
+            return InputModuleSteamVR.Instance.vrMenuButton.GetState(ApplyAndGetButtonConfig(inputSource));
         }
 
         [HarmonyTranspiler]
