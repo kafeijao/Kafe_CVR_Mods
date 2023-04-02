@@ -18,6 +18,8 @@ Welcome to my little collection of mods, feel free to leave bug reports or featu
 - [CVRSuperMario64](CVRSuperMario64) *in-depth url*
 - [Instances](Instances) *in-depth url*
 - [PostProcessingOverrides](PostProcessingOverrides) *in-depth url*
+- [RealisticFlight](RealisticFlight) *in-depth url*
+- [QuickMenuAccessibility](QuickMenuAccessibility) *in-depth url*
 
 ---
 
@@ -179,6 +181,24 @@ global configuration that you can use on worlds, and even make a per world confi
 It also allows you pick which type of configuration a world starts with by default.
 
 Check [Post Processing Overrides](PostProcessingOverrides) for more info.
+
+---
+
+### Realistic Flight
+
+Attempt of introducing a Flap/Wing realistic flight mode.
+Small tweaks to the movement of the player when airborne (not in flight mode).
+
+Check [Realistic Flight](RealisticFlight) for more info.
+
+---
+
+### Quick Menu Accessibility
+
+Simple mod that adds some accessibility features to the Quick Menu. You can access the configurations via Melon Prefs,
+or via BTKUI **Misc** Menu.
+
+Check [Quick Menu Accessibility](QuickMenuAccessibility) for more info.
 
 ---
 
