@@ -16,7 +16,6 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     private CVRSM64Mario _currentMario;
     private bool _wasNullAlready;
 
-    private bool _useFreeControlCam;
     private float _distance;
     private float _elevation;
 
@@ -33,13 +32,12 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     // First person
     private Vector3 _velocity = Vector3.zero;
 
-    // Free cam
+    // Constants
+    private const float RotationSpeed = 5.0f;
+    private float _minPitch = 91f;
+    private float _maxPitch = 179f;
 
-    // Working rotation
-    private float rotationSpeed = 5.0f;
-    // private Vector3 _cameraOffset;
-
-    // Test
+    // Current Internals
     private float _currentYaw;
     private float _currentPitch;
 
@@ -60,7 +58,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     }
 
     public static bool IsFreeCamEnabled() {
-        return Instance._isEnabled && Instance._portableCamera.IsActive() && Instance._useFreeControlCam;
+        return Instance._isEnabled && Instance._portableCamera.IsActive() && MarioCameraModFreeCam.IsFreeCamEnabled();
     }
 
     public Transform GetCameraTransform() => _camera.transform;
@@ -130,15 +128,6 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         nextMarioButton.DefaultValue = false;
         nextMarioButton.Load();
 
-        var useFreeControlCam = camera.@interface.AddAndGetSetting(PortableCameraSettingType.Bool);
-        useFreeControlCam.BoolChanged = boolChanged => _useFreeControlCam = boolChanged;
-        useFreeControlCam.SettingName = "MarioFreeCam";
-        useFreeControlCam.DisplayName = "Camera control with Thumbstick";
-        useFreeControlCam.isExpertSetting = false;
-        useFreeControlCam.OriginType = typeof(MarioCameraMod);
-        useFreeControlCam.DefaultValue = false;
-        useFreeControlCam.Load();
-
         var radiusSetting = camera.@interface.AddAndGetSetting(PortableCameraSettingType.Float);
         radiusSetting.FloatChanged = f => _distance = f;
         radiusSetting.SettingName = "MarioCamDistance";
@@ -195,77 +184,44 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
             _camera.transform.LookAt(_currentMario.transform);
         }
 
-        // else if (_useFreeControlCam) {
-        //     var m = _currentMario.transform.position;
-        //     var n = _camera.position;
-        //     m.y = 0;
-        //     n.y = 0;
-        //     n = (n - m).normalized * _distance;
-        //     n = Quaternion.AngleAxis(MarioInputModule.Instance.cameraRotation, Vector3.up ) * n;
-        //     n += m;
-        //     var position = _currentMario.transform.position;
-        //     n.y = position.y + _elevation;
-        //     _camera.transform.position = n;
-        //     _camera.transform.LookAt( position );
-        // }
 
-        // Working with just rotation
-        // else if (_useFreeControlCam) {
-        //     float cameraRotationInput = MarioInputModule.Instance.cameraRotation;
-        //     if (cameraRotationInput != 0) {
-        //         // Calculate the rotation around the character
-        //         Quaternion rotation = Quaternion.AngleAxis(cameraRotationInput * rotationSpeed, Vector3.up);
-        //
-        //         // Update the camera offset with the new rotation
-        //         _cameraOffset = rotation * _cameraOffset;
-        //     }
-        //
-        //     // Calculate the new position based on the character's position and the desired distance and elevation
-        //     Vector3 newPosition = _currentMario.transform.position + _cameraOffset.normalized * _distance;
-        //     newPosition.y = _currentMario.transform.position.y + _elevation;
-        //
-        //     // Update the camera position and rotation
-        //     _camera.position = newPosition;
-        //     _camera.LookAt(_currentMario.transform.position);
-        // }
-
-
-        else if (_useFreeControlCam) {
+        else if (MarioCameraModFreeCam.IsFreeCamEnabled()) {
             var cameraRotationInput = MarioInputModule.Instance.cameraRotation;
             var cameraPitchInput = MarioInputModule.Instance.cameraPitch;
 
             // Update the yaw value with the new horizontal input
-            _currentYaw += cameraRotationInput * rotationSpeed;
+            _currentYaw += cameraRotationInput * RotationSpeed;
 
             // Update the pitch value with the new vertical input
-            _currentPitch -= cameraPitchInput * rotationSpeed;
+            _currentPitch -= cameraPitchInput * RotationSpeed;
             // Limit the pitch to avoid camera flipping
-            _currentPitch = Mathf.Clamp(_currentPitch, 35, 120);
+            _currentPitch = Mathf.Clamp(_currentPitch, _minPitch, _maxPitch);
 
             // Calculate the combined rotation based on the yaw and pitch values
             var combinedRotation = Quaternion.Euler(_currentPitch, _currentYaw, 0);
 
             // Calculate the camera offset with the new combined rotation
-            var cameraOffset = combinedRotation * new Vector3(0, _elevation, _distance);
-            var newPosition = _currentMario.transform.position - cameraOffset;
+            var cameraOffset = combinedRotation * new Vector3(0, 0, _distance);
+            var marioPosition = _currentMario.transform.position;
+            var newPosition = marioPosition - cameraOffset;
 
             // Update the camera position and rotation
             _camera.position = newPosition;
-            _camera.LookAt(_currentMario.transform.position);
+            _camera.LookAt(marioPosition);
         }
 
         else {
-            var m = _currentMario.transform.position;
+            var marioPosition = _currentMario.transform.position;
+            var m = marioPosition;
             var n = _camera.position;
             m.y = 0;
             n.y = 0;
             n = (n - m).normalized * _distance;
             n = Quaternion.AngleAxis(MarioInputModule.Instance.horizontal, Vector3.up ) * n;
             n += m;
-            var position = _currentMario.transform.position;
-            n.y = position.y + _elevation;
+            n.y = marioPosition.y + _elevation;
             _camera.transform.position = n;
-            _camera.transform.LookAt( position );
+            _camera.transform.LookAt( marioPosition );
         }
 
         _portableCamera.RefreshFadeOut();
@@ -301,11 +257,8 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
             _portableCamera.SetFlip(CameraFlip.Back);
 
             // Working rotation
-            // _cameraOffset = _camera.position - _currentMario.transform.position;
-            // _currentPitch = 30f;
-
             _currentYaw = 0;
-            _currentPitch = 0;
+            _currentPitch = _maxPitch - 30f;
         }
     }
 

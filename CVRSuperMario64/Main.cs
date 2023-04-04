@@ -13,9 +13,11 @@ public class CVRSuperMario64 : MelonMod {
     // Asset bundle
     private static Material _marioMaterialCached;
     private static Sprite _marioSpriteCached;
+    private static Sprite _marioArrowsSpriteCached;
     private const string LibSM64AssetBundleName = "libsm64.assetbundle";
     private const string MarioMaterialAssetPath = "Assets/Content/Material/DefaultMario.mat";
     private const string MarioTextureAssetPath = "Assets/Content/Texture/Mario_Head_256.png";
+    private const string MarioTextureArrowsAssetPath = "Assets/Content/Texture/Mario_Head_Arrows_256.png";
 
     // Rom
     private const string SuperMario64UsZ64RomHashHex = "20b854b239203baf6c961b850a4a51a2";
@@ -64,10 +66,15 @@ public class CVRSuperMario64 : MelonMod {
             mat.hideFlags |= HideFlags.DontUnloadUnusedAsset;
             _marioMaterialCached = mat;
 
-            // Load Sprite
-            var sprite = assetBundle.LoadAsset<Sprite>(MarioTextureAssetPath);
-            sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset;
-            _marioSpriteCached = sprite;
+            // Load Mario Head Sprite
+            var marioHeadSprite = assetBundle.LoadAsset<Sprite>(MarioTextureAssetPath);
+            marioHeadSprite.hideFlags |= HideFlags.DontUnloadUnusedAsset;
+            _marioSpriteCached = marioHeadSprite;
+
+            // Load Mario Head Arrows Sprite
+            var marioHeadArrowsSprite = assetBundle.LoadAsset<Sprite>(MarioTextureArrowsAssetPath);
+            marioHeadArrowsSprite.hideFlags |= HideFlags.DontUnloadUnusedAsset;
+            _marioArrowsSpriteCached = marioHeadArrowsSprite;
         }
         catch (Exception ex) {
             MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
@@ -138,6 +145,10 @@ public class CVRSuperMario64 : MelonMod {
         return _marioSpriteCached;
     }
 
+    public static Sprite GetMarioArrowsSprite() {
+        return _marioArrowsSpriteCached;
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
@@ -150,9 +161,11 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PortableCamera), "Start")]
         public static void After_PortableCamera_Start(PortableCamera __instance) {
-            var mod = new MarioCameraMod();
-            __instance.RegisterMod(mod);
-            __instance.RequireUpdate(mod);
+            var marioCamMod = new MarioCameraMod();
+            var marioFreeCamMod = new MarioCameraModFreeCam();
+            __instance.RegisterMod(marioCamMod);
+            __instance.RequireUpdate(marioCamMod);
+            __instance.RegisterMod(marioFreeCamMod);
             __instance.UpdateOptionsDisplay();
         }
     }
