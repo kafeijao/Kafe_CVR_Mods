@@ -1,6 +1,6 @@
 ﻿// by Neitri, free of charge, free to redistribute
 // downloaded from https://github.com/netri/Neitri-Unity-Shaders
-// Edited by kafeijao (to support usage of a texture)
+// Edited by kafeijao
 
 // Fades outline based on how far it is behind objects and how far it is from camera
 // Add it to bottom of material list in Renderer component, so whole object is rendered again with this material
@@ -41,7 +41,7 @@ Shader "Neitri/Distance Fade Outline Texture"
 
 			#include "UnityCG.cginc"
 
-            float4 _MainTex_ST;
+			float4 _MainTex_ST;
 			uniform sampler2D _MainTex;
 
 			float4 _OutlineColor;
@@ -59,7 +59,8 @@ Shader "Neitri/Distance Fade Outline Texture"
 			{
 				float3 vertex : POSITION;
 				float3 normal : NORMAL;
-                float2 uv : TEXCOORD0;
+				float2 uv : TEXCOORD0;
+				UNITY_VERTEX_INPUT_INSTANCE_ID //Insert
 			};
 
 			struct v2f
@@ -69,6 +70,7 @@ Shader "Neitri/Distance Fade Outline Texture"
 				float4 worldPos : TEXCOORD2;
 				float4 projPos : TEXCOORD3;
 				float2 uv : TEXCOORD0;
+				UNITY_VERTEX_OUTPUT_STEREO //Insert
 			};
 
 			float3 getCameraPosition()
@@ -82,6 +84,10 @@ Shader "Neitri/Distance Fade Outline Texture"
 			v2f vert (appdata v)
 			{
 				v2f o;
+				UNITY_SETUP_INSTANCE_ID(v); //Insert
+				UNITY_INITIALIZE_OUTPUT(v2f, o); //Insert
+				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o); //Insert
+
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.normal = UnityObjectToWorldNormal(v.normal);
 				o.worldPos = mul(unity_ObjectToWorld, float4(v.vertex, 1));
