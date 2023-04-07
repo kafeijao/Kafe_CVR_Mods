@@ -7,6 +7,7 @@ using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.CCK.Debugger.Components;
+using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 using MelonLoader;
 using UnityEngine;
 

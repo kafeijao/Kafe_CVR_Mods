@@ -1,5 +1,4 @@
-﻿using Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
-using Kafe.CCK.Debugger.Utils;
+﻿using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
 namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
@@ -28,8 +27,7 @@ public class BoneVisualizer : GameObjectVisualizer {
         var visualizerTransform = VisualizerGo.transform;
         visualizerTransform.localPosition = Vector3.zero;
         visualizerTransform.localRotation = Quaternion.identity;
-        visualizerTransform.localScale = Misc.GetScaleFromAbsolute(transform, 5.0f);
-        visualizerTransform.transform.localScale *= scale;
+        visualizerTransform.localScale = Misc.GetScaleFromAbsolute(transform, 5.0f) * scale;
 
         // Make them darker than trackers
         Material.SetColor(Misc.MatOutlineColor, new Color(0.65f, 0.65f, 0.65f, 1f));

@@ -323,6 +323,7 @@ public class Button {
         Tracker,
         Trigger,
         Eye,
+        Advanced,
         Power,
         Mod1,
         Mod2,

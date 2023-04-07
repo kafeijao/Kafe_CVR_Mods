@@ -22,7 +22,10 @@ public static class AssetBundleLoader {
     private static GameObject _trackerVisualizerCache;
     private const string DebuggerMenuTrackerVisualizerPath = "Assets/Prefabs/CCKDebuggerVisualizer_ViveTracker3.prefab";
 
-    private static readonly Dictionary<ShaderType, Shader> _shaderCache = new();
+    private static GameObject _labelVisualizerCache;
+    private const string DebuggerMenuLabelVisualizerPath = "Assets/Prefabs/CCKDebuggerVisualizer_Label.prefab";
+
+    private static readonly Dictionary<ShaderType, Shader> ShaderCache = new();
     private const string ShaderAssetPath = "Assets/Neitri-Unity-Shaders-master/Distance Fade Outline Texture.shader";
 
     private static AssetBundle GetCckDebuggerAssetBundle() {
@@ -66,11 +69,19 @@ public static class AssetBundleLoader {
         return prefab;
     }
 
+    public static GameObject GetLabelVisualizerObject() {
+        if (_labelVisualizerCache != null) return _labelVisualizerCache;
+
+        var prefab = GetCckDebuggerAssetBundle().LoadAsset<GameObject>(DebuggerMenuLabelVisualizerPath);
+        _labelVisualizerCache = prefab;
+        return prefab;
+    }
+
     public static Shader GetShader(ShaderType type) {
-        if (_shaderCache.ContainsKey(type)) return _shaderCache[type];
+        if (ShaderCache.ContainsKey(type)) return ShaderCache[type];
 
         var shader = GetCckDebuggerAssetBundle().LoadAsset<Shader>(ShaderAssetPath);
-        _shaderCache[type] = shader;
+        ShaderCache[type] = shader;
         return shader;
     }
 }

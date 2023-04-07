@@ -244,6 +244,10 @@ html, body {
     background-image: url("Images/Buttons/Eye.png");
 }
 
+#cck-debugger-button-advanced {
+    background-image: url("Images/Buttons/Advanced.png");
+}
+
 #cck-debugger-button-power {
     background-image: url("Images/Buttons/Power.png");
     margin-bottom: 50px;
