@@ -1,7 +1,9 @@
 ﻿using System.Collections;
+using System.Collections.Concurrent;
 using ABI_RC.Core;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.EventSystem;
+using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.API;
 using ABI_RC.Core.Networking.API.Responses;
@@ -19,7 +21,8 @@ public class Instances : MelonMod {
 
     internal static JsonConfig Config;
 
-    public const string InstancesConfigFile = "InstancesModConfig.json";
+    private const string InstancesConfigFile = "InstancesModConfig.json";
+    private const string InstancesTempConfigFile = "InstancesModConfig.temp.json";
     public const string InstancesPowerShellLog = "InstancesMod.ps1.log";
     private const int CurrentConfigVersion = 1;
 
@@ -34,6 +37,11 @@ public class Instances : MelonMod {
 
     public const string InstanceRestartConfigArg = "--instances-owo-what-is-dis";
 
+    // Config File Saving
+    private static readonly BlockingCollection<string> JsonContentQueue = new(new ConcurrentQueue<string>());
+    private static Thread _saveConfigThread;
+    private static bool _startedJob;
+
     internal static void OnInstanceSelected(string instanceId, bool isInitial = false) {
         InstanceSelected?.Invoke(instanceId, isInitial);
     }
@@ -43,29 +51,44 @@ public class Instances : MelonMod {
         ModConfig.InitializeMelonPrefs();
 
         // Load The config
-        var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", InstancesConfigFile));
+        var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), InstancesConfigFile));
         var instancesConfigFile = new FileInfo(instancesConfigPath);
         instancesConfigFile.Directory?.Create();
 
-        // Create default config
-        if (!instancesConfigFile.Exists) {
+        var instancesTempConfigPath = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), InstancesTempConfigFile));
+        var instancesTempConfigFile = new FileInfo(instancesTempConfigPath);
+
+        var resetConfigFiles = false;
+
+        // Load the previous config
+        if (instancesConfigFile.Exists) {
+            try {
+                Config = JsonConvert.DeserializeObject<JsonConfig>(File.ReadAllText(instancesConfigFile.FullName));
+            }
+            catch (Exception errMain) {
+                try {
+                    // Attempt to read from the temp file instead
+                    MelonLogger.Warning($"Something went wrong when to load the {instancesConfigFile.FullName}. Checking the backup...");
+                    Config = JsonConvert.DeserializeObject<JsonConfig>(File.ReadAllText(instancesTempConfigFile.FullName));
+                    MelonLogger.Msg($"Loaded from the backup config successfully!");
+                }
+                catch (Exception errTemp) {
+                    resetConfigFiles = true;
+                    MelonLogger.Error($"Something went wrong when to load the {instancesTempConfigFile.FullName} config! Resetting config...");
+                    MelonLogger.Error(errMain);
+                    MelonLogger.Error(errTemp);
+                }
+            }
+        }
+
+        // Create default config files
+        if (!instancesConfigFile.Exists || resetConfigFiles) {
             var config = new JsonConfig();
             var jsonContent = JsonConvert.SerializeObject(config, Formatting.Indented);
             MelonLogger.Msg($"Initializing the config file on {instancesConfigFile.FullName}...");
             File.WriteAllText(instancesConfigFile.FullName, jsonContent);
+            File.Copy(instancesConfigPath, instancesTempConfigFile.FullName, true);
             Config = config;
-        }
-        // Load the previous config
-        else {
-            try {
-                Config = JsonConvert.DeserializeObject<JsonConfig>(File.ReadAllText(instancesConfigFile.FullName));
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Something went wrong when to load the {instancesConfigFile.FullName} config! " +
-                                  $"You might want to delete/fix the file and try again...");
-                MelonLogger.Error(e);
-                throw;
-            }
         }
 
         // Check for BTKUILib
@@ -83,14 +106,23 @@ public class Instances : MelonMod {
             MelonCoroutines.Start(LoadIntoLastInstance(instanceId, isInitial));
         };
 
+        // Start Saving Config Thread
+        _saveConfigThread = new Thread(SaveJsonConfigsThread);
+        _saveConfigThread.Start();
+
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
     }
 
-    public override void OnApplicationQuit() {
+    private static void UpdateRejoinLocation() {
+
+        #if DEBUG
+        MelonLogger.Msg("[UpdateRejoinLocation] Updating...");
+        #endif
+
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
-            && ModConfig.RejoinPreviousLocation.Value
+            && ModConfig.MeRejoinPreviousLocation.Value
             && MetaPort.Instance.CurrentInstanceId != ""
             && Config.LastInstance.InstanceId == MetaPort.Instance.CurrentInstanceId
             && MovementSystem.Instance.canFly) {
@@ -102,7 +134,6 @@ public class Instances : MelonMod {
             rot.x = 0;
             rot.z = 0;
 
-            MelonLogger.Msg($"Saving current location to teleport when rejoining... You need to rejoin withing 5 minutes!");
             Config.RejoinLocation = new JsonRejoinLocation {
                 InstanceId = MetaPort.Instance.CurrentInstanceId,
                 AttemptToTeleport = true,
@@ -110,17 +141,47 @@ public class Instances : MelonMod {
                 Position = new JsonVector3(pos),
                 RotationEuler = new JsonVector3(rot),
             };
+
             SaveConfig();
         }
     }
 
+    public override void OnApplicationQuit() {
+
+        // Stop the job that updates the rejoin location
+        if (_startedJob) SchedulerSystem.RemoveJob(UpdateRejoinLocation);
+
+        MelonLogger.Msg($"Saving current location to teleport when rejoining...You need to rejoin within {TeleportToLocationTimeout} minutes!");
+        UpdateRejoinLocation();
+
+        // Mark thread as done and join it
+        JsonContentQueue.CompleteAdding();
+        _saveConfigThread.Join();
+    }
+
     private static void SaveConfig() {
-        var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", InstancesConfigFile));
-        var instancesConfigFile = new FileInfo(instancesConfigPath);
-        instancesConfigFile.Directory?.Create();
         var jsonContent = JsonConvert.SerializeObject(Config, Formatting.Indented);
-        File.WriteAllText(instancesConfigFile.FullName, jsonContent);
+        // Queue the json to be saved on a thread
+        JsonContentQueue.Add(jsonContent);
         InstancesConfigChanged?.Invoke();
+    }
+
+    private static void SaveJsonConfigsThread() {
+
+        var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), InstancesConfigFile));
+        var instancesTempConfigPath = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), InstancesTempConfigFile));
+
+        foreach (var jsonContent in JsonContentQueue.GetConsumingEnumerable()) {
+
+            // Save the temp file first
+            var instancesTempConfigFile = new FileInfo(instancesTempConfigPath);
+            var instancesConfigFile = new FileInfo(instancesConfigPath);
+            instancesTempConfigFile.Directory?.Create();
+            File.WriteAllText(instancesTempConfigFile.FullName, jsonContent);
+
+            // Copy the temporary onto the actual file
+            File.Copy(instancesTempConfigPath, instancesConfigFile.FullName, true);
+        }
     }
 
     private static void InvalidateInstance(string instanceId) {
@@ -379,8 +440,14 @@ public class Instances : MelonMod {
             try {
                 MelonCoroutines.Start(UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName));
 
+                // Initialize the save config job when we reach an online instance
+                if (!_startedJob) {
+                    SchedulerSystem.AddJob(UpdateRejoinLocation, 10f);
+                    _startedJob = true;
+                }
+
                 if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
-                    && ModConfig.RejoinPreviousLocation.Value
+                    && ModConfig.MeRejoinPreviousLocation.Value
                     && Config.RejoinLocation is { AttemptToTeleport: true }
                     && Config.RejoinLocation.InstanceId == MetaPort.Instance.CurrentInstanceId
                     && MovementSystem.Instance.canFly) {

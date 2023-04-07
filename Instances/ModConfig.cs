@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Savior;
+using BTKUILib.UIObjects.Objects;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -14,7 +15,7 @@ public static class ModConfig {
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<bool> MeRejoinLastInstanceOnGameRestart;
-    internal static MelonPreferences_Entry<bool> RejoinPreviousLocation;
+    internal static MelonPreferences_Entry<bool> MeRejoinPreviousLocation;
 
     internal static MelonPreferences_Entry<bool> MeStartInAnOnlineInstance;
     internal static MelonPreferences_Entry<Region> MeStartingInstanceRegion;
@@ -35,6 +36,8 @@ public static class ModConfig {
         OwnerMustInvite,
     }
 
+    private const string VREnvArg = "-vr";
+
     public static void InitializeMelonPrefs() {
 
         // Melon Config
@@ -52,10 +55,10 @@ public static class ModConfig {
         MeStartingInstancePrivacyType = _melonCategory.CreateEntry("StartingInstancePrivacyType", InstancePrivacyType.OwnerMustInvite,
             description: "Which instance privacy type to use when starting the game in an online instance.");
 
-        MeInstancesHistoryCount = _melonCategory.CreateEntry("InstancesHistoryCount", 12,
+        MeInstancesHistoryCount = _melonCategory.CreateEntry("InstancesHistoryCount", 8,
             description: "How many instances should we keep on the history, needs to be between 4 and 24.");
 
-        RejoinPreviousLocation = _melonCategory.CreateEntry("RejoinPreviousLocation", false,
+        MeRejoinPreviousLocation = _melonCategory.CreateEntry("RejoinPreviousLocation", true,
             description: "Whether to teleport to previous location upon rejoining the last instance or not " +
                          $"(only works if rejoining within {Instances.TeleportToLocationTimeout} minutes.");
     }
@@ -84,24 +87,11 @@ public static class ModConfig {
             MenuSubtitle = "Rejoin previous instances",
         };
 
-        var categoryInstances = page.AddCategory("Recent Instances");
-        SetupInstancesButtons(categoryInstances);
-        Instances.InstancesConfigChanged += () => SetupInstancesButtons(categoryInstances);
+        var categorySettings = page.AddCategory("");
 
-        var categorySettings = page.AddCategory("Settings");
-
-        var joinLastInstanceButton = categorySettings.AddToggle("Join last instance after Restart",
-            "Should we attempt to join the last instance you were in upon restarting the game? This takes " +
-            "priority over starting in an Online Home World.",
-            MeRejoinLastInstanceOnGameRestart.Value);
-        joinLastInstanceButton.OnValueUpdated += b => {
-            if (b == MeRejoinLastInstanceOnGameRestart.Value) return;
-            MeRejoinLastInstanceOnGameRestart.Value = b;
-        };
-        MeRejoinLastInstanceOnGameRestart.OnEntryValueChanged.Subscribe((_, newValue) => {
-            if (joinLastInstanceButton.ToggleValue == newValue) return;
-            joinLastInstanceButton.ToggleValue = newValue;
-        });
+        var restartButton = categorySettings.AddButton("Restart", "",
+            "Restart in the current platform you're in currently.");
+        restartButton.OnPress += () => RestartCVR(false);
 
         var joinInitialOnline = categorySettings.AddToggle("Start on Online Home World",
             "Should we create an online instance of your Home World when starting the game? Joining last " +
@@ -116,6 +106,47 @@ public static class ModConfig {
             joinInitialOnline.ToggleValue = newValue;
         });
 
+        var joinLastInstanceButton = categorySettings.AddToggle("Join last instance after Restart",
+            "Should we attempt to join the last instance you were in upon restarting the game? This takes " +
+            "priority over starting in an Online Home World.",
+            MeRejoinLastInstanceOnGameRestart.Value);
+        joinLastInstanceButton.OnValueUpdated += b => {
+            if (b == MeRejoinLastInstanceOnGameRestart.Value) return;
+            MeRejoinLastInstanceOnGameRestart.Value = b;
+        };
+        MeRejoinLastInstanceOnGameRestart.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (joinLastInstanceButton.ToggleValue == newValue) return;
+            joinLastInstanceButton.ToggleValue = newValue;
+        });
+
+        var teleportToWhereWeLeft = categorySettings.AddToggle("Restart to same Location",
+            "If you have Join Last Instance Enabled, we will also attempt to teleport to the previous location.",
+            MeRejoinPreviousLocation.Value);
+        teleportToWhereWeLeft.OnValueUpdated += b => {
+            if (b == MeRejoinPreviousLocation.Value) return;
+            MeRejoinPreviousLocation.Value = b;
+        };
+        MeRejoinPreviousLocation.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (teleportToWhereWeLeft.ToggleValue == newValue) return;
+            teleportToWhereWeLeft.ToggleValue = newValue;
+        });
+
+        var restartOtherPlatformButton = categorySettings.AddButton($"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}", "",
+            "Restart but switch the platform.");
+        restartOtherPlatformButton.OnPress += () => RestartCVR(true);
+
+        var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", "", "Set the Type of the starting Online Instance.");
+        var multiSelectPrivacy = new MultiSelection("Starting Online Instance Privacy Type", Enum.GetNames(typeof(InstancePrivacyType)), (int) MeStartingInstancePrivacyType.Value);
+        multiSelectPrivacy.OnOptionUpdated += privacyType => MeStartingInstancePrivacyType.Value = (InstancePrivacyType) privacyType;
+        privacyTypeButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectPrivacy);
+        MeStartingInstancePrivacyType.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectPrivacy.SelectedOption = (int) newValue);
+
+        var regionButton = categorySettings.AddButton("Set Starting Region", "", "Set the Region of the starting Online Instance.");
+        var multiSelectRegion = new MultiSelection("Starting Online Instance Region", Enum.GetNames(typeof(Region)), (int) MeStartingInstanceRegion.Value);
+        multiSelectRegion.OnOptionUpdated += regionType => MeStartingInstanceRegion.Value = (Region) regionType;
+        regionButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectRegion);
+        MeStartingInstanceRegion.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectRegion.SelectedOption = (int) newValue);
+
         var configureHistoryLimit = categorySettings.AddButton("Set History Limit", "",
             "Define the number of instance to remember, needs to be between 4 and 24.");
         configureHistoryLimit.OnPress += () => {
@@ -123,12 +154,13 @@ public static class ModConfig {
         };
         MeInstancesHistoryCount.OnEntryValueChanged.Subscribe((_, newValue) => UpdateHistoryCount(newValue));
 
-        var restartButton = categorySettings.AddButton("Restart", "",
-            "Define the number of instance to remember.");
-        restartButton.OnPress += RestartCVR;
+        // Handle the recent instances
+        var categoryInstances = page.AddCategory("Recent Instances");
+        SetupInstancesButtons(categoryInstances);
+        Instances.InstancesConfigChanged += () => SetupInstancesButtons(categoryInstances);
     }
 
-    private static void RestartCVR() {
+    private static void RestartCVR(bool switchPlatform) {
 
         MelonLogger.Msg($"Pressed the Restart Button... Attempting to restart :)");
 
@@ -137,14 +169,26 @@ public static class ModConfig {
             var cvrExePath = Environment.GetCommandLineArgs()[0];
             var cvrArgs = "@()";
             var envArguments = Environment.GetCommandLineArgs().Skip(1).ToList();
+
             if (MetaPort.Instance.matureContentAllowed) {
                 envArguments.Add(Instances.InstanceRestartConfigArg);
             }
+
+            // Handle platform switches
+            if (switchPlatform) {
+                if (MetaPort.Instance.isUsingVr && envArguments.Contains(VREnvArg)) {
+                    envArguments.Remove(VREnvArg);
+                }
+                else if (!MetaPort.Instance.isUsingVr && !envArguments.Contains(VREnvArg)) {
+                    envArguments.Add(VREnvArg);
+                }
+            }
+
             if (envArguments.Count > 0) {
                 cvrArgs = $"'{string.Join("', '", envArguments)}'";
             }
 
-            var powerShellLogFile = Path.GetFullPath(Path.Combine("UserData", Instances.InstancesPowerShellLog));
+            var powerShellLogFile = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), Instances.InstancesPowerShellLog));
 
             // Create the PowerShell script as a string
             var scriptContent = @"
