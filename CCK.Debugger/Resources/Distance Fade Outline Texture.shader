@@ -1,6 +1,6 @@
 ﻿// by Neitri, free of charge, free to redistribute
 // downloaded from https://github.com/netri/Neitri-Unity-Shaders
-// Edited by kafeijao
+// Edited by kafeijao (to support usage of a texture)
 
 // Fades outline based on how far it is behind objects and how far it is from camera
 // Add it to bottom of material list in Renderer component, so whole object is rendered again with this material
