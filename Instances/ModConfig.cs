@@ -23,6 +23,8 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<int> MeInstancesHistoryCount;
 
+    internal static MelonPreferences_Entry<float> MeInstanceCreationJoinAttemptInterval;
+
     public enum Region {
         Europe,
         UnitedStates,
@@ -34,6 +36,29 @@ public static class ModConfig {
         Friends,
         EveryoneCanInvite,
         OwnerMustInvite,
+    }
+
+    private enum Icon {
+        Logo,
+        History,
+        Privacy,
+        Region,
+        Restart,
+        RestartDesktop,
+        RestartVR,
+    }
+
+    private static string GetName(Icon icon) {
+        switch (icon) {
+            case Icon.Logo: return $"{nameof(Instances)}-Logo";
+            case Icon.History: return $"{nameof(Instances)}-History";
+            case Icon.Privacy: return $"{nameof(Instances)}-Privacy";
+            case Icon.Region: return $"{nameof(Instances)}-Region";
+            case Icon.Restart: return $"{nameof(Instances)}-Restart";
+            case Icon.RestartDesktop: return $"{nameof(Instances)}-RestartDesktop";
+            case Icon.RestartVR: return $"{nameof(Instances)}-RestartVR";
+        }
+        return "";
     }
 
     private const string VREnvArg = "-vr";
@@ -61,6 +86,9 @@ public static class ModConfig {
         MeRejoinPreviousLocation = _melonCategory.CreateEntry("RejoinPreviousLocation", true,
             description: "Whether to teleport to previous location upon rejoining the last instance or not " +
                          $"(only works if rejoining within {Instances.TeleportToLocationTimeout} minutes.");
+
+        MeInstanceCreationJoinAttemptInterval = _melonCategory.CreateEntry("InstanceCreationJoinAttemptInterval", 0.3f,
+            description: "Time in seconds between attempts to join the instance created (defaults to 0.3 seconds).");
     }
 
 
@@ -75,21 +103,23 @@ public static class ModConfig {
     private static void SetupBTKUI(CVR_MenuManager manager) {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
-        #if DEBUG
-        MelonLogger.Msg($"[InstancesBTKUI] Initializing...");
-        #endif
+        var ass = Assembly.GetExecutingAssembly();
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Logo), ass.GetManifestResourceStream("resources.BTKUILogoInstances.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.History), ass.GetManifestResourceStream("resources.BTKUIIconHistory.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Privacy), ass.GetManifestResourceStream("resources.BTKUIIconPrivacy.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Region), ass.GetManifestResourceStream("resources.BTKUIIconRegion.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Restart), ass.GetManifestResourceStream("resources.BTKUIIconRestart.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.RestartDesktop), ass.GetManifestResourceStream("resources.BTKUIIconRestartDesktop.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.RestartVR), ass.GetManifestResourceStream("resources.BTKUIIconRestartVR.png"));
 
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), "InstancesIcon",
-            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.BTKUIIcon.png"));
-
-        var page = new BTKUILib.UIObjects.Page(nameof(Instances), nameof(Instances), true, "InstancesIcon") {
+        var page = new BTKUILib.UIObjects.Page(nameof(Instances), nameof(Instances), true, GetName(Icon.Logo)) {
             MenuTitle = nameof(Instances),
             MenuSubtitle = "Rejoin previous instances",
         };
 
         var categorySettings = page.AddCategory("");
 
-        var restartButton = categorySettings.AddButton("Restart", "",
+        var restartButton = categorySettings.AddButton("Restart", GetName(Icon.Restart),
             "Restart in the current platform you're in currently.");
         restartButton.OnPress += () => RestartCVR(false);
 
@@ -131,23 +161,25 @@ public static class ModConfig {
             teleportToWhereWeLeft.ToggleValue = newValue;
         });
 
-        var restartOtherPlatformButton = categorySettings.AddButton($"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}", "",
+        var restartOtherPlatformButton = categorySettings.AddButton(
+            $"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}",
+            GetName(MetaPort.Instance.isUsingVr ? Icon.RestartDesktop : Icon.RestartVR),
             "Restart but switch the platform.");
         restartOtherPlatformButton.OnPress += () => RestartCVR(true);
 
-        var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", "", "Set the Type of the starting Online Instance.");
+        var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", GetName(Icon.Privacy), "Set the Type of the starting Online Instance.");
         var multiSelectPrivacy = new MultiSelection("Starting Online Instance Privacy Type", Enum.GetNames(typeof(InstancePrivacyType)), (int) MeStartingInstancePrivacyType.Value);
         multiSelectPrivacy.OnOptionUpdated += privacyType => MeStartingInstancePrivacyType.Value = (InstancePrivacyType) privacyType;
         privacyTypeButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectPrivacy);
         MeStartingInstancePrivacyType.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectPrivacy.SelectedOption = (int) newValue);
 
-        var regionButton = categorySettings.AddButton("Set Starting Region", "", "Set the Region of the starting Online Instance.");
+        var regionButton = categorySettings.AddButton("Set Starting Region", GetName(Icon.Region), "Set the Region of the starting Online Instance.");
         var multiSelectRegion = new MultiSelection("Starting Online Instance Region", Enum.GetNames(typeof(Region)), (int) MeStartingInstanceRegion.Value);
         multiSelectRegion.OnOptionUpdated += regionType => MeStartingInstanceRegion.Value = (Region) regionType;
         regionButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectRegion);
         MeStartingInstanceRegion.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectRegion.SelectedOption = (int) newValue);
 
-        var configureHistoryLimit = categorySettings.AddButton("Set History Limit", "",
+        var configureHistoryLimit = categorySettings.AddButton("Set History Limit", GetName(Icon.History),
             "Define the number of instance to remember, needs to be between 4 and 24.");
         configureHistoryLimit.OnPress += () => {
             BTKUILib.QuickMenuAPI.OpenNumberInput("History Limit [4-24]", MeInstancesHistoryCount.Value, UpdateHistoryCount);
@@ -161,8 +193,6 @@ public static class ModConfig {
     }
 
     private static void RestartCVR(bool switchPlatform) {
-
-        MelonLogger.Msg($"Pressed the Restart Button... Attempting to restart :)");
 
         try {
 

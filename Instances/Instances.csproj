@@ -9,8 +9,26 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\InstancesBTKUIIcon.png">
-            <LogicalName>resources.BTKUIIcon.png</LogicalName>
+        <EmbeddedResource Include="Resources\BTKUI_Logo_Instances.png">
+            <LogicalName>resources.BTKUILogoInstances.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\BTKUI_Icon_History.png">
+            <LogicalName>resources.BTKUIIconHistory.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\BTKUI_Icon_Privacy.png">
+            <LogicalName>resources.BTKUIIconPrivacy.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\BTKUI_Icon_Region.png">
+            <LogicalName>resources.BTKUIIconRegion.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\BTKUI_Icon_Restart.png">
+            <LogicalName>resources.BTKUIIconRestart.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\BTKUI_Icon_Restart_Desktop.png">
+            <LogicalName>resources.BTKUIIconRestartDesktop.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\BTKUI_Icon_Restart_VR.png">
+            <LogicalName>resources.BTKUIIconRestartVR.png</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
 

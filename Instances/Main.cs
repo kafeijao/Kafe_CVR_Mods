@@ -362,7 +362,7 @@ public class Instances : MelonMod {
                 for (var attemptNum = 1; attemptNum <= 3; attemptNum++) {
 
                     // They also wait on the UI for 300 ms... It seems it takes a while before we can request the instance details
-                    yield return new WaitForSeconds(0.3f*attemptNum);
+                    yield return new WaitForSeconds(ModConfig.MeInstanceCreationJoinAttemptInterval.Value * attemptNum);
 
                     var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceId });
                     yield return new WaitUntil(() => task.IsCompleted);
@@ -428,10 +428,9 @@ public class Instances : MelonMod {
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(Before_HQTools_Start)}");
                 MelonLogger.Error(e);
-                throw;
             }
 
-            return false;
+            return true;
         }
 
         [HarmonyPostfix]
