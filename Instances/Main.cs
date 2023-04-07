@@ -10,6 +10,7 @@ using ABI_RC.Core.Networking.API.Responses;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.MovementSystem;
+using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using Newtonsoft.Json;
@@ -30,12 +31,14 @@ public class Instances : MelonMod {
     public static event Action<string, bool> InstanceSelected;
 
     private static bool _isChangingInstance;
+    public static bool _consumedTeleport;
 
     private const string GroupId = "SFW";
 
     public const int TeleportToLocationTimeout = 5;
 
     public const string InstanceRestartConfigArg = "--instances-owo-what-is-dis";
+
 
     // Config File Saving
     private static readonly BlockingCollection<string> JsonContentQueue = new(new ConcurrentQueue<string>());
@@ -433,10 +436,17 @@ public class Instances : MelonMod {
             return true;
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
+        public static void Before_CVRWorld_Start() {
+            _consumedTeleport = false;
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.PopulateLastMessage))]
         public static void After_RichPresence_PopulateLastMessage() {
             try {
+
                 MelonCoroutines.Start(UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName));
 
                 // Initialize the save config job when we reach an online instance
@@ -445,11 +455,14 @@ public class Instances : MelonMod {
                     _startedJob = true;
                 }
 
-                if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
+                if (!_consumedTeleport &&
+                    ModConfig.MeRejoinLastInstanceOnGameRestart.Value
                     && ModConfig.MeRejoinPreviousLocation.Value
                     && Config.RejoinLocation is { AttemptToTeleport: true }
                     && Config.RejoinLocation.InstanceId == MetaPort.Instance.CurrentInstanceId
                     && MovementSystem.Instance.canFly) {
+
+                    _consumedTeleport = true;
 
                     var timeSinceClosed = DateTime.UtcNow - Config.RejoinLocation.ClosedDateTime;
                     if (timeSinceClosed > TimeSpan.FromMinutes(TeleportToLocationTimeout)) {
@@ -460,10 +473,6 @@ public class Instances : MelonMod {
                         MovementSystem.Instance.TeleportToPosRot(Config.RejoinLocation.Position.GetPosition(), Config.RejoinLocation.RotationEuler.GetRotation());
                     }
                 }
-
-                // Delete the rejoining location
-                Config.RejoinLocation = null;
-                SaveConfig();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_PopulateLastMessage)}");
