@@ -1,6 +1,8 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Savior;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -12,10 +14,13 @@ public static class ModConfig {
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<bool> MeRejoinLastInstanceOnGameRestart;
+    internal static MelonPreferences_Entry<bool> RejoinPreviousLocation;
 
     internal static MelonPreferences_Entry<bool> MeStartInAnOnlineInstance;
     internal static MelonPreferences_Entry<Region> MeStartingInstanceRegion;
     internal static MelonPreferences_Entry<InstancePrivacyType> MeStartingInstancePrivacyType;
+
+    internal static MelonPreferences_Entry<int> MeInstancesHistoryCount;
 
     public enum Region {
         Europe,
@@ -46,6 +51,13 @@ public static class ModConfig {
 
         MeStartingInstancePrivacyType = _melonCategory.CreateEntry("StartingInstancePrivacyType", InstancePrivacyType.OwnerMustInvite,
             description: "Which instance privacy type to use when starting the game in an online instance.");
+
+        MeInstancesHistoryCount = _melonCategory.CreateEntry("InstancesHistoryCount", 12,
+            description: "How many instances should we keep on the history, needs to be between 4 and 24.");
+
+        RejoinPreviousLocation = _melonCategory.CreateEntry("RejoinPreviousLocation", false,
+            description: "Whether to teleport to previous location upon rejoining the last instance or not " +
+                         $"(only works if rejoining within {Instances.TeleportToLocationTimeout} minutes.");
     }
 
 
@@ -103,6 +115,103 @@ public static class ModConfig {
             if (joinInitialOnline.ToggleValue == newValue) return;
             joinInitialOnline.ToggleValue = newValue;
         });
+
+        var configureHistoryLimit = categorySettings.AddButton("Set History Limit", "",
+            "Define the number of instance to remember, needs to be between 4 and 24.");
+        configureHistoryLimit.OnPress += () => {
+            BTKUILib.QuickMenuAPI.OpenNumberInput("History Limit [4-24]", MeInstancesHistoryCount.Value, UpdateHistoryCount);
+        };
+        MeInstancesHistoryCount.OnEntryValueChanged.Subscribe((_, newValue) => UpdateHistoryCount(newValue));
+
+        var restartButton = categorySettings.AddButton("Restart", "",
+            "Define the number of instance to remember.");
+        restartButton.OnPress += RestartCVR;
+    }
+
+    private static void RestartCVR() {
+
+        MelonLogger.Msg($"Pressed the Restart Button... Attempting to restart :)");
+
+        try {
+
+            var cvrExePath = Environment.GetCommandLineArgs()[0];
+            var cvrArgs = "@()";
+            var envArguments = Environment.GetCommandLineArgs().Skip(1).ToList();
+            if (MetaPort.Instance.matureContentAllowed) {
+                envArguments.Add(Instances.InstanceRestartConfigArg);
+            }
+            if (envArguments.Count > 0) {
+                cvrArgs = $"'{string.Join("', '", envArguments)}'";
+            }
+
+            var powerShellLogFile = Path.GetFullPath(Path.Combine("UserData", Instances.InstancesPowerShellLog));
+
+            // Create the PowerShell script as a string
+            var scriptContent = @"
+            Start-Transcript -Path '" + powerShellLogFile + @"'
+            # Set the process name to wait for
+            $processName = 'ChilloutVR'
+            # Wait for the process to stop running
+            $timeout = New-TimeSpan -Seconds 30
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            Write-Host ""Waiting for $processName to stop running...""
+            do {
+                $process = Get-Process -Name $processName -ErrorAction SilentlyContinue
+                if ($process -ne $null) {
+                    Write-Host ""Still waiting for $processName to stop running...""
+                    Start-Sleep -Seconds 1
+                }
+            } while ($process -ne $null -and $sw.Elapsed -lt $timeout)
+
+            # If the process stopped, start a new instance with arguments
+            if ($process -eq $null) {
+                $exePath = '" + cvrExePath + @"'
+                $args = " + cvrArgs + @"
+                Write-Host ""Starting $exePath with arguments: $args""
+                Start-Process -FilePath $exePath -ArgumentList $args
+                Start-Sleep -Seconds 2
+            }
+            else {
+                Write-Host ""$processName is still running. Timed out after $($timeout.TotalSeconds) seconds.""
+                Write-Host ""Please make sure $processName is not running before starting a new instance.""
+                Start-Sleep -Seconds 10
+            }
+            Stop-Transcript
+            ";
+
+            // Execute the PowerShell script
+            var startInfo = new ProcessStartInfo {
+                FileName = "powershell.exe",
+                Arguments = $"-Command \"{scriptContent}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true
+            };
+
+            var process = new Process();
+            process.StartInfo = startInfo;
+            process.Start();
+
+            Application.Quit();
+
+        }
+        catch (Exception e) {
+            MelonLogger.Error($"Attempted to restart the game, but something failed really bad :(");
+            MelonLogger.Error(e);
+        }
+    }
+
+    private static void UpdateHistoryCount(float attemptedValue) {
+
+        // Clamp possible values from 4 to 24 in multiples of 4
+        var roundedValue = (int) Math.Round(attemptedValue / 4.0) * 4;
+        roundedValue = Mathf.Clamp(roundedValue, 4, 24);
+
+        if (MeInstancesHistoryCount.Value == roundedValue) return;
+
+        MeInstancesHistoryCount.Value = roundedValue;
+
+        // Clip the instance amount if necessary, and trigger save so it refreshes
+        Instances.ApplyInstanceHistoryLimit(true);
     }
 
     private static object _refreshButtonCancellationToken;
