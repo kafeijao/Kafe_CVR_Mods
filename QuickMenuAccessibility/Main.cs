@@ -14,6 +14,16 @@ public class QuickMenuAccessibility : MelonMod {
 
     public static Action<Transform> AnchorChanged;
 
+    private static GameObject _rightVrAnchor;
+    private static bool _snappedToRightController;
+
+    private static GameObject _worldVrAnchor;
+    private static bool _snappedToWorldAnchor;
+
+    private static bool _initialized;
+
+    public static bool _shouldSkipQuickMenu;
+
     public override void OnInitializeMelon() {
 
         ModConfig.InitializeMelonPrefs();
@@ -46,26 +56,11 @@ public class QuickMenuAccessibility : MelonMod {
             if (source == SteamVR_Input_Sources.LeftHand) source = SteamVR_Input_Sources.RightHand;
             else if (source == SteamVR_Input_Sources.RightHand) source = SteamVR_Input_Sources.LeftHand;
         }
-
-        // Main menu
-        //ViewManager.Instance.UiStateToggle
-
         return source;
     }
 
     [HarmonyPatch]
     internal class HarmonyPatches {
-
-        private static GameObject _rightVrAnchor;
-        private static bool _snappedToRightController;
-
-        private static bool _initialized;
-
-        // Save the last opened position/rotations for the left and right hand
-        private static Vector3 _lastLeftPosOpened = Vector3.zero;
-        private static Quaternion _lastLeftRotOpened = Quaternion.identity;
-        private static Vector3 _lastRightPosOpened = Vector3.zero;
-        private static Quaternion _lastRightRotOpened= Quaternion.identity;
 
         private static Vector3 MirrorPosition(Vector3 pos) {
             // Mirror the position offset by negating the X value
@@ -80,12 +75,13 @@ public class QuickMenuAccessibility : MelonMod {
             return rot;
         }
 
-        private static Quaternion MirrorRotation(Quaternion rot) {
-            // Mirror the rotation by negating the x and w components of the Quaternion
-            return new Quaternion(-rot.x, rot.y, rot.z, -rot.w);
+        private static Transform GetCurrentAnchor() {
+            if (_snappedToWorldAnchor) return _worldVrAnchor.transform;
+            if (_snappedToRightController) return _rightVrAnchor.transform;
+            return CVR_MenuManager.Instance._leftVrAnchor.transform;
         }
 
-        private static void SetupRightAnchor(CVR_MenuManager menuManager, PlayerSetup playerSetup) {
+        private static void SetupCustomAnchors(CVR_MenuManager menuManager, PlayerSetup playerSetup) {
 
             if (_initialized) {
                 MelonLogger.Error($"Something went wrong... The SetupRightAnchor was called twice O_o");
@@ -99,13 +95,25 @@ public class QuickMenuAccessibility : MelonMod {
             _rightVrAnchor.transform.localPosition = MirrorPosition(menuManager.coreData.menuParameters.quickPositionOffset);
             _rightVrAnchor.transform.localEulerAngles = MirrorEulerRotation(menuManager.coreData.menuParameters.quickRotationOffset);
 
-            // Handle config changes
+            // Create the World VR Anchor
+            _worldVrAnchor = new GameObject("World VR Anchor");
+            _worldVrAnchor.transform.SetParent(menuManager.transform);
+
+            // Handle right controller snap config changes
             _snappedToRightController = ModConfig.MeSwapQuickMenuHands.Value;
-            AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
             ModConfig.MeSwapQuickMenuHands.OnEntryValueChanged.Subscribe((_, snapToRightController) => {
                 _snappedToRightController = snapToRightController;
-                AnchorChanged?.Invoke(_snappedToRightController ? _rightVrAnchor.transform : menuManager._leftVrAnchor.transform);
+                AnchorChanged?.Invoke(GetCurrentAnchor());
             });
+
+            // Handle world space snap config changes
+            _snappedToWorldAnchor = ModConfig.MeDropQuickMenuInWorld.Value;
+            ModConfig.MeDropQuickMenuInWorld.OnEntryValueChanged.Subscribe((_, snapToWorld) => {
+                _snappedToWorldAnchor = snapToWorld;
+                AnchorChanged?.Invoke(GetCurrentAnchor());
+            });
+
+            AnchorChanged?.Invoke(GetCurrentAnchor());
 
             _initialized = true;
         }
@@ -116,7 +124,7 @@ public class QuickMenuAccessibility : MelonMod {
         public static void After_PlayerSetup_Start(PlayerSetup __instance) {
             try {
                 if (CVR_MenuManager.Instance == null) return;
-                SetupRightAnchor(CVR_MenuManager.Instance, __instance);
+                SetupCustomAnchors(CVR_MenuManager.Instance, __instance);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}");
@@ -129,7 +137,7 @@ public class QuickMenuAccessibility : MelonMod {
         public static void After_CVR_MenuManager_Start(CVR_MenuManager __instance) {
             try {
                 if (PlayerSetup.Instance == null) return;
-                SetupRightAnchor(__instance, PlayerSetup.Instance);
+                SetupCustomAnchors(__instance, PlayerSetup.Instance);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_Start)}");
@@ -144,20 +152,18 @@ public class QuickMenuAccessibility : MelonMod {
             try {
                 if (!_initialized || !show) return;
 
-                var leftAnchor = __instance.leftVrController;
-                var rightAnchor = _rightVrAnchor.transform;
+                // Set the world anchor to face the player
+                var rotationPivot = PlayerSetup.Instance._movementSystem.rotationPivot;
+                var rotationPivotForward = rotationPivot.forward;
+                _worldVrAnchor.transform.rotation = Quaternion.LookRotation(rotationPivotForward, Vector3.up);
+                _worldVrAnchor.transform.position = rotationPivot.position + rotationPivotForward * 0.5f * ViewManager.Instance.scaleFactor;
 
-                _lastLeftPosOpened = leftAnchor.position;
-                _lastLeftRotOpened = leftAnchor.rotation;
-                _lastRightPosOpened = rightAnchor.position;
-                _lastRightRotOpened = rightAnchor.rotation;
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_LateUpdate)}");
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_ToggleQuickMenu)}");
                 MelonLogger.Error(e);
             }
         }
-
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.LateUpdate))]
@@ -193,11 +199,11 @@ public class QuickMenuAccessibility : MelonMod {
                 // Normal updates of the QM position/rotation
                 else if (MetaPort.Instance.isUsingVr && __instance._quickMenuCollider.enabled) {
 
-                    // If we got the option to stuck the QM to the world, lets set the position to the initial one
-                    if (ModConfig.MeDropQuickMenuInWorld.Value) {
+                    // If we got the option to stuck the QM to the world, set the position to the world anchor
+                    if (_snappedToWorldAnchor) {
                         var quickMenuTransform = __instance.quickMenu.transform;
-                        quickMenuTransform.position = _snappedToRightController ? _lastRightPosOpened : _lastLeftPosOpened;
-                        quickMenuTransform.rotation = _snappedToRightController ? _lastRightRotOpened : _lastLeftRotOpened;
+                        quickMenuTransform.position = _worldVrAnchor.transform.position;
+                        quickMenuTransform.rotation = _worldVrAnchor.transform.rotation;
                         return;
                     }
 
@@ -280,9 +286,100 @@ public class QuickMenuAccessibility : MelonMod {
                 patchedGetStateCount++;
             }).InstructionEnumeration();
 
+            #if DEBUG
             MelonLogger.Msg($"Patches vrMenuButton -> GetStateDown: {patchedGetStateDownCount}/2, GetState: {patchedGetStateCount}/2");
+            #endif
 
             return patchedInstructions;
+        }
+
+        // 2 Menu 1 Button
+        private static int _handledQMFrame;
+        private static int _handledMMFrame;
+
+        [HarmonyPrefix]
+        [HarmonyPriority(99999)]
+        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.ToggleQuickMenu))]
+        public static bool Before_CVR_MenuManager_ToggleQuickMenu(CVR_MenuManager __instance, ref bool show) {
+            try {
+
+                // This is pure cancer :/ Whoever tries to understand this I'm sorry
+
+                if (_shouldSkipQuickMenu) return false;
+
+                if (!_initialized || !CVRInputManager.Instance.quickMenuButton || !MetaPort.Instance.isUsingVr) return true;
+
+                if (_handledQMFrame == Time.frameCount) return false;
+
+                if (ModConfig.MeSingleButton.Value || !VRTrackerManager.Instance.CheckTwoTrackedHands()) {
+
+                    _handledQMFrame = Time.frameCount;
+
+                    var mainMenu = ViewManager.Instance;
+
+                    if (!mainMenu._gameMenuOpen && !__instance._quickMenuOpen) {
+                        mainMenu.UiStateToggle(false);
+                        __instance.ToggleQuickMenu(true);
+                    }
+                    else if (!mainMenu._gameMenuOpen && __instance._quickMenuOpen) {
+                        mainMenu.UiStateToggle(true);
+                        __instance.ToggleQuickMenu(false);
+                    }
+                    else {
+                        mainMenu.UiStateToggle(false);
+                        // Need to set show ref to false because otherwise it would open the menu
+                        show = false;
+                        __instance.ToggleQuickMenu(false);
+                    }
+
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(Before_CVR_MenuManager_ToggleQuickMenu)}");
+                MelonLogger.Error(e);
+            }
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.UiStateToggle), argumentTypes: new Type[0])]
+        public static bool Before_ViewManager_UiStateToggle(ViewManager __instance) {
+            try {
+
+                if (!_initialized || _handledMMFrame == Time.frameCount || !CVRInputManager.Instance.mainMenuButton || !MetaPort.Instance.isUsingVr) return true;
+
+                if (ModConfig.MeSingleButton.Value || !VRTrackerManager.Instance.CheckTwoTrackedHands()) {
+
+                    _handledMMFrame = Time.frameCount;
+
+                    var quickMenu = CVR_MenuManager.Instance;
+
+                    if (!__instance._gameMenuOpen && !quickMenu._quickMenuOpen) {
+                        __instance.UiStateToggle(true);
+                        quickMenu.ToggleQuickMenu(false);
+                    }
+                    else if (__instance._gameMenuOpen && !quickMenu._quickMenuOpen) {
+                        __instance.UiStateToggle(false);
+                        quickMenu.ToggleQuickMenu(true);
+                    }
+                    else {
+                        __instance.UiStateToggle(false);
+                        quickMenu.ToggleQuickMenu(false);
+                    }
+
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(Before_ViewManager_UiStateToggle)}");
+                MelonLogger.Error(e);
+            }
+            return true;
         }
 
     }

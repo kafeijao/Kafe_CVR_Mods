@@ -11,6 +11,7 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeSwapQuickMenuHands;
     internal static MelonPreferences_Entry<bool> MeSwampQuickMenuButton;
     internal static MelonPreferences_Entry<bool> MeDropQuickMenuInWorld;
+    internal static MelonPreferences_Entry<bool> MeSingleButton;
 
     public static void InitializeMelonPrefs() {
 
@@ -25,6 +26,9 @@ public static class ModConfig {
 
         MeDropQuickMenuInWorld = _melonCategory.CreateEntry("DropQuickMenuInWorld", false,
             description: "Whether to drop the quick menu in world space when opened or not.");
+
+        MeSingleButton = _melonCategory.CreateEntry("SingleButton", false,
+            description: "Whether to allow using the same button to toggle between QM and Main Menu or not.");
     }
 
     public static void InitializeBTKUI() {
@@ -73,6 +77,17 @@ public static class ModConfig {
             dropQuickMenuInWorld.ToggleValue = newValue;
         });
 
+        var singleMenuButton = cat.AddToggle("2 Menus 1 Button",
+            "Cycle thought both Quick Menu and Main Menu using a single button.",
+            MeSingleButton.Value);
+        singleMenuButton.OnValueUpdated += b => {
+            if (b == MeSingleButton.Value) return;
+            MeSingleButton.Value = b;
+        };
+        MeSingleButton.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (singleMenuButton.ToggleValue == newValue) return;
+            singleMenuButton.ToggleValue = newValue;
+        });
     }
 
 }

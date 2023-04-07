@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using ABI_RC.Core.Savior;
+﻿using ABI_RC.Core.Savior;
 using HarmonyLib;
 using MelonLoader;
 using Valve.VR;
@@ -28,12 +27,16 @@ public static class CompatibilityHacksActionMenu {
     }
 
     private static bool OnUpdateInputSteamVR(InputModuleSteamVR __instance) {
-        if (__instance.vrMenuButton == null) return false;
+        if (__instance == null || __instance.vrMenuButton == null) return false;
         //ActionMenuMod.instance.OnUpdateInput(__instance.vrMenuButton.GetStateDown(SteamVR_Input_Sources.LeftHand), __instance.vrMenuButton.GetStateUp(SteamVR_Input_Sources.LeftHand));
+        var quickButtonCache = __instance._inputManager.quickMenuButton;
+        QuickMenuAccessibility._shouldSkipQuickMenu = true;
         var actionMenu = Traverse.Create(typeof(ActionMenu.ActionMenuMod)).Field<ActionMenu.ActionMenuMod>("instance");
         Traverse.Create(actionMenu).Method("OnUpdateInput").GetValue(
             __instance.vrMenuButton.GetStateDown(QuickMenuAccessibility.ApplyAndGetButtonConfig(SteamVR_Input_Sources.LeftHand)),
             __instance.vrMenuButton.GetStateUp(QuickMenuAccessibility.ApplyAndGetButtonConfig(SteamVR_Input_Sources.LeftHand)));
+        __instance._inputManager.quickMenuButton = quickButtonCache;
+        QuickMenuAccessibility._shouldSkipQuickMenu = false;
         return false;
     }
 
