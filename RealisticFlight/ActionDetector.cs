@@ -9,7 +9,7 @@ public class ActionDetector : MonoBehaviour {
     public CVRAvatar avatarDescriptor;
     public Animator animator;
 
-    public float timeThreshold = 1.5f;
+    public float timeThreshold = 0.5f;
 
     private Transform _head;
     private Transform _hips;
@@ -83,7 +83,9 @@ public class ActionDetector : MonoBehaviour {
                 // Check if our hands are above our head
                 if (hand.HandTransform.position.y > _head.position.y) {
                     hand.State = FlapState.Starting;
+                    #if DEBUG
                     MelonLogger.Msg($"Starting Hand: {hand.Side.ToString()}...");
+                    #endif
                 }
                 break;
 
@@ -96,7 +98,9 @@ public class ActionDetector : MonoBehaviour {
                     hand.PreviousPosition = handPosition;
                     hand.DistanceFlapped = 0f;
                     hand.State = FlapState.Flapping;
+                    #if DEBUG
                     MelonLogger.Msg($"Flapping Hand: {hand.Side.ToString()}...");
+                    #endif
                 }
                 break;
 
@@ -106,7 +110,10 @@ public class ActionDetector : MonoBehaviour {
                 // If stop moving downwards or timed out
                 if (hand.PreviousPosition.y < hand.HandTransform.position.y || Time.time > hand.FlapStartedTime + timeThreshold) {
                     hand.State = FlapState.Idle;
+
+                    #if DEBUG
                     MelonLogger.Msg($"Failed! Hand: {hand.Side.ToString()}");
+                    #endif
                     break;
                 }
                 // Add to the Distance Flapped
@@ -119,7 +126,10 @@ public class ActionDetector : MonoBehaviour {
                     // Calculate the flap velocity by using the accumulated flapped distance across the time it took
                     hand.FlapVelocity = hand.DistanceFlapped / (Time.time - hand.FlapStartedTime);
                     hand.FlapDirectionNormalized = (hand.InitialPosition - currentHandPosition).normalized;
+
+                    #if DEBUG
                     MelonLogger.Msg($"Flapped Hand: {hand.Side.ToString()}");
+                    #endif
                 }
                 break;
 
@@ -127,7 +137,9 @@ public class ActionDetector : MonoBehaviour {
                 // Keep checking the timer to cancel...
                 if (Time.time > hand.FlapStartedTime + timeThreshold) {
                     hand.State = FlapState.Idle;
+                    #if DEBUG
                     MelonLogger.Msg($"Failed! Hand: {hand.Side.ToString()}");
+                    #endif
                 }
                 break;
         }
