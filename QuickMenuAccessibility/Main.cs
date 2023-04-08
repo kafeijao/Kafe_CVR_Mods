@@ -76,7 +76,7 @@ public class QuickMenuAccessibility : MelonMod {
         }
 
         private static Transform GetCurrentAnchor() {
-            if (_snappedToWorldAnchor) return _worldVrAnchor.transform;
+            if (_snappedToWorldAnchor || VRTrackerManager.Instance.CheckTwoTrackedHands()) return _worldVrAnchor.transform;
             if (_snappedToRightController) return _rightVrAnchor.transform;
             return CVR_MenuManager.Instance._leftVrAnchor.transform;
         }
@@ -165,10 +165,18 @@ public class QuickMenuAccessibility : MelonMod {
             }
         }
 
+        private static bool _lastCheckTrackedHands;
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.LateUpdate))]
         public static void After_CVR_MenuManager_LateUpdate(CVR_MenuManager __instance) {
             try {
+
+                // If we happen to lose tracking on one of the hands, enable the world space QM
+                if (VRTrackerManager.Instance != null && VRTrackerManager.Instance.CheckTwoTrackedHands() != _lastCheckTrackedHands) {
+                    AnchorChanged?.Invoke(GetCurrentAnchor());
+                    _lastCheckTrackedHands = VRTrackerManager.Instance.CheckTwoTrackedHands();
+                }
 
                 // Handle the position updates of the QM to match the hand on the config
 
