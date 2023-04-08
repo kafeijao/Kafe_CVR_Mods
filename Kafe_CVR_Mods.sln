@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticFlight", "Realisti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickMenuAccessibility", "QuickMenuAccessibility\QuickMenuAccessibility.csproj", "{B2DF7302-88C8-4ECC-BA7C-721F9B97E9A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimizeVR", "MinimiseVR\MinimiseVR.csproj", "{D43CC288-26CC-4F48-863E-0AA6620C15B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,5 +98,9 @@ Global
 		{B2DF7302-88C8-4ECC-BA7C-721F9B97E9A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2DF7302-88C8-4ECC-BA7C-721F9B97E9A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2DF7302-88C8-4ECC-BA7C-721F9B97E9A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	    {D43CC288-26CC-4F48-863E-0AA6620C15B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D43CC288-26CC-4F48-863E-0AA6620C15B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D43CC288-26CC-4F48-863E-0AA6620C15B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D43CC288-26CC-4F48-863E-0AA6620C15B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
