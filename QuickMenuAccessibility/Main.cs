@@ -76,7 +76,7 @@ public class QuickMenuAccessibility : MelonMod {
         }
 
         private static Transform GetCurrentAnchor() {
-            if (_snappedToWorldAnchor || VRTrackerManager.Instance.CheckTwoTrackedHands()) return _worldVrAnchor.transform;
+            if (_snappedToWorldAnchor || VRTrackerManager.Instance != null && !VRTrackerManager.Instance.CheckTwoTrackedHands()) return _worldVrAnchor.transform;
             if (_snappedToRightController) return _rightVrAnchor.transform;
             return CVR_MenuManager.Instance._leftVrAnchor.transform;
         }
@@ -208,7 +208,7 @@ public class QuickMenuAccessibility : MelonMod {
                 else if (MetaPort.Instance.isUsingVr && __instance._quickMenuCollider.enabled) {
 
                     // If we got the option to stuck the QM to the world, set the position to the world anchor
-                    if (_snappedToWorldAnchor) {
+                    if (_snappedToWorldAnchor || VRTrackerManager.Instance != null && !VRTrackerManager.Instance.CheckTwoTrackedHands()) {
                         var quickMenuTransform = __instance.quickMenu.transform;
                         quickMenuTransform.position = _worldVrAnchor.transform.position;
                         quickMenuTransform.rotation = _worldVrAnchor.transform.rotation;
