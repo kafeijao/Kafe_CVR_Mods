@@ -25,6 +25,8 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<float> MeInstanceCreationJoinAttemptInterval;
 
+    internal static MelonPreferences_Entry<int> MeJoiningLastInstanceMinutesTimeout;
+
     public enum Region {
         Europe,
         UnitedStates,
@@ -89,6 +91,9 @@ public static class ModConfig {
 
         MeInstanceCreationJoinAttemptInterval = _melonCategory.CreateEntry("InstanceCreationJoinAttemptInterval", 0.3f,
             description: "Time in seconds between attempts to join the instance created (defaults to 0.3 seconds).");
+
+        MeJoiningLastInstanceMinutesTimeout = _melonCategory.CreateEntry("JoiningLastInstanceMinutesTimeout", 60,
+            description: "For how many minutes should the game make you join the last instance. Use -1 to disable the timeout.");
     }
 
 

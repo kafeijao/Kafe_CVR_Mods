@@ -404,6 +404,7 @@ public class Instances : MelonMod {
         public static bool Before_HQTools_Start() {
             try {
 
+                // Original method code, since we're skipping the execution
                 CVRTools.ConfigureHudAffinity();
                 AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
 
@@ -412,8 +413,16 @@ public class Instances : MelonMod {
 
                     // Let's attempt to join the last instance
                     if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null) {
-                        OnInstanceSelected(Config.LastInstance.InstanceId, true);
-                        return false;
+
+                        // Check if joining last instance timed out
+                        if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && DateTime.UtcNow - Config.RejoinLocation.ClosedDateTime > TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value)) {
+                            MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
+                        }
+                        // Otherwise just attempt to join the last instance
+                        else {
+                            OnInstanceSelected(Config.LastInstance.InstanceId, true);
+                            return false;
+                        }
                     }
 
                     // Otherwise let's join our home world, but in an online instance
