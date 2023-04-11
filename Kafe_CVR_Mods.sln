@@ -30,7 +30,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticFlight", "Realisti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickMenuAccessibility", "QuickMenuAccessibility\QuickMenuAccessibility.csproj", "{B2DF7302-88C8-4ECC-BA7C-721F9B97E9A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimizeVR", "MinimiseVR\MinimiseVR.csproj", "{D43CC288-26CC-4F48-863E-0AA6620C15B8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimizeWindows", "MinimizeWindows\MinimizeWindows.csproj", "{D43CC288-26CC-4F48-863E-0AA6620C15B8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoHardwareAcceleration", "NoHardwareAcceleration\NoHardwareAcceleration.csproj", "{64D4DD1A-1BC9-45A3-AE5F-2503ED5ADA0C}"
 EndProject

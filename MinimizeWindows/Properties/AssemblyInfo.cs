@@ -1,19 +1,19 @@
 ﻿using System.Reflection;
-using Kafe.MinimiseVR;
-using Kafe.MinimiseVR.Properties;
+using Kafe.MinimizeWindows;
+using Kafe.MinimizeWindows.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(Kafe.MinimiseVR))]
+[assembly: AssemblyTitle(nameof(Kafe.MinimizeWindows))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(Kafe.MinimiseVR))]
+[assembly: AssemblyProduct(nameof(Kafe.MinimizeWindows))]
 
 [assembly: MelonInfo(
-    typeof(MinimiseVR),
-    nameof(Kafe.MinimiseVR),
+    typeof(MinimizeWindows),
+    nameof(Kafe.MinimizeWindows),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -24,8 +24,8 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 
-namespace Kafe.MinimiseVR.Properties;
+namespace Kafe.MinimizeWindows.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.1";
+    public const string Version = "0.0.2";
     public const string Author = "kafeijao";
 }
