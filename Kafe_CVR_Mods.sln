@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoHardwareAcceleration", "N
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CVRUnverifiedModUpdaterPlugin", "CVRUnverifiedModUpdaterPlugin\CVRUnverifiedModUpdaterPlugin.csproj", "{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterAFK", "BetterAFK\BetterAFK.csproj", "{2FD32016-6331-46B9-9979-6676CED2E1B2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,5 +116,9 @@ Global
 		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
