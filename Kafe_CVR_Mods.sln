@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimizeWindows", "Minimize
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoHardwareAcceleration", "NoHardwareAcceleration\NoHardwareAcceleration.csproj", "{64D4DD1A-1BC9-45A3-AE5F-2503ED5ADA0C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CVRUnverifiedModUpdaterPlugin", "CVRUnverifiedModUpdaterPlugin\CVRUnverifiedModUpdaterPlugin.csproj", "{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,5 +110,9 @@ Global
 		{64D4DD1A-1BC9-45A3-AE5F-2503ED5ADA0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64D4DD1A-1BC9-45A3-AE5F-2503ED5ADA0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64D4DD1A-1BC9-45A3-AE5F-2503ED5ADA0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
