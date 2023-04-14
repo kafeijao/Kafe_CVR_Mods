@@ -86,8 +86,7 @@ public static class ModConfig {
 
         var overrideButton = currentWorld.AddButton($"PostProcessing: {config.ConfigType.ToString()}", "",
             "Which override type should we use? Original: Original Post processing of the world. " +
-            "Global: Uses your Global override. Custom: " +
-            "Override specific for this world. Off: Disables PP.");
+            "Global: Uses your Global override. Custom: Override specific for this world. Off: Disables PP.");
 
         overrideButton.OnPress += () => {
             var nextType = (OverrideType)(((int)config.ConfigType + 1) % TypeCount);
@@ -130,6 +129,10 @@ public static class ModConfig {
         // Sliders
         _page.AddSlider("Bloom Intensity", "Set the Bloom Intensity", current.Bloom.Intensity/Multiplier, 0f, 5f, 2).OnValueUpdated += newValue => {
             current.Bloom.Intensity = newValue * Multiplier;
+            PostProcessingOverrides.SaveConfigAndApplyChanges(true);
+        };
+        _page.AddSlider("Bloom Threshold", "Set the Bloom Threshold", current.Bloom.Threshold, 0f, 5f, 2).OnValueUpdated += newValue => {
+            current.Bloom.Threshold = newValue;
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };
     }

@@ -1,4 +1,6 @@
-# PostProcessingOverrides
+# Post Processing Overrides
+
+Latest Release: [PostProcessingOverrides.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/PostProcessingOverrides.dll)
 
 This mod gives you more control over the world's Post Processing configurations.
 

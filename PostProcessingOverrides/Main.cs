@@ -31,8 +31,9 @@ public class PostProcessingOverrides : MelonMod {
     private const string PostProcessingOverridesConfigFile = "PostProcessingOverridesModConfig.json";
     private const int CurrentConfigVersion = 1;
 
+    // Layer Indices and Masks
     private const int PPLayer = 16;
-    private const int PPLayerMask = -4097;
+    private const int PPLayerMask = 1 << PPLayer;
 
     public static event Action ConfigChanged;
 
@@ -138,7 +139,10 @@ public class PostProcessingOverrides : MelonMod {
         [JsonConverter(typeof(StringEnumConverter))] public OverrideSetting Active = OverrideSetting.Override;
     }
 
-    public record JsonConfigPPSettingBloom : JsonConfigPPSetting { public float Intensity = 0.2f; }
+    public record JsonConfigPPSettingBloom : JsonConfigPPSetting {
+        public float Intensity = 0.2f;
+        public float Threshold = 1.0f;
+    }
     public record JsonConfigPPSettingAO : JsonConfigPPSetting;
     public record JsonConfigPPSettingColorGrading : JsonConfigPPSetting;
     public record JsonConfigPPSettingAutoExposure : JsonConfigPPSetting;
@@ -223,8 +227,12 @@ public class PostProcessingOverrides : MelonMod {
         // Bloom
         bloom.enabled.value = configToBeUsed!.Bloom.Active == OverrideSetting.Override;
         bloom.enabled.overrideState = configToBeUsed.Bloom.Active == OverrideSetting.Override;
+        // Bloom Intensity
         bloom.intensity.value = configToBeUsed.Bloom.Intensity;
         bloom.intensity.overrideState = configToBeUsed.Bloom.Active == OverrideSetting.Override;
+        // Bloom Threshold
+        bloom.threshold.value = configToBeUsed.Bloom.Threshold;
+        bloom.threshold.overrideState = configToBeUsed.Bloom.Active == OverrideSetting.Override;
 
         // Disable/Enable all world's volumes according the config
         foreach (var postProcessingBloom in _currentWorld._postProcessingBloomList) {
@@ -277,24 +285,15 @@ public class PostProcessingOverrides : MelonMod {
 
             // Enforce the PPLayer on the Post Processing layer
             if (world.referenceCamera != null && world.referenceCamera.TryGetComponent(out PostProcessLayer refCameraPostProcessLayer)) {
-                _currentWorldLayer.volumeLayer = refCameraPostProcessLayer.volumeLayer | PPLayer;
+                _currentWorldLayer.volumeLayer = refCameraPostProcessLayer.volumeLayer;
                 _originalEnabled = refCameraPostProcessLayer.enabled;
             }
             else {
-                _currentWorldLayer.volumeLayer |= PPLayerMask;
                 _originalEnabled = false;
-
-                // Initialize camera culling as if PP was available
-                var cullingMask = _currentWorldCamera.cullingMask;
-                cullingMask &= -32769;
-                cullingMask |= 256;
-                cullingMask |= 512;
-                cullingMask |= 32;
-                cullingMask &= PPLayerMask;
-                cullingMask |= 1024;
-                cullingMask |= 8192;
-                _currentWorldCamera.cullingMask = cullingMask;
             }
+
+            // Add our PP layer to the Mask
+            _currentWorldLayer.volumeLayer |= PPLayerMask;
 
             // Create the mod override volume for the world
             var modPPVolumeGo = new GameObject("[PostProcessOverrides Mod] OverrideVolume") {
