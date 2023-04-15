@@ -31,6 +31,14 @@ else {
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
 $managedLibsFolder = $scriptDir + "\ManagedLibs"
 
+if (!(Test-Path $managedLibsFolder)) {
+    New-Item -ItemType Directory -Path $managedLibsFolder
+    Write-Output "ManagedLibs folder created successfully."
+}
+else {
+    Write-Output "ManagedLibs folder already exists."
+}
+
 Write-Host ""
 Write-Host "Copying the DLLs from the CVR, MelonLoader, and Mods folder to the ManagedLibs"
 
