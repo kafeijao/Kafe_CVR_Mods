@@ -206,8 +206,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         var mainAnimator = currentSpawnable.gameObject.GetComponent<Animator>();
         if (mainAnimator != null) {
             foreach (var parameter in mainAnimator.parameters) {
-                var parameterEntry = ParameterEntrySection.Get(mainAnimator, parameter);
-                string GetParamValue() => parameterEntry.GetValue();
+                Func<string> GetParamValue = AnimatorParameterUtils.StringValueGetter(mainAnimator, parameter);
                 categoryMainAnimatorParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             }
         }

@@ -278,10 +278,8 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         // Restore Main Animator Parameters
         foreach (var parameter in mainAnimator.parameters) {
-            var parameterEntry = ParameterEntrySection.Get(mainAnimator, parameter);
-
             // Add the parameter to the proper category
-            string GetParamValue() => parameterEntry.GetValue();
+            Func<string> GetParamValue = AnimatorParameterUtils.StringValueGetter(mainAnimator, parameter);
             if (parameter.name.StartsWith("#")) sectionLocalParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             else if (CoreParameterNames.Contains(parameter.name)) sectionCoreParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             else sectionSyncedParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
