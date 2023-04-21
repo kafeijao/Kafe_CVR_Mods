@@ -53,7 +53,7 @@ public class LabeledVisualizer : GameObjectVisualizer {
         var cameraPos = _playerCamera.transform.position;
 
         foreach (var visualizer in VisualizersActive.Values) {
-            if (visualizer is not LabeledVisualizer otherLabelVis || otherLabelVis == this) continue;
+            if (visualizer is not LabeledVisualizer otherLabelVis || otherLabelVis == null || otherLabelVis == this) continue;
             if (Vector3.Distance(_labelTransform.transform.position, otherLabelVis._labelTransform.position) < 0.025f * PlayerSetup.Instance._avatarHeight) {
                 _labelTransform.Translate(0f, 0.025f * PlayerSetup.Instance._avatarHeight, 0f, Space.Self);
             }
