@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CVRUnverifiedModUpdaterPlug
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterAFK", "BetterAFK\BetterAFK.csproj", "{2FD32016-6331-46B9-9979-6676CED2E1B2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBox", "ChatBox\ChatBox.csproj", "{DF5222E3-DB35-4B81-85EC-ECC665F965D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -126,5 +128,9 @@ Global
 		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
