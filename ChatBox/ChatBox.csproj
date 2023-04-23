@@ -12,6 +12,12 @@
         <EmbeddedResource Include="Resources\chatbox.assetbundle">
             <LogicalName>chatbox.assetbundle</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Sounds_Message.wav">
+            <LogicalName>chatbox.sound.message.wav</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Sounds_Typing.wav">
+            <LogicalName>chatbox.sound.typing.wav</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
 
 </Project>

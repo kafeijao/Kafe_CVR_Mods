@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Util.Object_Behaviour;
 using TMPro;
@@ -16,18 +17,36 @@ public class ChatBoxBehavior : MonoBehaviour {
     private const string ChildTextBubbleName = "Text Bubble";
     private const string ChildTextBubbleOutputName = "Output";
 
+    private static readonly Vector3 TypingDefaultLocalScale = new Vector3(0.5f, 0.5f, 0.5f) * 0.8f;
+    private static readonly Vector3 ChatBoxDefaultLocalScale = new(0.002f, 0.002f, 0.002f);
+
     private static readonly Dictionary<string, ChatBoxBehavior> ChatBoxes;
 
     private PlayerNameplate _nameplate;
+
+    private GameObject _root;
+
     private GameObject _typingGo;
     private readonly List<GameObject> _typingGoChildren = new();
+    private AudioSource _typingAudioSource;
+
     private GameObject _textBubbleGo;
     private TextMeshProUGUI _textBubbleOutputTMP;
+    private AudioSource _textBubbleAudioSource;
+
+    private CanvasGroup _canvasGroup;
 
     private int _lastTypingIndex;
 
     private string _playerGuid;
-    private const float NameplateOffset = 0.35f;
+    private const float NameplateOffset = 0.1f;
+    private const float NameplateDistanceMultiplier = 0.25f;
+
+    // Config updates
+    private static float _volume;
+    private static float _chatBoxSize;
+    private static float _chatBoxOpacity;
+    private static float _notificationSoundMaxDistance;
 
     static ChatBoxBehavior() {
 
@@ -50,6 +69,43 @@ public class ChatBoxBehavior : MonoBehaviour {
                 chatBoxBehavior.OnMessage(msg);
             }
         };
+
+        // Config Listeners
+        _volume = ModConfig.MeSoundsVolume.Value;
+        ModConfig.MeSoundsVolume.OnEntryValueChanged.Subscribe((_, newValue) => {
+            _volume = newValue;
+            UpdateChatBoxes();
+        });
+        _chatBoxSize = ModConfig.MeChatBoxSize.Value;
+        ModConfig.MeChatBoxSize.OnEntryValueChanged.Subscribe((_, newValue) => {
+            _chatBoxSize = newValue;
+            UpdateChatBoxes();
+        });
+        _chatBoxOpacity = ModConfig.MeChatBoxOpacity.Value;
+        ModConfig.MeChatBoxOpacity.OnEntryValueChanged.Subscribe((_, newValue) => {
+            _chatBoxOpacity = newValue;
+            UpdateChatBoxes();
+        });
+        _notificationSoundMaxDistance = ModConfig.MeNotificationSoundMaxDistance.Value;
+        ModConfig.MeNotificationSoundMaxDistance.OnEntryValueChanged.Subscribe((_, newValue) => {
+            _notificationSoundMaxDistance = newValue;
+            UpdateChatBoxes();
+        });
+    }
+
+    private static void UpdateChatBoxes() {
+        foreach (var chatBox in ChatBoxes.Select(chatBoxKeyValue => chatBoxKeyValue.Value).Where(chatBox => chatBox != null)) {
+            chatBox.UpdateChatBox();
+        }
+    }
+    private void UpdateChatBox() {
+        _canvasGroup.alpha = _chatBoxOpacity;
+        _textBubbleAudioSource.volume = _volume;
+        _typingAudioSource.volume = _volume;
+        _root.transform.localPosition = new Vector3(0, NameplateOffset + NameplateDistanceMultiplier * _chatBoxSize, 0);
+        _root.transform.localScale = ChatBoxDefaultLocalScale * _chatBoxSize;
+        _typingAudioSource.maxDistance = _notificationSoundMaxDistance;
+        _textBubbleAudioSource.maxDistance = _notificationSoundMaxDistance;
     }
 
     private void Start() {
@@ -58,25 +114,55 @@ public class ChatBoxBehavior : MonoBehaviour {
         _playerGuid = _nameplate.player.ownerId;
 
         // Setup the game object
-        var prefab = Instantiate(ModConfig.ChatBoxPrefab, transform);
+        _root = Instantiate(ModConfig.ChatBoxPrefab, transform);
         // prefab.layer = LayerMask.NameToLayer("UI Internal");
-        prefab.name = $"[{nameof(ChatBox)} Mod]";
-        prefab.transform.localPosition = new Vector3(0, NameplateOffset, 0);
-        prefab.transform.rotation = _nameplate.transform.rotation;
-        prefab.transform.localScale = new Vector3(0.002f, 0.002f, 0.002f);
-        prefab.AddComponent<CameraFacingObject>();
+        _root.name = $"[{nameof(ChatBox)} Mod]";
+        _root.transform.rotation = _nameplate.transform.rotation;
+
+        // Handle the chat box postion and scale
+        _root.AddComponent<CameraFacingObject>();
+
+        // Add Canvas Group
+        _canvasGroup = _root.AddComponent<CanvasGroup>();
+        _canvasGroup.blocksRaycasts = false;
+        _canvasGroup.ignoreParentGroups = false;
+        _canvasGroup.interactable = false;
 
         // Get the references for the Typing stuff and Text stuff
-        var typingTransform = prefab.transform.Find(ChildTypingName);
-        typingTransform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+        var typingTransform = _root.transform.Find(ChildTypingName);
+
+        // Handle the typing scale
+        typingTransform.localScale = TypingDefaultLocalScale * _chatBoxSize;
+
         _typingGo = typingTransform.gameObject;
         for (var i = 0; i < typingTransform.childCount; i++) {
             _typingGoChildren.Add(typingTransform.GetChild(i).gameObject);
         }
-        _textBubbleGo = prefab.transform.Find(ChildTextBubbleName).gameObject;
+        _textBubbleGo = _root.transform.Find(ChildTextBubbleName).gameObject;
         var tmpGo = _textBubbleGo.transform.Find(ChildTextBubbleOutputName);
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
 
+        // Add Typing Audio Source
+        _typingAudioSource = _typingGo.AddComponent<AudioSource>();
+        _typingAudioSource.spatialBlend = 1f;
+        _typingAudioSource.minDistance = 0.5f;
+        _typingAudioSource.rolloffMode = AudioRolloffMode.Linear;
+        _typingAudioSource.clip = ModConfig.AudioClips[ModConfig.Sound.Typing];
+        _typingAudioSource.loop = false;
+        _typingAudioSource.playOnAwake = false;
+
+        // Add Message Audio Source
+        _textBubbleAudioSource = _textBubbleGo.AddComponent<AudioSource>();
+        _textBubbleAudioSource.spatialBlend = 1f;
+        _textBubbleAudioSource.minDistance = 0.5f;
+        _textBubbleAudioSource.rolloffMode = AudioRolloffMode.Linear;
+        _textBubbleAudioSource.clip = ModConfig.AudioClips[ModConfig.Sound.Message];
+        _textBubbleAudioSource.loop = false;
+        _textBubbleAudioSource.playOnAwake = false;
+
+        UpdateChatBox();
+
+        // Add to the cache
         ChatBoxes[_playerGuid] = this;
     }
 
@@ -108,6 +194,7 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         StartCoroutine(nameof(ResetIsTypingAfterDelay));
         _typingGo.SetActive(true);
+        if (ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
     }
 
     private IEnumerator ResetIsTypingAfterDelay() {
@@ -136,10 +223,11 @@ public class ChatBoxBehavior : MonoBehaviour {
         }
         StartCoroutine(nameof(ResetTextAfterDelay));
         _textBubbleGo.SetActive(true);
+        if (ModConfig.MeSoundOnMessage.Value) _textBubbleAudioSource.Play();
     }
 
     private IEnumerator ResetTextAfterDelay() {
-        yield return new WaitForSeconds(10f);
+        yield return new WaitForSeconds(ModConfig.MeMessageTimeoutSeconds.Value);
         _textBubbleGo.SetActive(false);
     }
 }

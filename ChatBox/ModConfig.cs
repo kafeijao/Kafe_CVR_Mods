@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
+using ABI_RC.Core.InteractionSystem;
 using MelonLoader;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Kafe.ChatBox;
 
@@ -8,28 +10,71 @@ public static class ModConfig {
 
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
-    internal static MelonPreferences_Entry<int> MeMessageTimeoutSeconds;
+    internal static MelonPreferences_Entry<bool> MeOnlyViewFriends;
+    internal static MelonPreferences_Entry<bool> MeSoundOnStartedTyping;
+    internal static MelonPreferences_Entry<bool> MeSoundOnMessage;
+    internal static MelonPreferences_Entry<float> MeSoundsVolume;
+    internal static MelonPreferences_Entry<float> MeNotificationSoundMaxDistance;
+    internal static MelonPreferences_Entry<float> MeMessageTimeoutSeconds;
+    internal static MelonPreferences_Entry<float> MeChatBoxOpacity;
+    internal static MelonPreferences_Entry<float> MeChatBoxSize;
 
     // Asset Bundle
     public static GameObject ChatBoxPrefab;
     private const string ChatBoxAssetBundleName = "chatbox.assetbundle";
     private const string ChatBoxPrefabAssetPath = "Assets/Chatbox/ChatBox.prefab";
 
+    // Files
+    internal enum Sound {
+        Typing,
+        Message,
+    }
+
+    private const string ChatBoxSoundTyping = "chatbox.sound.typing.wav";
+    private const string ChatBoxSoundMessage = "chatbox.sound.message.wav";
+
+    private static readonly Dictionary<Sound, string> AudioClipResourceNames = new() {
+        {Sound.Typing, ChatBoxSoundTyping},
+        {Sound.Message, ChatBoxSoundMessage},
+    };
+
+    internal static readonly Dictionary<Sound, AudioClip> AudioClips = new();
+
     public static void InitializeMelonPrefs() {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(ChatBox));
 
-        MeMessageTimeoutSeconds = _melonCategory.CreateEntry("MessageTimeoutSeconds", 20,
+        MeOnlyViewFriends = _melonCategory.CreateEntry("OnlyViewFriends", false,
+            description: "Whether only show ChatBoxes on friends or not.");
+
+        MeSoundOnStartedTyping = _melonCategory.CreateEntry("SoundOnStartedTyping", true,
+            description: "Whether there should be a sound when someone starts typing or not.");
+
+        MeSoundOnMessage = _melonCategory.CreateEntry("SoundOnMessage", true,
+            description: "Whether there should be a sound when someone sends a message or not.");
+
+        MeSoundsVolume = _melonCategory.CreateEntry("SoundsVolume", 0.5f,
+            description: "The volume of the sounds for the notification of typing/messages. Goes from 0 to 1.");
+
+        MeNotificationSoundMaxDistance = _melonCategory.CreateEntry("NotificationSoundMaxDistance", 5f,
+            description: "The distance where the notification sounds completely cuts off.");
+
+        MeMessageTimeoutSeconds = _melonCategory.CreateEntry("MessageTimeoutSeconds", 20f,
             description: "How long should a message stay on top of a player's head after written.");
+
+        MeChatBoxOpacity = _melonCategory.CreateEntry("ChatBoxOpacity", 1f,
+            description: "The opacity of the Chat Box, between 0 (invisible) and 1 (opaque).");
+
+        MeChatBoxSize = _melonCategory.CreateEntry("ChatBoxSize", 1f,
+            description: "The size of the Chat Box, between 0 (smallest) and 2 (biggest). The default is 1.");
 
     }
 
-    public static void LoadAssetBundles(Assembly assembly) {
+    public static void LoadAssemblyResources(Assembly assembly) {
 
         try {
 
-            MelonLogger.Msg($"Loading the asset bundle...");
             using var resourceStream = assembly.GetManifestResourceStream(ChatBoxAssetBundleName);
             using var memoryStream = new MemoryStream();
             if (resourceStream == null) {
@@ -47,6 +92,95 @@ public static class ModConfig {
         catch (Exception ex) {
             MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
         }
+
+        // Load/Create the sound files
+        foreach (var audioClipResourceName in AudioClipResourceNames) {
+            try {
+
+                using var resourceStream = assembly.GetManifestResourceStream(audioClipResourceName.Value);
+
+                // Create the directory if non-existent
+                var audioPath = Path.GetFullPath(Path.Combine("UserData", nameof(ChatBox), audioClipResourceName.Value));
+                var audioFile = new FileInfo(audioPath);
+                audioFile.Directory?.Create();
+
+                // If there is no audio file, write the default
+                if (!audioFile.Exists) {
+                    MelonLogger.Msg($"Saving default sound file to {audioFile.FullName}...");
+                    using var fileStream = File.Open(audioPath, FileMode.Create, FileAccess.Write);
+                    resourceStream!.CopyTo(fileStream);
+                }
+
+                // Read the sound file from disk
+                MelonLogger.Msg($"Reading sound file from disk: {audioFile.FullName}");
+                using var uwr = UnityWebRequestMultimedia.GetAudioClip(audioPath, AudioType.WAV);
+                uwr.SendWebRequest();
+
+                // I want this sync, should be fast since we're loading from the disk and not the webs
+                while (!uwr.isDone) {}
+                if (uwr.isNetworkError || uwr.isHttpError) {
+                    MelonLogger.Error($"{uwr.error}");
+                }
+                else {
+                    AudioClips[audioClipResourceName.Key] = DownloadHandlerAudioClip.GetContent(uwr);
+                }
+            }
+            catch (Exception ex) {
+                MelonLogger.Error($"Failed to Load the Audio Clips\n" + ex.Message);
+            }
+        }
+    }
+
+
+    public static void InitializeBTKUI() {
+        BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
+    }
+
+    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry) {
+        var toggle = category.AddToggle(entry.DisplayName, entry.Description, entry.Value);
+        toggle.OnValueUpdated += b => {
+            if (b != entry.Value) entry.Value = b;
+        };
+        entry.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (newValue != toggle.ToggleValue) toggle.ToggleValue = newValue;
+        });
+    }
+
+    private static void AddMelonSlider(BTKUILib.UIObjects.Page page, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
+        var slider = page.AddSlider(entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
+        slider.OnValueUpdated += f => {
+            if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
+        };
+        entry.OnEntryValueChanged.Subscribe((_, newValue) => {
+            if (!Mathf.Approximately(newValue, slider.SliderValue)) slider.SetSliderValue(newValue);
+        });
+    }
+
+    private static void SetupBTKUI(CVR_MenuManager manager) {
+        BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
+
+        var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
+        var miscCategory = miscPage.AddCategory(nameof(ChatBox));
+
+        miscCategory.AddButton("Send Message", "", "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
+            manager.ToggleQuickMenu(false);
+            ChatBox.OpenKeyboard();
+        };
+
+        var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", "", $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));
+        modPage.MenuTitle = $"{nameof(ChatBox)} Settings";
+
+        var modSettingsCategory = modPage.AddCategory("Settings");
+
+        AddMelonToggle(modSettingsCategory, MeSoundOnStartedTyping);
+        AddMelonToggle(modSettingsCategory, MeSoundOnMessage);
+        AddMelonToggle(modSettingsCategory, MeOnlyViewFriends);
+
+        AddMelonSlider(modPage, MeSoundsVolume, 0f, 1f, 1);
+        AddMelonSlider(modPage, MeNotificationSoundMaxDistance, 1f, 25f, 1);
+        AddMelonSlider(modPage, MeMessageTimeoutSeconds, 5, 90f, 0);
+        AddMelonSlider(modPage, MeChatBoxOpacity, 0.1f, 1f, 2);
+        AddMelonSlider(modPage, MeChatBoxSize, 0.0f, 2f, 2);
     }
 
 }

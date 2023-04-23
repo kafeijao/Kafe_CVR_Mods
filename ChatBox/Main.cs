@@ -20,20 +20,24 @@ public class ChatBox : MelonMod {
 
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
-        ModConfig.LoadAssetBundles(MelonAssembly.Assembly);
+        ModConfig.InitializeBTKUI();
+        ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
+    }
+
+    public static void OpenKeyboard() {
+        if (ViewManager.Instance == null) return;
+        if (!_openedKeyboard) {
+            _openedKeyboard = true;
+            if (_openKeyboardCoroutineToken != null) {
+                MelonCoroutines.Stop(_openKeyboardCoroutineToken);
+            }
+            _openKeyboardCoroutineToken = MelonCoroutines.Start(OpenKeyboardWithDelay());
+        }
     }
 
     public override void OnUpdate() {
-
         if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)) {
-            if (ViewManager.Instance == null) return;
-            if (!_openedKeyboard) {
-                _openedKeyboard = true;
-                if (_openKeyboardCoroutineToken != null) {
-                    MelonCoroutines.Stop(_openKeyboardCoroutineToken);
-                }
-                _openKeyboardCoroutineToken = MelonCoroutines.Start(OpenKeyboardWithDelay());
-            }
+            OpenKeyboard();
         }
     }
 

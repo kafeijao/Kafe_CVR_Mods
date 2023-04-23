@@ -1,18 +1,15 @@
 ﻿using System.Text;
 using ABI_RC.Core.Networking;
+using ABI_RC.Core.Networking.IO.Social;
+using ABI_RC.Core.Savior;
 using DarkRift;
 using DarkRift.Client;
 using HarmonyLib;
 using MelonLoader;
 
-#if !DEBUG
-using ABI_RC.Core.Savior;
-#endif
-
-
 namespace Kafe.ChatBox;
 
-public class ModNetwork {
+public static class ModNetwork {
 
     private const ushort ModMsgTag = 13999;
     private const string ModId = $"MelonMod.Kafe.{nameof(ChatBox)}";
@@ -25,8 +22,6 @@ public class ModNetwork {
     private enum MessageType : byte {
         Typing = 0,
         SendMessage = 1,
-        // SyncRequest = 2,
-        // SyncResponse = 3,
     }
 
     public static void SendTyping(bool isTyping) {
@@ -51,10 +46,11 @@ public class ModNetwork {
 
         var senderGuid = reader.ReadString();
 
-        #if !DEBUG
+        // Ignore messages from non-friends
+        if (ModConfig.MeOnlyViewFriends.Value && !Friends.FriendsWith(senderGuid)) return;
+
         // Ignore our own messages
         if (senderGuid == MetaPort.Instance.ownerId) return;
-        #endif
 
         var msgTypeRaw = reader.ReadByte();
 
