@@ -211,10 +211,10 @@ public static class ModConfig {
 
             // Handle platform switches
             if (switchPlatform) {
-                if (MetaPort.Instance.isUsingVr && envArguments.Contains(VREnvArg)) {
+                if (envArguments.Contains(VREnvArg)) {
                     envArguments.Remove(VREnvArg);
                 }
-                else if (!MetaPort.Instance.isUsingVr && !envArguments.Contains(VREnvArg)) {
+                else {
                     envArguments.Add(VREnvArg);
                 }
             }
@@ -225,19 +225,21 @@ public static class ModConfig {
 
             var powerShellLogFile = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), Instances.InstancesPowerShellLog));
 
+            // Get the process ID
+            var processId = Process.GetCurrentProcess().Id;
+
             // Create the PowerShell script as a string
             var scriptContent = @"
             Start-Transcript -Path '" + powerShellLogFile + @"'
-            # Set the process name to wait for
-            $processName = 'ChilloutVR'
             # Wait for the process to stop running
+            $processID = " + processId + @"
             $timeout = New-TimeSpan -Seconds 30
             $sw = [System.Diagnostics.Stopwatch]::StartNew()
-            Write-Host ""Waiting for $processName to stop running...""
+            Write-Host ""Waiting for process with ID $processID to stop running...""
             do {
-                $process = Get-Process -Name $processName -ErrorAction SilentlyContinue
+                $process = Get-Process -Id $processID -ErrorAction SilentlyContinue
                 if ($process -ne $null) {
-                    Write-Host ""Still waiting for $processName to stop running...""
+                    Write-Host ""Still waiting for process with ID $processID to stop running...""
                     Start-Sleep -Seconds 1
                 }
             } while ($process -ne $null -and $sw.Elapsed -lt $timeout)
@@ -251,8 +253,8 @@ public static class ModConfig {
                 Start-Sleep -Seconds 2
             }
             else {
-                Write-Host ""$processName is still running. Timed out after $($timeout.TotalSeconds) seconds.""
-                Write-Host ""Please make sure $processName is not running before starting a new instance.""
+                Write-Host ""Process with ID $processID is still running. Timed out after $($timeout.TotalSeconds) seconds.""
+                Write-Host ""Please make sure the process with ID $processID is not running before starting a new instance.""
                 Start-Sleep -Seconds 10
             }
             Stop-Transcript

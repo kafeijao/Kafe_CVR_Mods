@@ -23,10 +23,11 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
-[assembly: MelonAdditionalDependencies("BTKUILib")]
+[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 
 namespace Kafe.Instances.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.1";
+    public const string Version = "1.0.2";
     public const string Author = "kafeijao";
+    public const string BTKUILibName = "BTKUILib";
 }

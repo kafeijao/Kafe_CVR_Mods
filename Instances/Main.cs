@@ -471,7 +471,6 @@ public class Instances : MelonMod {
                     && Config.RejoinLocation.InstanceId == MetaPort.Instance.CurrentInstanceId
                     && MovementSystem.Instance.canFly) {
 
-                    _consumedTeleport = true;
 
                     var timeSinceClosed = DateTime.UtcNow - Config.RejoinLocation.ClosedDateTime;
                     if (timeSinceClosed > TimeSpan.FromMinutes(TeleportToLocationTimeout)) {
@@ -482,6 +481,10 @@ public class Instances : MelonMod {
                         MovementSystem.Instance.TeleportToPosRot(Config.RejoinLocation.Position.GetPosition(), Config.RejoinLocation.RotationEuler.GetRotation());
                     }
                 }
+
+                // Mark the teleport as consumed. We don't want to mistakenly teleport
+                _consumedTeleport = true;
+
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_PopulateLastMessage)}");
