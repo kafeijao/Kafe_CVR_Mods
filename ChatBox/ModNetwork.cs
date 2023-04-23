@@ -1,8 +1,14 @@
-﻿using ABI_RC.Core.Networking;
-using ABI_RC.Core.Networking.IO.Social;
+﻿using System.Text;
+using ABI_RC.Core.Networking;
+using DarkRift;
 using DarkRift.Client;
 using HarmonyLib;
 using MelonLoader;
+
+#if !DEBUG
+using ABI_RC.Core.Savior;
+#endif
+
 
 namespace Kafe.ChatBox;
 
@@ -16,11 +22,19 @@ public class ModNetwork {
         ToAll = 1,
     }
 
-    private enum MessageType {
+    private enum MessageType : byte {
         Typing = 0,
         SendMessage = 1,
-        SyncRequest = 2,
-        SyncResponse = 3,
+        // SyncRequest = 2,
+        // SyncResponse = 3,
+    }
+
+    public static void SendTyping(bool isTyping) {
+        SendMsgToAllPlayers(MessageType.Typing, writer => writer.Write(isTyping));
+    }
+
+    public static void SendMessage(string msg) {
+        SendMsgToAllPlayers(MessageType.SendMessage, writer => writer.Write(msg, Encoding.UTF8));
     }
 
     private static void OnMessage(object sender, MessageReceivedEventArgs e) {
@@ -36,7 +50,75 @@ public class ModNetwork {
         if (modId != ModId) return;
 
         var senderGuid = reader.ReadString();
-        var isFriend = Friends.FriendsWith(senderGuid);
+
+        #if !DEBUG
+        // Ignore our own messages
+        if (senderGuid == MetaPort.Instance.ownerId) return;
+        #endif
+
+        var msgTypeRaw = reader.ReadByte();
+
+        // Ignore wrong msg types
+        if (!Enum.IsDefined(typeof(MessageType), msgTypeRaw)) return;
+
+        switch ((MessageType) msgTypeRaw) {
+
+            case MessageType.Typing:
+                ChatBox.OnReceivedTyping?.Invoke(senderGuid, reader.ReadBoolean());
+                break;
+
+            case MessageType.SendMessage:
+                ChatBox.OnReceivedMessage?.Invoke(senderGuid, reader.ReadString(Encoding.UTF8));
+                break;
+        }
+    }
+
+    private static void SendMsgToAllPlayers(MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
+
+        if (NetworkManager.Instance == null ||
+            NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
+            MelonLogger.Warning($"Attempted to {nameof(SendMsgToAllPlayers)} but the Game Network is Down...");
+        }
+
+        // Mandatory message parameters
+        using var writer = DarkRiftWriter.Create();
+        writer.Write(ModId);
+        writer.Write((int) SeedPolicy.ToAll);
+
+        // Set the message type (for our internal behavior)
+        writer.Write((byte) msgType);
+
+        // Set the parameters we want to send
+        msgDataAction?.Invoke(writer);
+
+        using var message = Message.Create(ModMsgTag, writer);
+        NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
+    }
+
+    private static void SendToSpecificPlayers(List<string> playerGuids, MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
+
+        if (NetworkManager.Instance == null ||
+            NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
+            MelonLogger.Warning($"Attempted to {nameof(SendToSpecificPlayers)} but the Game Network is Down...");
+        }
+
+        // Mandatory message parameters
+        using var writer = DarkRiftWriter.Create();
+        writer.Write(ModId);
+        writer.Write((int) SeedPolicy.ToSpecific);
+        writer.Write(playerGuids.Count);
+        foreach (var playerGuid in playerGuids) {
+            writer.Write(playerGuid);
+        }
+
+        // Set the message type (for our internal behavior)
+        writer.Write((byte) msgType);
+
+        // Set the parameters we want to send
+        msgDataAction?.Invoke(writer);
+
+        using var message = Message.Create(ModMsgTag, writer);
+        NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
     }
 
     [HarmonyPatch]

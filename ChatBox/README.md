@@ -9,6 +9,10 @@ ChatBox. You can bring the keyboard by pressing `Y` or by using the Quick Menu.
 
 ---
 
+## Credits
+
+Thanks [AstroDogeDX](https://github.com/AstroDogeDX) for all the UI!
+
 ## Disclosure
 
 > ---

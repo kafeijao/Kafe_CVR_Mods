@@ -23,9 +23,11 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonOptionalDependencies(AssemblyInfoParams.BTKUILibName)]
 
 namespace Kafe.ChatBox.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "0.0.1";
     public const string Author = "kafeijao";
+    public const string BTKUILibName = "BTKUILib";
 }

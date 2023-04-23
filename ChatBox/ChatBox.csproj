@@ -1,6 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <Folder Include="Resources" />
-  </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="BTKUILib">
+            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\chatbox.assetbundle">
+            <LogicalName>chatbox.assetbundle</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
 </Project>
