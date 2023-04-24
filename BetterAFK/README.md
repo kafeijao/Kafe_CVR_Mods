@@ -5,6 +5,8 @@ Latest Release: [BetterAFK.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releas
 Enhance your AFK experience in CVR with Better AFK, a mod that improves the AFK detection and provides a more accurate
 and customizable AFK state.
 
+**Note:** Parameter Stream will take priority if you make them override the `AFK` or `AFKTimer` parameters.
+
 ### Features
 
 - Fixes the Parameter Stream `Headset On Head` and `Time Since Headset Removed` to work correctly.
