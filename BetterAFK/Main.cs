@@ -64,13 +64,13 @@ public class BetterAFK : MelonMod {
 
                 // Set the animator AFK property
                 if (ModConfig.MeSetAnimatorParameterAFK.Value) {
-                    PlayerSetup.Instance.changeAnimatorParam(AFK, _isAFK ? 1f : 0f);
+                    PlayerSetup.Instance.animatorManager.SetAnimatorParameter(AFK, _isAFK ? 1f : 0f);
                 }
 
                 // Set the animator AFKTimer property
                 if (ModConfig.MeSetAnimatorParameterAFKTimer.Value) {
                     var afkTimer = _isAFK ? Time.time - _headsetRemoveTime : -1f;
-                    PlayerSetup.Instance.changeAnimatorParam(AFKTimer, afkTimer);
+                    PlayerSetup.Instance.animatorManager.SetAnimatorParameter(AFKTimer, afkTimer);
                 }
             }
             catch (Exception e) {
