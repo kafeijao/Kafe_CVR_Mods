@@ -9,8 +9,8 @@ namespace Kafe.BetterAFK;
 
 public class BetterAFK : MelonMod {
 
-    private static readonly int AFK = Animator.StringToHash("AFK");
-    private static readonly int AFKTimer = Animator.StringToHash("AFKTimer");
+    private const string AFK = "AFK";
+    private const string AFKTimer = "AFKTimer";
 
     public static bool IsEndKeyOverridingAFK;
 
@@ -63,15 +63,14 @@ public class BetterAFK : MelonMod {
                 }
 
                 // Set the animator AFK property
-                if (ModConfig.MeSetAnimatorParameterAFK.Value && PlayerSetup.Instance._animator != null) {
-                    PlayerSetup.Instance._animator.SetBool(AFK, _isAFK);
+                if (ModConfig.MeSetAnimatorParameterAFK.Value) {
+                    PlayerSetup.Instance.changeAnimatorParam(AFK, _isAFK ? 1f : 0f);
                 }
 
                 // Set the animator AFKTimer property
-                if (ModConfig.MeSetAnimatorParameterAFKTimer.Value && PlayerSetup.Instance._animator != null) {
+                if (ModConfig.MeSetAnimatorParameterAFKTimer.Value) {
                     var afkTimer = _isAFK ? Time.time - _headsetRemoveTime : -1f;
-                    PlayerSetup.Instance._animator.SetFloat(AFKTimer, afkTimer);
-                    PlayerSetup.Instance._animator.SetInteger(AFKTimer, (int) afkTimer);
+                    PlayerSetup.Instance.changeAnimatorParam(AFKTimer, afkTimer);
                 }
             }
             catch (Exception e) {
