@@ -54,21 +54,21 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         ChatBoxes = new Dictionary<string, ChatBoxBehavior>();
 
-        ChatBox.OnReceivedTyping += (guid, isTyping) => {
+        ChatBox.OnReceivedTyping += (guid, isTyping, notify) => {
             #if DEBUG
             MelonLogger.Msg($"Received a Typing message from: {guid} -> {isTyping}");
             #endif
             if (ChatBoxes.TryGetValue(guid, out var chatBoxBehavior)) {
-                chatBoxBehavior.OnTyping(isTyping);
+                chatBoxBehavior.OnTyping(isTyping, notify);
             }
         };
 
-        ChatBox.OnReceivedMessage += (guid, msg) => {
+        ChatBox.OnReceivedMessage += (guid, msg, notify) => {
             #if DEBUG
             MelonLogger.Msg($"Received a Message message from: {guid} -> {msg}");
             #endif
             if (ChatBoxes.TryGetValue(guid, out var chatBoxBehavior)) {
-                chatBoxBehavior.OnMessage(msg);
+                chatBoxBehavior.OnMessage(msg, notify);
             }
         };
 
@@ -180,7 +180,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         _lastTypingIndex = 0;
     }
 
-    private void OnTyping(bool isTyping) {
+    private void OnTyping(bool isTyping, bool notify) {
 
         if (!isTyping) {
             StopTyping();
@@ -196,7 +196,7 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         StartCoroutine(nameof(ResetIsTypingAfterDelay));
         _typingGo.SetActive(true);
-        if (ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
+        if (notify && ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
     }
 
     private IEnumerator ResetIsTypingAfterDelay() {
@@ -212,7 +212,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         StopTyping();
     }
 
-    private void OnMessage(string msg) {
+    private void OnMessage(string msg, bool notify) {
         StopTyping();
 
         // Update the text
@@ -225,7 +225,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         }
         _resetTextAfterDelayCoroutine = StartCoroutine(ResetTextAfterDelay(msg.Length));
         _textBubbleGo.SetActive(true);
-        if (ModConfig.MeSoundOnMessage.Value) _textBubbleAudioSource.Play();
+        if (notify && ModConfig.MeSoundOnMessage.Value) _textBubbleAudioSource.Play();
     }
 
     private IEnumerator ResetTextAfterDelay(int msgLength) {

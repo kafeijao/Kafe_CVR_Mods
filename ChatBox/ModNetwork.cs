@@ -32,14 +32,15 @@ public static class ModNetwork {
         Mod,
     }
 
-    internal static void SendTyping(bool isTyping, MessageSource msgSource) {
+    internal static void SendTyping(bool isTyping, MessageSource msgSource, bool notification) {
         SendMsgToAllPlayers(MessageType.Typing, writer => {
             writer.Write((byte) msgSource);
             writer.Write(isTyping);
+            writer.Write(notification);
         });
     }
 
-    internal static void SendMessage(string msg, MessageSource source) {
+    internal static void SendMessage(string msg, MessageSource source, bool notification) {
         if (msg.Length > CharactersMaxCount) {
             MelonLogger.Warning($"Messages can have a maximum of {CharactersMaxCount} characters.");
             return;
@@ -47,8 +48,9 @@ public static class ModNetwork {
         var sent = SendMsgToAllPlayers(MessageType.SendMessage, writer => {
             writer.Write((byte) source);
             writer.Write(msg, Encoding.UTF8);
+            writer.Write(notification);
         });
-        if (sent) Commands.HandleSentCommand(msg);
+        if (sent) Commands.HandleSentCommand(msg, notification);
     }
 
     private static void OnMessage(object sender, MessageReceivedEventArgs e) {
@@ -89,7 +91,7 @@ public static class ModNetwork {
                     if (ModConfig.MeIgnoreOscMessages.Value && (MessageSource)typingSrcByte == MessageSource.OSC) return;
                     if (ModConfig.MeIgnoreModMessages.Value && (MessageSource)typingSrcByte == MessageSource.Mod) return;
 
-                    ChatBox.OnReceivedTyping?.Invoke(senderGuid, reader.ReadBoolean());
+                    ChatBox.OnReceivedTyping?.Invoke(senderGuid, reader.ReadBoolean(), reader.ReadBoolean());
                     break;
 
                 case MessageType.SendMessage:
@@ -107,8 +109,10 @@ public static class ModNetwork {
                         return;
                     }
 
-                    ChatBox.OnReceivedMessage?.Invoke(senderGuid, msg);
-                    Commands.HandleReceivedCommand(senderGuid, msg);
+                    var sendNotification = reader.ReadBoolean();
+
+                    ChatBox.OnReceivedMessage?.Invoke(senderGuid, msg, sendNotification);
+                    Commands.HandleReceivedCommand(senderGuid, msg, sendNotification);
                     break;
             }
         }

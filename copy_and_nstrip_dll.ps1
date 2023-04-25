@@ -42,7 +42,7 @@ Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $managedLibsFolder
 
 # Third Party Dependencies
 $melonModsPath="\Mods\"
-$modNames = @("BTKUILib")
+$modNames = @("BTKUILib", "ChatBox")
 $missingMods = New-Object System.Collections.Generic.List[string]
 
 
