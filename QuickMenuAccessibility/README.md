@@ -1,5 +1,7 @@
 # Quick Menu Accessibility
 
+Latest Release: [QuickMenuAccessibility.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/QuickMenuAccessibility.dll)
+
 Simple mod that adds some accessibility features to the Quick Menu. You can access the configurations via Melon Prefs, 
 or via BTKUI **Misc** Menu.
 
