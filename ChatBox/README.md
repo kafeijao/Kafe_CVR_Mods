@@ -13,6 +13,9 @@ You can toggle the sounds for when someone starts typing and send a message. You
 `/UserData/Chatbox/` folder (next to the `/Mods` folder). Also you can customize the distance when you stop hearing the
 notifications and volume.
 
+You can add a boolean to your animator of your avatar named `ChatBox/Typing` or `#ChatBox/Typing` (if you want it local)
+. It will be set to `true` when you're writing a message (ChatBox keyboard opened), and `false` otherwise.
+
 ---
 
 ## Credits

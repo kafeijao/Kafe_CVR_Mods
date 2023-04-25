@@ -42,6 +42,8 @@ public class ChatBoxBehavior : MonoBehaviour {
     private const float NameplateOffset = 0.1f;
     private const float NameplateDistanceMultiplier = 0.25f;
 
+    private static Coroutine _resetTextAfterDelayCoroutine;
+
     // Config updates
     private static float _volume;
     private static float _chatBoxSize;
@@ -219,15 +221,18 @@ public class ChatBoxBehavior : MonoBehaviour {
         }
 
         if (_textBubbleGo.activeSelf) {
-            StopCoroutine(nameof(ResetTextAfterDelay));
+            StopCoroutine(_resetTextAfterDelayCoroutine);
         }
-        StartCoroutine(nameof(ResetTextAfterDelay));
+        _resetTextAfterDelayCoroutine = StartCoroutine(ResetTextAfterDelay(msg.Length));
         _textBubbleGo.SetActive(true);
         if (ModConfig.MeSoundOnMessage.Value) _textBubbleAudioSource.Play();
     }
 
-    private IEnumerator ResetTextAfterDelay() {
-        yield return new WaitForSeconds(ModConfig.MeMessageTimeoutSeconds.Value);
+    private IEnumerator ResetTextAfterDelay(int msgLength) {
+        var timeout = ModConfig.MeMessageTimeoutDependsLength.Value
+            ? Mathf.Clamp(msgLength / 5f, ModConfig.MessageTimeoutMin, ModConfig.MeMessageTimeoutSeconds.Value)
+            : ModConfig.MeMessageTimeoutSeconds.Value;
+        yield return new WaitForSeconds(timeout);
         _textBubbleGo.SetActive(false);
     }
 }

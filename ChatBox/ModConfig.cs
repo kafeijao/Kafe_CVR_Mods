@@ -8,6 +8,9 @@ namespace Kafe.ChatBox;
 
 public static class ModConfig {
 
+    public const float MessageTimeoutMin = 5f;
+    public const float MessageTimeoutMax = 90f;
+
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<bool> MeOnlyViewFriends;
@@ -16,8 +19,11 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<float> MeSoundsVolume;
     internal static MelonPreferences_Entry<float> MeNotificationSoundMaxDistance;
     internal static MelonPreferences_Entry<float> MeMessageTimeoutSeconds;
+    internal static MelonPreferences_Entry<bool> MeMessageTimeoutDependsLength;
     internal static MelonPreferences_Entry<float> MeChatBoxOpacity;
     internal static MelonPreferences_Entry<float> MeChatBoxSize;
+    internal static MelonPreferences_Entry<bool> MeIgnoreOscMessages;
+    internal static MelonPreferences_Entry<bool> MeIgnoreModMessages;
 
     // Asset Bundle
     public static GameObject ChatBoxPrefab;
@@ -60,14 +66,23 @@ public static class ModConfig {
         MeNotificationSoundMaxDistance = _melonCategory.CreateEntry("NotificationSoundMaxDistance", 5f,
             description: "The distance where the notification sounds completely cuts off.");
 
-        MeMessageTimeoutSeconds = _melonCategory.CreateEntry("MessageTimeoutSeconds", 20f,
+        MeMessageTimeoutSeconds = _melonCategory.CreateEntry("MessageTimeoutSeconds", 30f,
             description: "How long should a message stay on top of a player's head after written.");
+
+        MeMessageTimeoutDependsLength = _melonCategory.CreateEntry("MessageTimeoutDependsLength", true,
+            description: "Whether the message timeout depends on the message length or not.");
 
         MeChatBoxOpacity = _melonCategory.CreateEntry("ChatBoxOpacity", 1f,
             description: "The opacity of the Chat Box, between 0 (invisible) and 1 (opaque).");
 
         MeChatBoxSize = _melonCategory.CreateEntry("ChatBoxSize", 1f,
             description: "The size of the Chat Box, between 0 (smallest) and 2 (biggest). The default is 1.");
+
+        MeIgnoreOscMessages = _melonCategory.CreateEntry("IgnoreOscMessages", false,
+            description: "Whether to ignore messages sent via OSC or not.");
+
+        MeIgnoreModMessages = _melonCategory.CreateEntry("IgnoreModMessages", false,
+            description: "Whether to ignore messages sent via other Mods or not.");
 
     }
 
@@ -164,7 +179,7 @@ public static class ModConfig {
 
         miscCategory.AddButton("Send Message", "", "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
             manager.ToggleQuickMenu(false);
-            ChatBox.OpenKeyboard();
+            ChatBox.OpenKeyboard(false, "");
         };
 
         var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", "", $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));
@@ -175,10 +190,13 @@ public static class ModConfig {
         AddMelonToggle(modSettingsCategory, MeSoundOnStartedTyping);
         AddMelonToggle(modSettingsCategory, MeSoundOnMessage);
         AddMelonToggle(modSettingsCategory, MeOnlyViewFriends);
+        AddMelonToggle(modSettingsCategory, MeMessageTimeoutDependsLength);
+        AddMelonToggle(modSettingsCategory, MeIgnoreOscMessages);
+        AddMelonToggle(modSettingsCategory, MeIgnoreModMessages);
 
         AddMelonSlider(modPage, MeSoundsVolume, 0f, 1f, 1);
         AddMelonSlider(modPage, MeNotificationSoundMaxDistance, 1f, 25f, 1);
-        AddMelonSlider(modPage, MeMessageTimeoutSeconds, 5, 90f, 0);
+        AddMelonSlider(modPage, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0);
         AddMelonSlider(modPage, MeChatBoxOpacity, 0.1f, 1f, 2);
         AddMelonSlider(modPage, MeChatBoxSize, 0.0f, 2f, 2);
     }
