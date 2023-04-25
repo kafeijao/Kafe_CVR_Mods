@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Reflection;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
@@ -17,9 +16,6 @@ public class ChatBox : MelonMod {
     private const string AnimatorParameterTyping = "ChatBox/Typing";
     private static readonly int AnimatorParameterTypingLocal = Animator.StringToHash("#" + AnimatorParameterTyping);
 
-    public static Action<string, bool, bool> OnReceivedTyping;
-    public static Action<string, string, bool> OnReceivedMessage;
-
     private static bool _isChatBoxKeyboardOpened;
 
     private static object _openKeyboardCoroutineToken;
@@ -30,36 +26,7 @@ public class ChatBox : MelonMod {
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
     }
 
-    public override void OnLateInitializeMelon() {
-        foreach (var modCommands in Commands.ModCommands) {
-            MelonLogger.Msg($"[Commands] The mod {modCommands.Key} registered the commands: {string.Join(", ", modCommands.Value)}.");
-        }
-    }
-
-    /// <summary>
-    /// Sends a message through the ChatBox.
-    /// </summary>
-    /// <param name="message">The message to be sent through the ChatBox.</param>
-    /// <param name="sendSoundNotification">Whether to send a sounds notification or not.</param>
-    public static void SendMessage(string message, bool sendSoundNotification) {
-        ModNetwork.SendMessage(message, Assembly.GetExecutingAssembly().GetName().Name == "Kafe.OSC.Integrations" ? ModNetwork.MessageSource.OSC : ModNetwork.MessageSource.Mod, sendSoundNotification);
-    }
-
-    /// <summary>
-    /// Sets the typing status of the local player.
-    /// </summary>
-    /// <param name="isTyping">A boolean value indicating whether the local player is typing. Set to true if the player is typing, and false if the player is not typing.</param>
-    /// <param name="sendSoundNotification">Whether to send a sounds notification or not.</param>
-    public static void SetIsTyping(bool isTyping, bool sendSoundNotification) {
-        SetIsTyping(isTyping, Assembly.GetExecutingAssembly().GetName().Name == "Kafe.OSC.Integrations" ? ModNetwork.MessageSource.OSC : ModNetwork.MessageSource.Mod, sendSoundNotification);
-    }
-
-    /// <summary>
-    /// Opens the in-game keyboard, with an optional delay and an initial message.
-    /// </summary>
-    /// <param name="delayed">If set to true, the keyboard will be opened after a 0.15-second delay. If set to false, the keyboard will be opened immediately.</param>
-    /// <param name="initialMessage">The initial message to be displayed on the keyboard when it is opened. This can be an empty string.</param>
-    public static void OpenKeyboard(bool delayed, string initialMessage) {
+    internal static void OpenKeyboard(bool delayed, string initialMessage) {
         if (ViewManager.Instance == null) return;
         _isChatBoxKeyboardOpened = true;
         if (_openKeyboardCoroutineToken != null) {
@@ -73,8 +40,9 @@ public class ChatBox : MelonMod {
         }
     }
 
-    private static void SetIsTyping(bool isTyping, ModNetwork.MessageSource msgSource, bool notification) {
-        ModNetwork.SendTyping(isTyping, msgSource, notification);
+    internal static void SetIsTyping(API.MessageSource msgSource, bool isTyping, bool notification) {
+        if (PlayerSetup.Instance == null) return;
+        ModNetwork.SendTyping(msgSource, isTyping, notification);
         PlayerSetup.Instance.animatorManager.SetAnimatorParameter(AnimatorParameterTyping, isTyping ? 1f : 0f);
         var animator = PlayerSetup.Instance._animator;
         if (animator != null) {
@@ -84,7 +52,7 @@ public class ChatBox : MelonMod {
 
     private static void ActuallyOpenKeyboard(string initialMessage) {
         ViewManager.Instance.openMenuKeyboard(KeyboardId + initialMessage);
-        ModNetwork.SendTyping(true, ModNetwork.MessageSource.Internal, true);
+        ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
         _openKeyboardCoroutineToken = null;
     }
 
@@ -110,7 +78,7 @@ public class ChatBox : MelonMod {
 
         private static void DisableKeyboard() {
             _isChatBoxKeyboardOpened = false;
-            SetIsTyping(false, ModNetwork.MessageSource.Internal, true);
+            SetIsTyping(API.MessageSource.Internal, false, true);
             if (_openKeyboardCoroutineToken != null) {
                 MelonCoroutines.Stop(_openKeyboardCoroutineToken);
             }
@@ -145,7 +113,7 @@ public class ChatBox : MelonMod {
                 if (_isChatBoxKeyboardOpened) {
                     if (!previousValue.StartsWith(KeyboardId)) {
                         _isChatBoxKeyboardOpened = false;
-                        SetIsTyping(false, ModNetwork.MessageSource.Internal, true);
+                        SetIsTyping(API.MessageSource.Internal, false, true);
                     }
                     else {
                         // Remove the tag
@@ -200,7 +168,7 @@ public class ChatBox : MelonMod {
         public static void After_ViewManager_SendToWorldUi(ViewManager __instance, string value) {
             try {
                 if (_isChatBoxKeyboardOpened) {
-                    ModNetwork.SendMessage(value, ModNetwork.MessageSource.Internal, true);
+                    ModNetwork.SendMessage(API.MessageSource.Internal, value, true, true);
                     DisableKeyboard();
                 }
             }

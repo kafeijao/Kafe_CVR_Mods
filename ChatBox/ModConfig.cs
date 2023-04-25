@@ -9,7 +9,7 @@ namespace Kafe.ChatBox;
 public static class ModConfig {
 
     public const float MessageTimeoutMin = 5f;
-    public const float MessageTimeoutMax = 90f;
+    private const float MessageTimeoutMax = 90f;
 
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
@@ -99,7 +99,7 @@ public static class ModConfig {
             resourceStream.CopyTo(memoryStream);
             var assetBundle = AssetBundle.LoadFromMemory(memoryStream.ToArray());
 
-            // Load Chatbox Prefab
+            // Load ChatBox Prefab
             ChatBoxPrefab = assetBundle.LoadAsset<GameObject>(ChatBoxPrefabAssetPath);
             ChatBoxPrefab.hideFlags |= HideFlags.DontUnloadUnusedAsset;
 

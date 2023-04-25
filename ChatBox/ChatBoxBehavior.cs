@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.Object_Behaviour;
+using MelonLoader;
 using TMPro;
 using UnityEngine;
 
@@ -54,20 +56,39 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         ChatBoxes = new Dictionary<string, ChatBoxBehavior>();
 
-        ChatBox.OnReceivedTyping += (guid, isTyping, notify) => {
+        API.OnIsTypingReceived += (source, senderGuid, isTyping, notify) => {
+
+            // Ignore our own messages
+            if (senderGuid == MetaPort.Instance.ownerId) return;
+
+            // Handle typing source ignores
+            if (ModConfig.MeIgnoreOscMessages.Value && source == API.MessageSource.OSC) return;
+            if (ModConfig.MeIgnoreModMessages.Value && source == API.MessageSource.Mod) return;
+
             #if DEBUG
-            MelonLogger.Msg($"Received a Typing message from: {guid} -> {isTyping}");
+            MelonLogger.Msg($"Received a Typing message from: {senderGuid} -> {isTyping}");
             #endif
-            if (ChatBoxes.TryGetValue(guid, out var chatBoxBehavior)) {
+            if (ChatBoxes.TryGetValue(senderGuid, out var chatBoxBehavior)) {
                 chatBoxBehavior.OnTyping(isTyping, notify);
             }
         };
 
-        ChatBox.OnReceivedMessage += (guid, msg, notify) => {
+        API.OnMessageReceived += (source, senderGuid, msg, notify, displayMessage) => {
+
+            // Ignore messages that are not supposed to be displayed
+            if (!displayMessage) return;
+
+            // Ignore our own messages
+            if (senderGuid == MetaPort.Instance.ownerId) return;
+
+            // Handle typing source ignores
+            if (ModConfig.MeIgnoreOscMessages.Value && source == API.MessageSource.OSC) return;
+            if (ModConfig.MeIgnoreModMessages.Value && source == API.MessageSource.Mod) return;
+
             #if DEBUG
-            MelonLogger.Msg($"Received a Message message from: {guid} -> {msg}");
+            MelonLogger.Msg($"Received a Message message from: {senderGuid} -> {msg}");
             #endif
-            if (ChatBoxes.TryGetValue(guid, out var chatBoxBehavior)) {
+            if (ChatBoxes.TryGetValue(senderGuid, out var chatBoxBehavior)) {
                 chatBoxBehavior.OnMessage(msg, notify);
             }
         };
@@ -121,7 +142,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         _root.name = $"[{nameof(ChatBox)} Mod]";
         _root.transform.rotation = _nameplate.transform.rotation;
 
-        // Handle the chat box postion and scale
+        // Handle the chat box position and scale
         _root.AddComponent<CameraFacingObject>();
 
         // Add Canvas Group
@@ -190,13 +211,16 @@ public class ChatBoxBehavior : MonoBehaviour {
         // Ignore typing if we got a message staying
         if (_textBubbleGo.activeSelf) return;
 
+        var wasOn = false;
+
         if (_typingGo.activeSelf) {
             StopCoroutine(nameof(ResetIsTypingAfterDelay));
+            wasOn = true;
         }
 
         StartCoroutine(nameof(ResetIsTypingAfterDelay));
         _typingGo.SetActive(true);
-        if (notify && ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
+        if (!wasOn && notify && ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
     }
 
     private IEnumerator ResetIsTypingAfterDelay() {
@@ -230,7 +254,7 @@ public class ChatBoxBehavior : MonoBehaviour {
 
     private IEnumerator ResetTextAfterDelay(int msgLength) {
         var timeout = ModConfig.MeMessageTimeoutDependsLength.Value
-            ? Mathf.Clamp(msgLength / 5f, ModConfig.MessageTimeoutMin, ModConfig.MeMessageTimeoutSeconds.Value)
+            ? Mathf.Clamp(msgLength / 10f, ModConfig.MessageTimeoutMin, ModConfig.MeMessageTimeoutSeconds.Value)
             : ModConfig.MeMessageTimeoutSeconds.Value;
         yield return new WaitForSeconds(timeout);
         _textBubbleGo.SetActive(false);

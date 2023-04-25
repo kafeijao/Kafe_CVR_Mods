@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
-using ABI_RC.Core.Savior;
 using DarkRift;
 using DarkRift.Client;
 using HarmonyLib;
@@ -26,21 +25,16 @@ public static class ModNetwork {
         SendMessage = 1,
     }
 
-    internal enum MessageSource : byte {
-        Internal,
-        OSC,
-        Mod,
-    }
-
-    internal static void SendTyping(bool isTyping, MessageSource msgSource, bool notification) {
-        SendMsgToAllPlayers(MessageType.Typing, writer => {
-            writer.Write((byte) msgSource);
+    internal static void SendTyping(API.MessageSource source, bool isTyping, bool notification) {
+        var sent = SendMsgToAllPlayers(MessageType.Typing, writer => {
+            writer.Write((byte) source);
             writer.Write(isTyping);
             writer.Write(notification);
         });
+        if (sent) API.OnIsTypingSent?.Invoke(source, isTyping, notification);
     }
 
-    internal static void SendMessage(string msg, MessageSource source, bool notification) {
+    internal static void SendMessage(API.MessageSource source, string msg, bool notification, bool displayMessage) {
         if (msg.Length > CharactersMaxCount) {
             MelonLogger.Warning($"Messages can have a maximum of {CharactersMaxCount} characters.");
             return;
@@ -49,8 +43,9 @@ public static class ModNetwork {
             writer.Write((byte) source);
             writer.Write(msg, Encoding.UTF8);
             writer.Write(notification);
+            writer.Write(displayMessage);
         });
-        if (sent) Commands.HandleSentCommand(msg, notification);
+        if (sent) API.OnMessageSent?.Invoke(source, msg, notification, displayMessage);
     }
 
     private static void OnMessage(object sender, MessageReceivedEventArgs e) {
@@ -72,9 +67,6 @@ public static class ModNetwork {
             // Ignore messages from non-friends
             if (ModConfig.MeOnlyViewFriends.Value && !Friends.FriendsWith(senderGuid)) return;
 
-            // Ignore our own messages
-            if (senderGuid == MetaPort.Instance.ownerId) return;
-
             var msgTypeRaw = reader.ReadByte();
 
             // Ignore wrong msg types
@@ -85,23 +77,22 @@ public static class ModNetwork {
                 case MessageType.Typing:
 
                     var typingSrcByte = reader.ReadByte();
-                    if (!Enum.IsDefined(typeof(MessageSource), typingSrcByte)) return;
+                    if (!Enum.IsDefined(typeof(API.MessageSource), typingSrcByte)) {
+                        throw new Exception($"[Typing] Received an invalid source byte ({typingSrcByte}).");
+                    }
 
-                    // Handle typing source ignores
-                    if (ModConfig.MeIgnoreOscMessages.Value && (MessageSource)typingSrcByte == MessageSource.OSC) return;
-                    if (ModConfig.MeIgnoreModMessages.Value && (MessageSource)typingSrcByte == MessageSource.Mod) return;
+                    var isTyping = reader.ReadBoolean();
+                    var notification = reader.ReadBoolean();
 
-                    ChatBox.OnReceivedTyping?.Invoke(senderGuid, reader.ReadBoolean(), reader.ReadBoolean());
+                    API.OnIsTypingReceived?.Invoke((API.MessageSource)typingSrcByte, senderGuid, isTyping, notification);
                     break;
 
                 case MessageType.SendMessage:
 
                     var messageSrcByte = reader.ReadByte();
-                    if (!Enum.IsDefined(typeof(MessageSource), messageSrcByte)) return;
-
-                    // Handle msg source ignores
-                    if (ModConfig.MeIgnoreOscMessages.Value && (MessageSource)messageSrcByte == MessageSource.OSC) return;
-                    if (ModConfig.MeIgnoreModMessages.Value && (MessageSource)messageSrcByte == MessageSource.Mod) return;
+                    if (!Enum.IsDefined(typeof(API.MessageSource), messageSrcByte)) {
+                        throw new Exception($"[SendMessage] Received an invalid source byte ({messageSrcByte}).");
+                    }
 
                     var msg = reader.ReadString(Encoding.UTF8);
                     if (msg.Length > CharactersMaxCount) {
@@ -110,9 +101,9 @@ public static class ModNetwork {
                     }
 
                     var sendNotification = reader.ReadBoolean();
+                    var displayMessage = reader.ReadBoolean();
 
-                    ChatBox.OnReceivedMessage?.Invoke(senderGuid, msg, sendNotification);
-                    Commands.HandleReceivedCommand(senderGuid, msg, sendNotification);
+                    API.OnMessageReceived?.Invoke((API.MessageSource)messageSrcByte, senderGuid, msg, sendNotification, displayMessage);
                     break;
             }
         }
@@ -127,6 +118,7 @@ public static class ModNetwork {
         if (NetworkManager.Instance == null ||
             NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
             MelonLogger.Warning($"Attempted to {nameof(SendMsgToAllPlayers)} but the Game Network is Down...");
+            return false;
         }
 
         // Mandatory message parameters
@@ -155,6 +147,7 @@ public static class ModNetwork {
         if (NetworkManager.Instance == null ||
             NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
             MelonLogger.Warning($"Attempted to {nameof(SendToSpecificPlayers)} but the Game Network is Down...");
+            return;
         }
 
         // Mandatory message parameters

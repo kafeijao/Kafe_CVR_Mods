@@ -18,6 +18,14 @@ You can add a boolean to your animator of your avatar named `ChatBox/Typing` or 
 
 ---
 
+## External Access
+
+There's an API for mods to use [API Class](https://github.com/kafeijao/Kafe_CVR_Mods/blob/master/ChatBox/API.cs) if you
+want to integrate.
+
+You can also check [OSC Mod](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) for the ChatBox interation
+endpoints.
+
 ## Credits
 
 Thanks [AstroDogeDX](https://github.com/AstroDogeDX) for all the UI!
