@@ -1,10 +1,10 @@
 ﻿using ABI_RC.Core.Savior;
+using Kafe.OSC.Components;
+using Kafe.OSC.Handlers;
+using Kafe.OSC.Utils;
 using MelonLoader;
-using OSC.Components;
-using OSC.Handlers;
-using OSC.Utils;
 
-namespace OSC;
+namespace Kafe.OSC;
 
 public class OSC : MelonMod {
 
@@ -40,6 +40,9 @@ public class OSC : MelonMod {
     // Tracking Module
     public MelonPreferences_Entry<bool> meOSCTrackingModule;
     public MelonPreferences_Entry<float> meOSCTrackingModuleUpdateInterval;
+
+    // Chat Box Module
+    public MelonPreferences_Entry<bool> meOSCChatBoxModule;
 
     // Misc
     public MelonPreferences_Entry<bool> meOSCDebug;
@@ -137,6 +140,12 @@ public class OSC : MelonMod {
             description: "Minimum of seconds between each tracking data update. Default: 0 (will update every frame) " +
                          "Eg: 0.050 will update every 50 milliseconds.");
 
+
+        // Chat Box
+        meOSCChatBoxModule = _mcOsc.CreateEntry("ChatBoxModule", true,
+            description: "Whether the mod will listen on the /chatbox/ address or not.");
+
+
         // Misc
         meOSCDebug = _mcOsc.CreateEntry("Debug", false,
             description: "Whether should spam the console with debug messages or not.");
@@ -178,8 +187,6 @@ public class OSC : MelonMod {
         meOSCCompatibilityVRCFaceTracking.OnValueChangedUntyped += SetVrcFaceTrackingCompatibility;
         SetVrcFaceTrackingCompatibility();
 
-        _mcOsc.SaveToFile(false);
-
         // Attach OSC Input Module and handle their disabling/enabling
         Events.Scene.InputManagerCreated += () => {
             var inputModuleOsc = CVRInputManager.Instance.gameObject.AddComponent<InputModuleOSC>();
@@ -190,6 +197,12 @@ public class OSC : MelonMod {
 
         // Start OSC server
         _handlerOsc = new HandlerOsc();
+
+        // Check for ChatBox
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "ChatBox") != null) {
+            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration!");
+            Integrations.ChatBox.InitializeChatBox();
+        }
     }
 
     public override void OnApplicationQuit() {

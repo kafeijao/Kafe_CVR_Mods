@@ -10,7 +10,7 @@ namespace System.Runtime.CompilerServices {
     internal static class IsExternalInit {}
 }
 
-namespace OSC.Utils {
+namespace Kafe.OSC.Utils {
     public static class JsonConfigOsc {
 
         public static JsonConfigAvatar CurrentAvatarConfig { get; private set; }

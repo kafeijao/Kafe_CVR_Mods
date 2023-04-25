@@ -1,18 +1,18 @@
 ﻿using System.Reflection;
-using OSC.Properties;
+using Kafe.OSC.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(OSC))]
+[assembly: AssemblyTitle(nameof(Kafe.OSC))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(OSC))]
+[assembly: AssemblyProduct(nameof(Kafe.OSC))]
 
 [assembly: MelonInfo(
-    typeof(OSC.OSC),
-    nameof(OSC),
+    typeof(Kafe.OSC.OSC),
+    nameof(Kafe.OSC),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -22,9 +22,11 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonOptionalDependencies(AssemblyInfoParams.ChatBoxName)]
 
-namespace OSC.Properties;
+namespace Kafe.OSC.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.8";
+    public const string Version = "1.1.0";
     public const string Author = "kafeijao";
+    public const string ChatBoxName = "ChatBox";
 }

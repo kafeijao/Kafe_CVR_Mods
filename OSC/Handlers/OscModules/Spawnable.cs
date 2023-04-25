@@ -4,7 +4,7 @@ using MelonLoader;
 using Rug.Osc;
 using UnityEngine;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 enum SpawnableOperation {
     create,

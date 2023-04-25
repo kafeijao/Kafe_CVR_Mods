@@ -5,7 +5,7 @@ using Assets.ABI_RC.Systems.Safety.AdvancedSafety;
 using MelonLoader;
 using UnityEngine;
 
-namespace OSC.Events;
+namespace Kafe.OSC.Events;
 
 public static class Spawnable {
 

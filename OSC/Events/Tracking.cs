@@ -4,7 +4,7 @@ using HarmonyLib;
 using UnityEngine;
 using Valve.VR;
 
-namespace OSC.Events;
+namespace Kafe.OSC.Events;
 
 public enum TrackingDataSource {
     hmd,

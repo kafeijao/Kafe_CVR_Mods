@@ -2,11 +2,11 @@
 using ABI_RC.Core;
 using ABI_RC.Core.EventSystem;
 using ABI_RC.Core.Savior;
+using Kafe.OSC.Utils;
 using MelonLoader;
-using OSC.Utils;
 using UnityEngine;
 
-namespace OSC.Events;
+namespace Kafe.OSC.Events;
 
 public static class Avatar {
 

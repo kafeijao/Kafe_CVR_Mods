@@ -1,11 +1,11 @@
 ﻿using System.Collections;
 using System.Net;
+using Kafe.OSC.Handlers.OscModules;
 using MelonLoader;
-using OSC.Handlers.OscModules;
 using Rug.Osc;
-using OSC.Utils;
+using Kafe.OSC.Utils;
 
-namespace OSC.Handlers;
+namespace Kafe.OSC.Handlers;
 
 internal class HandlerOsc {
 
@@ -19,6 +19,7 @@ internal class HandlerOsc {
     private readonly Spawnable SpawnableHandler;
     private readonly Tracking TrackingHandler;
     private readonly Config ConfigHandler;
+    private readonly OscModules.ChatBox ChatBoxHandler;
 
     private static bool _debugMode;
     private static bool _compatibilityVRCFaceTracking;
@@ -108,6 +109,7 @@ internal class HandlerOsc {
         SpawnableHandler = new Spawnable();
         TrackingHandler = new Tracking();
         ConfigHandler = new Config();
+        ChatBoxHandler = new OscModules.ChatBox();
 
         Instance = this;
     }
@@ -207,6 +209,9 @@ internal class HandlerOsc {
                     break;
                 case not null when addressLower.StartsWith(Config.AddressPrefixConfig):
                     ConfigHandler.ReceiveMessageHandler(oscMessage);
+                    break;
+                case not null when addressLower.StartsWith(OscModules.ChatBox.AddressPrefixChatBox):
+                    ChatBoxHandler.ReceiveMessageHandler(oscMessage);
                     break;
             }
         }

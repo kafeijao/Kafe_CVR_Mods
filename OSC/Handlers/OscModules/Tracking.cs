@@ -1,7 +1,7 @@
-﻿using OSC.Events;
+﻿using Kafe.OSC.Events;
 using UnityEngine;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 enum TrackingEntity {
     device,

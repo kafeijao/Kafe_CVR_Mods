@@ -8,7 +8,7 @@ using ABI.CCK.Components;
 using HarmonyLib;
 using Rug.Osc;
 
-namespace OSC;
+namespace Kafe.OSC;
 
 [HarmonyPatch]
 internal class HarmonyPatches {

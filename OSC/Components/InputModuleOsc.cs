@@ -8,7 +8,7 @@ using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace OSC.Components;
+namespace Kafe.OSC.Components;
 
 public enum AxisNames {
     Horizontal,

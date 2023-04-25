@@ -1,9 +1,9 @@
-﻿using MelonLoader;
-using OSC.Components;
+﻿using Kafe.OSC.Components;
+using MelonLoader;
 using Rug.Osc;
 using UnityEngine;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 public class Input : OscHandler {
 

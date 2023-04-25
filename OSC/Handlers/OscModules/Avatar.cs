@@ -2,12 +2,12 @@
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using HarmonyLib;
+using Kafe.OSC.Utils;
 using MelonLoader;
-using OSC.Utils;
 using Rug.Osc;
 using UnityEngine;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 public class Avatar : OscHandler {
 
