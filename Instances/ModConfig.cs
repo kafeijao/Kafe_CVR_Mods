@@ -197,7 +197,7 @@ public static class ModConfig {
         Instances.InstancesConfigChanged += () => SetupInstancesButtons(categoryInstances);
     }
 
-    private static void RestartCVR(bool switchPlatform) {
+    internal static void RestartCVR(bool switchPlatform) {
 
         try {
 

@@ -66,13 +66,21 @@ public class Instances : MelonMod {
         // Load the previous config
         if (instancesConfigFile.Exists) {
             try {
-                Config = JsonConvert.DeserializeObject<JsonConfig>(File.ReadAllText(instancesConfigFile.FullName));
+                var fileContents = File.ReadAllText(instancesConfigFile.FullName);
+                if (fileContents.All(c => c == '\0')) {
+                    throw new Exception($"The file {instancesConfigFile.FullName} existed but is binary zero-filled file");
+                }
+                Config = JsonConvert.DeserializeObject<JsonConfig>(fileContents);
             }
             catch (Exception errMain) {
                 try {
                     // Attempt to read from the temp file instead
                     MelonLogger.Warning($"Something went wrong when to load the {instancesConfigFile.FullName}. Checking the backup...");
-                    Config = JsonConvert.DeserializeObject<JsonConfig>(File.ReadAllText(instancesTempConfigFile.FullName));
+                    var fileContents = File.ReadAllText(instancesTempConfigFile.FullName);
+                    if (fileContents.All(c => c == '\0')) {
+                        throw new Exception($"The file {instancesConfigFile.FullName} existed but is binary zero-filled file");
+                    }
+                    Config = JsonConvert.DeserializeObject<JsonConfig>(fileContents);
                     MelonLogger.Msg($"Loaded from the backup config successfully!");
                 }
                 catch (Exception errTemp) {
@@ -101,6 +109,12 @@ public class Instances : MelonMod {
         }
         else {
             MelonLogger.Warning($"BTKUILib mod NOT detected! You won't have access to the Instances History feature!");
+        }
+
+        // Check for ChatBox
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "ChatBox") != null) {
+            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration!");
+            Integrations.ChatBox.InitializeChatBox();
         }
 
         InstanceSelected += (instanceId, isInitial) => {
