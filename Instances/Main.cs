@@ -308,9 +308,16 @@ public class Instances : MelonMod {
         yield return new WaitUntil(() => task.IsCompleted);
         var instanceDetails = task.Result;
 
-        if (instanceDetails?.Data == null) {
+        var hasOtherUsers = instanceDetails?.Data?.Members?.Exists(u => u.Name != MetaPort.Instance.username);
 
-            if (instanceDetails != null) {
+        if (instanceDetails?.Data == null || (hasOtherUsers.HasValue && !hasOtherUsers.Value)) {
+
+            if (hasOtherUsers.HasValue && !hasOtherUsers.Value) {
+                MelonLogger.Msg($"Attempted to join the previous Instance, but there's no-one in the instance. " +
+                                    $"This might result in joining a closing instance, skipping...");
+            }
+
+            else if (instanceDetails != null) {
                 MelonLogger.Warning($"Attempted to join the previous Instance, but {instanceId} can't be found, " +
                                     $"Reason: {instanceDetails.Message}");
             }
