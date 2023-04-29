@@ -29,6 +29,11 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
 
+    <!-- Hack! MelonLoader is locking the Mod files, this way I can build and output the mod dll with the game running -->
+    <Target Name="DeleteOutputDLLIfExists" BeforeTargets="BeforeBuild">
+        <Exec Command="if exist &quot;$(OutputPath)$(TargetName).dll&quot; del /F /Q &quot;$(OutputPath)$(TargetName).dll&quot;" />
+    </Target>
+
     <ItemGroup>
         <Reference Include="0Harmony">
             <HintPath>$(MsBuildThisFileDirectory)\ManagedLibs\0Harmony.dll</HintPath>
