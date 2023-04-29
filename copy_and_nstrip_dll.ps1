@@ -33,7 +33,7 @@ $managedLibsFolder = $scriptDir + "\ManagedLibs"
 
 if (!(Test-Path $managedLibsFolder)) {
     New-Item -ItemType Directory -Path $managedLibsFolder
-    Write-Output "ManagedLibs folder created successfully."
+    Write-Host "ManagedLibs folder created successfully."
 }
 
 Write-Host ""
