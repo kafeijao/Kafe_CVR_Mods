@@ -106,7 +106,7 @@ $HOST.UI.RawUI.Flushinputbuffer()
 Write-Host "NStrip Convert all private/protected stuff to public. Requires <AllowUnsafeBlocks>true></AllowUnsafeBlocks>"
 
 # Create an array to hold the file names to strip
-$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll')
+$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll')
 
 # Check if NStrip.exe exists in the current directory
 if(Test-Path -Path ".\NStrip.exe") {
