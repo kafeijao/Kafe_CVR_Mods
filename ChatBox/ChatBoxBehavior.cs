@@ -1,11 +1,10 @@
 ﻿using System.Collections;
-using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.Object_Behaviour;
-using MelonLoader;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 #if DEBUG
 using MelonLoader;
@@ -18,6 +17,20 @@ public class ChatBoxBehavior : MonoBehaviour {
     private const string ChildTypingName = "Typing";
     private const string ChildTextBubbleName = "Text Bubble";
     private const string ChildTextBubbleOutputName = "Output";
+    private const string ChildTextBubbleHexagonName = "Bubble Hexagon";
+    private const string ChildTextBubbleRoundName = "Bubble Round";
+
+    // Normal
+    private readonly Color Green = new Color(0.2235294f, 0.7490196f, 0f);
+    private readonly Color GreenTransparency = new Color(0.2235294f, 0.7490196f, 0f, 0.75f);
+    // Whisper
+    private readonly Color BlueTransparency = new Color(0f, 0.6122726f, 0.7490196f, 0.75f);
+    // OSC
+    private readonly Color TealTransparency = new Color(0.2494215f, 0.8962264f, 0.8223274f, 0.75f);
+    // Mod
+    private readonly Color PinkTransparency = new Color(1f, 0.4009434f, 0.9096327f, 0.75f);
+    // Astro - Official InuCast Salmon Colour^tm - Shiba Inu Shaped Bubble
+    private readonly Color AstroTransparency = new Color(1f, 0.4980392f, 0.4980392f, 0.75f);
 
     private static readonly Vector3 TypingDefaultLocalScale = new Vector3(0.5f, 0.5f, 0.5f) * 0.8f;
     private static readonly Vector3 ChatBoxDefaultLocalScale = new(0.002f, 0.002f, 0.002f);
@@ -29,10 +42,13 @@ public class ChatBoxBehavior : MonoBehaviour {
     private GameObject _root;
 
     private GameObject _typingGo;
+    private Image _typingBackground;
     private readonly List<GameObject> _typingGoChildren = new();
     private AudioSource _typingAudioSource;
 
     private GameObject _textBubbleGo;
+    private Image _textBubbleHexagonImg;
+    private Image _textBubbleRoundImg;
     private TextMeshProUGUI _textBubbleOutputTMP;
     private AudioSource _textBubbleAudioSource;
 
@@ -89,7 +105,7 @@ public class ChatBoxBehavior : MonoBehaviour {
             MelonLogger.Msg($"Received a Message message from: {senderGuid} -> {msg}");
             #endif
             if (ChatBoxes.TryGetValue(senderGuid, out var chatBoxBehavior)) {
-                chatBoxBehavior.OnMessage(msg, notify);
+                chatBoxBehavior.OnMessage(source, msg, notify);
             }
         };
 
@@ -146,10 +162,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         _root.AddComponent<CameraFacingObject>();
 
         // Add Canvas Group
-        _canvasGroup = _root.AddComponent<CanvasGroup>();
-        _canvasGroup.blocksRaycasts = false;
-        _canvasGroup.ignoreParentGroups = false;
-        _canvasGroup.interactable = false;
+        _canvasGroup = _root.GetComponent<CanvasGroup>();
 
         // Get the references for the Typing stuff and Text stuff
         var typingTransform = _root.transform.Find(ChildTypingName);
@@ -157,12 +170,19 @@ public class ChatBoxBehavior : MonoBehaviour {
         // Handle the typing scale
         typingTransform.localScale = TypingDefaultLocalScale * _chatBoxSize;
 
+        // Typing
         _typingGo = typingTransform.gameObject;
-        for (var i = 0; i < typingTransform.childCount; i++) {
-            _typingGoChildren.Add(typingTransform.GetChild(i).gameObject);
+        _typingBackground = _typingGo.transform.GetChild(0).GetComponent<Image>();
+        _typingBackground.color = Green;
+        for (var i = 0; i < _typingBackground.transform.childCount; i++) {
+            _typingGoChildren.Add(_typingBackground.transform.GetChild(i).gameObject);
         }
+
+        // Text Bubble
         _textBubbleGo = _root.transform.Find(ChildTextBubbleName).gameObject;
         var tmpGo = _textBubbleGo.transform.Find(ChildTextBubbleOutputName);
+        _textBubbleHexagonImg = _textBubbleGo.transform.Find(ChildTextBubbleHexagonName).GetComponent<Image>();
+        _textBubbleRoundImg = _textBubbleGo.transform.Find(ChildTextBubbleRoundName).GetComponent<Image>();
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
 
         // Add Typing Audio Source
@@ -225,8 +245,8 @@ public class ChatBoxBehavior : MonoBehaviour {
 
     private IEnumerator ResetIsTypingAfterDelay() {
 
-        // Timeout after 60 seconds...
-        for (var i = 0; i < 120; i++) {
+        // Timeout after 5 seconds without writing...
+        for (var i = 0; i < 10; i++) {
             _typingGoChildren[_lastTypingIndex].SetActive(false);
             _lastTypingIndex = (_lastTypingIndex + 1) % _typingGoChildren.Count;
             _typingGoChildren[_lastTypingIndex].SetActive(true);
@@ -236,7 +256,24 @@ public class ChatBoxBehavior : MonoBehaviour {
         StopTyping();
     }
 
-    private void OnMessage(string msg, bool notify) {
+    private void SetColor(API.MessageSource source) {
+        var color = Green;
+        switch (source) {
+            case API.MessageSource.Internal:
+                color = GreenTransparency;
+                break;
+            case API.MessageSource.OSC:
+                color = TealTransparency;
+                break;
+            case API.MessageSource.Mod:
+                color = BlueTransparency;
+                break;
+        }
+        _textBubbleHexagonImg.color = color;
+        _textBubbleRoundImg.color = color;
+    }
+
+    private void OnMessage(API.MessageSource source, string msg, bool notify) {
         StopTyping();
 
         // Update the text
@@ -249,6 +286,9 @@ public class ChatBoxBehavior : MonoBehaviour {
         }
         _resetTextAfterDelayCoroutine = StartCoroutine(ResetTextAfterDelay(msg.Length));
         _textBubbleGo.SetActive(true);
+        _textBubbleHexagonImg.gameObject.SetActive(notify);
+        _textBubbleRoundImg.gameObject.SetActive(!notify);
+        SetColor(source);
         if (notify && ModConfig.MeSoundOnMessage.Value) _textBubbleAudioSource.Play();
     }
 

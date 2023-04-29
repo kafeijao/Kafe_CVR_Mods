@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
+using ABI_RC.Core.Player;
 using DarkRift;
 using DarkRift.Client;
 using HarmonyLib;
@@ -108,8 +109,8 @@ public static class ModNetwork {
             }
         }
         catch (Exception) {
-            MelonLogger.Warning($"Received a malformed message from ${senderGuid}, they might be running an outdated " +
-                                $"version of the mod, or I broke something, or they're trying to do something funny.");
+            MelonLogger.Warning($"Received a malformed message from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}, " +
+                                $"they might be running an outdated version of the mod, or I broke something, or they're trying to do something funny.");
         }
     }
 

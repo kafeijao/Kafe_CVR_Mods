@@ -18,6 +18,9 @@
         <EmbeddedResource Include="Resources\Sounds_Typing.wav">
             <LogicalName>chatbox.sound.typing.wav</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="Resources\CVRTest_ui_Patches.js">
+            <LogicalName>chatbox.cohtml.cvrtest.ui.patches.js</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
 
 </Project>

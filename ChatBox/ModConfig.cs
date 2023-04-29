@@ -30,6 +30,9 @@ public static class ModConfig {
     private const string ChatBoxAssetBundleName = "chatbox.assetbundle";
     private const string ChatBoxPrefabAssetPath = "Assets/Chatbox/ChatBox.prefab";
 
+    internal static string javascriptPatchesContent;
+    private const string ChatBoxJSPatches = "chatbox.cohtml.cvrtest.ui.patches.js";
+
     // Files
     internal enum Sound {
         Typing,
@@ -144,6 +147,21 @@ public static class ModConfig {
                 MelonLogger.Error($"Failed to Load the Audio Clips\n" + ex.Message);
             }
         }
+
+        try {
+            using var resourceStream = assembly.GetManifestResourceStream(ChatBoxJSPatches);
+            if (resourceStream == null) {
+                MelonLogger.Error($"Failed to load {ChatBoxJSPatches}!");
+                return;
+            }
+
+            using var streamReader = new StreamReader(resourceStream);
+            javascriptPatchesContent = streamReader.ReadToEnd();
+        }
+        catch (Exception ex) {
+            MelonLogger.Error("Failed to load the resource: " + ex.Message);
+        }
+
     }
 
 
@@ -186,6 +204,14 @@ public static class ModConfig {
         modPage.MenuTitle = $"{nameof(ChatBox)} Settings";
 
         var modSettingsCategory = modPage.AddCategory("Settings");
+
+        var num = 0;
+        var ico = new[] { "TT_Off", "TT_Original" };
+        var button = modSettingsCategory.AddButton("button", ico[num], "button tooltip");
+        button.OnPress += () => {
+            button.ButtonText = $"UGABUGA-{num++}";
+            button.ButtonIcon = $"UGABUGA-{ico[num%2]}";
+        };
 
         AddMelonToggle(modSettingsCategory, MeSoundOnStartedTyping);
         AddMelonToggle(modSettingsCategory, MeSoundOnMessage);
