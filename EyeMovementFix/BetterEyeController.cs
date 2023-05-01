@@ -459,7 +459,8 @@ public class BetterEyeController : MonoBehaviour {
 
     private void OnDestroy() {
         initialized = false;
-        foreach(var (eyeController, _) in BetterControllers.Where(kvp => kvp.Value == this).ToList()) {
+        var eyeControllers = BetterControllers.Where(kvp => kvp.Value == this).Select(kvp => kvp.Key).ToList();
+        foreach(var eyeController in eyeControllers) {
             BetterControllers.Remove(eyeController);
         }
 

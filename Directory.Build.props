@@ -3,7 +3,7 @@
     <PropertyGroup>
         <!-- Put your Chillout vr path in a new environnment variable CVRPATH in Windows -->
         <OutputPath>$(CVRPATH)\Mods\</OutputPath>
-        <LangVersion>preview</LangVersion>
+        <LangVersion>latest</LangVersion>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <TargetFramework>net472</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
