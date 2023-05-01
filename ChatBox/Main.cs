@@ -128,7 +128,8 @@ public class ChatBox : MelonMod {
 
     public override void OnUpdate() {
 
-        if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) && !_isChatBoxKeyboardOpened) {
+        if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
+            && !_isChatBoxKeyboardOpened && !ViewManager.Instance._gameMenuOpen) {
             OpenKeyboard(true, "");
         }
 
