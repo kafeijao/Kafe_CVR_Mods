@@ -1,7 +1,28 @@
 # OSC
 
-This **Melon Loader** mod allows you to use OSC to interact with **ChilloutVR**. It tries to be compatible with other
-social VR games that also use OSC. This way allows the usage of tools made for other games with relative ease.
+This mod enables interactions with ChilloutVR using OSC. It's very similar to other social VR games OSC Implementation,
+so most external applications should work without many (if any) changes.
+
+#### Main Features
+
+- Change avatar parameters
+- Control the game inputs (like Gestures, movement, etc)
+- Trigger special game features (like flight, mute, etc)
+- Configurable endpoints (parameters address & type conversion)
+- Change avatar by providing avatar id
+- Spawn and delete props
+- Interact with props (settings/reading their location and synced parameters)
+- Retrieving the tracking data and battery info from `trackers`, `hmd`, `controllers`, `base stations`, and `play space`
+- Resend all cached events (like all the current parameters) triggered via an endpoint
+
+More features can be added, exploring CVR possibilities to the max. Feel free to submit Feature Requests in the github.
+
+#### Official Python Library
+There is also a [python library](https://github.com/kafeijao/cvr_osc_lib_py) that abstracts all the api provided by this
+mod. This is a great starting point if you plan developing something in python.
+
+
+## Table of Contents
 
 - [OSC Avatar](#OSC-Avatar)
 - [OSC Inputs](#OSC-Inputs)
