@@ -312,9 +312,10 @@ public class Instances : MelonMod {
 
         if (instanceDetails?.Data == null || (hasOtherUsers.HasValue && !hasOtherUsers.Value)) {
 
-            if (hasOtherUsers.HasValue && !hasOtherUsers.Value) {
+            if (ModConfig.MePreventRejoiningEmptyInstances.Value && hasOtherUsers.HasValue && !hasOtherUsers.Value) {
                 MelonLogger.Msg($"Attempted to join the previous Instance, but there's no-one in the instance. " +
-                                    $"This might result in joining a closing instance, skipping...");
+                                    $"This might result in joining a closing instance, skipping... You CAN disable this " +
+                                    $"behavior in Melon Prefs.");
             }
 
             else if (instanceDetails != null) {

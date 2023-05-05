@@ -27,6 +27,8 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<int> MeJoiningLastInstanceMinutesTimeout;
 
+    internal static MelonPreferences_Entry<bool> MePreventRejoiningEmptyInstances;
+
     public enum Region {
         Europe,
         UnitedStates,
@@ -94,6 +96,10 @@ public static class ModConfig {
 
         MeJoiningLastInstanceMinutesTimeout = _melonCategory.CreateEntry("JoiningLastInstanceMinutesTimeout", 60,
             description: "For how many minutes should the game make you join the last instance. Use -1 to disable the timeout.");
+
+        MePreventRejoiningEmptyInstances = _melonCategory.CreateEntry("PreventRejoiningEmptyInstances", true,
+            description: "Whether to prevent joining empty instances or not. Empty instances might be closing already, " +
+                         "which will result in joining an instance and then getting disconnection spam.");
     }
 
 
