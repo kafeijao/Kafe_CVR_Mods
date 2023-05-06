@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <Reference Include="BTKUILib">
+            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="BTKSAImmersiveHud">
+            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKSAImmersiveHud.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\CVRTestPatches.js">
+        <LogicalName>cohtml.cvrtest.patches.js</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="Resources\CVRUIPatches.js">
+        <LogicalName>cohtml.cvrui.patches.js</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

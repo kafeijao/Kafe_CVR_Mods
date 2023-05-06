@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBox", "ChatBox\ChatBox.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuckMinus", "FuckMinus\FuckMinus.csproj", "{7532DDAB-2D28-4A80-BD62-7086D0B33708}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RequestLib", "RequestLib\RequestLib.csproj", "{E05795EE-A8E9-4633-A636-A780A90D0F74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,5 +140,9 @@ Global
 		{7532DDAB-2D28-4A80-BD62-7086D0B33708}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7532DDAB-2D28-4A80-BD62-7086D0B33708}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7532DDAB-2D28-4A80-BD62-7086D0B33708}.Release|Any CPU.Build.0 = Release|Any CPU
+        {E05795EE-A8E9-4633-A636-A780A90D0F74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E05795EE-A8E9-4633-A636-A780A90D0F74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E05795EE-A8E9-4633-A636-A780A90D0F74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E05795EE-A8E9-4633-A636-A780A90D0F74}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
