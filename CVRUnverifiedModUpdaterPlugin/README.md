@@ -1,7 +1,6 @@
-# CVR Unverified Mod Updater Plugin
+# CVRUnverifiedModUpdaterPlugin
 
-Latest
-Release: [CVRUnverifiedModUpdaterPlugin.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CVRUnverifiedModUpdaterPlugin.dll)
+[![Download Latest CVRUnverifiedModUpdaterPlugin.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest CVRUnverifiedModUpdaterPlugin.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CVRUnverifiedModUpdaterPlugin.dll)
 
 **Note:**: This is a **__plugin__**, it goes in the `/Plugins` folder, not the `/Mods` one!
 

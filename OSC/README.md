@@ -1,5 +1,7 @@
 # OSC
 
+[![Download Latest OSC.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest OSC.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/OSC.dll)
+
 This mod enables interactions with ChilloutVR using OSC. It's very similar to other social VR games OSC Implementation,
 so most external applications should work without many (if any) changes.
 

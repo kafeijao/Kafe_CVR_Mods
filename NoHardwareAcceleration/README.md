@@ -1,6 +1,6 @@
 # NoHardwareAcceleration
 
-Latest Release: [NoHardwareAcceleration.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/NoHardwareAcceleration.dll)
+[![Download Latest NoHardwareAcceleration.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest NoHardwareAcceleration.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/NoHardwareAcceleration.dll)
 
 Disables the Hardware Acceleration on AV Pro Video Players.
 You can toggle it on/off in Melon Prefs, but the changes are only applied to newly spawned Video Players.

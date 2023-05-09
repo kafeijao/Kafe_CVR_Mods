@@ -1,5 +1,7 @@
 # Instances
 
+[![Download Latest Instances.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest Instances.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/Instances.dll)
+
 Instances is a simple mod for ChilloutVR that enhances the management of world instances.
 
 Requires [BTKUILib](https://github.com/BTK-Development/BTKUILib)

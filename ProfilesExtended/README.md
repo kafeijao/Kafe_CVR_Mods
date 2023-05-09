@@ -1,5 +1,7 @@
 # ProfilesExtended
 
+[![Download Latest ProfilesExtended.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest ProfilesExtended.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/ProfilesExtended.dll)
+
 This mod adds more functionality to the avatar profiles system.
 
 ### Features:

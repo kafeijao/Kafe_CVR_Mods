@@ -1,5 +1,7 @@
 # LoginProfiles
 
+[![Download Latest LoginProfiles.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest LoginProfiles.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/LoginProfiles.dll)
+
 This mod allows to use an argument when starting ChilloutVR in order to select a login profile. This enables
 swapping accounts without requiring to enter the credentials (if logged in on that profile previously).
 This is useful for me to deploy two clients on two different accounts to test avatars and worlds synchronization stuff.

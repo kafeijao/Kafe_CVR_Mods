@@ -1,5 +1,8 @@
 # BetterLipsync
 
+[![Download Latest BetterLipsync.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest BetterLipsync.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/BetterLipsync.dll)
+
+
 Refactor the viseme controller use the 
 [oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).
 

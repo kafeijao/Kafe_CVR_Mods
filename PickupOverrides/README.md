@@ -1,5 +1,7 @@
 # PickupOverrides
 
+[![Download Latest PickupOverrides.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest PickupOverrides.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/PickupOverrides.dll)
+
 This mod allows to override a few settings for all the pickups in the scene.
 
 ## Auto-Hold

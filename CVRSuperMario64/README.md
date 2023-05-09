@@ -1,5 +1,7 @@
 # CVRSuperMario64
 
+[![Download Latest CVRSuperMario64.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest CVRSuperMario64.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CVRSuperMario64.dll)
+
 Mod to integrate the [libsm64](https://github.com/libsm64/libsm64) into CVR. It allows to spawn a Mario prop and control
 it (both in Desktop and VR). Since we're running the actual reverse engineered SM64 engine it should behave exactly like
 in the original game.

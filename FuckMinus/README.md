@@ -1,6 +1,6 @@
 # FuckMinus
 
-Latest Release: [FuckMinus.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/FuckMinus.dll)
+[![Download Latest FuckMinus.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest FuckMinus.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/FuckMinus.dll)
 
 Prevents the `-` key from disconnecting from the instance.
 

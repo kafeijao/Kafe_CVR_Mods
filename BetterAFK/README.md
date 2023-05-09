@@ -1,6 +1,6 @@
-# Better AFK
+# BetterAFK
 
-Latest Release: [BetterAFK.dll](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/BetterAFK.dll)
+[![Download Latest BetterAFK.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest BetterAFK.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/BetterAFK.dll)
 
 Enhance your AFK experience in CVR with Better AFK, a mod that improves the AFK detection and provides a more accurate
 and customizable AFK state.
