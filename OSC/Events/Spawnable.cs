@@ -26,7 +26,7 @@ public static class Spawnable {
 
         // Handle config debug value and changes
         _debugMode = OSC.Instance.meOSCDebug.Value;
-        OSC.Instance.meOSCDebug.OnValueChanged += (_, newValue) => _debugMode = newValue;
+        OSC.Instance.meOSCDebug.OnEntryValueChanged.Subscribe((_, newValue) => _debugMode = newValue);
 
         // Instantiate caches
         PropCache = new Dictionary<string, CVRSyncHelper.PropData>();

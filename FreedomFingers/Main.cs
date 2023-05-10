@@ -5,7 +5,7 @@ using ABI_RC.Systems.IK;
 using HarmonyLib;
 using MelonLoader;
 
-namespace FreedomFingers;
+namespace Kafe.FreedomFingers;
 
 public class FreedomFingers : MelonMod {
 
@@ -13,7 +13,7 @@ public class FreedomFingers : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntryEnableNotification;
     private static MelonPreferences_Entry<bool> _melonEntryStartWithGesturesEnabled;
 
-    public override void OnApplicationStart() {
+    public override void OnInitializeMelon() {
 
         // Melon Config
         _melonCategoryFreedomFingers = MelonPreferences.CreateCategory(nameof(FreedomFingers));
@@ -31,14 +31,13 @@ public class FreedomFingers : MelonMod {
 	    private static bool _isDefaultGestureSet;
 
 	    [HarmonyPostfix]
-	    [HarmonyPatch(typeof(PlayerSetup), "SetFingerTracking")]
+	    [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.SetFingerTracking))]
 	    private static void After_PlayerSetup_SetFingerTracking(bool status) {
 
 		    // On the first time ran, set the gesture toggle to our default value
 		    if (!_isDefaultGestureSet) {
-			    var inputModuleSteamVR = Traverse.Create(typeof(InputModuleSteamVR)).Field("Instance").GetValue<InputModuleSteamVR>();
-			    Traverse.Create(inputModuleSteamVR).Field("_steamVrIndexGestureToggleValue").SetValue(_melonEntryStartWithGesturesEnabled.Value);
-			    _isDefaultGestureSet = true;
+			    InputModuleSteamVR.Instance._steamVrIndexGestureToggleValue = _melonEntryStartWithGesturesEnabled.Value;
+				_isDefaultGestureSet = true;
 		    }
 
 		    // Keep finger tracking always active
@@ -56,16 +55,16 @@ public class FreedomFingers : MelonMod {
 	    private static void After_InputModuleSteamVR_Start(InputModuleSteamVR __instance) {
 
 			// Prevent the setting from working, we want to have finger tracking always on
-		    Traverse.Create(__instance).Field("_gestureAnimationsDuringFingerTracking").SetValue(false);
+		    __instance._gestureAnimationsDuringFingerTracking = false;
 	    }
 
 	    [HarmonyPostfix]
-	    [HarmonyPatch(typeof(InputModuleSteamVR), "SettingsBoolChanged")]
+	    [HarmonyPatch(typeof(InputModuleSteamVR), nameof(InputModuleSteamVR.SettingsBoolChanged))]
 	    private static void After_InputModuleSteamVR_SettingBoolChanged(InputModuleSteamVR __instance, string name) {
 
 		    // Prevent the setting from working, we want to have finger tracking always on
 		    if (name != "ControlEnableGesturesWhileFingerTracking") return;
-		    Traverse.Create(__instance).Field("_gestureAnimationsDuringFingerTracking").SetValue(false);
+		    __instance._gestureAnimationsDuringFingerTracking = false;
 	    }
 
 	    [HarmonyPrefix]

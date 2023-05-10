@@ -2,7 +2,6 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Player.AvatarTracking.Remote;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
-using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
@@ -49,7 +48,7 @@ public class CVRSM64Mario : MonoBehaviour {
     private CVRPickupObject _pickup;
     private CVRPlayerEntity _owner;
     private Transform _localPlayerTransform;
-    private Traverse<RemoteHeadPoint> _ownerViewPoint;
+    private RemoteHeadPoint _ownerViewPoint;
 
     // Mario State
     private Vector3[][] _positionBuffers;
@@ -193,8 +192,8 @@ public class CVRSM64Mario : MonoBehaviour {
 
         if (!spawnable.IsMine()) {
             _owner = MetaPort.Instance.PlayerManager.NetworkPlayers.Find(entity => entity.Uuid == spawnable.ownerId);
-            _ownerViewPoint = Traverse.Create(_owner.PuppetMaster).Field<RemoteHeadPoint>("_viewPoint");
-            if (_ownerViewPoint == null || _ownerViewPoint.Value == null) {
+            _ownerViewPoint = _owner.PuppetMaster._viewPoint;
+            if (_ownerViewPoint == null || _ownerViewPoint == null) {
                 var err = $"{nameof(CVRSM64Mario)} failed to start because couldn't find the viewpoint of the owner of it!";
                 MelonLogger.Error(err);
                 spawnable.Delete();
@@ -653,8 +652,8 @@ public class CVRSM64Mario : MonoBehaviour {
         }
 
         // Use the remote player viewpoint. This value will be overwritten after with the prop face angle sync
-        if (_ownerViewPoint.Value) {
-            return _ownerViewPoint.Value.transform.forward;
+        if (_ownerViewPoint) {
+            return _ownerViewPoint.transform.forward;
         }
 
         return Vector3.zero;

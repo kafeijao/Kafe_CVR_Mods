@@ -17,18 +17,18 @@ public class Input : OscHandler {
 
         // Enable according to the config and setup the config listeners
         if (OSC.Instance.meOSCInputModule.Value) Enable();
-        OSC.Instance.meOSCInputModule.OnValueChanged += (oldValue, newValue) => {
+        OSC.Instance.meOSCInputModule.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue && !oldValue) Enable();
             else if (!newValue && oldValue) Disable();
-        };
+        });
 
         // Set the blacklist and listen for it's changes according to the config
         _inputBlacklist = OSC.Instance.meOSCInputModuleBlacklist.Value;
-        OSC.Instance.meOSCInputModuleBlacklist.OnValueChanged += (_, newValue) => _inputBlacklist = newValue;
+        OSC.Instance.meOSCInputModuleBlacklist.OnEntryValueChanged.Subscribe((_, newValue) => _inputBlacklist = newValue);
 
         // Handle the warning when blocked osc command by config
         _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
-        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
+        OSC.Instance.meOSCDebugConfigWarnings.OnEntryValueChanged.Subscribe((_, enabled) => _debugConfigWarnings = enabled);
     }
 
     internal sealed override void Enable() {

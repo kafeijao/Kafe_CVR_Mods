@@ -1,18 +1,18 @@
 using System.Reflection;
-using FreedomFingers.Properties;
+using Kafe.FreedomFingers.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(FreedomFingers))]
+[assembly: AssemblyTitle(nameof(Kafe.FreedomFingers))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(FreedomFingers))]
+[assembly: AssemblyProduct(nameof(Kafe.FreedomFingers))]
 
 [assembly: MelonInfo(
-    typeof(FreedomFingers.FreedomFingers),
-    nameof(FreedomFingers),
+    typeof(Kafe.FreedomFingers.FreedomFingers),
+    nameof(Kafe.FreedomFingers),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -23,7 +23,7 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 
-namespace FreedomFingers.Properties;
+namespace Kafe.FreedomFingers.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "1.0.2";
     public const string Author = "kafeijao";

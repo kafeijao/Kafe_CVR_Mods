@@ -18,12 +18,12 @@ internal class HarmonyPatches {
     static HarmonyPatches() {
         // Handle performance mod changes
         _performanceMode = OSC.Instance.meOSCPerformanceMode.Value;
-        OSC.Instance.meOSCPerformanceMode.OnValueChanged += (_, enabled) => _performanceMode = enabled;
+        OSC.Instance.meOSCPerformanceMode.OnEntryValueChanged.Subscribe((_, enabled) => _performanceMode = enabled);
     }
 
     // Avatar
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(AvatarDetails_t), "Recycle")]
+    [HarmonyPatch(typeof(AvatarDetails_t), nameof(AvatarDetails_t.Recycle))]
     internal static void BeforeAvatarDetailsRecycle(AvatarDetails_t __instance) {
         Events.Avatar.OnAvatarDetailsReceived(__instance.AvatarId, __instance.AvatarName);
     }
@@ -97,18 +97,18 @@ internal class HarmonyPatches {
 
     // Scene
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(PlayerSetup), "Start")]
+    [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.Start))]
     internal static void AfterPlayerSetup() {
         Events.Scene.OnPlayerSetup();
     }
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(PlayerSetup), "LateUpdate")]
+    [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
     internal static void AfterPlayerSetupLateUpdate() {
         Events.Scene.OnPlayerSetupLateUpdate();
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRInputManager), "Start")]
+    [HarmonyPatch(typeof(CVRInputManager), nameof(CVRInputManager.Start))]
     private static void AfterInputManagerCreated() {
         Events.Scene.OnInputManagerCreated();
     }

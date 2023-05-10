@@ -8,7 +8,7 @@ using MelonLoader;
 using NicoKuroKusagi.MemoryManagement;
 using UnityEngine;
 
-namespace EyeMovementFix;
+namespace Kafe.EyeMovementFix;
 
 // Todo: Implement different target candidates using classes
 public sealed class TargetCandidate : IReusable {
@@ -188,44 +188,44 @@ public sealed class TargetCandidate : IReusable {
             return alignmentWeight * alignmentScore + distanceWeight * distanceScore;
         }
 
-        bool HasLineOfSight(TargetCandidate targetCandidate, float targetDistance, out bool inMirror) {
-            // Shoot a raycast that stops at target distance
-            // If collides with a player capsule, assume LOS
-            // If doesnt collide with anything, assume LOS because there was nothing blocking reaching the target
-
-            // Ignore mirrors and camera (because the raycast won't reach a player lol)
-            // And can't look if the ray hit has the mirror script, because not all mirrors have colliders
-            // Todo: Think of a way to raycast the mirror reflections
-            if (targetCandidate._isCamera || targetCandidate._isMirrorReflection) {
-                inMirror = true;
-                return true;
-            }
-            inMirror = false;
-
-            var targetDirection = (targetCandidate.Position - cvrController.viewPosition).normalized;
-
-            // If we're shooting the raycast from the local player we don't want to hit ourselves
-            var mask = cvrController.isLocal ? DefaultOrRemotePlayersMask : DefaultOrAllPlayersMask;
-
-            if (Physics.Raycast(viewpoint.position, targetDirection, out var hitInfo, targetDistance, mask)) {
-                #if DEBUG
-                if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Layer: {LayerMask.LayerToName(hitInfo.collider.gameObject.layer)}, Name: {hitInfo.collider.gameObject.name}");
-                #endif
-
-                // If we hit something other than the default layer we can consider we didn't get blocked
-                if (hitInfo.collider.gameObject.layer != DefaultLayer) return true;
-
-                // Otherwise lets check if the thing we hit got a player descriptor (some player stuff is in the Default Layer)
-                return hitInfo.collider.GetComponent<PlayerDescriptor>() != null;
-            }
-
-            #if DEBUG
-            if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Did not reach anything (means target wasn't blocked)");
-            #endif
-
-            // Since we limited our raycast to the target's distance, here means the raycast wasn't blocked!
-            return true;
-        }
+        // bool HasLineOfSight(TargetCandidate targetCandidate, float targetDistance, out bool inMirror) {
+        //     // Shoot a raycast that stops at target distance
+        //     // If collides with a player capsule, assume LOS
+        //     // If doesnt collide with anything, assume LOS because there was nothing blocking reaching the target
+        //
+        //     // Ignore mirrors and camera (because the raycast won't reach a player lol)
+        //     // And can't look if the ray hit has the mirror script, because not all mirrors have colliders
+        //     // Todo: Think of a way to raycast the mirror reflections
+        //     if (targetCandidate._isCamera || targetCandidate._isMirrorReflection) {
+        //         inMirror = true;
+        //         return true;
+        //     }
+        //     inMirror = false;
+        //
+        //     var targetDirection = (targetCandidate.Position - cvrController.viewPosition).normalized;
+        //
+        //     // If we're shooting the raycast from the local player we don't want to hit ourselves
+        //     var mask = cvrController.isLocal ? DefaultOrRemotePlayersMask : DefaultOrAllPlayersMask;
+        //
+        //     if (Physics.Raycast(viewpoint.position, targetDirection, out var hitInfo, targetDistance, mask)) {
+        //         #if DEBUG
+        //         if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Layer: {LayerMask.LayerToName(hitInfo.collider.gameObject.layer)}, Name: {hitInfo.collider.gameObject.name}");
+        //         #endif
+        //
+        //         // If we hit something other than the default layer we can consider we didn't get blocked
+        //         if (hitInfo.collider.gameObject.layer != DefaultLayer) return true;
+        //
+        //         // Otherwise lets check if the thing we hit got a player descriptor (some player stuff is in the Default Layer)
+        //         return hitInfo.collider.GetComponent<PlayerDescriptor>() != null;
+        //     }
+        //
+        //     #if DEBUG
+        //     if (betterController.isDebugging) MelonLogger.Msg($"\t\t[Raycast] Did not reach anything (means target wasn't blocked)");
+        //     #endif
+        //
+        //     // Since we limited our raycast to the target's distance, here means the raycast wasn't blocked!
+        //     return true;
+        // }
 
         float GetTalkingScore(TargetCandidate targetCandidate) {
             // Attempt to get the talking score of the target
@@ -394,7 +394,7 @@ public sealed class TargetCandidate : IReusable {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeControllerManager), "Start")]
+        [HarmonyPatch(typeof(CVREyeControllerManager), nameof(CVREyeControllerManager.Start))]
         private static void After_CVREyeControllerManager_Start() {
             // Get the camera pickup instance so we can check if the camera is being held
             _cameraPickup = CVRCamController.Instance.cvrCamera.GetComponent<CVRPickupObject>();

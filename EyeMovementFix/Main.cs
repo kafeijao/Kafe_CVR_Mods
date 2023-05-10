@@ -3,12 +3,12 @@ using System.Reflection.Emit;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Util.AssetFiltering;
 using ABI.CCK.Components;
-using EyeMovementFix.CCK;
 using HarmonyLib;
+using EyeMovementFix.CCK;
 using MelonLoader;
 using UnityEngine;
 
-namespace EyeMovementFix;
+namespace Kafe.EyeMovementFix;
 
 public class EyeMovementFix : MelonMod {
 
@@ -33,7 +33,7 @@ public class EyeMovementFix : MelonMod {
                          "see what I'm doing, makes no sense to target players in the portable mirror.");
 
         // Add our CCK component to the whitelist
-        Traverse.Create(typeof(SharedFilter)).Field<HashSet<Type>>("_avatarWhitelist").Value.Add(typeof(EyeRotationLimits));
+        SharedFilter._avatarWhitelist.Add(typeof(EyeRotationLimits));
 
         // Check for portable mirror
         _hasPortableMirror = RegisteredMelons.FirstOrDefault(m => m.Info.Name == "PortableMirrorMod") != null;
@@ -113,7 +113,7 @@ public class EyeMovementFix : MelonMod {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVREyeController), "Start")]
+        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Start))]
         private static void Before_CVREyeControllerManager_Start(CVREyeController __instance, ref Transform ___EyeLeft, ref Transform ___EyeRight) {
 
             if (__instance.isLocal) return;
@@ -121,7 +121,9 @@ public class EyeMovementFix : MelonMod {
                 // Mega hack because for some reason the CVRAvatar Start is not being called...
                 // And I really need the puppet master to be there so it can properly calculate the eye positions!
                 var avatar = __instance.GetComponent<CVRAvatar>();
-                Traverse.Create(avatar).Field("puppetMaster").SetValue(__instance.transform.parent.parent.GetComponentInParent<PuppetMaster>());
+                if (avatar.puppetMaster == null) {
+                    avatar.puppetMaster = __instance.transform.parent.parent.GetComponentInParent<PuppetMaster>();
+                }
             }
             catch (Exception e) {
                 MelonLogger.Error(e);
@@ -181,7 +183,7 @@ public class EyeMovementFix : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAvatar), "OnDestroy")]
+        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.OnDestroy))]
         private static void Before_CVREyeControllerManager_Start(CVRAvatar __instance) {
             try {
                 if (BetterEyeController.OriginalLeftEyeLocalRotation.ContainsKey(__instance)) {

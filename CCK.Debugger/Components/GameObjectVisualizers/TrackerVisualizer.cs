@@ -1,6 +1,5 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Systems.IK;
-using HarmonyLib;
 using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
@@ -15,7 +14,7 @@ public class TrackerVisualizer : GameObjectVisualizer {
         // We already turned off all the trackers, so only proceed if we want to turn them on
         if (!isOn) return;
 
-        var avatarHeight = Traverse.Create(PlayerSetup.Instance).Field("_avatarHeight").GetValue<float>();
+        var avatarHeight = PlayerSetup.Instance._avatarHeight;
         var trackers = IKSystem.Instance.AllTrackingPoints.FindAll(t => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
 
         // Add visualizers to the trackers

@@ -22,14 +22,11 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         bool IsValid(CVRPlayerEntity entity) {
             if (entity?.PuppetMaster == null) return false;
-            var animatorManager = Traverse.Create(entity.PuppetMaster)
-                .Field("_animator")
-                .GetValue<Animator>();
-            return animatorManager != null;
+            return entity.PuppetMaster._animator != null;
         }
 
         PlayerEntities = new LooseList<CVRPlayerEntity>(players, IsValid, true);
-        CoreParameterNames = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
+        CoreParameterNames = CVRAnimatorManager.coreParameters;
 
         // Triggers
         TrackedTriggers = new List<CVRAdvancedAvatarSettingsTrigger>();
@@ -181,19 +178,13 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         isLocal = PlayerEntities.CurrentObject == null;
         currentPlayer = PlayerEntities.CurrentObject;
         if (isLocal) {
-            var playerSetupTraverse = Traverse.Create(PlayerSetup.Instance);
-            var isBlocked = playerSetupTraverse.Field<bool>("_isBlocked").Value;
-            var isBlockedAlt = playerSetupTraverse.Field<bool>("_isBlockedAlt").Value;
-            isAvatarDisabled = isBlocked || isBlockedAlt;
+            isAvatarDisabled = PlayerSetup.Instance._isBlocked || PlayerSetup.Instance._isBlockedAlt;
             isAnimatorInitialized = true;
         }
         else {
-            var puppetMasterTraverse = Traverse.Create(currentPlayer.PuppetMaster);
-            var isHidden = puppetMasterTraverse.Field<bool>("_isHidden").Value;
-            var isBlocked = puppetMasterTraverse.Field<bool>("_isBlocked").Value;
-            var isBlockedAlt = puppetMasterTraverse.Field<bool>("_isBlockedAlt").Value;
-            isAvatarDisabled = isHidden || isBlocked || isBlockedAlt;
-            isAnimatorInitialized = puppetMasterTraverse.Field<Animator>("_animator").Value != null;
+            var puppetMaster = currentPlayer.PuppetMaster;
+            isAvatarDisabled = puppetMaster._isHidden || puppetMaster._isBlocked || puppetMaster._isBlockedAlt;
+            isAnimatorInitialized = puppetMaster._animator != null;
         }
 
         _core?.UpdateCore(playerCount > 1, $"{PlayerEntities.CurrentObjectIndex+1}/{playerCount}", true);
@@ -255,7 +246,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         var mainAnimator = avatarAnimator = isLocal
             ? Events.Avatar.LocalPlayerAnimatorManager?.animator
-            : Traverse.Create(currentPlayer.PuppetMaster).Field("_animator").GetValue<Animator>();
+            : currentPlayer.PuppetMaster._animator;
 
         // Check if something borked and there is no animator ;_;
         if (mainAnimator == null || !mainAnimator.isInitialized || mainAnimator.parameters == null) {
@@ -423,7 +414,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Update button visibility
         triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 
-        var avatarHeight = Traverse.Create(isLocal ? PlayerSetup.Instance : currentPlayer.PuppetMaster).Field("_avatarHeight").GetValue<float>();
+        var avatarHeight = isLocal ? PlayerSetup.Instance._avatarHeight : currentPlayer.PuppetMaster._avatarHeight;
 
         // Set up the Humanoid Bones
         CurrentEntityBoneList.Clear();
@@ -450,7 +441,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Prevent initializing if there is no Eye Movement controller
         if (hasEyeController) {
 
-            var targetGuid = Traverse.Create(localController).Field<string>("targetGuid").Value;
+            var targetGuid = localController.targetGuid;
 
             // Eye movement visualizers updater
             eyeButton.StateUpdater = button => {
@@ -467,26 +458,12 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                 }
             };
 
-            var controllerTraverse = Traverse.Create(localController);
-
-            var targetGuidField = controllerTraverse.Field<string>("targetGuid");
-            eyeMovementSection.AddSection("Target Guid").AddValueGetter(() => targetGuidField.Value);
-
-            var eyeAngleField = controllerTraverse.Field<Vector2>("eyeAngle");
-            eyeMovementSection.AddSection("Eye Angle").AddValueGetter(() => eyeAngleField.Value.ToString("F3"));
-
-            var leftEyeField = controllerTraverse.Field<Transform>("EyeLeft");
-            if (leftEyeField != null) eyeMovementSection.AddSection("Left Eye Rotation").AddValueGetter(() => leftEyeField.Value == null ? Na : leftEyeField.Value.localRotation.ToString("F3"));
-
-            var leftEyeBaseRotField = controllerTraverse.Field<Quaternion>("EyeLeftBaseRot");
-            if (leftEyeBaseRotField != null) eyeMovementSection.AddSection("Left Eye Rotation Base").AddValueGetter(() => leftEyeBaseRotField.Value.ToString("F3"));
-
-            var rightEyeField = controllerTraverse.Field<Transform>("EyeRight");
-            if (rightEyeField != null) eyeMovementSection.AddSection("Right Eye Rotation").AddValueGetter(() => rightEyeField.Value == null ? Na : rightEyeField.Value.localRotation.ToString("F3"));
-
-            var rightEyeBaseRotField = controllerTraverse.Field<Quaternion>("EyeRightBaseRot");
-            if (rightEyeBaseRotField != null) eyeMovementSection.AddSection("Right Eye Rotation Base").AddValueGetter(() => rightEyeBaseRotField.Value.ToString("F3"));
-
+            eyeMovementSection.AddSection("Target Guid").AddValueGetter(() => localController.targetGuid);
+            eyeMovementSection.AddSection("Eye Angle").AddValueGetter(() => localController.eyeAngle.ToString("F3"));
+            eyeMovementSection.AddSection("Left Eye Rotation").AddValueGetter(() => localController.EyeLeft == null ? Na : localController.EyeLeft.localRotation.ToString("F3"));
+            eyeMovementSection.AddSection("Left Eye Rotation Base").AddValueGetter(() => localController.EyeLeftBaseRot == null ? Na : localController.EyeLeftBaseRot.ToString("F3"));
+            eyeMovementSection.AddSection("Right Eye Rotation").AddValueGetter(() => localController.EyeRight == null ? Na : localController.EyeRight.localRotation.ToString("F3"));
+            eyeMovementSection.AddSection("Right Eye Rotation Base").AddValueGetter(() => localController.EyeRightBaseRot == null ? Na : localController.EyeRightBaseRot.ToString("F3"));
             eyeMovementSection.AddSection("Candidates").AddValueGetter(() => eyeManager.targetCandidates.Values.Join(candidate => candidate.Guid));
         }
     }

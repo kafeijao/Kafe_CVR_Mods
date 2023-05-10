@@ -34,15 +34,15 @@ public static class Tracking {
 
         // Set whether the module is enabled and handle the config changes
         _enabled = OSC.Instance.meOSCTrackingModule.Value;
-        OSC.Instance.meOSCTrackingModule.OnValueChanged += (_, newValue) => _enabled = newValue;
+        OSC.Instance.meOSCTrackingModule.OnEntryValueChanged.Subscribe((_, newValue) => _enabled = newValue);
 
         // Set the update rate and handle the config changes
         _updateRate = OSC.Instance.meOSCTrackingModuleUpdateInterval.Value;
         _nextUpdate = _updateRate + Time.time;
-        OSC.Instance.meOSCTrackingModuleUpdateInterval.OnValueChanged += (_, newValue) => {
+        OSC.Instance.meOSCTrackingModuleUpdateInterval.OnEntryValueChanged.Subscribe((_, newValue) => {
             _updateRate = newValue;
             _nextUpdate = Time.time + newValue;
-        };
+        });
 
         // Set the play space transform when it loads
         Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;

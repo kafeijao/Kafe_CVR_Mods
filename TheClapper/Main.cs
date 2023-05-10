@@ -5,7 +5,7 @@ using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace TheClapper;
+namespace Kafe.TheClapper;
 
 public class TheClapper : MelonMod {
 
@@ -42,14 +42,12 @@ public class TheClapper : MelonMod {
     private static bool _isInitialized;
     private static bool _wasPreparingClap;
     private static float _preparingTime;
-    private static Traverse<CVRGestureStep.Gesture> _leftGesture;
-    private static Traverse<CVRGestureStep.Gesture> _rightGesture;
 
     public override void OnUpdate() {
         if (!_isInitialized || !_showVisualizerAfterOpenHands.Value) return;
 
-        var isPreparingClap = _leftGesture.Value == CVRGestureStep.Gesture.Open &&
-                              _rightGesture.Value == CVRGestureStep.Gesture.Open;
+        var isPreparingClap = CVRGestureRecognizer.Instance.currentGestureLeft == CVRGestureStep.Gesture.Open &&
+                              CVRGestureRecognizer.Instance.currentGestureRight == CVRGestureStep.Gesture.Open;
 
         if (isPreparingClap) {
             if (!_wasPreparingClap) {
@@ -68,7 +66,7 @@ public class TheClapper : MelonMod {
     }
 
     internal static void EmitParticles(Vector3 pos, Color color, float scale = 1f) {
-        var main = _particleSystem.main;
+        var _ = _particleSystem.main;
 
         var material = _particleSystemRenderer.material;
         material.color = color;
@@ -85,7 +83,7 @@ public class TheClapper : MelonMod {
     private static class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(GesturePlaneTest), "Start")]
+        [HarmonyPatch(typeof(GesturePlaneTest), nameof(GesturePlaneTest.Start))]
         private static void After_GesturePlaneTest_Start(GesturePlaneTest __instance) {
 
             // Create the Clap gesture and add its handler
@@ -116,11 +114,6 @@ public class TheClapper : MelonMod {
             _baseScale = particlesGo.transform.localScale;
             _particleSystem = particleSystem;
             _particleSystemRenderer = particleSystemRenderer;
-
-            // Save gesture references
-            var gmTraverse = Traverse.Create(CVRGestureRecognizer.Instance);
-            _leftGesture = gmTraverse.Field<CVRGestureStep.Gesture>("currentGestureLeft");
-            _rightGesture = gmTraverse.Field<CVRGestureStep.Gesture>("currentGestureRight");
 
             _isInitialized = true;
         }

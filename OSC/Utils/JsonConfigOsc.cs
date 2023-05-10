@@ -15,7 +15,7 @@ namespace Kafe.OSC.Utils {
 
         public static JsonConfigAvatar CurrentAvatarConfig { get; private set; }
 
-        private static readonly HashSet<string> CoreParameters = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
+        private static readonly HashSet<string> CoreParameters = CVRAnimatorManager.coreParameters;
 
         internal static void ClearCurrentAvatarConfig() {
             CurrentAvatarConfig = null;

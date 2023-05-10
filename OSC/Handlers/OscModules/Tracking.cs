@@ -44,10 +44,10 @@ public class Tracking : OscHandler {
 
         // Enable according to the config and setup the config listeners
         if (OSC.Instance.meOSCTrackingModule.Value) Enable();
-        OSC.Instance.meOSCTrackingModule.OnValueChanged += (oldValue, newValue) => {
+        OSC.Instance.meOSCTrackingModule.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue && !oldValue) Enable();
             else if (!newValue && oldValue) Disable();
-        };
+        });
     }
 
     internal sealed override void Enable() {

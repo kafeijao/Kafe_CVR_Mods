@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Animations;
 
-namespace TheClapper;
+namespace Kafe.TheClapper;
 
 public abstract class Clappable : MonoBehaviour {
 

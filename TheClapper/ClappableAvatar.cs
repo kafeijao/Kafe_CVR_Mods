@@ -1,11 +1,10 @@
 ﻿using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace TheClapper;
+namespace Kafe.TheClapper;
 
 public class ClappableAvatar : Clappable {
 
@@ -14,13 +13,13 @@ public class ClappableAvatar : Clappable {
     private PuppetMaster _puppetMaster;
 
     protected override bool IsClappable() {
-        var isHidden = Traverse.Create(_puppetMaster).Field<bool>("_isBlocked").Value;
+        var isHidden = _puppetMaster._isBlocked;
         return isHidden || !TheClapper.PreventClappingFriends.Value || !Friends.FriendsWith(_playerId);
     }
 
     protected override void OnClapped(Vector3 clappablePosition) {
 
-        var isHidden = Traverse.Create(_puppetMaster).Field<bool>("_isBlocked").Value;
+        var isHidden = _puppetMaster._isBlocked;
 
         MelonLogger.Msg($"{(isHidden ? "Unclapped" : "Clapped")} {_playerUserName}'s avatar!");
 

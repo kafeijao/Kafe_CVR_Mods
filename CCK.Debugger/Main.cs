@@ -96,7 +96,7 @@ public class CCKDebugger : MelonMod {
 
         // Avatar Destroyed
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAvatar), "OnDestroy")]
+        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.OnDestroy))]
         static void After_CVAvatar_OnDestroy(CVRAvatar __instance) {
             try {
                 Events.Avatar.OnCVRAvatarDestroyed(__instance);
@@ -109,7 +109,7 @@ public class CCKDebugger : MelonMod {
         }
         // Avatar Started
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAvatar), "Start")]
+        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.Start))]
         static void After_CVAvatar_Start(CVRAvatar __instance) {
             try {
                 Events.Avatar.OnCVRAvatarStarted(__instance);
@@ -123,7 +123,7 @@ public class CCKDebugger : MelonMod {
 
         // Spawnable Destroyed
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSpawnable), "OnDestroy")]
+        [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.OnDestroy))]
         static void After_CVRSpawnable_OnDestroy(CVRSpawnable __instance) {
             try {
                 Events.Spawnable.OnCVRSpawnableDestroyed(__instance);
@@ -136,7 +136,7 @@ public class CCKDebugger : MelonMod {
         }
         // Spawnable Started
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSpawnable), "Start")]
+        [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.Start))]
         static void After_CVRSpawnable_Start(CVRSpawnable __instance) {
             try {
                 Events.Spawnable.OnCVRSpawnableStarted(__instance);
@@ -247,7 +247,7 @@ public class CCKDebugger : MelonMod {
 
         // Scene
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_MenuManager), "Start")]
+        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.Start))]
         private static void AfterMenuCreated(ref CVR_MenuManager __instance) {
 
             try {

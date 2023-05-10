@@ -4,7 +4,7 @@ using ABI_RC.Core.UI;
 using HarmonyLib;
 using MelonLoader;
 
-namespace LoginProfiles;
+namespace Kafe.LoginProfiles;
 
 public class LoginProfiles : MelonMod {
 

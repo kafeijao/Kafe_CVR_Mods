@@ -2,7 +2,6 @@
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.IK;
-using HarmonyLib;
 using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 using Valve.VR;
 
@@ -56,15 +55,12 @@ public class MiscCohtmlHandler : ICohtmlHandler {
 
         // FingerCurls
         var im = CVRInputManager.Instance;
-        if (Traverse.Create(CVRInputManager.Instance).Field<List<CVRInputModule>>("_inputModules").Value.Find(module => module is InputModuleSteamVR) is InputModuleSteamVR steamVrIm) {
+        if (CVRInputManager.Instance._inputModules.Find(module => module is InputModuleSteamVR) is InputModuleSteamVR steamVrIm) {
 
             _fingerCurlSection = core.AddSection("Finger Curls", true);
 
-            var triggerValue = Traverse.Create(steamVrIm).Field<SteamVR_Action_Single>("vrTriggerValue").Value;
-            var gripValue = Traverse.Create(steamVrIm).Field<SteamVR_Action_Single>("vrGripValue").Value;
-
-            _fingerCurlSection.AddSection("LeftTrigger").AddValueGetter(() => triggerValue.GetAxis(SteamVR_Input_Sources.LeftHand).ToString(CultureInfo.InvariantCulture));
-            _fingerCurlSection.AddSection("LeftGrip").AddValueGetter(() => gripValue.GetAxis(SteamVR_Input_Sources.LeftHand).ToString(CultureInfo.InvariantCulture));
+            _fingerCurlSection.AddSection("LeftTrigger").AddValueGetter(() => steamVrIm.vrTriggerValue.GetAxis(SteamVR_Input_Sources.LeftHand).ToString(CultureInfo.InvariantCulture));
+            _fingerCurlSection.AddSection("LeftGrip").AddValueGetter(() => steamVrIm.vrGripValue.GetAxis(SteamVR_Input_Sources.LeftHand).ToString(CultureInfo.InvariantCulture));
 
             _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftThumb)).AddValueGetter(() => im.fingerCurlLeftThumb.ToString(CultureInfo.InvariantCulture));
             _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftIndex)).AddValueGetter(() => im.fingerCurlLeftIndex.ToString(CultureInfo.InvariantCulture));
@@ -72,8 +68,8 @@ public class MiscCohtmlHandler : ICohtmlHandler {
             _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftRing)).AddValueGetter(() => im.fingerCurlLeftRing.ToString(CultureInfo.InvariantCulture));
             _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftPinky)).AddValueGetter(() => im.fingerCurlLeftPinky.ToString(CultureInfo.InvariantCulture));
 
-            _fingerCurlSection.AddSection("RightTrigger").AddValueGetter(() => triggerValue.GetAxis(SteamVR_Input_Sources.RightHand).ToString(CultureInfo.InvariantCulture));
-            _fingerCurlSection.AddSection("RightGrip").AddValueGetter(() => gripValue.GetAxis(SteamVR_Input_Sources.RightHand).ToString(CultureInfo.InvariantCulture));
+            _fingerCurlSection.AddSection("RightTrigger").AddValueGetter(() => steamVrIm.vrTriggerValue.GetAxis(SteamVR_Input_Sources.RightHand).ToString(CultureInfo.InvariantCulture));
+            _fingerCurlSection.AddSection("RightGrip").AddValueGetter(() => steamVrIm.vrGripValue.GetAxis(SteamVR_Input_Sources.RightHand).ToString(CultureInfo.InvariantCulture));
 
             _fingerCurlSection.AddSection(nameof(im.fingerCurlRightThumb)).AddValueGetter(() => im.fingerCurlRightThumb.ToString(CultureInfo.InvariantCulture));
             _fingerCurlSection.AddSection(nameof(im.fingerCurlRightIndex)).AddValueGetter(() => im.fingerCurlRightIndex.ToString(CultureInfo.InvariantCulture));

@@ -52,7 +52,7 @@ public class OSC : MelonMod {
 
     private HandlerOsc _handlerOsc;
 
-    public override void OnApplicationStart() {
+    public override void OnInitializeMelon() {
 
         Instance = this;
 
@@ -184,7 +184,7 @@ public class OSC : MelonMod {
             MelonLogger.Msg("[Config] \t- All props interactions");
             MelonLogger.Msg("[Config] \t- All tracking info endpoints");
         }
-        meOSCCompatibilityVRCFaceTracking.OnValueChangedUntyped += SetVrcFaceTrackingCompatibility;
+        meOSCCompatibilityVRCFaceTracking.OnEntryValueChanged.Subscribe((_, _) => SetVrcFaceTrackingCompatibility());
         SetVrcFaceTrackingCompatibility();
 
         // Attach OSC Input Module and handle their disabling/enabling
@@ -192,7 +192,7 @@ public class OSC : MelonMod {
             var inputModuleOsc = CVRInputManager.Instance.gameObject.AddComponent<InputModuleOSC>();
             inputModuleOsc.enabled = meOSCInputModule.Value;
             MelonLogger.Msg("[Input] OSC Input Module Initialized.");
-            meOSCInputModule.OnValueChanged += (_, newValue) => inputModuleOsc.enabled = newValue;
+            meOSCInputModule.OnEntryValueChanged.Subscribe((_, newValue) => inputModuleOsc.enabled = newValue);
         };
 
         // Start OSC server

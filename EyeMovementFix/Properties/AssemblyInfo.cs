@@ -1,18 +1,18 @@
 ﻿using System.Reflection;
-using EyeMovementFix.Properties;
+using Kafe.EyeMovementFix.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(EyeMovementFix))]
+[assembly: AssemblyTitle(nameof(Kafe.EyeMovementFix))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(EyeMovementFix))]
+[assembly: AssemblyProduct(nameof(Kafe.EyeMovementFix))]
 
 [assembly: MelonInfo(
-    typeof(EyeMovementFix.EyeMovementFix),
-    nameof(EyeMovementFix),
+    typeof(Kafe.EyeMovementFix.EyeMovementFix),
+    nameof(Kafe.EyeMovementFix),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -24,7 +24,7 @@ using MelonLoader;
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 [assembly: MelonOptionalDependencies("PortableMirrorMod", "CCKDebugger")]
 
-namespace EyeMovementFix.Properties;
+namespace Kafe.EyeMovementFix.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "2.0.4";
     public const string Author = "kafeijao";
