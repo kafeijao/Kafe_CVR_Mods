@@ -3,7 +3,7 @@
     
     <ItemGroup>
         <Reference Include="ChatBox">
-            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\ChatBox.dll</HintPath>
+            <HintPath>$(CVRPATH)\Mods\ChatBox.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

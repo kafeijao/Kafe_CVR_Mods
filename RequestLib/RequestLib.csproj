@@ -3,11 +3,11 @@
 
     <ItemGroup>
         <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="BTKSAImmersiveHud">
-            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKSAImmersiveHud.dll</HintPath>
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKSAImmersiveHud.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

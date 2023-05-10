@@ -11,7 +11,7 @@ $cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"
 $dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll')
 
 # Array with the mods to grab
-$modNames = @("BTKUILib", "ChatBox", "BTKSAImmersiveHud")
+$modNames = @("BTKUILib", "BTKSAImmersiveHud", "ActionMenu", "MenuScalePatch")
 
 if ($cvrPath -and (Test-Path "$cvrPath\$cvrExecutable")) {
     # Found ChilloutVR.exe in the existing CVRPATH
@@ -35,15 +35,15 @@ else {
 }
 
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
-$managedLibsFolder = $scriptDir + "\ManagedLibs"
+$managedLibsFolder = $scriptDir + "\.ManagedLibs"
 
 if (!(Test-Path $managedLibsFolder)) {
     New-Item -ItemType Directory -Path $managedLibsFolder
-    Write-Host "ManagedLibs folder created successfully."
+    Write-Host ".ManagedLibs folder created successfully."
 }
 
 Write-Host ""
-Write-Host "Copying the DLLs from the CVR, MelonLoader, and Mods folder to the ManagedLibs"
+Write-Host "Copying the DLLs from the CVR, MelonLoader, and Mods folder to the .ManagedLibs"
 
 
 Copy-Item $cvrPath$0HarmonydllPath -Destination $managedLibsFolder
@@ -63,12 +63,12 @@ foreach ($modName in $modNames) {
 
     # Attempt to grab from the mods folder
     if (Test-Path $modPath -PathType Leaf) {
-        Write-Host "    Copying $modDll from $melonModsPath to \ManagedLibs!"
+        Write-Host "    Copying $modDll from $melonModsPath to \.ManagedLibs!"
         Copy-Item $modPath -Destination $managedLibsFolder
     }
-    # Check if they already exist in the ManagedLibs
+    # Check if they already exist in the .ManagedLibs
     elseif (Test-Path $managedLibsModPath -PathType Leaf) {
-        Write-Host "    Ignoring $modDll since already exists in \ManagedLibs!"
+        Write-Host "    Ignoring $modDll since already exists in \.ManagedLibs!"
     }
     # If we fail, lets add to the missing mods list
     else {

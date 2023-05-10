@@ -3,11 +3,11 @@
 
     <ItemGroup>
         <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ChatBox">
-            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\ChatBox.dll</HintPath>
+            <HintPath>$(CVRPATH)\Mods\ChatBox.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

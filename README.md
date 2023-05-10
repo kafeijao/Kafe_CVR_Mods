@@ -50,7 +50,7 @@ In order to build this project follow the instructions (thanks [@Daky](https://g
   Otherwise follow the instructions bellow
   to [Set CVR Folder Environment Variable](#set-cvr-folder-environment-variable)
 - (3) Run `copy_and_nstrip_dll.ps1` on the Power Shell. This will copy the required CVR, MelonLoader, and Mod DLLs into
-  this project's `/ManagedLibs`. Note if some of the required mods are not found, it will display the url from the CVR
+  this project's `/.ManagedLibs`. Note if some of the required mods are not found, it will display the url from the CVR
   Modding Group API so you can download.
 
 ### Set CVR Folder Environment Variable

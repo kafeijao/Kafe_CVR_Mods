@@ -3,7 +3,7 @@
 
     <ItemGroup>
         <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\ManagedLibs\BTKUILib.dll</HintPath>
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
@@ -11,11 +11,11 @@
     <!-- Mods to add compatibility, sorry if you're trying to compile... -->
     <ItemGroup>
         <Reference Include="MenuScalePatch">
-            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\MenuScalePatch.dll</HintPath>
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\MenuScalePatch.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ActionMenu">
-            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\Mods\ActionMenu.dll</HintPath>
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\ActionMenu.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
