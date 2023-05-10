@@ -51,6 +51,17 @@ Copy-Item $cvrPath$melonLoaderdllPath -Destination $managedLibsFolder
 Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $managedLibsFolder
 
 
+# Saving XML ready libs for the Build.props file
+$lib_names_xml = "<Project><ItemGroup>"
+$lib_names_xml += '<Reference Include="0Harmony"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\0Harmony.dll</HintPath><Private>False</Private></Reference>'
+$lib_names_xml += '<Reference Include="MelonLoader"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MelonLoader.dll</HintPath><Private>False</Private></Reference>'
+foreach ($file in Get-ChildItem $cvrPath$cvrManagedDataPath"\*") {
+    $lib_names_xml += "<Reference Include=`"$($file.BaseName)`"><HintPath>`$(MsBuildThisFileDirectory)\.ManagedLibs\$($file.BaseName).dll</HintPath><Private>False</Private></Reference>"
+}
+$lib_names_xml += "</ItemGroup></Project>"
+$lib_names_xml | Out-File -Encoding UTF8 -FilePath lib_names.xml
+
+
 # Third Party Dependencies
 $melonModsPath="\Mods\"
 $missingMods = New-Object System.Collections.Generic.List[string]
