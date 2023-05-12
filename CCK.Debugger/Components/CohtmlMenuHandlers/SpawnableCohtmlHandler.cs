@@ -52,6 +52,9 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
             if (!isLoaded && PropsData.CurrentObject != null && PropsData.CurrentObject.Spawnable == spawnable) {
                 ResetProp(false);
             }
+            else {
+                ResetProp(true);
+            }
         };
 
         Events.DebuggerMenu.EntityChanged += () => {
