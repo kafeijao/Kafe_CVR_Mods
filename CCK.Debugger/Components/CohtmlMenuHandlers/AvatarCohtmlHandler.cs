@@ -9,6 +9,7 @@ using Kafe.CCK.Debugger.Components.PointerVisualizers;
 using Kafe.CCK.Debugger.Components.TriggerVisualizers;
 using Kafe.CCK.Debugger.Entities;
 using Kafe.CCK.Debugger.Utils;
+using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
@@ -62,6 +63,11 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                 if (PlayerSetup.Instance._avatar == avatar.gameObject) {
                     return true;
                 }
+            }
+            // Prevent crashing with PuppetMaster null bug
+            else if (PlayerEntities.CurrentObject.PuppetMaster == null) {
+                MelonLogger.Warning("Tried to inspect a remote player with a null PuppetMaster (this should never happen).");
+                return false;
             }
             // Remote player avatar
             else if (PlayerEntities.CurrentObject.PuppetMaster.avatarObject == avatar.gameObject) {
