@@ -18,8 +18,6 @@ public abstract class PointerVisualizer : MonoBehaviour {
     protected CVRPointer Pointer;
     protected GameObject VisualizerGo;
 
-    protected bool Initialized { get; set; }
-
     public static PointerVisualizer CreateVisualizer(CVRPointer pointer) {
 
         // Check if the component already exists, if so ignore the creation request but enable it
@@ -75,6 +73,7 @@ public abstract class PointerVisualizer : MonoBehaviour {
 
         visualizer.Pointer = pointer;
         visualizer.enabled = false;
+        VisualizersAll[pointer] = visualizer;
         return visualizer;
     }
 
@@ -119,14 +118,8 @@ public abstract class PointerVisualizer : MonoBehaviour {
         VisualizerGo.SetActive(false);
     }
 
-    protected virtual void Start() {
-        VisualizersAll[Pointer] = this;
-        Initialized = true;
-        UpdateState();
-    }
-
     private void UpdateState() {
-        if (!Initialized) return;
+        if (VisualizerGo == null || Pointer == null) return;
         VisualizerGo.SetActive(isActiveAndEnabled);
         if (isActiveAndEnabled && !VisualizersActive.ContainsKey(Pointer)) {
             VisualizersActive.Add(Pointer, this);

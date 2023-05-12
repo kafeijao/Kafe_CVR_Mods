@@ -16,8 +16,6 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
     protected GameObject VisualizerGo;
     protected Material Material;
 
-    private bool Initialized { get; set; }
-
     internal void InitializeVisualizer(GameObject prefab, GameObject target, GameObjectVisualizer visualizer) {
 
         _targetGo = target;
@@ -46,16 +44,12 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
 
         // Hide by default
         VisualizerGo.SetActive(false);
-    }
 
-    protected virtual void Start() {
         VisualizersAll[_targetGo] = this;
-        Initialized = true;
-        UpdateState();
     }
 
     private void UpdateState() {
-        if (!Initialized) return;
+        if (VisualizerGo == null || _targetGo == null) return;
         VisualizerGo.SetActive(enabled);
         if (enabled && !VisualizersActive.ContainsKey(_targetGo)) {
             VisualizersActive.Add(_targetGo, this);

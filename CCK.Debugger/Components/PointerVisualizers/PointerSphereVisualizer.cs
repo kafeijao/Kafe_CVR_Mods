@@ -9,7 +9,7 @@ public class PointerSphereVisualizer : PointerVisualizer {
 
     private const float MinimumRadius = 0.015f;
 
-    protected override void Start() {
+    protected void Start() {
 
         // Sphere colliders might not be present when the visualizer was created, because cvr default colliders only
         // get added by the Start Event of CVRPointer
@@ -33,13 +33,9 @@ public class PointerSphereVisualizer : PointerVisualizer {
         }
 
         VisualizerGo.transform.localScale = Vector3.zero;
-
-        base.Start();
     }
 
     private void Update() {
-        if (!Initialized) return;
-
         // Update the size and position to match the pointer
         var lossyScale = PointerCollider.transform.lossyScale.x;
         var scaledRadius = lossyScale == 0 ? 0 : Mathf.Max(PointerCollider.radius, MinimumRadius / lossyScale);

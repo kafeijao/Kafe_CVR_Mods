@@ -51,7 +51,6 @@ public class TriggerSpawnableVisualizer : TriggerVisualizer {
     }
 
     private void Update() {
-        if (!Initialized) return;
 
         // Update the size and position to match the trigger
         VisualizerGo.transform.localScale = TriggerCollider.size;

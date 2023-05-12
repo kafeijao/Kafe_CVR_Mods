@@ -20,8 +20,6 @@ public abstract class TriggerVisualizer : MonoBehaviour {
     protected MonoBehaviour TriggerBehavior;
     protected GameObject VisualizerGo;
 
-    protected bool Initialized { get; private set; }
-
     protected BoxCollider TriggerCollider { get; private set; }
 
     public static TriggerVisualizer CreateVisualizer(MonoBehaviour trigger) {
@@ -50,6 +48,7 @@ public abstract class TriggerVisualizer : MonoBehaviour {
 
         // Disable the behavior
         visualizer.enabled = false;
+        VisualizersAll[trigger] = visualizer;
         return visualizer;
     }
 
@@ -111,13 +110,11 @@ public abstract class TriggerVisualizer : MonoBehaviour {
         TriggerCollider = boxCollider;
         InitializeVisualizer(Misc.GetPrimitiveMesh(PrimitiveType.Cube));
 
-        VisualizersAll[TriggerBehavior] = this;
-        Initialized = true;
         UpdateState();
     }
 
     private void UpdateState() {
-        if (!Initialized) return;
+        if (VisualizerGo == null || TriggerBehavior == null) return;
         VisualizerGo.SetActive(isActiveAndEnabled);
         if (isActiveAndEnabled && !VisualizersActive.ContainsKey(TriggerBehavior)) {
             VisualizersActive.Add(TriggerBehavior, this);
