@@ -66,7 +66,9 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             }
             // Prevent crashing with PuppetMaster null bug
             else if (PlayerEntities.CurrentObject.PuppetMaster == null) {
+                #if DEBUG
                 MelonLogger.Warning("Tried to inspect a remote player with a null PuppetMaster (this should never happen).");
+                #endif
                 return false;
             }
             // Remote player avatar
