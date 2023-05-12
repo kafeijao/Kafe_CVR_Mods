@@ -62,6 +62,9 @@ public class LabeledVisualizer : GameObjectVisualizer {
         // Force labels to look at the player's camera
         _labelTransform.rotation = Quaternion.LookRotation(_labelTransform.position - cameraPos);
 
+        // Keep the scale updated
+        var visualizerTransform = VisualizerGo.transform;
+        visualizerTransform.localScale = GetLocalScale(visualizerTransform);
     }
 
     internal static bool HasLabeledVisualizersActive() {
