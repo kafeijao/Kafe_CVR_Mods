@@ -10,20 +10,20 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
     protected static readonly Dictionary<GameObject, GameObjectVisualizer> VisualizersAll = new();
     protected static readonly Dictionary<GameObject, GameObjectVisualizer> VisualizersActive = new();
 
-    private const string GameObjectName = "[CCK.Debugger] GameObject Visualizer";
+    protected abstract string GetName();
 
     private GameObject _targetGo;
     protected GameObject VisualizerGo;
     protected Material Material;
 
-    internal void InitializeVisualizer(GameObject prefab, GameObject target, GameObjectVisualizer visualizer) {
+    internal void InitializeVisualizer(GameObject prefab, GameObject target) {
 
         _targetGo = target;
 
         // Instantiate the visualizer GameObject inside of the target
         VisualizerGo = Instantiate(prefab, target.transform);
         VisualizerGo.layer = target.layer;
-        VisualizerGo.name = GameObjectName;
+        VisualizerGo.name = GetName();
 
         // Get the renderer and assign material
         var renderer = VisualizerGo.GetComponent<MeshRenderer>();
@@ -48,7 +48,7 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
         VisualizersAll[_targetGo] = this;
     }
 
-    private void UpdateState() {
+    protected void UpdateState() {
         if (VisualizerGo == null || _targetGo == null) return;
         VisualizerGo.SetActive(enabled);
         if (enabled && !VisualizersActive.ContainsKey(_targetGo)) {

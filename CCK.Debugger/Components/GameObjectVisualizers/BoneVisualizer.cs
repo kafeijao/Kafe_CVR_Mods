@@ -5,6 +5,8 @@ namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class BoneVisualizer : GameObjectVisualizer {
 
+    protected override string GetName() => "[CCK.Debugger] Bone Visualizer";
+
     public static BoneVisualizer Create(GameObject target, float scale) {
 
         // Check if the component already exists, if so ignore the creation request but enable it
@@ -14,7 +16,7 @@ public class BoneVisualizer : GameObjectVisualizer {
         }
 
         visualizer = target.AddComponent<BoneVisualizer>();
-        visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target, visualizer);
+        visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target);
         visualizer.SetupVisualizer(scale);
 
         visualizer.enabled = false;

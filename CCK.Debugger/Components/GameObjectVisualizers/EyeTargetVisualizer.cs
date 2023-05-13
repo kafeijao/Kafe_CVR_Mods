@@ -6,6 +6,8 @@ namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class EyeTargetVisualizer : GameObjectVisualizer {
 
+    protected override string GetName() => "[CCK.Debugger] Eye Target Visualizer";
+
     private CVREyeControllerCandidate _candidate;
     private static readonly Color DarkerColor = new Color(1f, 1f, 1f, 0.5f);
     private static readonly Color BrighterColor = new Color(2f, 2f, 2f, 0.75f);
@@ -27,7 +29,7 @@ public class EyeTargetVisualizer : GameObjectVisualizer {
         // If the component still doesn't exist, create it!
         if (!target.TryGetComponent(out EyeTargetVisualizer visualizer)) {
             visualizer = target.AddComponent<EyeTargetVisualizer>();
-            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target, visualizer);
+            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target);
         }
 
         visualizer._candidate = candidate;

@@ -7,6 +7,8 @@ namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class LabeledVisualizer : GameObjectVisualizer {
 
+    protected override string GetName() => "[CCK.Debugger] Label Visualizer";
+
     private string _label;
     private RectTransform _labelTransform;
     private TextMeshPro _labelTMP;
@@ -18,15 +20,11 @@ public class LabeledVisualizer : GameObjectVisualizer {
         // If the component still doesn't exist, create it!
         if (!target.TryGetComponent(out LabeledVisualizer visualizer)) {
             visualizer = target.AddComponent<LabeledVisualizer>();
-            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetLabelVisualizerObject(), target, visualizer);
+            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetLabelVisualizerObject(), target);
         }
 
         visualizer._label = label;
         visualizer.SetupVisualizer();
-    }
-
-    private static Vector3 GetLocalScale(Transform target) {
-        return Misc.GetScaleFromAbsolute(target.transform, 5.0f) * PlayerSetup.Instance._avatarHeight;
     }
 
     protected override void SetupVisualizer(float scale = 1f) {
@@ -37,7 +35,6 @@ public class LabeledVisualizer : GameObjectVisualizer {
         var visualizerTransform = VisualizerGo.transform;
         visualizerTransform.localPosition = Vector3.zero;
         visualizerTransform.localRotation = Quaternion.identity;
-        visualizerTransform.localScale = GetLocalScale(visualizerTransform);
 
         // Setup Label
         _labelTransform = (RectTransform) visualizerTransform.Find("Label");
@@ -63,8 +60,7 @@ public class LabeledVisualizer : GameObjectVisualizer {
         _labelTransform.rotation = Quaternion.LookRotation(_labelTransform.position - cameraPos);
 
         // Keep the scale updated
-        var visualizerTransform = VisualizerGo.transform;
-        visualizerTransform.localScale = GetLocalScale(visualizerTransform);
+        VisualizerGo.transform.localScale = Misc.GetScaleFromAbsolute(transform, 5.0f) * PlayerSetup.Instance._avatarHeight;
     }
 
     internal static bool HasLabeledVisualizersActive() {
@@ -80,6 +76,7 @@ public class LabeledVisualizer : GameObjectVisualizer {
         foreach (var visualizer in VisualizersAll.Values.ToArray()) {
             if (visualizer is LabeledVisualizer vis) {
                 vis.enabled = isOn;
+                vis.UpdateState();
             }
         }
     }
