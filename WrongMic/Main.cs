@@ -34,7 +34,6 @@ public class WrongMic : MelonMod {
                     }
                     else {
                         __instance.comms.MicrophoneName = ModConfig.MeMicVR.Value;
-                        MelonLogger.Msg($"Loaded the VR Microphone [{ModConfig.MeMicVR.Value}]");
                     }
                 }
                 else {
@@ -45,7 +44,6 @@ public class WrongMic : MelonMod {
                     }
                     else {
                         __instance.comms.MicrophoneName = ModConfig.MeMicDesktop.Value;
-                        MelonLogger.Msg($"Loaded the Desktop Microphone [{ModConfig.MeMicDesktop.Value}]");
                     }
                 }
             }
@@ -75,6 +73,5 @@ public class WrongMic : MelonMod {
                 MelonLogger.Error(e);
             }
         }
-
     }
 }
