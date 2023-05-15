@@ -1,11 +1,2 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <ItemGroup>
-        <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-    </ItemGroup>
-
-</Project>
+<Project Sdk="Microsoft.NET.Sdk"/>
