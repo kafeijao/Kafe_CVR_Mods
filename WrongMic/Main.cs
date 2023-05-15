@@ -27,7 +27,7 @@ public class WrongMic : MelonMod {
         public static void After_RootLogic_Start(RootLogic __instance) {
             try {
                 if (MetaPort.Instance.isUsingVr) {
-                    if (ModConfig.MeMicVR.Value == ModConfig.Undefined) {
+                    if (ModConfig.MeMicVR.Value.Equals(ModConfig.Undefined)) {
                         ModConfig.MeMicVR.Value = MetaPort.Instance.settings.GetSettingsString("AudioInputDevice");
                         MelonLogger.Warning($"There's no mic configured for VR. Going to set to the current mic [{ModConfig.MeMicVR.Value}]. " +
                                             $"If it's wrong just change on the Game's normal menus.");
@@ -38,14 +38,14 @@ public class WrongMic : MelonMod {
                     }
                 }
                 else {
-                    if (ModConfig.MeMicDesktop.Value == ModConfig.Undefined) {
+                    if (ModConfig.MeMicDesktop.Value.Equals(ModConfig.Undefined)) {
                         ModConfig.MeMicDesktop.Value = MetaPort.Instance.settings.GetSettingsString("AudioInputDevice");
                         MelonLogger.Warning($"There's no mic configured for Desktop. Going to set to the current mic [{ModConfig.MeMicDesktop.Value}]. " +
                                             $"If it's wrong just change on the Game's normal menus.");
                     }
                     else {
                         __instance.comms.MicrophoneName = ModConfig.MeMicDesktop.Value;
-                        MelonLogger.Msg($"Loaded the Desktop Microphone [{ModConfig.MeMicVR.Value}]");
+                        MelonLogger.Msg($"Loaded the Desktop Microphone [{ModConfig.MeMicDesktop.Value}]");
                     }
                 }
             }
