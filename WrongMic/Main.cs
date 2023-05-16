@@ -7,8 +7,20 @@ namespace Kafe.WrongMic;
 
 public class WrongMic : MelonMod {
 
+    private const string MicSettingName = "AudioInputDevice";
+
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
+    }
+
+    private static void SetSettingAudioInputSilently(string microphoneName) {
+        if (!MetaPort.Instance.settings._settings.TryGetValue(MicSettingName, out var setting)) {
+            MelonLogger.Error($"[SetSettingAudioInputSilently] Something went wrong, we failed to find the Microphone Setting...");
+            return;
+        }
+        setting.SetValueString(microphoneName);
+        MetaPort.Instance.settings.settingsHaveChanged = true;
+        RootLogic.Instance.comms.MicrophoneName = microphoneName;
     }
 
     [HarmonyPatch]
@@ -21,29 +33,28 @@ public class WrongMic : MelonMod {
             if (RootLogic.Instance != null) After_RootLogic_Start(RootLogic.Instance);
         }
 
-
         [HarmonyPostfix]
         [HarmonyPatch(typeof(RootLogic), nameof(RootLogic.Start))]
         public static void After_RootLogic_Start(RootLogic __instance) {
             try {
                 if (MetaPort.Instance.isUsingVr) {
                     if (ModConfig.MeMicVR.Value.Equals(ModConfig.Undefined)) {
-                        ModConfig.MeMicVR.Value = MetaPort.Instance.settings.GetSettingsString("AudioInputDevice");
+                        ModConfig.MeMicVR.Value = MetaPort.Instance.settings.GetSettingsString(MicSettingName);
                         MelonLogger.Warning($"There's no mic configured for VR. Going to set to the current mic [{ModConfig.MeMicVR.Value}]. " +
                                             $"If it's wrong just change on the Game's normal menus.");
                     }
                     else {
-                        __instance.comms.MicrophoneName = ModConfig.MeMicVR.Value;
+                        SetSettingAudioInputSilently(ModConfig.MeMicVR.Value);
                     }
                 }
                 else {
                     if (ModConfig.MeMicDesktop.Value.Equals(ModConfig.Undefined)) {
-                        ModConfig.MeMicDesktop.Value = MetaPort.Instance.settings.GetSettingsString("AudioInputDevice");
+                        ModConfig.MeMicDesktop.Value = MetaPort.Instance.settings.GetSettingsString(MicSettingName);
                         MelonLogger.Warning($"There's no mic configured for Desktop. Going to set to the current mic [{ModConfig.MeMicDesktop.Value}]. " +
                                             $"If it's wrong just change on the Game's normal menus.");
                     }
                     else {
-                        __instance.comms.MicrophoneName = ModConfig.MeMicDesktop.Value;
+                        SetSettingAudioInputSilently(ModConfig.MeMicDesktop.Value);
                     }
                 }
             }
