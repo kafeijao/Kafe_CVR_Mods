@@ -8,7 +8,7 @@ $cvrExecutable = "ChilloutVR.exe"
 $cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"
 
 # Array with the dlls to strip
-$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll')
+$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll', 'MagicaCloth.dll')
 
 # Array with the mods to grab
 $modNames = @("BTKUILib", "BTKSAImmersiveHud", "ActionMenu", "MenuScalePatch")
