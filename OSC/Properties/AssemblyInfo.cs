@@ -23,10 +23,12 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 [assembly: MelonOptionalDependencies(AssemblyInfoParams.ChatBoxName)]
+[assembly: MelonIncompatibleAssemblies(AssemblyInfoParams.CVRParamLibName)]
 
 namespace Kafe.OSC.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.1.0";
+    public const string Version = "1.1.1";
     public const string Author = "kafeijao";
     public const string ChatBoxName = "ChatBox";
+    public const string CVRParamLibName = "CVRParamLib";
 }
