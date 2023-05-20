@@ -82,11 +82,13 @@ internal static class Data {
         internal override void DisablePhysics() {
             _dynamicBone.m_Gravity = Vector3.zero;
             _dynamicBone.m_Force = Vector3.zero;
+            _dynamicBone.OnDidApplyAnimationProperties();
         }
 
         internal override void RestorePhysics() {
             _dynamicBone.m_Gravity = _gravityDirection;
             _dynamicBone.m_Force = _forceDirection;
+            _dynamicBone.OnDidApplyAnimationProperties();
         }
 
         internal override float GetRadius(Transform childNode) {
