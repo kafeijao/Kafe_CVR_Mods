@@ -1,6 +1,7 @@
 using ABI_RC.Core.Base;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using HarmonyLib;
 using MagicaCloth;
 using MelonLoader;
@@ -150,19 +151,6 @@ public class GrabbyBones : MelonMod {
         });
     }
 
-    private static Transform[] GetIkBones(Transform root, Transform child) {
-        var path = new Stack<Transform>();
-        var current = child;
-        while (current != null) {
-            path.Push(current);
-            if (current == root) {
-                break;
-            }
-            current = current.parent;
-        }
-        return path.ToArray();
-    }
-
     private static void Grab(PuppetMaster puppetMaster, Transform sourceTransform) {
 
         var avatarHeight = puppetMaster == null ? PlayerSetup.Instance._avatarHeight : puppetMaster._avatarHeight;
@@ -184,6 +172,9 @@ public class GrabbyBones : MelonMod {
                 var possibleGrabbed = GrabbedBones.FirstOrDefault(gb => gb.Root == root);
                 if (possibleGrabbed != null) continue;
 
+                // Don't allow to grab this grabby bone if is parent/child of the hand grabbing
+                if (sourceTransform.IsChildOf(root.RootTransform) || root.RootTransform.IsChildOf(sourceTransform)) break;
+
                 foreach (var childTransform in root.ChildTransforms) {
                     var radius = grabbyBone.GetRadius(childTransform);
                     var currentDistance = Vector3.Distance(sourceTransform.position, childTransform.position);
@@ -191,6 +182,9 @@ public class GrabbyBones : MelonMod {
 
                     // Ignore if we're grabbing outside of the bone radius
                     if (currentDistance > radius + avatarHeight * AvatarSizeToHandProportions) continue;
+
+                    // Don't allow to grab this root if is parent/child of the hand grabbing
+                    if (sourceTransform.IsChildOf(childTransform) || childTransform.IsChildOf(sourceTransform)) break;
 
                     // Pick the bone closest to our hand
                     if (currentDistance < closestDistance) {
@@ -227,14 +221,12 @@ public class GrabbyBones : MelonMod {
         sourceTransformOffset.position = closestChildTransform.position;
 
         GrabbedBones.Add(new GrabbedInfo(puppetMaster, sourceTransform, sourceTransformOffset, closestGrabbyBoneInfo, closestGrabbyBoneRoot, closestChildTransform));
-        closestGrabbyBoneRoot.IK.solver.SetChain(GetIkBones(closestGrabbyBoneRoot.RootTransform, closestChildTransform), closestGrabbyBoneRoot.RootTransform);
-        closestGrabbyBoneRoot.IK.solver.target = sourceTransformOffset;
         closestGrabbyBoneInfo.DisablePhysics();
-        closestGrabbyBoneRoot.IK.enabled = true;
+        closestGrabbyBoneRoot.Grab(closestChildTransform, sourceTransformOffset);
     }
 
     private static void ResetGrab(GrabbedInfo grabbed) {
-        grabbed.Root.IK.enabled = false;
+        grabbed.Root.Release();
         grabbed.Info.RestorePhysics();
     }
 
@@ -314,65 +306,74 @@ public class GrabbyBones : MelonMod {
             }
         }
 
-        private static Dictionary<Transform, HashSet<Transform>> GetMagicaRoots(Transform root, List<Transform> childNodes, List<int> selectData, bool canFixedRotate, bool fixedParent) {
+        private static void CreateMagicaRoot(Dictionary<Transform, HashSet<Transform>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
+            var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
+            results.Add(root, actualChildren.ToHashSet());
 
-            var rootIdx = childNodes.IndexOf(root);
-            var rootType = selectData[rootIdx];
-            var directChildren = childNodes.Where(c => c.parent == root).ToList();
-            var result = new Dictionary<Transform, HashSet<Transform>>();
+            // var rotationLimitAngles = new HashSet<RotationLimitAngle>();
+            // foreach (var actualChild in actualChildren) {
+            //     if (!canFixedRotate &&
+            //         TryGetSelectionData(childNodes, selectData, actualChild, out var selectionDataType) &&
+            //         selectionDataType == SelectionData.Fixed) {
+            //         if (!ikBones.Contains(actualChild)) {
+            //             // Todo: investigate a better solution for not moving child bones
+            //             var rotLimitAngle = actualChild.gameObject.AddComponentIfMissing<RotationLimitAngle>();
+            //             rotLimitAngle.limit = 0f;
+            //             rotLimitAngle.twistLimit = 0f;
+            //             rotLimitAngle.Disable();
+            //             rotationLimitAngles.Add(rotLimitAngle);
+            //         }
+            //     }
+            // }
+        }
 
-            var allDirectChildrenFixed = directChildren.Count > 0 && directChildren.All(c => selectData[childNodes.IndexOf(c)] == SelectionData.Fixed);
-            var allDirectChildrenHaveChildren = directChildren.Count > 0 && directChildren.All(c => childNodes.Any(coc => coc.parent == c));
+        private static void PopulateMagicaRoots(
+            ref Dictionary<Transform, HashSet<Transform>> results,
+            Transform root,
+            List<Transform> useTransformList,
+            List<int> selectData,
+            bool canFixedRotate,
+            bool hasFixedParent) {
 
-            // If it's a grey sphere
-            // Or is red and (all child are also red or reds can't rotate)
-            // => use their children as roots instead
-            if (rootType == SelectionData.Invalid || rootType == SelectionData.Fixed && (!canFixedRotate && allDirectChildrenHaveChildren || allDirectChildrenFixed)) {
-                var newChildNodes = childNodes.Where((_, index) => index != rootIdx).ToList();
-                var newSelectData = selectData.Where((_, index) => index != rootIdx).ToList();
-                #if DEBUG
-                MelonLogger.Msg($"Creating Sub-Root: [{rootType}] {root.name}... newChildren({newChildNodes.Count}): {newChildNodes.Join(t => t.name)}");
-                #endif
-                foreach (var directChild in directChildren) {
-                    foreach (var directChildResult in GetMagicaRoots(directChild, newChildNodes, newSelectData, canFixedRotate, rootType == SelectionData.Fixed)) {
-                        result[directChildResult.Key] = directChildResult.Value;
+            var rootTransformIdx = useTransformList.IndexOf(root);
+            if (rootTransformIdx == -1) {
+                MelonLogger.Warning($"[GetMagicaRoots] Root {root.name} not found in childNodes...");
+                return;
+            }
+            var rootType = selectData[rootTransformIdx];
+
+            // Found a green dot with a fixed parent
+            if (rootType == SelectionData.Move && hasFixedParent) {
+                CreateMagicaRoot(results, root, useTransformList, root);
+                return;
+            }
+
+            // Found a red that can rotate -> look for green children
+            if (rootType == SelectionData.Fixed && canFixedRotate) {
+                foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
+                    var directChildIdx = useTransformList.IndexOf(directChild);
+                    if (directChildIdx == -1) {
+                        MelonLogger.Warning($"[GetMagicaRoots] DirectChild {directChild.name} not found in childNodes...");
+                        return;
+                    }
+                    var directChildType = selectData[rootTransformIdx];
+
+                    // Found a green children! Let's create a root on this red pointing pivoting on the green child
+                    if (directChildType == SelectionData.Move) {
+                        CreateMagicaRoot(results, root, useTransformList, directChild);
+                    }
+                    // Otherwise let's go down the chain
+                    else {
+                        PopulateMagicaRoots(ref results, directChild, useTransformList, selectData, true, true);
                     }
                 }
-                return result;
+                return;
             }
 
-            // If the root is red (we already checked that not all children can be roots)
-            // Or we can allow greens as roots if has a non-rotating parent
-            // => Make this a root
-            if (rootType == SelectionData.Fixed || fixedParent && !canFixedRotate && rootType == SelectionData.Move) {
-
-                var filteredChildren = childNodes.Where((ct, idx) => {
-                    if (ct == null) return false;
-
-                    // Limit reds rotation if they shouldn't move (including the root)
-                    if (!canFixedRotate && selectData[idx] == SelectionData.Fixed) {
-                        var rotLimitAngle = ct.gameObject.AddComponentIfMissing<RotationLimitAngle>();
-                        rotLimitAngle.limit = 0f;
-                        rotLimitAngle.twistLimit = 0f;
-                    }
-
-                    return ct != root && ct.IsChildOf(root);
-                }).ToHashSet();
-
-                #if DEBUG
-                MelonLogger.Msg($"Found Root: [{rootType}] {root.name}! Transforms({filteredChildren.Count}): {filteredChildren.Join(t => t.name)}");
-                #endif
-
-                result[root] = filteredChildren;
-                return result;
+            // Everything else, let's just go down the chain... If already had a fixed parent let's keep it, otherwise just check if it's fixed
+            foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
+                PopulateMagicaRoots(ref results, directChild, useTransformList, selectData, canFixedRotate, hasFixedParent || rootType == SelectionData.Fixed);
             }
-
-            #if DEBUG
-            MelonLogger.Msg($"Giving up Returning empty... [{rootType}] {root.name}!");
-            #endif
-
-            // Return empty result, we found no valid roots
-            return result;
         }
 
         [HarmonyPostfix]
@@ -380,6 +381,26 @@ public class GrabbyBones : MelonMod {
         public static void After_MagicaBoneCloth_ClothInit(MagicaBoneCloth __instance) {
             // Initialize FABRIK for magica bone cloth roots
             try {
+                var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
+                // var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
+
+                var selectionList = __instance.GetSelectionList();
+
+                if (selectionList == null) {
+                    #if DEBUG
+                    MelonLogger.Warning($"[After_MagicaBoneCloth_ClothInit] [{GetPlayerName(puppetMaster)}] {__instance.name} had a null selectionList. This needs investigation... Skipping!");
+                    #endif
+                    return;
+                }
+
+                if (selectionList.Count != __instance.useTransformList.Count) {
+                    #if DEBUG
+                    MelonLogger.Warning($"[After_MagicaBoneCloth_ClothInit] [{GetPlayerName(puppetMaster)}] {__instance.name} had a selectionList count ({selectionList.Count}) " +
+                                        $"different than __instance.useTransformList count ({__instance.useTransformList.Count}). This needs investigation... Skipping!");
+                    #endif
+                    return;
+                }
+
                 GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagicaBoneInfo(__instance, __instance.Params.GravityDirection);
 
                 for (var i = 0; i < __instance.ClothTarget.RootCount; i++) {
@@ -389,13 +410,21 @@ public class GrabbyBones : MelonMod {
                     var root = __instance.ClothTarget.GetRoot(i);
                     if (root == null) continue;
 
-                    if (__instance.ClothSelection.selectionList.Count != 1) {
-                        MelonLogger.Warning($"{__instance.name} had a selection list count different than 1. This needs investigation on how to handle these cases.");
-                        continue;
-                    }
+                    var innerRoots = new Dictionary<Transform, HashSet<Transform>>();
+
+                    // var ikBones = new HashSet<Transform>();
+                    // if (animator != null && animator.isHuman) {
+                    //     foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones))) {
+                    //         if (bone == HumanBodyBones.LastBone) continue;
+                    //         var boneTransform = animator.GetBoneTransform(bone);
+                    //         if (boneTransform != null) {
+                    //             ikBones.Add(boneTransform);
+                    //         }
+                    //     }
+                    // }
 
                     // Create our own roots, because magica is funny and roots are not really roots ;_;
-                    var innerRoots = GetMagicaRoots(root, __instance.useTransformList, __instance.ClothSelection.selectionList[0].selectData, canFixedRotate, false);
+                    PopulateMagicaRoots(ref innerRoots, root, __instance.useTransformList, selectionList, canFixedRotate, false);
 
                     // Iterate our generated roots
                     foreach (var innerRoot in innerRoots) {
@@ -405,12 +434,11 @@ public class GrabbyBones : MelonMod {
                         fabrik.solver.useRotationLimits = true;
                         fabrik.enabled = false;
 
-                        grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value);
+                        grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value, new HashSet<RotationLimitAngle>());
                     }
                 }
 
                 GrabbyBonesCache.Add(grabbyBoneInfo);
-
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_MagicaBoneCloth_ClothInit)}. Probably some funny magica setup...");
@@ -434,7 +462,7 @@ public class GrabbyBones : MelonMod {
         }
 
 
-        private static Dictionary<Transform, HashSet<Transform>> GetDynBoneRoots(DynamicBone dynamicBone, Transform root, IEnumerable<Transform> childNodes, int it = 0) {
+        private static Dictionary<Transform, HashSet<Transform>> GetDynBoneRoots(Animator animator, DynamicBone dynamicBone, Transform root, IEnumerable<Transform> childNodes, int it = 0) {
 
             var result = new Dictionary<Transform, HashSet<Transform>>();
             var currentChildren = childNodes.Where(ct => ct != null && ct != root && !dynamicBone.m_Exclusions.Contains(ct) && ct.IsChildOf(root)).ToHashSet();
@@ -449,14 +477,21 @@ public class GrabbyBones : MelonMod {
             // People have their dyn bone components deeper inside of the root they reference
             var isComponentInside = dynamicBone.transform != root && dynamicBone.transform.IsChildOf(root);
 
-            if (stiffness >= 0.7f || isComponentInside) {
+            // Root bone with multiple children won't be rotated
+            var cantRotateDueChildCount = currentChildren.Count(c => c.parent == root) > 1;
+
+            // Let's not move the humanoid bones (if configured to do so)
+            var isHumanoidBone = ModConfig.MePreventGrabIKBones.Value && animator.isHuman && ((HumanBodyBones[])Enum.GetValues(typeof(HumanBodyBones))).Any(b => b != HumanBodyBones.LastBone && animator.GetBoneTransform(b) == root);
+
+            if (Mathf.Approximately(stiffness, 1f) || stiffness >= 1f || isComponentInside || isHumanoidBone || cantRotateDueChildCount) {
 
                 #if DEBUG
-                MelonLogger.Msg($"\tSkipping {root.name} root! Stiffness: {stiffness}, IsComponentInside: {isComponentInside}. Creating Sub-Roots...");
+                MelonLogger.Msg($"\tSkipping {root.name} root! Stiffness: {stiffness}, IsComponentInside: {isComponentInside}, " +
+                                $"isHumanoidBone: {isHumanoidBone}, cantRotateDueChildCount: {cantRotateDueChildCount}. Creating Sub-Roots...");
                 #endif
 
                 foreach (var directChild in currentChildren.Where(c => c.parent == root)) {
-                    foreach (var directChildResult in GetDynBoneRoots(dynamicBone, directChild, currentChildren, it+1)) {
+                    foreach (var directChildResult in GetDynBoneRoots(animator, dynamicBone, directChild, currentChildren, it+1)) {
                         result[directChildResult.Key] = directChildResult.Value;
                     }
                 }
@@ -485,22 +520,29 @@ public class GrabbyBones : MelonMod {
         public static void After_DynamicBone_Start(DynamicBone __instance) {
             // Initialize FABRIK for dynamic bone roots
             try {
+                var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
+                var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
+
                 GrabbyBoneInfo grabbyBoneInfo = new GrabbyDynamicBoneInfo(__instance, __instance.m_Gravity, __instance.m_Force);
 
                 // Ignore null or excluded roots
                 var root = __instance.m_Root;
                 if (root == null || __instance.m_Exclusions.Contains(root)) return;
 
-                var innerRoots = GetDynBoneRoots(__instance, root, __instance.GetTransformList);
+                var innerRoots = GetDynBoneRoots(animator, __instance, root, __instance.GetTransformList);
 
                 foreach (var innerRoot in innerRoots) {
+
+                    // Remove transforms that are children of (or themselves) exclusions
+                    innerRoot.Value.RemoveWhere(t => __instance.m_Exclusions.Exists(t.IsChildOf));
+
                     if (innerRoot.Value.Count == 0) continue;
 
                     var fabrik = innerRoot.Key.gameObject.AddComponent<FABRIK>();
                     fabrik.solver.useRotationLimits = true;
                     fabrik.enabled = false;
 
-                    grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value);
+                    grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value, new HashSet<RotationLimitAngle>());
                 }
 
                 GrabbyBonesCache.Add(grabbyBoneInfo);

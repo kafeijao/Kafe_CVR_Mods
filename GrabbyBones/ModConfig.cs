@@ -11,6 +11,7 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeEnabled;
     internal static MelonPreferences_Entry<bool> MeOnlyFriends;
     internal static MelonPreferences_Entry<int> MeMaxPlayerDistance;
+    internal static MelonPreferences_Entry<bool> MePreventGrabIKBones;
 
     public static void InitializeMelonPrefs() {
 
@@ -25,6 +26,9 @@ public static class ModConfig {
 
         MeMaxPlayerDistance = _melonCategory.CreateEntry("MaxPlayerDistance", 15,
             description: "Max distance from us to the player in order to see them grabbing bones. Set 0 for unlimited.");
+
+        MePreventGrabIKBones = _melonCategory.CreateEntry("PreventGrabIKBones", false,
+            description: "Whether to prevent grabbing IK bones (part of the animator) or not.");
     }
 
     public static void InitializeBTKUI() {

@@ -49,17 +49,17 @@ internal static class Data {
             MagicaPhysicsManager.Instance.Team.SetGravityDirection(_magicaBoneCloth.TeamId, _gravityDirection);
         }
 
-        internal override float GetRadius(Transform childNode) {
-            var index = _magicaBoneCloth.useTransformList.IndexOf(childNode);
-            // Hack! Sometimes the use transform has more elements than the vertex depth :/
-            // I'm assuming it's because it ignores some roots, so I rather keep the latest indexes
-            index -= _magicaBoneCloth.useTransformList.Count - _magicaBoneCloth.ClothData.vertexDepthList.Count;
-            if (index < 0 || index >= _magicaBoneCloth.ClothData.vertexDepthList.Count) {
-                MelonLogger.Msg($"[GetRadiusMagica] not found: {childNode}");
-                return 0f;
-            }
-            var depth = _magicaBoneCloth.ClothData.vertexDepthList[index];
-            return _magicaBoneCloth.Params.GetRadius(depth);
+        internal override float GetRadius(Transform childNode) => GetRadius(_magicaBoneCloth, childNode);
+
+        internal static float GetRadius(MagicaBoneCloth magicaBone, Transform childNode) {
+            var transformIndex = magicaBone.useTransformList.IndexOf(childNode);
+            var clothDataIndex = magicaBone.clothData.useVertexList.IndexOf(transformIndex);
+
+            // In magica some transforms have no cloth data for some reason, let's give it a 0 radius
+            if (clothDataIndex == -1) return 0f;
+
+            var depth = magicaBone.ClothData.vertexDepthList[clothDataIndex];
+            return magicaBone.Params.GetRadius(depth);
         }
 
         internal override bool HasInstance(MonoBehaviour script) => script == _magicaBoneCloth;
@@ -91,10 +91,12 @@ internal static class Data {
             _dynamicBone.OnDidApplyAnimationProperties();
         }
 
-        internal override float GetRadius(Transform childNode) {
-            var index = _dynamicBone.transformsList.IndexOf(childNode);
-            var radiusCurve = _dynamicBone.ParticlesList[index].m_Radius_curve;
-            return radiusCurve * _dynamicBone.m_Radius * _dynamicBone.transform.lossyScale.x;
+        internal override float GetRadius(Transform childNode) => GetRadius(_dynamicBone, childNode);
+
+        internal static float GetRadius(DynamicBone dynamicBone, Transform childNode) {
+            var index = dynamicBone.transformsList.IndexOf(childNode);
+            var radiusCurve = dynamicBone.ParticlesList[index].m_Radius_curve;
+            return radiusCurve * dynamicBone.m_Radius * dynamicBone.transform.lossyScale.x;
         }
 
         internal static float GetStiffness(DynamicBone dynamicBone, Transform childNode) {
@@ -106,22 +108,55 @@ internal static class Data {
         internal override bool HasInstance(MonoBehaviour script) => script == _dynamicBone;
     }
 
+    private static Transform[] GetIkBones(Transform root, Transform child) {
+        var path = new Stack<Transform>();
+        var current = child;
+        while (current != null) {
+            path.Push(current);
+            if (current == root) {
+                break;
+            }
+            current = current.parent;
+        }
+        return path.ToArray();
+    }
+
     internal abstract class GrabbyBoneInfo {
 
         internal class Root {
             internal readonly FABRIK IK;
             internal readonly Transform RootTransform;
             internal readonly HashSet<Transform> ChildTransforms;
+            internal readonly HashSet<RotationLimitAngle> RotationLimits;
 
-            internal Root(FABRIK ik, Transform rootTransform, HashSet<Transform> childTransforms) {
+            internal Root(FABRIK ik, Transform rootTransform, HashSet<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
                 IK = ik;
                 RootTransform = rootTransform;
                 ChildTransforms = childTransforms;
+                RotationLimits = rotationLimits;
+            }
+
+            internal void Grab(Transform closestChildTransform, Transform sourceTransformOffset) {
+                foreach (var rotationLimitAngle in RotationLimits) {
+                    if (rotationLimitAngle == null) continue;
+                    rotationLimitAngle.enabled = true;
+                }
+                IK.solver.SetChain(GetIkBones(RootTransform, closestChildTransform), RootTransform);
+                IK.solver.target = sourceTransformOffset;
+                IK.enabled = true;
+            }
+
+            internal void Release() {
+                IK.enabled = false;
+                foreach (var rotationLimitAngle in RotationLimits) {
+                    if (rotationLimitAngle == null) continue;
+                    rotationLimitAngle.enabled = false;
+                }
             }
         }
 
-        internal void AddRoot(FABRIK fabrik, Transform rootTransform, HashSet<Transform> childTransforms) {
-            Roots.Add(new Root(fabrik, rootTransform, childTransforms));
+        internal void AddRoot(FABRIK fabrik, Transform rootTransform, HashSet<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
+            Roots.Add(new Root(fabrik, rootTransform, childTransforms, rotationLimits));
         }
 
         internal readonly HashSet<Root> Roots = new();
