@@ -6,8 +6,6 @@ namespace Kafe.CVRUnverifiedModUpdaterPlugin;
 
 public class CVRUnverifiedModUpdaterPlugin : MelonPlugin {
 
-    private static readonly string ModsFolder = MelonHandler.ModsDirectory;
-
     public override void OnApplicationEarlyStart() {
 
         ModConfig.InitializeJsonConfig();
@@ -69,8 +67,7 @@ public class CVRUnverifiedModUpdaterPlugin : MelonPlugin {
 
                 // Download the mod
                 using var client = new WebClient();
-                var destinationPath = Path.Combine(ModsFolder, name);
-                client.DownloadFile(downloadUrl, destinationPath);
+                client.DownloadFile(downloadUrl, matchedFile.GetDestinationPath(name));
 
                 matchedFile.UpdatedAt = updatedAt;
                 ModConfig.SaveJsonConfig();

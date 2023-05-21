@@ -1,5 +1,6 @@
 ﻿using MelonLoader;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Kafe.CVRUnverifiedModUpdaterPlugin;
 
@@ -9,6 +10,24 @@ public static class ModConfig {
 
     private const string JsonConfigFile = "CVRUnverifiedModUpdaterPluginConfig.json";
     private const int CurrentConfigVersion = 1;
+
+    public enum DllType {
+        Mod,
+        ModDesktop,
+        ModVR,
+        Plugin,
+    }
+
+    public static string GetPath(DllType type) {
+        switch (type) {
+            case DllType.Mod: return MelonHandler.ModsDirectory;
+            case DllType.ModDesktop: return Path.Combine(MelonHandler.ModsDirectory, "Desktop");
+            case DllType.ModVR: return Path.Combine(MelonHandler.ModsDirectory, "VR");
+            case DllType.Plugin: return MelonHandler.PluginsDirectory;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(type), type, "Attempted to get path with an invalid dll type");
+        }
+    }
 
     public record JsonConfig {
         public int ConfigVersion = CurrentConfigVersion;
@@ -25,7 +44,10 @@ public static class ModConfig {
 
     public record JsonConfigRepoFile {
         public string Name;
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DllType Type = DllType.Mod;
         public string UpdatedAt = "";
+        public string GetDestinationPath(string fileName) => Path.Combine(GetPath(Type), fileName);
     }
 
     public static void SaveJsonConfig() {
