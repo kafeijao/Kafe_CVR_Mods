@@ -8,6 +8,11 @@ public static class ModConfig {
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
 
+    internal static MelonPreferences_Entry<bool> MeShowUnknownInfo;
+    internal static MelonPreferences_Entry<bool> MeShowUnknownWarning;
+    internal static MelonPreferences_Entry<bool> MeShowUnknownError;
+    internal static MelonPreferences_Entry<bool> MeShowStackTraces;
+
     internal static MelonPreferences_Entry<bool> MeShowCVRInfo;
     internal static MelonPreferences_Entry<bool> MeShowCVRWarning;
     internal static MelonPreferences_Entry<bool> MeShowCVRError;
@@ -27,6 +32,18 @@ public static class ModConfig {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(AssemblyInfoParams.Name);
+
+        MeShowUnknownInfo = _melonCategory.CreateEntry("ShowUnknownInfo", true,
+            description: "Whether only show Unknown Info logs or not.");
+
+        MeShowUnknownWarning = _melonCategory.CreateEntry("ShowUnknownWarning", true,
+            description: "Whether only show Unknown Warning logs or not.");
+
+        MeShowUnknownError = _melonCategory.CreateEntry("ShowUnknownError", true,
+            description: "Whether only show Unknown Error logs or not.");
+
+        MeShowStackTraces = _melonCategory.CreateEntry("ShowStackTraces", true,
+            description: "Whether only show Stack Traces logs or not.");
 
         MeShowCVRInfo = _melonCategory.CreateEntry("ShowCVRInfo", false,
             description: "Whether only show CVR Game Info logs or not.");

@@ -113,7 +113,7 @@ public static class LogParser {
 
     public static bool IsSpamMessage(string message) => MiscSpamMessages.Contains(message) || MiscSpamPrefixMessages.Any(message.StartsWith);
 
-    public static bool IsUselessMessage(string message) => MiscUselessMessages.Contains(message);
+    public static bool IsUselessMessage(string message) => MiscUselessMessages.Contains(message) || MiscUselessPrefixesMessages.Any(message.StartsWith);
 
     public static bool IsAvPro(string message) => message.StartsWith("[AVProVideo] ");
 }
