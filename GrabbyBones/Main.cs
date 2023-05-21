@@ -306,9 +306,9 @@ public class GrabbyBones : MelonMod {
             }
         }
 
-        private static void CreateMagicaRoot(Dictionary<Transform, HashSet<Transform>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
+        private static void CreateMagicaRoot(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
             var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
-            results.Add(root, actualChildren.ToHashSet());
+            results.Add(new Tuple<Transform, HashSet<Transform>>(root, actualChildren.ToHashSet()));
 
             // var rotationLimitAngles = new HashSet<RotationLimitAngle>();
             // foreach (var actualChild in actualChildren) {
@@ -328,12 +328,13 @@ public class GrabbyBones : MelonMod {
         }
 
         private static void PopulateMagicaRoots(
-            ref Dictionary<Transform, HashSet<Transform>> results,
+            ref HashSet<Tuple<Transform, HashSet<Transform>>> results,
             Transform root,
             List<Transform> useTransformList,
             List<int> selectData,
             bool canFixedRotate,
-            bool hasFixedParent) {
+            bool hasFixedParent,
+            int it) {
 
             var rootTransformIdx = useTransformList.IndexOf(root);
             if (rootTransformIdx == -1) {
@@ -344,6 +345,9 @@ public class GrabbyBones : MelonMod {
 
             // Found a green dot with a fixed parent
             if (rootType == SelectionData.Move && hasFixedParent) {
+                #if DEBUG
+                MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Creating Root {root.name} pivoting on itself");
+                #endif
                 CreateMagicaRoot(results, root, useTransformList, root);
                 return;
             }
@@ -356,15 +360,23 @@ public class GrabbyBones : MelonMod {
                         MelonLogger.Warning($"[GetMagicaRoots] DirectChild {directChild.name} not found in childNodes...");
                         return;
                     }
-                    var directChildType = selectData[rootTransformIdx];
+                    var directChildType = selectData[directChildIdx];
 
                     // Found a green children! Let's create a root on this red pointing pivoting on the green child
+                    // We're pivoting because other direct children can't be included in the chain
                     if (directChildType == SelectionData.Move) {
+                        #if DEBUG
+                        MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Creating Root {root.name} pivoting on {directChild.name}");
+                        #endif
                         CreateMagicaRoot(results, root, useTransformList, directChild);
                     }
                     // Otherwise let's go down the chain
                     else {
-                        PopulateMagicaRoots(ref results, directChild, useTransformList, selectData, true, true);
+                        #if DEBUG
+                        MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Can't use {root.name} as root... " +
+                                        $"[type=Fixed] [canFixedRotate=true] [hasFixedParent={hasFixedParent}]");
+                        #endif
+                        PopulateMagicaRoots(ref results, directChild, useTransformList, selectData, true, true, it+1);
                     }
                 }
                 return;
@@ -372,7 +384,17 @@ public class GrabbyBones : MelonMod {
 
             // Everything else, let's just go down the chain... If already had a fixed parent let's keep it, otherwise just check if it's fixed
             foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
-                PopulateMagicaRoots(ref results, directChild, useTransformList, selectData, canFixedRotate, hasFixedParent || rootType == SelectionData.Fixed);
+                #if DEBUG
+                var typeName = rootType switch {
+                    SelectionData.Fixed => nameof(SelectionData.Fixed),
+                    SelectionData.Move => nameof(SelectionData.Move),
+                    SelectionData.Extend => nameof(SelectionData.Extend),
+                    _ => nameof(SelectionData.Invalid),
+                };
+                MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Can't use {root.name} as root... " +
+                                $"[type={typeName}] [canFixedRotate={canFixedRotate}] [hasFixedParent={hasFixedParent}]");
+                #endif
+                PopulateMagicaRoots(ref results, directChild, useTransformList, selectData, canFixedRotate, hasFixedParent || rootType == SelectionData.Fixed, it+1);
             }
         }
 
@@ -410,7 +432,7 @@ public class GrabbyBones : MelonMod {
                     var root = __instance.ClothTarget.GetRoot(i);
                     if (root == null) continue;
 
-                    var innerRoots = new Dictionary<Transform, HashSet<Transform>>();
+                    var innerRoots = new HashSet<Tuple<Transform, HashSet<Transform>>>();
 
                     // var ikBones = new HashSet<Transform>();
                     // if (animator != null && animator.isHuman) {
@@ -424,17 +446,17 @@ public class GrabbyBones : MelonMod {
                     // }
 
                     // Create our own roots, because magica is funny and roots are not really roots ;_;
-                    PopulateMagicaRoots(ref innerRoots, root, __instance.useTransformList, selectionList, canFixedRotate, false);
+                    PopulateMagicaRoots(ref innerRoots, root, __instance.useTransformList, selectionList, canFixedRotate, false, 0);
 
                     // Iterate our generated roots
                     foreach (var innerRoot in innerRoots) {
-                        if (innerRoot.Value.Count == 0) continue;
+                        if (innerRoot.Item2.Count == 0) continue;
 
-                        var fabrik = innerRoot.Key.gameObject.AddComponent<FABRIK>();
+                        var fabrik = innerRoot.Item1.gameObject.AddComponent<FABRIK>();
                         fabrik.solver.useRotationLimits = true;
                         fabrik.enabled = false;
 
-                        grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value, new HashSet<RotationLimitAngle>());
+                        grabbyBoneInfo.AddRoot(fabrik, innerRoot.Item1, innerRoot.Item2, new HashSet<RotationLimitAngle>());
                     }
                 }
 
@@ -478,7 +500,7 @@ public class GrabbyBones : MelonMod {
             var isComponentInside = dynamicBone.transform != root && dynamicBone.transform.IsChildOf(root);
 
             // Root bone with multiple children won't be rotated
-            var cantRotateDueChildCount = currentChildren.Count(c => c.parent == root) > 1;
+            var cantRotateDueChildCount = it == 0 && currentChildren.Count(c => c.parent == root) > 1;
 
             // Let's not move the humanoid bones (if configured to do so)
             var isHumanoidBone = ModConfig.MePreventGrabIKBones.Value && animator.isHuman && ((HumanBodyBones[])Enum.GetValues(typeof(HumanBodyBones))).Any(b => b != HumanBodyBones.LastBone && animator.GetBoneTransform(b) == root);
