@@ -24,6 +24,8 @@ public static class LogParser {
     };
     private static readonly HashSet<string> MiscSpamPrefixMessages = new() {
         "IK chain has no Bones.",
+        "Screen position out of view frustum ",
+        "The character with Unicode value ",
     };
 
     // Misc Useless Messages
@@ -32,6 +34,9 @@ public static class LogParser {
         "~   This Game has been MODIFIED using MelonLoader. DO NOT report any issues to the Game Developers!   ~",
         "Loaded HRTF: default.",
         "Successfully connected to API Websocket",
+    };
+    private static readonly HashSet<string> MiscUselessPrefixesMessages = new() {
+        "Non-convex MeshCollider with non-kinematic Rigidbody is no longer supported since Unity 5",
     };
 
 
