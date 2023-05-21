@@ -11,6 +11,11 @@ lost in the player log!
 - Bring logging from the game logs to the Melon Console.
 - Rate limit for repeated messages when spamming (the same message will only display every `5 seconds` maximum).
 - Configurable Message Filtering! You can pick which messages you want to `Show` in the Melon Prefs.
+  - Stack Traces: *on by default*
+  - Unknown messages
+    - Info: *on by default*
+    - Warning: *on by default*
+    - Error: *on by default*
   - CVR Game messages
     - Info: *off by default*
     - Warning: *off by default*
