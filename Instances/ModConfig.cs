@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using BTKUILib.UIObjects.Objects;
 using MelonLoader;
@@ -28,6 +29,8 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<int> MeJoiningLastInstanceMinutesTimeout;
 
     internal static MelonPreferences_Entry<bool> MePreventRejoiningEmptyInstances;
+
+    internal static MelonPreferences_Entry<bool> MeAttemptToSaveAndLoadToken;
 
     public enum Region {
         Europe,
@@ -100,6 +103,10 @@ public static class ModConfig {
         MePreventRejoiningEmptyInstances = _melonCategory.CreateEntry("PreventRejoiningEmptyInstances", true,
             description: "Whether to prevent joining empty instances or not. Empty instances might be closing already, " +
                          "which will result in joining an instance and then getting disconnection spam.");
+
+        MeAttemptToSaveAndLoadToken = _melonCategory.CreateEntry("AttemptToSaveAndLoadToken", false,
+            description: "Whether to attempt to save current instance token when restarting and then use it to join. This " +
+                         "will allow rejoining private instances, but it might fail and cause you to not load into an offline world.");
     }
 
 
@@ -132,7 +139,7 @@ public static class ModConfig {
 
         var restartButton = categorySettings.AddButton("Restart", GetName(Icon.Restart),
             "Restart in the current platform you're in currently.");
-        restartButton.OnPress += () => RestartCVR(false);
+        restartButton.OnPress += () => MelonCoroutines.Start(RestartCVR(false));
 
         var joinInitialOnline = categorySettings.AddToggle("Start on Online Home World",
             "Should we create an online instance of your Home World when starting the game? Joining last " +
@@ -176,7 +183,7 @@ public static class ModConfig {
             $"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}",
             GetName(MetaPort.Instance.isUsingVr ? Icon.RestartDesktop : Icon.RestartVR),
             "Restart but switch the platform.");
-        restartOtherPlatformButton.OnPress += () => RestartCVR(true);
+        restartOtherPlatformButton.OnPress += () => MelonCoroutines.Start(RestartCVR(true));
 
         var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", GetName(Icon.Privacy), "Set the Type of the starting Online Instance.");
         var multiSelectPrivacy = new MultiSelection("Starting Online Instance Privacy Type", Enum.GetNames(typeof(InstancePrivacyType)), (int) MeStartingInstancePrivacyType.Value);
@@ -203,7 +210,26 @@ public static class ModConfig {
         Instances.InstancesConfigChanged += () => SetupInstancesButtons(categoryInstances);
     }
 
-    internal static void RestartCVR(bool switchPlatform) {
+    private static bool _isRestarting;
+
+    internal static IEnumerator RestartCVR(bool switchPlatform) {
+
+        if (_isRestarting) {
+            MelonLogger.Warning("[CreateAndJoinOnlineInstance] Already restarting...");
+            yield break;
+        }
+        _isRestarting = true;
+
+        // If there are still people in the world and our token has less than 5 mins, grab a new instance token
+        if (MeAttemptToSaveAndLoadToken.Value
+            && CVRPlayerManager.Instance.NetworkPlayers.Count > 0
+            && Instances.Config.LastInstance.JoinToken != null
+            && Instances.Config.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow < TimeSpan.FromMinutes(5)) {
+            MelonLogger.Msg($"Fetching a new instance token, since ours is pretty old or expired," +
+                            $" Expire Date: {Instances.Config.LastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
+            var saveTokenTask = Instances.SaveCurrentInstanceToken();
+            yield return new WaitUntil(() => saveTokenTask.IsCompleted);
+        }
 
         try {
 
@@ -284,6 +310,9 @@ public static class ModConfig {
         catch (Exception e) {
             MelonLogger.Error($"Attempted to restart the game, but something failed really bad :(");
             MelonLogger.Error(e);
+        }
+        finally {
+            _isRestarting = false;
         }
     }
 

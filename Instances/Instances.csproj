@@ -36,4 +36,8 @@
         </EmbeddedResource>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.30.1" />
+    </ItemGroup>
+
 </Project>

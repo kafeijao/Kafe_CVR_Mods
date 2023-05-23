@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
 using ABI_RC.Core;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.EventSystem;
@@ -15,6 +16,7 @@ using HarmonyLib;
 using MelonLoader;
 using Newtonsoft.Json;
 using UnityEngine;
+using CVRInstances = ABI_RC.Core.Networking.IO.Instancing.Instances;
 
 namespace Kafe.Instances;
 
@@ -31,7 +33,7 @@ public class Instances : MelonMod {
     public static event Action<string, bool> InstanceSelected;
 
     private static bool _isChangingInstance;
-    public static bool _consumedTeleport;
+    private static bool _consumedTeleport;
 
     private const string GroupId = "SFW";
 
@@ -102,14 +104,8 @@ public class Instances : MelonMod {
             Config = config;
         }
 
-        // Check for BTKUILib
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "BTKUILib") != null) {
-            MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
-            ModConfig.InitializeBTKUI();
-        }
-        else {
-            MelonLogger.Warning($"BTKUILib mod NOT detected! You won't have access to the Instances History feature!");
-        }
+        // Initialize BTKUI
+        ModConfig.InitializeBTKUI();
 
         // Check for ChatBox
         if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "ChatBox") != null) {
@@ -212,6 +208,25 @@ public class Instances : MelonMod {
         SaveConfig();
     }
 
+    private static void UpdateInstanceToken() {
+        if (Config.LastInstance == null) return;
+        if (CVRInstances.InstanceJoinJWT != Config.LastInstance.JoinToken?.JoinToken) {
+            var token = new JsonConfigJoinToken() {
+                WorldId = MetaPort.Instance.CurrentWorldId,
+                InstanceId = MetaPort.Instance.CurrentInstanceId,
+                JoinToken = CVRInstances.InstanceJoinJWT,
+                FQDN = CVRInstances.Fqdn,
+                Port = CVRInstances.Port,
+            };
+            token.CalculateExpiration();
+            Config.LastInstance.JoinToken = token;
+            #if DEBUG
+            MelonLogger.Msg($"Instance token was updated! Expiration: {token.ExpirationDate.ToLocalTime()}");
+            #endif
+            SaveConfig();
+        }
+    }
+
     private static IEnumerator UpdateLastInstance(string worldId, string instanceId, string instanceName) {
 
         // Already have this instance saved
@@ -293,11 +308,28 @@ public class Instances : MelonMod {
         public Quaternion GetRotation() => Quaternion.Euler(X, Y, Z);
     }
 
+    public record JsonConfigJoinToken {
+        public string WorldId;
+        public string InstanceId;
+        public string JoinToken;
+        public string FQDN;
+        public short Port;
+        public DateTime ExpirationDate;
+
+        public void CalculateExpiration() {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(JoinToken);
+            var exp = Convert.ToInt64(jwtToken.Claims.First(claim => claim.Type == "exp").Value);
+            ExpirationDate = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
+        }
+    }
+
     public record JsonConfigInstance {
         public string WorldId;
         public string WorldImageUrl = null;
         public string InstanceId;
         public string InstanceName;
+        public JsonConfigJoinToken JoinToken = null;
     }
 
     private static IEnumerator LoadIntoLastInstance(string instanceId, bool isInitial) {
@@ -355,6 +387,33 @@ public class Instances : MelonMod {
         }
 
         _isChangingInstance = false;
+    }
+
+    internal static async Task SaveCurrentInstanceToken() {
+        var baseResponse = await ApiConnection.MakeRequest<InstanceJoinResponse>(ApiConnection.ApiOperation.InstanceJoin, new {
+            instanceID = MetaPort.Instance.CurrentInstanceId
+        });
+        if (baseResponse is { Data: not null }) {
+            var token = new JsonConfigJoinToken() {
+                WorldId = MetaPort.Instance.CurrentWorldId,
+                InstanceId = MetaPort.Instance.CurrentInstanceId,
+                JoinToken = baseResponse.Data.Jwt,
+                FQDN = baseResponse.Data.Host.Fqdn,
+                Port = baseResponse.Data.Host.Port
+            };
+            token.CalculateExpiration();
+            Config.LastInstance.JoinToken = token;
+            MelonLogger.Msg($"Successfully grabbed an instance token! Expires at: {token.ExpirationDate.ToLocalTime()}");
+            SaveConfig();
+        }
+    }
+
+    private static void LoadWorldUsingToken(JsonConfigJoinToken joinToken) {
+        CVRInstances.RequestedInstance = joinToken.InstanceId;
+        CVRInstances.InstanceJoinJWT = joinToken.JoinToken;
+        CVRInstances.Fqdn = joinToken.FQDN;
+        CVRInstances.Port = joinToken.Port;
+        Content.LoadIntoWorld(joinToken.WorldId);
     }
 
     private static IEnumerator CreateAndJoinOnlineInstance() {
@@ -418,6 +477,50 @@ public class Instances : MelonMod {
         Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
     }
 
+    private static bool _ranHQToolsStart;
+    private static bool _ranHQCVRWorldStart;
+
+    private static void Initialize() {
+
+        // Funny race condition >.> Let's not
+        if (!_ranHQToolsStart || !_ranHQCVRWorldStart) return;
+
+        // Attempt to join with an instance token (needs to have more than 1 minute time left)
+        if (ModConfig.MeAttemptToSaveAndLoadToken.Value && Config.LastInstance?.JoinToken != null) {
+            if (Config.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow > TimeSpan.FromMinutes(1)) {
+                MelonLogger.Msg($"Attempting to join previous instance using the join token...");
+                LoadWorldUsingToken(Config.LastInstance.JoinToken);
+                return;
+            }
+            else {
+                MelonLogger.Msg($"Skip attempting to rejoin last instance using a token, because the token expired or is about to. " +
+                                $"Expire Date: {Config.LastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
+            }
+        }
+
+        // Let's attempt to join the last instance
+        if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null) {
+
+            // Check if joining last instance timed out
+            if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && DateTime.UtcNow - Config.RejoinLocation.ClosedDateTime > TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value)) {
+                MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
+            }
+            // Otherwise just attempt to join the last instance
+            else {
+                OnInstanceSelected(Config.LastInstance.InstanceId, true);
+                return;
+            }
+        }
+
+        // Otherwise let's join our home world, but in an online instance
+        if (ModConfig.MeStartInAnOnlineInstance.Value) {
+            MelonCoroutines.Start(CreateAndJoinOnlineInstance());
+            return;
+        }
+
+        Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
@@ -425,39 +528,13 @@ public class Instances : MelonMod {
         [HarmonyPatch(typeof(HQTools), nameof(HQTools.Start))]
         public static bool Before_HQTools_Start() {
             try {
-
                 // Original method code, since we're skipping the execution
                 CVRTools.ConfigureHudAffinity();
                 AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
 
-                // If shift is hold, let's just go to our offline instance
-                if (!Input.GetKey(KeyCode.LeftShift)) {
-
-                    // Let's attempt to join the last instance
-                    if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null) {
-
-                        // Check if joining last instance timed out
-                        if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && DateTime.UtcNow - Config.RejoinLocation.ClosedDateTime > TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value)) {
-                            MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
-                        }
-                        // Otherwise just attempt to join the last instance
-                        else {
-                            OnInstanceSelected(Config.LastInstance.InstanceId, true);
-                            return false;
-                        }
-                    }
-
-                    // Otherwise let's join our home world, but in an online instance
-                    if (ModConfig.MeStartInAnOnlineInstance.Value) {
-                        MelonCoroutines.Start(CreateAndJoinOnlineInstance());
-                        return false;
-                    }
-                }
-                else {
-                    MelonLogger.Msg("Since you pressed Left Shift during the game start, you'll be thrown into an offline Instance!");
-                }
-
-                Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
+                _ranHQToolsStart = true;
+                Initialize();
+                return false;
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(Before_HQTools_Start)}");
@@ -474,10 +551,29 @@ public class Instances : MelonMod {
         }
 
         [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
+        public static IEnumerator After_CVRWorld_Start(IEnumerator result) {
+            while (result.MoveNext()) yield return result.Current;
+
+            // MelonLogger.Msg($"[After_CVRWorld_Start] LoadedWorldCount: {MetaPort.Instance.worldsLoadedCounter} Name: {SceneManager.GetActiveScene().name}");
+            // [After_CVRWorld_Start] LoadedWorldCount: 1 Name: Headquarters
+
+            // If it's the HQ Scene
+            if (MetaPort.Instance.worldsLoadedCounter == 1) {
+                _ranHQCVRWorldStart = true;
+                Initialize();
+            }
+        }
+
+        [HarmonyPostfix]
         [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.PopulateLastMessage))]
         public static void After_RichPresence_PopulateLastMessage() {
             try {
 
+                // Check for token updates
+                UpdateInstanceToken();
+
+                // Update current instance
                 MelonCoroutines.Start(UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName));
 
                 // Initialize the save config job when we reach an online instance
