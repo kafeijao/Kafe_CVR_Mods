@@ -17,15 +17,30 @@ public static class LogParser {
     private static readonly Regex ScriptMissingPattern1 = new(@"The referenced script \((?<scriptName>.+?)\) on this Behaviour is missing!", RegexOptions.Compiled);
     private static readonly Regex ScriptMissingPattern2 = new(@"The referenced script on this Behaviour \(Game Object '(?<scriptName>.*?)'\) is missing!", RegexOptions.Compiled);
 
+    // AV Pro Messages
+    private static readonly HashSet<string> AvProPrefixMessages = new() {
+        "[AVProVideo] ",
+    };
+    private static readonly HashSet<string> AvProInnerMessages = new() {
+        "ABI_RC.VideoPlayer.Scripts.Players.AvPro.AvProPlayer.get_Time () (at",
+        "ABI_RC.VideoPlayer.Scripts.Players.AvPro.AvProPlayer.CleanupVideoPlayers () (at",
+    };
+
     // Misc Spam Messages
     private static readonly HashSet<string> MiscSpamMessages = new() {
         "Result from API Request InstanceDetail returned NotFound",
         "Kinematic body only supports Speculative Continuous collision detection",
+        "RenderTexture.Create: Depth|ShadowMap RenderTexture requested without a depth buffer. Changing to a 16 bit depth buffer.",
     };
     private static readonly HashSet<string> MiscSpamPrefixMessages = new() {
         "IK chain has no Bones.",
         "Screen position out of view frustum ",
         "The character with Unicode value ",
+        "Couldn't create a Convex Mesh from source mesh ",
+        "Material doesn't have a color property ",
+    };
+    private static readonly HashSet<string> MiscSpamSuffixMessages = new() {
+        " is already registered as a write bone.",
     };
 
     // Misc Useless Messages
@@ -116,9 +131,16 @@ public static class LogParser {
         return false;
     }
 
-    public static bool IsSpamMessage(string message) => MiscSpamMessages.Contains(message) || MiscSpamPrefixMessages.Any(message.StartsWith);
+    public static bool IsSpamMessage(string message) =>
+        MiscSpamMessages.Contains(message)
+        || MiscSpamPrefixMessages.Any(message.StartsWith)
+        || MiscSpamSuffixMessages.Any(message.EndsWith);
 
-    public static bool IsUselessMessage(string message) => MiscUselessMessages.Contains(message) || MiscUselessPrefixesMessages.Any(message.StartsWith);
+    public static bool IsUselessMessage(string message) =>
+        MiscUselessMessages.Contains(message)
+        || MiscUselessPrefixesMessages.Any(message.StartsWith);
 
-    public static bool IsAvPro(string message) => message.StartsWith("[AVProVideo] ");
+    public static bool IsAvPro(string message) =>
+        AvProPrefixMessages.Any(message.StartsWith)
+        || AvProInnerMessages.Any(message.Contains);
 }

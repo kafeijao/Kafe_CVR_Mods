@@ -36,7 +36,7 @@ public class LoggerPlusPlus : MelonPlugin {
         );
     }
 
-    private static void ActualLogMessage(LogType type, string message, bool isStackTrace) {
+    private static void ActualLogMessage(LogType type, string message, bool isStackTrace, Exception exception) {
 
         // Check if it's a spam log
         if (LogParser.IsSpamMessage(message)) {
@@ -62,7 +62,7 @@ public class LoggerPlusPlus : MelonPlugin {
             if (!ModConfig.MeShowCVRWarning.Value && type == LogType.Warning) return;
             if (!ModConfig.MeShowCVRError.Value && type is LogType.Error) return;
         }
-        // Check CVR Game logs
+        // Check AV Pro logs
         else if (LogParser.IsAvPro(message)) {
             if (!ModConfig.MeShowAvPro.Value) return;
         }
@@ -108,13 +108,13 @@ public class LoggerPlusPlus : MelonPlugin {
         private static readonly TimeSpan CleanupInterval = TimeSpan.FromMinutes(1);
         private static readonly object CleanupLock = new();
 
-        public static void Log(string message, LogType type, bool isStacktrace) {
+        public static void Log(string message, LogType type, bool isStacktrace, Exception exception) {
             var now = DateTime.UtcNow;
             if (MessageTimestamps.TryGetValue(message, out var lastLogged)) {
                 if (now - lastLogged < RateLimit) return;
             }
             MessageTimestamps[message] = now;
-            ActualLogMessage(type, message, isStacktrace);
+            ActualLogMessage(type, message, isStacktrace, exception);
 
             // Cleanup the cache
             lock (CleanupLock) {
@@ -131,7 +131,7 @@ public class LoggerPlusPlus : MelonPlugin {
 
     private static void LogMessageReceived(string condition, string stackTrace, LogType type) {
         try {
-            RateLimitedLogger.Log($"{condition}{(stackTrace.IsNullOrEmpty() ? "" : $"\n{stackTrace}")}", type, false);
+            RateLimitedLogger.Log($"{condition}{(stackTrace.IsNullOrEmpty() ? "" : $"\n{stackTrace}")}", type, false, null);
         }
         catch (Exception e) {
             MelonLogger.Error(e);
@@ -140,7 +140,7 @@ public class LoggerPlusPlus : MelonPlugin {
 
     private static void InternalLog(LogType level, LogOption options, string msg, UnityEngine.Object obj) {
         try {
-            RateLimitedLogger.Log($"{msg}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", level, false);
+            RateLimitedLogger.Log($"{msg}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", level, false, null);
         }
         catch (Exception e) {
             MelonLogger.Error(e);
@@ -149,7 +149,7 @@ public class LoggerPlusPlus : MelonPlugin {
 
     private static void InternalLogException(Exception exception, UnityEngine.Object obj) {
         try {
-            RateLimitedLogger.Log($"{exception}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", LogType.Exception, true);
+            RateLimitedLogger.Log($"{exception}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", LogType.Exception, true, exception);
         }
         catch (Exception e) {
             MelonLogger.Error(e);
