@@ -1,7 +1,7 @@
-using ABI_RC.Core.Base;
-using ABI_RC.Core.Networking.IO.Social;
+// #define DEBUG_ROOT_GEN
+
 using ABI_RC.Core.Player;
-using ABI_RC.Core.Savior;
+using ABI.CCK.Components;
 using HarmonyLib;
 using MagicaCloth;
 using MelonLoader;
@@ -11,14 +11,12 @@ using static Kafe.GrabbyBones.Data;
 
 namespace Kafe.GrabbyBones;
 
+
 public class GrabbyBones : MelonMod {
 
     private static bool _initialize;
 
-    private const float AvatarSizeToBreakDistance = 1f;
     private const float AvatarSizeToHandProportions = 0.1f;
-
-    private const string HandOffsetName = $"[{nameof(GrabbedBones)} Mod] HandOffset";
 
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
@@ -31,129 +29,36 @@ public class GrabbyBones : MelonMod {
 
     private static readonly HashSet<GrabbyBoneInfo> GrabbyBonesCache = new();
 
-    private enum GrabState {
-        None = 0,
-        Grab,
-        // Pose,
-    }
-
-    private static readonly Dictionary<Transform, GrabState> GrabbedStates = new();
-
-    private static readonly HashSet<GrabbedInfo> GrabbedBones = new();
-
-    private static string GetPlayerName(PuppetMaster puppetMaster) {
+    internal static string GetPlayerName(PuppetMaster puppetMaster) {
         if (puppetMaster == null) return "Me";
         if (puppetMaster._playerDescriptor != null) return puppetMaster._playerDescriptor.userName;
         return "N/A";
     }
 
-    private static void CheckState(PuppetMaster puppetMaster, Transform handTransform, GrabState grabState) {
-        GrabbedStates.TryGetValue(handTransform, out var previousGrabState);
-        if (grabState == GrabState.Grab && previousGrabState == GrabState.None) {
-            Grab(puppetMaster, handTransform);
-        }
-        else if (grabState == GrabState.None && previousGrabState != GrabState.None) {
-            Release(puppetMaster, handTransform);
-        }
-        GrabbedStates[handTransform] = grabState;
-    }
 
-    private static GrabState GetGrabState(float gesture, float thumbCurl, float middleFingerCurl) {
-        if (Mathf.Approximately(gesture, 1) || thumbCurl > 0.5f && middleFingerCurl > 0.5f) return GrabState.Grab;
-        // if (Mathf.Approximately(gesture, 2) || thumbCurl < 0.4f && middleFingerCurl > 0.5f) return GrabState.Pose;
-        return GrabState.None;
-    }
-
-    private static void CheckAvatarMovementData(PuppetMaster puppetMaster, Animator animator, PlayerAvatarMovementData data) {
-        if (animator == null || !animator.isHuman) return;
-        var leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
-        if (leftHand != null) CheckState(puppetMaster, leftHand, GetGrabState(data.AnimatorGestureLeft, data.LeftThumbCurl, data.LeftMiddleCurl));
-        var rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-        if (rightHand != null) CheckState(puppetMaster, rightHand, GetGrabState(data.AnimatorGestureRight, data.RightThumbCurl, data.RightMiddleCurl));
+    private static void CheckState(AvatarHandInfo handInfo) {
+        var currentGrabState = handInfo.GetGrabState();
+        if (currentGrabState == GrabState.Grab && handInfo.PreviousGrabState == GrabState.None) {
+            Grab(handInfo);
+        }
+        else if (currentGrabState == GrabState.None && handInfo.PreviousGrabState != GrabState.None) {
+            Release(handInfo);
+        }
+        handInfo.PreviousGrabState = currentGrabState;
     }
 
     private static void OnVeryLateUpdate() {
         if (!_initialize) return;
 
-        // The local player
-        CheckAvatarMovementData(null, PlayerSetup.Instance._animator, PlayerSetup.Instance._playerAvatarMovementData);
-
-        // Remote Players
-        foreach (var player in CVRPlayerManager.Instance.NetworkPlayers) {
-            if (ModConfig.MeOnlyFriends.Value && !Friends.FriendsWith(player.Uuid)) continue;
-            if (player.PuppetMaster == null || player.PuppetMaster.PlayerAvatarMovementDataInput == null) continue;
-            if (player.PuppetMaster._isHidden || player.PuppetMaster._isBlocked || player.PuppetMaster._isBlockedAlt) continue;
-            if (ModConfig.MeMaxPlayerDistance.Value > 0 &&
-                Vector3.Distance(player.PuppetMaster.transform.position, PlayerSetup.Instance.transform.position) >
-                ModConfig.MeMaxPlayerDistance.Value) continue;
-
-            CheckAvatarMovementData(player.PuppetMaster, player.PuppetMaster._animator, player.PuppetMaster.PlayerAvatarMovementDataInput);
+        foreach (var handInfo in AvatarHandInfo.Hands) {
+            if (!handInfo.IsAllowed()) continue;
+            CheckState(handInfo);
         }
-
-        // Check for currently grabbed bones breaks
-        GrabbedBones.RemoveWhere(grabbedBone => {
-
-            if (grabbedBone.PuppetMasterComponent != null) {
-                var puppetMaster = grabbedBone.PuppetMasterComponent;
-
-                // Handle player's avatar being hidden/blocked/blocked_alt
-                if (puppetMaster._isHidden || puppetMaster._isBlocked || puppetMaster._isBlockedAlt) {
-                    #if DEBUG
-                    MelonLogger.Msg($"[{GetPlayerName(puppetMaster)}] Broken by being hidden/blocked/blocked_alt: {grabbedBone.Root.RootTransform.name}. " +
-                                    $"_isHidden: {puppetMaster._isHidden}, _isBlocked: {puppetMaster._isBlocked}, _isBlockedAlt: {puppetMaster._isBlockedAlt}");
-                    #endif
-                    ResetGrab(grabbedBone);
-                    return true;
-                }
-
-                // Handle player being too far
-                if (ModConfig.MeMaxPlayerDistance.Value > 0 && Vector3.Distance(puppetMaster.transform.position, PlayerSetup.Instance.transform.position) > ModConfig.MeMaxPlayerDistance.Value) {
-                    #if DEBUG
-                    MelonLogger.Msg($"[{GetPlayerName(puppetMaster)}] Broken by grabbing player being too far: {grabbedBone.Root.RootTransform.name}.");
-                    #endif
-                    ResetGrab(grabbedBone);
-                    return true;
-                }
-            }
-
-            // Handle puppet master being null, but it wasn't the local player...
-            else if (!grabbedBone.IsLocalPlayer) {
-                #if DEBUG
-                MelonLogger.Msg($"[N/A] Broken by remote player puppet master being gone: {grabbedBone.Root.RootTransform.name}.");
-                #endif
-                ResetGrab(grabbedBone);
-                return true;
-            }
-
-            // Handle hand transform being gone (seems to happen when the player crashed?)
-            if (grabbedBone.SourceHand == null || grabbedBone.SourceHandOffset == null) {
-                #if DEBUG
-                MelonLogger.Msg($"[{GetPlayerName(grabbedBone.PuppetMasterComponent)}] Broken by hand transform being gone: {grabbedBone.Root.RootTransform.name}");
-                #endif
-                ResetGrab(grabbedBone);
-                return true;
-            }
-
-            // Handle source hand being too far
-            var avatarHeight = grabbedBone.PuppetMasterComponent == null ? PlayerSetup.Instance._avatarHeight : grabbedBone.PuppetMasterComponent._avatarHeight;
-            var breakDistance = avatarHeight * AvatarSizeToBreakDistance;
-            var currentDistance = Vector3.Distance(grabbedBone.SourceHandOffset.position, grabbedBone.TargetChildBone.position);
-            if (currentDistance > breakDistance) {
-                #if DEBUG
-                MelonLogger.Msg($"[{GetPlayerName(grabbedBone.PuppetMasterComponent)}] Broken by distance: {grabbedBone.Root.RootTransform.name}. " +
-                                $"Current Distance: {currentDistance}, Breaking Distance: {breakDistance}");
-                #endif
-                ResetGrab(grabbedBone);
-                return true;
-            }
-
-            return false;
-        });
     }
 
-    private static void Grab(PuppetMaster puppetMaster, Transform sourceTransform) {
+    private static void Grab(AvatarHandInfo handInfo) {
 
-        var avatarHeight = puppetMaster == null ? PlayerSetup.Instance._avatarHeight : puppetMaster._avatarHeight;
+        var avatarHeight = handInfo.GetAvatarHeight();
 
         GrabbyBoneInfo closestGrabbyBoneInfo = null;
         GrabbyBoneInfo.Root closestGrabbyBoneRoot = null;
@@ -169,22 +74,21 @@ public class GrabbyBones : MelonMod {
             foreach (var root in grabbyBone.Roots) {
 
                 // If the root is being grabbed already lets ignore
-                var possibleGrabbed = GrabbedBones.FirstOrDefault(gb => gb.Root == root);
-                if (possibleGrabbed != null) continue;
+                if (AvatarHandInfo.IsRootGrabbed(root)) continue;
 
                 // Don't allow to grab this grabby bone if is parent/child of the hand grabbing
-                if (sourceTransform.IsChildOf(root.RootTransform) || root.RootTransform.IsChildOf(sourceTransform)) break;
+                if (handInfo.GrabbingPoint.IsChildOf(root.RootTransform) || root.RootTransform.IsChildOf(handInfo.GrabbingPoint)) break;
 
                 foreach (var childTransform in root.ChildTransforms) {
                     var radius = grabbyBone.GetRadius(childTransform);
-                    var currentDistance = Vector3.Distance(sourceTransform.position, childTransform.position);
+                    var currentDistance = Vector3.Distance(handInfo.GrabbingPoint.position, childTransform.position);
                     // MelonLogger.Msg($"\tPicked closest! radius: {radius}, currentDistance: {currentDistance}, maxDistance: {radius + avatarHeight * AvatarSizeToHandProportions}");
 
                     // Ignore if we're grabbing outside of the bone radius
                     if (currentDistance > radius + avatarHeight * AvatarSizeToHandProportions) continue;
 
                     // Don't allow to grab this root if is parent/child of the hand grabbing
-                    if (sourceTransform.IsChildOf(childTransform) || childTransform.IsChildOf(sourceTransform)) break;
+                    if (handInfo.GrabbingPoint.IsChildOf(childTransform) || childTransform.IsChildOf(handInfo.GrabbingPoint)) break;
 
                     // Pick the bone closest to our hand
                     if (currentDistance < closestDistance) {
@@ -207,40 +111,21 @@ public class GrabbyBones : MelonMod {
         if (closestChildTransform == null) return;
 
         #if DEBUG
-        MelonLogger.Msg($"[{GetPlayerName(puppetMaster)}] Grabbed: distance: {closestDistance}, bone: {(closestChildTransform == null ? "N/A" : closestChildTransform.name)}");
+        MelonLogger.Msg($"[{handInfo.GetPlayerName()}] Grabbed: distance: {closestDistance}, bone: {(closestChildTransform == null ? "N/A" : closestChildTransform.name)}");
         #endif
 
-        // Todo: Add these on initialization and cache it
-        var sourceTransformOffset = sourceTransform.Find(HandOffsetName);
-        if (sourceTransformOffset == null) {
-            sourceTransformOffset = new GameObject(HandOffsetName).transform;
-            sourceTransformOffset.SetParent(sourceTransform);
-        }
-
         // Set the offset position
-        sourceTransformOffset.position = closestChildTransform.position;
+        handInfo.GrabbingOffset.position = closestChildTransform.position;
 
-        GrabbedBones.Add(new GrabbedInfo(puppetMaster, sourceTransform, sourceTransformOffset, closestGrabbyBoneInfo, closestGrabbyBoneRoot, closestChildTransform));
-        closestGrabbyBoneInfo.DisablePhysics();
-        closestGrabbyBoneRoot.Grab(closestChildTransform, sourceTransformOffset);
+        handInfo.Grab(new GrabbedInfo(handInfo, closestGrabbyBoneInfo, closestGrabbyBoneRoot, closestChildTransform));
     }
 
-    private static void ResetGrab(GrabbedInfo grabbed) {
-        grabbed.Root.Release();
-        grabbed.Info.RestorePhysics();
-    }
-
-    private static void Release(PuppetMaster puppetMaster, Transform sourceTransform) {
-
-        var possibleGrabbed = GrabbedBones.FirstOrDefault(gb => gb.SourceHand == sourceTransform);
-        if (possibleGrabbed != null) {
-            ResetGrab(possibleGrabbed);
-            GrabbedBones.Remove(possibleGrabbed);
-
-            #if DEBUG
-            MelonLogger.Msg($"[{GetPlayerName(puppetMaster)}] Released {possibleGrabbed.Root.RootTransform.name}");
-            #endif
-        }
+    private static void Release(AvatarHandInfo handInfo) {
+        if (!handInfo.IsGrabbing) return;
+        #if DEBUG
+        MelonLogger.Msg($"[{handInfo.GetPlayerName()}] Released {handInfo.GrabbedBoneInfo.Root.RootTransform.name}");
+        #endif
+        handInfo.Release();
     }
 
     [DefaultExecutionOrder(9999999)]
@@ -250,7 +135,7 @@ public class GrabbyBones : MelonMod {
             if (!ModConfig.MeEnabled.Value) return;
 
             // Prevent the IK Solver from running in LateUpdate for the local player. It's going to run later.
-            foreach (var grabbedBone in GrabbedBones.Where(gb => gb.IsLocalPlayer)) {
+            foreach (var grabbedBone in AvatarHandInfo.LocalGrabbedBones) {
                 grabbedBone.Root.IK.skipSolverUpdate = true;
             }
         }
@@ -259,13 +144,13 @@ public class GrabbyBones : MelonMod {
             if (!ModConfig.MeEnabled.Value) return;
 
             try {
-                // We need to run the local player skipped FABRIK solver after VRIK, otherwise vr will be funny
-                foreach (var grabbedBone in GrabbedBones.Where(gb => gb.IsLocalPlayer)) {
-                    grabbedBone.Root.IK.UpdateSolverExternal();
-                }
-
                 // We need the very last positions accurately, so it is compatible with (VRIK, and LeapMotion mod)
                 OnVeryLateUpdate();
+
+                // We need to run the local player skipped FABRIK solver after VRIK, otherwise vr will be funny
+                foreach (var grabbedBone in AvatarHandInfo.LocalGrabbedBones) {
+                    grabbedBone.Root.IK.UpdateSolverExternal();
+                }
             }
             catch (Exception e) {
                 MelonLogger.Error(e);
@@ -292,16 +177,46 @@ public class GrabbyBones : MelonMod {
                     #if DEBUG
                     MelonLogger.Msg($"[Disabled] Releasing all grabbed bones...");
                     #endif
-                    GrabbedBones.RemoveWhere(grabbedBone => {
-                        ResetGrab(grabbedBone);
-                        return true;
-                    });
+                    AvatarHandInfo.ReleaseAll();
                 });
 
                 _initialize = true;
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}.");
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.Start))]
+        public static /*IEnumerator*/ void After_CVRAvatar_Start(/*IEnumerator values, */CVRAvatar __instance) {
+            // #if DEBUG
+            // MelonLogger.Msg($"[After_CVRAvatar_Start] [{GetPlayerName(__instance.puppetMaster)}] Before Iterator...");
+            // #endif
+
+            // while (values.MoveNext())
+            //     yield return values.Current;
+
+            try {
+                // Need to get it like this because if the avatars are hidden via distance seem to not call the whole enumerator
+                var puppetMaster = __instance.transform.parent.GetComponentInParent<PuppetMaster>();
+                AvatarHandInfo.Create(__instance, puppetMaster);
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVRAvatar_Start)}.");
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.OnDestroy))]
+        public static void After_PlayerSetup_OnDestroy(CVRAvatar __instance) {
+            try {
+                AvatarHandInfo.Delete(__instance);
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_OnDestroy)}.");
                 MelonLogger.Error(e);
             }
         }
@@ -345,7 +260,7 @@ public class GrabbyBones : MelonMod {
 
             // Found a green dot with a fixed parent
             if (rootType == SelectionData.Move && hasFixedParent) {
-                #if DEBUG
+                #if DEBUG_ROOT_GEN
                 MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Creating Root {root.name} pivoting on itself");
                 #endif
                 CreateMagicaRoot(results, root, useTransformList, root);
@@ -365,14 +280,14 @@ public class GrabbyBones : MelonMod {
                     // Found a green children! Let's create a root on this red pointing pivoting on the green child
                     // We're pivoting because other direct children can't be included in the chain
                     if (directChildType == SelectionData.Move) {
-                        #if DEBUG
+                        #if DEBUG_ROOT_GEN
                         MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Creating Root {root.name} pivoting on {directChild.name}");
                         #endif
                         CreateMagicaRoot(results, root, useTransformList, directChild);
                     }
                     // Otherwise let's go down the chain
                     else {
-                        #if DEBUG
+                        #if DEBUG_ROOT_GEN
                         MelonLogger.Msg($"[PopulateMagicaRoots]{new string('\t', it)} Can't use {root.name} as root... " +
                                         $"[type=Fixed] [canFixedRotate=true] [hasFixedParent={hasFixedParent}]");
                         #endif
@@ -384,7 +299,7 @@ public class GrabbyBones : MelonMod {
 
             // Everything else, let's just go down the chain... If already had a fixed parent let's keep it, otherwise just check if it's fixed
             foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
-                #if DEBUG
+                #if DEBUG_ROOT_GEN
                 var typeName = rootType switch {
                     SelectionData.Fixed => nameof(SelectionData.Fixed),
                     SelectionData.Move => nameof(SelectionData.Move),
@@ -479,7 +394,7 @@ public class GrabbyBones : MelonMod {
                     }
                 }
             }
-            GrabbedBones.RemoveWhere(gb => gb.Info.HasInstance(__instance));
+            AvatarHandInfo.ReleaseAllWithBehavior(__instance);
             GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
         }
 
@@ -489,7 +404,7 @@ public class GrabbyBones : MelonMod {
             var result = new Dictionary<Transform, HashSet<Transform>>();
             var currentChildren = childNodes.Where(ct => ct != null && ct != root && !dynamicBone.m_Exclusions.Contains(ct) && ct.IsChildOf(root)).ToHashSet();
 
-            #if DEBUG
+            #if DEBUG_ROOT_GEN
             MelonLogger.Msg($"{(it == 0 ? "[DynamicBone] Creating Root" : $"{new string('\t', it)}Creating Sub-Root")}: {root.name}... Children: ({currentChildren.Count}) {currentChildren.Join(t => t.name)}");
             #endif
 
@@ -507,7 +422,7 @@ public class GrabbyBones : MelonMod {
 
             if (Mathf.Approximately(stiffness, 1f) || stiffness >= 1f || isComponentInside || isHumanoidBone || cantRotateDueChildCount) {
 
-                #if DEBUG
+                #if DEBUG_ROOT_GEN
                 MelonLogger.Msg($"\tSkipping {root.name} root! Stiffness: {stiffness}, IsComponentInside: {isComponentInside}, " +
                                 $"isHumanoidBone: {isHumanoidBone}, cantRotateDueChildCount: {cantRotateDueChildCount}. Creating Sub-Roots...");
                 #endif
@@ -527,7 +442,7 @@ public class GrabbyBones : MelonMod {
 
             // Roots needs children...
             else {
-                #if DEBUG
+                #if DEBUG_ROOT_GEN
                 MelonLogger.Msg($"Giving up Returning empty... Root: {root.name}!");
                 #endif
 
@@ -579,7 +494,7 @@ public class GrabbyBones : MelonMod {
         [HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.OnDestroy))]
         public static void After_DynamicBone_OnDestroy(DynamicBone __instance) {
             // Clean cached info and currently grabbed info related to this dyn bone
-            GrabbedBones.RemoveWhere(gb => gb.Info.HasInstance(__instance));
+            AvatarHandInfo.ReleaseAllWithBehavior(__instance);
             GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
         }
     }
