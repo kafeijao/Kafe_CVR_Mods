@@ -463,12 +463,14 @@ internal static class Data {
                     if (rotationLimitAngle == null) continue;
                     rotationLimitAngle.enabled = true;
                 }
+                if (IK == null || IK.solver == null) return;
                 IK.solver.SetChain(GetIkBones(RootTransform, closestChildTransform), RootTransform);
                 IK.solver.target = sourceTransformOffset;
                 IK.enabled = true;
             }
 
             internal void DisableIKChain() {
+                if (IK == null) return;
                 IK.enabled = false;
                 foreach (var rotationLimitAngle in RotationLimits) {
                     if (rotationLimitAngle == null) continue;
