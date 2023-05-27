@@ -18,6 +18,8 @@ public class GrabbyBones : MelonMod {
 
     private const float AvatarSizeToHandProportions = 0.1f;
 
+    private const string IgnoreGrabbyBonesTag = "[NGB]";
+
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
         ModConfig.InitializeBTKUI();
@@ -54,6 +56,8 @@ public class GrabbyBones : MelonMod {
             if (!handInfo.IsAllowed()) continue;
             CheckState(handInfo);
         }
+
+        AvatarHandInfo.CheckGrabbedBones();
     }
 
     private static void Grab(AvatarHandInfo handInfo) {
@@ -134,10 +138,11 @@ public class GrabbyBones : MelonMod {
         private void FixedUpdate() {
             if (!ModConfig.MeEnabled.Value) return;
 
-            // Prevent the IK Solver from running in LateUpdate for the local player. It's going to run later.
-            foreach (var grabbedBone in AvatarHandInfo.LocalGrabbedBones) {
-                grabbedBone.Root.IK.skipSolverUpdate = true;
-            }
+            // Update the angle parameters
+            AvatarHandInfo.UpdateAngleParameters();
+
+            // Prevent the IK Solver from running at the usual time. We're going to run manually later.
+            AvatarHandInfo.SetSkipIKSolver();
         }
 
         private void LateUpdate() {
@@ -147,10 +152,8 @@ public class GrabbyBones : MelonMod {
                 // We need the very last positions accurately, so it is compatible with (VRIK, and LeapMotion mod)
                 OnVeryLateUpdate();
 
-                // We need to run the local player skipped FABRIK solver after VRIK, otherwise vr will be funny
-                foreach (var grabbedBone in AvatarHandInfo.LocalGrabbedBones) {
-                    grabbedBone.Root.IK.UpdateSolverExternal();
-                }
+                // We need to run the skipped FABRIK solver after VRIK, otherwise vr will be funny
+                AvatarHandInfo.ExecuteIKSolver();
             }
             catch (Exception e) {
                 MelonLogger.Error(e);
@@ -190,15 +193,10 @@ public class GrabbyBones : MelonMod {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.Start))]
-        public static /*IEnumerator*/ void After_CVRAvatar_Start(/*IEnumerator values, */CVRAvatar __instance) {
-            // #if DEBUG
-            // MelonLogger.Msg($"[After_CVRAvatar_Start] [{GetPlayerName(__instance.puppetMaster)}] Before Iterator...");
-            // #endif
-
-            // while (values.MoveNext())
-            //     yield return values.Current;
-
+        public static void After_CVRAvatar_Start(CVRAvatar __instance) {
+            // Initialize the avatar's hand info
             try {
+
                 // Need to get it like this because if the avatars are hidden via distance seem to not call the whole enumerator
                 var puppetMaster = __instance.transform.parent.GetComponentInParent<PuppetMaster>();
                 AvatarHandInfo.Create(__instance, puppetMaster);
@@ -212,7 +210,9 @@ public class GrabbyBones : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.OnDestroy))]
         public static void After_PlayerSetup_OnDestroy(CVRAvatar __instance) {
+            // Cleanup the avatar's hand info
             try {
+
                 AvatarHandInfo.Delete(__instance);
             }
             catch (Exception e) {
@@ -224,22 +224,6 @@ public class GrabbyBones : MelonMod {
         private static void CreateMagicaRoot(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
             var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
             results.Add(new Tuple<Transform, HashSet<Transform>>(root, actualChildren.ToHashSet()));
-
-            // var rotationLimitAngles = new HashSet<RotationLimitAngle>();
-            // foreach (var actualChild in actualChildren) {
-            //     if (!canFixedRotate &&
-            //         TryGetSelectionData(childNodes, selectData, actualChild, out var selectionDataType) &&
-            //         selectionDataType == SelectionData.Fixed) {
-            //         if (!ikBones.Contains(actualChild)) {
-            //             // Todo: investigate a better solution for not moving child bones
-            //             var rotLimitAngle = actualChild.gameObject.AddComponentIfMissing<RotationLimitAngle>();
-            //             rotLimitAngle.limit = 0f;
-            //             rotLimitAngle.twistLimit = 0f;
-            //             rotLimitAngle.Disable();
-            //             rotationLimitAngles.Add(rotLimitAngle);
-            //         }
-            //     }
-            // }
         }
 
         private static void PopulateMagicaRoots(
@@ -318,6 +302,12 @@ public class GrabbyBones : MelonMod {
         public static void After_MagicaBoneCloth_ClothInit(MagicaBoneCloth __instance) {
             // Initialize FABRIK for magica bone cloth roots
             try {
+
+                // We only want to mess with the avatar's magica cloth bones, for now
+                if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
+
+                if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
+
                 var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
                 // var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
 
@@ -338,7 +328,7 @@ public class GrabbyBones : MelonMod {
                     return;
                 }
 
-                GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagicaBoneInfo(__instance, __instance.Params.GravityDirection);
+                GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagicaBoneInfo(puppetMaster, __instance, __instance.Params.GravityDirection);
 
                 for (var i = 0; i < __instance.ClothTarget.RootCount; i++) {
 
@@ -349,17 +339,6 @@ public class GrabbyBones : MelonMod {
 
                     var innerRoots = new HashSet<Tuple<Transform, HashSet<Transform>>>();
 
-                    // var ikBones = new HashSet<Transform>();
-                    // if (animator != null && animator.isHuman) {
-                    //     foreach (HumanBodyBones bone in Enum.GetValues(typeof(HumanBodyBones))) {
-                    //         if (bone == HumanBodyBones.LastBone) continue;
-                    //         var boneTransform = animator.GetBoneTransform(bone);
-                    //         if (boneTransform != null) {
-                    //             ikBones.Add(boneTransform);
-                    //         }
-                    //     }
-                    // }
-
                     // Create our own roots, because magica is funny and roots are not really roots ;_;
                     PopulateMagicaRoots(ref innerRoots, root, __instance.useTransformList, selectionList, canFixedRotate, false, 0);
 
@@ -369,6 +348,7 @@ public class GrabbyBones : MelonMod {
 
                         var fabrik = innerRoot.Item1.gameObject.AddComponent<FABRIK>();
                         fabrik.solver.useRotationLimits = true;
+                        fabrik.fixTransforms = true;
                         fabrik.enabled = false;
 
                         grabbyBoneInfo.AddRoot(fabrik, innerRoot.Item1, innerRoot.Item2, new HashSet<RotationLimitAngle>());
@@ -387,15 +367,22 @@ public class GrabbyBones : MelonMod {
         [HarmonyPatch(typeof(MagicaBoneCloth), nameof(MagicaBoneCloth.ClothDispose))]
         public static void After_MagicaBoneCloth_ClothDispose(MagicaBoneCloth __instance) {
             // Clean cached info and currently grabbed info related to this magica bone cloth
-            foreach (var grabbyBoneInfo in GrabbyBonesCache) {
-                if (grabbyBoneInfo.HasInstance(__instance)) {
-                    foreach (var root in grabbyBoneInfo.Roots.Where(root => root.IK != null)) {
-                        UnityEngine.Object.Destroy(root.IK);
+            try {
+
+                foreach (var grabbyBoneInfo in GrabbyBonesCache) {
+                    if (grabbyBoneInfo.HasInstance(__instance)) {
+                        foreach (var root in grabbyBoneInfo.Roots.Where(root => root.IK != null)) {
+                            UnityEngine.Object.Destroy(root.IK);
+                        }
                     }
                 }
+                AvatarHandInfo.ReleaseAllWithBehavior(__instance);
+                GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
             }
-            AvatarHandInfo.ReleaseAllWithBehavior(__instance);
-            GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_MagicaBoneCloth_ClothDispose)}.");
+                MelonLogger.Error(e);
+            }
         }
 
 
@@ -457,10 +444,16 @@ public class GrabbyBones : MelonMod {
         public static void After_DynamicBone_Start(DynamicBone __instance) {
             // Initialize FABRIK for dynamic bone roots
             try {
+
+                // We only want to mess with the dynamic bones from avatars, for now
+                if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
+
+                if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
+
                 var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
                 var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
 
-                GrabbyBoneInfo grabbyBoneInfo = new GrabbyDynamicBoneInfo(__instance, __instance.m_Gravity, __instance.m_Force);
+                GrabbyBoneInfo grabbyBoneInfo = new GrabbyDynamicBoneInfo(puppetMaster, __instance, __instance.m_Gravity, __instance.m_Force);
 
                 // Ignore null or excluded roots
                 var root = __instance.m_Root;
@@ -477,6 +470,7 @@ public class GrabbyBones : MelonMod {
 
                     var fabrik = innerRoot.Key.gameObject.AddComponent<FABRIK>();
                     fabrik.solver.useRotationLimits = true;
+                    fabrik.fixTransforms = true;
                     fabrik.enabled = false;
 
                     grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value, new HashSet<RotationLimitAngle>());
@@ -494,8 +488,15 @@ public class GrabbyBones : MelonMod {
         [HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.OnDestroy))]
         public static void After_DynamicBone_OnDestroy(DynamicBone __instance) {
             // Clean cached info and currently grabbed info related to this dyn bone
-            AvatarHandInfo.ReleaseAllWithBehavior(__instance);
-            GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
+            try {
+
+                AvatarHandInfo.ReleaseAllWithBehavior(__instance);
+                GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_DynamicBone_OnDestroy)}.");
+                MelonLogger.Error(e);
+            }
         }
     }
 }
