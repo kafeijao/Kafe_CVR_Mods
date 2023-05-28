@@ -24,6 +24,7 @@ public static class LogParser {
     private static readonly HashSet<string> AvProInnerMessages = new() {
         "ABI_RC.VideoPlayer.Scripts.Players.AvPro.AvProPlayer.get_Time () (at",
         "ABI_RC.VideoPlayer.Scripts.Players.AvPro.AvProPlayer.CleanupVideoPlayers () (at",
+        "ABI_RC.VideoPlayer.Scripts.ViewManagerVideoPlayer.E_NotifyUser (System.String text)",
     };
 
     // Misc Spam Messages
@@ -38,6 +39,8 @@ public static class LogParser {
         "The character with Unicode value ",
         "Couldn't create a Convex Mesh from source mesh ",
         "Material doesn't have a color property ",
+        "Coroutine couldn't be started because the the game object '",
+        "Only custom filters can be played. Please add a custom filter or an audioclip to the audiosource (",
     };
     private static readonly HashSet<string> MiscSpamSuffixMessages = new() {
         " is already registered as a write bone.",
@@ -49,6 +52,7 @@ public static class LogParser {
         "~   This Game has been MODIFIED using MelonLoader. DO NOT report any issues to the Game Developers!   ~",
         "Loaded HRTF: default.",
         "Successfully connected to API Websocket",
+        "0",
     };
     private static readonly HashSet<string> MiscUselessPrefixesMessages = new() {
         "Non-convex MeshCollider with non-kinematic Rigidbody is no longer supported since Unity 5",
