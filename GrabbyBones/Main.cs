@@ -115,7 +115,7 @@ public class GrabbyBones : MelonMod {
         if (closestChildTransform == null) return;
 
         #if DEBUG
-        MelonLogger.Msg($"[{handInfo.GetPlayerName()}] Grabbed: distance: {closestDistance}, bone: {(closestChildTransform == null ? "N/A" : closestChildTransform.name)}");
+        MelonLogger.Msg($"[{GetPlayerName(handInfo.PuppetMaster)}] Grabbed: distance: {closestDistance}, bone: {(closestChildTransform == null ? "N/A" : closestChildTransform.name)}");
         #endif
 
         // Set the offset position
@@ -127,7 +127,7 @@ public class GrabbyBones : MelonMod {
     private static void Release(AvatarHandInfo handInfo) {
         if (!handInfo.IsGrabbing) return;
         #if DEBUG
-        MelonLogger.Msg($"[{handInfo.GetPlayerName()}] Released {handInfo.GrabbedBoneInfo.Root.RootTransform.name}");
+        MelonLogger.Msg($"[{GetPlayerName(handInfo.PuppetMaster)}] Released {handInfo.GrabbedBoneInfo.Root.RootTransform.name}");
         #endif
         handInfo.Release();
     }
