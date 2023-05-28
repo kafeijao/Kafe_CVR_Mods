@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections;
+using System.Text;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
@@ -11,10 +12,15 @@ namespace Kafe.ChatBox;
 
 public static class ModNetwork {
 
-    private const ushort ModMsgTag = 13999;
     private const string ModId = $"MelonMod.Kafe.{nameof(ChatBox)}";
 
     private const int CharactersMaxCount = 2000;
+
+    private enum Tag : ushort {
+        Subscribe = 13997,
+        Unsubscribe = 13997,
+        Message = 13997,
+    }
 
     private enum SeedPolicy {
         ToSpecific = 0,
@@ -51,19 +57,27 @@ public static class ModNetwork {
 
     private static void OnMessage(object sender, MessageReceivedEventArgs e) {
 
+        #if DEBUG
+        if (e.Tag is (ushort) Tag.Message or (ushort) Tag.Unsubscribe or (ushort) Tag.Subscribe) {
+            MelonLogger.Msg($"Received Message on {e.Tag}!");
+        }
+        #endif
+
         // Ignore Messages that are not Mod Network Messages
-        if (e.Tag != ModMsgTag) return;
+        if (e.Tag != (ushort) Tag.Message) return;
 
-            using var message = e.GetMessage();
-            using var reader = message.GetReader();
-            var modId = reader.ReadString();
+        using var message = e.GetMessage();
+        using var reader = message.GetReader();
+        var modId = reader.ReadString();
 
-            // Ignore Messages not for our mod
-            if (modId != ModId) return;
+        // Ignore Messages not for our mod
+        if (modId != ModId) return;
 
-            var senderGuid = reader.ReadString();
+        var senderGuid = reader.ReadString();
 
         try {
+
+            // Todo: Check if blocked people can send us messages. And if they do nuke it
 
             // Ignore messages from non-friends
             if (ModConfig.MeOnlyViewFriends.Value && !Friends.FriendsWith(senderGuid)) return;
@@ -114,6 +128,28 @@ public static class ModNetwork {
         }
     }
 
+    private static void SendGuid(ushort msgTag) {
+
+        if (NetworkManager.Instance == null ||
+            NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
+            MelonLogger.Warning($"Attempted to {nameof(SendGuid)} but the Game Network is Down...");
+            return;
+        }
+
+        // Mandatory message parameters
+        using var writer = DarkRiftWriter.Create();
+        writer.Write(ModId);
+
+        using var message = Message.Create(msgTag, writer);
+
+        NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
+    }
+
+    private static void Subscribe() => SendGuid((ushort) Tag.Subscribe);
+
+    private static void Unsubscribe() => SendGuid((ushort) Tag.Unsubscribe);
+
+
     private static bool SendMsgToAllPlayers(MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
 
         if (NetworkManager.Instance == null ||
@@ -133,7 +169,7 @@ public static class ModNetwork {
         // Set the parameters we want to send
         msgDataAction?.Invoke(writer);
 
-        using var message = Message.Create(ModMsgTag, writer);
+        using var message = Message.Create((ushort) Tag.Message, writer);
         if (message.DataLength > 60000) {
             MelonLogger.Warning($"The limit for data in a single packet should be {ushort.MaxValue} bytes, " +
                                 $"so let's limit to 60000 bytes. This message won't be sent");
@@ -143,7 +179,7 @@ public static class ModNetwork {
         return true;
     }
 
-    private static void SendToSpecificPlayers(List<string> playerGuids, MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
+    private static void SendToSpecificPlayers(string[] playerGuids, MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
 
         if (NetworkManager.Instance == null ||
             NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
@@ -155,10 +191,8 @@ public static class ModNetwork {
         using var writer = DarkRiftWriter.Create();
         writer.Write(ModId);
         writer.Write((int) SeedPolicy.ToSpecific);
-        writer.Write(playerGuids.Count);
-        foreach (var playerGuid in playerGuids) {
-            writer.Write(playerGuid);
-        }
+        writer.Write(playerGuids.Length);
+        writer.Write(playerGuids);
 
         // Set the message type (for our internal behavior)
         writer.Write((byte) msgType);
@@ -166,12 +200,25 @@ public static class ModNetwork {
         // Set the parameters we want to send
         msgDataAction?.Invoke(writer);
 
-        using var message = Message.Create(ModMsgTag, writer);
+        using var message = Message.Create((ushort) Tag.Message, writer);
         NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
     }
 
     [HarmonyPatch]
     internal class HarmonyPatches {
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.ReceiveReconnectToken))]
+        public static void After_NetworkManager_ReceiveReconnectToken() {
+            try {
+                MelonLogger.Msg($"Reclaim Token Assigned... Subscribing to {ModId} on the Mod Network...");
+                Subscribe();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_ReceiveReconnectToken)}");
+                MelonLogger.Error(e);
+            }
+        }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.Awake))]

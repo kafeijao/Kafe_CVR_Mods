@@ -32,8 +32,8 @@ public class ChatBoxBehavior : MonoBehaviour {
     // Astro - Official InuCast Salmon Colour^tm - Shiba Inu Shaped Bubble
     private readonly Color AstroTransparency = new Color(1f, 0.4980392f, 0.4980392f, 0.75f);
 
-    private static readonly Vector3 TypingDefaultLocalScale = new Vector3(0.5f, 0.5f, 0.5f) * 0.8f;
     private static readonly Vector3 ChatBoxDefaultLocalScale = new(0.002f, 0.002f, 0.002f);
+    private static readonly Vector3 TypingScaleMultiplier = new(0.2f, 0.2f, 0.2f);
 
     private static readonly Dictionary<string, ChatBoxBehavior> ChatBoxes;
 
@@ -41,11 +41,13 @@ public class ChatBoxBehavior : MonoBehaviour {
 
     private GameObject _root;
 
+    private Transform _typingTransform;
     private GameObject _typingGo;
     private Image _typingBackground;
     private readonly List<GameObject> _typingGoChildren = new();
     private AudioSource _typingAudioSource;
 
+    private Transform _textBubbleTransform;
     private GameObject _textBubbleGo;
     private Image _textBubbleHexagonImg;
     private Image _textBubbleRoundImg;
@@ -57,8 +59,13 @@ public class ChatBoxBehavior : MonoBehaviour {
     private int _lastTypingIndex;
 
     private string _playerGuid;
-    private const float NameplateOffset = 0.1f;
-    private const float NameplateDistanceMultiplier = 0.25f;
+    private const float NameplateOffsetBubble = 160f;
+    private const float NameplateOffsetBubbleMultiplier = 110f;
+
+    private const float NameplateOffsetXTyping = 150f;
+    private const float NameplateOffsetXTypingMultiplier = 45f;
+    private const float NameplateOffsetYTyping = -65f;
+    private const float NameplateOffsetYTypingMultiplier = 25f;
 
     private static Coroutine _resetTextAfterDelayCoroutine;
 
@@ -137,12 +144,19 @@ public class ChatBoxBehavior : MonoBehaviour {
             chatBox.UpdateChatBox();
         }
     }
+
     private void UpdateChatBox() {
         _canvasGroup.alpha = _chatBoxOpacity;
         _textBubbleAudioSource.volume = _volume;
         _typingAudioSource.volume = _volume;
-        _root.transform.localPosition = new Vector3(0, NameplateOffset + NameplateDistanceMultiplier * _chatBoxSize, 0);
-        _root.transform.localScale = ChatBoxDefaultLocalScale * _chatBoxSize;
+
+        _textBubbleTransform.localPosition = new Vector3(0, NameplateOffsetBubble + NameplateOffsetBubbleMultiplier * (_chatBoxSize - 1), 0);
+        _textBubbleTransform.localScale = Vector3.one * _chatBoxSize;
+
+        // Resizing the typing thing is stupid ?
+        // _typingTransform.localPosition = new Vector3(NameplateOffsetXTyping + NameplateOffsetXTypingMultiplier * _chatBoxSize, NameplateOffsetYTyping + NameplateOffsetYTypingMultiplier * _chatBoxSize, 0);
+        // _typingTransform.localScale = TypingScaleMultiplier * (_chatBoxSize + 1);
+
         _typingAudioSource.maxDistance = _notificationSoundMaxDistance;
         _textBubbleAudioSource.maxDistance = _notificationSoundMaxDistance;
     }
@@ -157,6 +171,8 @@ public class ChatBoxBehavior : MonoBehaviour {
         // prefab.layer = LayerMask.NameToLayer("UI Internal");
         _root.name = $"[{nameof(ChatBox)} Mod]";
         _root.transform.rotation = _nameplate.transform.rotation;
+        _root.transform.localPosition = Vector3.zero;
+        _root.transform.localScale = ChatBoxDefaultLocalScale;
 
         // Handle the chat box position and scale
         _root.AddComponent<CameraFacingObject>();
@@ -165,13 +181,12 @@ public class ChatBoxBehavior : MonoBehaviour {
         _canvasGroup = _root.GetComponent<CanvasGroup>();
 
         // Get the references for the Typing stuff and Text stuff
-        var typingTransform = _root.transform.Find(ChildTypingName);
-
-        // Handle the typing scale
-        typingTransform.localScale = TypingDefaultLocalScale * _chatBoxSize;
+        _typingTransform = _root.transform.Find(ChildTypingName);
 
         // Typing
-        _typingGo = typingTransform.gameObject;
+        _typingTransform.localPosition = new Vector3(NameplateOffsetXTyping, NameplateOffsetYTyping, 0);
+        _typingTransform.localScale = TypingScaleMultiplier;
+        _typingGo = _typingTransform.gameObject;
         _typingBackground = _typingGo.transform.GetChild(0).GetComponent<Image>();
         _typingBackground.color = Green;
         for (var i = 0; i < _typingBackground.transform.childCount; i++) {
@@ -180,9 +195,10 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         // Text Bubble
         _textBubbleGo = _root.transform.Find(ChildTextBubbleName).gameObject;
-        var tmpGo = _textBubbleGo.transform.Find(ChildTextBubbleOutputName);
-        _textBubbleHexagonImg = _textBubbleGo.transform.Find(ChildTextBubbleHexagonName).GetComponent<Image>();
-        _textBubbleRoundImg = _textBubbleGo.transform.Find(ChildTextBubbleRoundName).GetComponent<Image>();
+        _textBubbleTransform = _textBubbleGo.transform;
+        var tmpGo = _textBubbleTransform.Find(ChildTextBubbleOutputName);
+        _textBubbleHexagonImg = _textBubbleTransform.Find(ChildTextBubbleHexagonName).GetComponent<Image>();
+        _textBubbleRoundImg = _textBubbleTransform.Find(ChildTextBubbleRoundName).GetComponent<Image>();
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
 
         // Add Typing Audio Source
@@ -229,7 +245,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         }
 
         // Ignore typing if we got a message staying
-        if (_textBubbleGo.activeSelf) return;
+        // if (_textBubbleGo.activeSelf) return;
 
         var wasOn = false;
 

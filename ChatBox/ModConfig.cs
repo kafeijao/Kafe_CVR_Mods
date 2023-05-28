@@ -25,10 +25,15 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeIgnoreOscMessages;
     internal static MelonPreferences_Entry<bool> MeIgnoreModMessages;
 
+    internal static MelonPreferences_Entry<bool> MeShowHistoryWindow;
+    internal static MelonPreferences_Entry<bool> MeHistoryWindowOpened;
+
     // Asset Bundle
     public static GameObject ChatBoxPrefab;
+    public static GameObject ChatBoxHistoryPrefab;
     private const string ChatBoxAssetBundleName = "chatbox.assetbundle";
     private const string ChatBoxPrefabAssetPath = "Assets/Chatbox/ChatBox.prefab";
+    private const string ChatBoxHistoryPrefabAssetPath = "Assets/Chatbox/History.prefab";
 
     internal static string javascriptPatchesContent;
     private const string ChatBoxJSPatches = "chatbox.cohtml.cvrtest.ui.patches.js";
@@ -79,13 +84,19 @@ public static class ModConfig {
             description: "The opacity of the Chat Box, between 0 (invisible) and 1 (opaque).");
 
         MeChatBoxSize = _melonCategory.CreateEntry("ChatBoxSize", 1f,
-            description: "The size of the Chat Box, between 0 (smallest) and 2 (biggest). The default is 1.");
+            description: "The size of the Chat Box, between 0 (smallest) and 2 (biggest). The default is 0.5");
 
         MeIgnoreOscMessages = _melonCategory.CreateEntry("IgnoreOscMessages", false,
             description: "Whether to ignore messages sent via OSC or not.");
 
         MeIgnoreModMessages = _melonCategory.CreateEntry("IgnoreModMessages", false,
             description: "Whether to ignore messages sent via other Mods or not.");
+
+        MeShowHistoryWindow = _melonCategory.CreateEntry("ShowHistoryWindow", true,
+            description: "Whether to show the history window or not.");
+
+        MeHistoryWindowOpened = _melonCategory.CreateEntry("HistoryWindowOpened", false,
+            description: "Whether the history window is opened or not.");
 
     }
 
@@ -105,7 +116,8 @@ public static class ModConfig {
             // Load ChatBox Prefab
             ChatBoxPrefab = assetBundle.LoadAsset<GameObject>(ChatBoxPrefabAssetPath);
             ChatBoxPrefab.hideFlags |= HideFlags.DontUnloadUnusedAsset;
-
+            ChatBoxHistoryPrefab = assetBundle.LoadAsset<GameObject>(ChatBoxHistoryPrefabAssetPath);
+            ChatBoxHistoryPrefab.hideFlags |= HideFlags.DontUnloadUnusedAsset;
         }
         catch (Exception ex) {
             MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
@@ -169,8 +181,8 @@ public static class ModConfig {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry) {
-        var toggle = category.AddToggle(entry.DisplayName, entry.Description, entry.Value);
+    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry, string overrideName = null) {
+        var toggle = category.AddToggle(overrideName ?? entry.DisplayName, entry.Description, entry.Value);
         toggle.OnValueUpdated += b => {
             if (b != entry.Value) entry.Value = b;
         };
@@ -179,8 +191,8 @@ public static class ModConfig {
         });
     }
 
-    private static void AddMelonSlider(BTKUILib.UIObjects.Page page, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
-        var slider = page.AddSlider(entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
+    private static void AddMelonSlider(BTKUILib.UIObjects.Page page, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces, string overrideName = null) {
+        var slider = page.AddSlider(overrideName ?? entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
         slider.OnValueUpdated += f => {
             if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
         };
@@ -205,26 +217,22 @@ public static class ModConfig {
 
         var modSettingsCategory = modPage.AddCategory("Settings");
 
-        var num = 0;
-        var ico = new[] { "TT_Off", "TT_Original" };
-        var button = modSettingsCategory.AddButton("button", ico[num], "button tooltip");
-        button.OnPress += () => {
-            button.ButtonText = $"UGABUGA-{num++}";
-            button.ButtonIcon = $"UGABUGA-{ico[num%2]}";
-        };
+        AddMelonToggle(modSettingsCategory, MeSoundOnStartedTyping, "Typing Sound");
+        AddMelonToggle(modSettingsCategory, MeSoundOnMessage, "Message Sound");
+        AddMelonToggle(modSettingsCategory, MeOnlyViewFriends, "Only Friends");
+        AddMelonToggle(modSettingsCategory, MeMessageTimeoutDependsLength, "Dynamic Timeout");
+        AddMelonToggle(modSettingsCategory, MeIgnoreOscMessages, "Hide OSC Msgs");
+        AddMelonToggle(modSettingsCategory, MeIgnoreModMessages, "Hide Mod Msgs");
 
-        AddMelonToggle(modSettingsCategory, MeSoundOnStartedTyping);
-        AddMelonToggle(modSettingsCategory, MeSoundOnMessage);
-        AddMelonToggle(modSettingsCategory, MeOnlyViewFriends);
-        AddMelonToggle(modSettingsCategory, MeMessageTimeoutDependsLength);
-        AddMelonToggle(modSettingsCategory, MeIgnoreOscMessages);
-        AddMelonToggle(modSettingsCategory, MeIgnoreModMessages);
+        var pinButtonBTKUI = modSettingsCategory.AddButton("Pin History to QM", "",
+            "Pins the History Window back to quick menu. Useful if you lost your window :)");
+        pinButtonBTKUI.OnPress += () => HistoryBehavior.Instance.ParentTo(HistoryBehavior.MenuTarget.QuickMenu);
 
         AddMelonSlider(modPage, MeSoundsVolume, 0f, 1f, 1);
-        AddMelonSlider(modPage, MeNotificationSoundMaxDistance, 1f, 25f, 1);
-        AddMelonSlider(modPage, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0);
+        AddMelonSlider(modPage, MeNotificationSoundMaxDistance, 1f, 25f, 1, "Sound Distance");
+        AddMelonSlider(modPage, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0, "Timeout (secs)");
         AddMelonSlider(modPage, MeChatBoxOpacity, 0.1f, 1f, 2);
-        AddMelonSlider(modPage, MeChatBoxSize, 0.0f, 2f, 2);
+        AddMelonSlider(modPage, MeChatBoxSize, 0f, 2f, 2);
     }
 
 }
