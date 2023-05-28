@@ -210,6 +210,8 @@ public class Instances : MelonMod {
 
     private static void UpdateInstanceToken() {
         if (Config.LastInstance == null) return;
+        // If we got a token for a different instance, nuke it
+        if (Config.LastInstance.JoinToken?.InstanceId != MetaPort.Instance.CurrentInstanceId) Config.LastInstance.JoinToken = null;
         if (CVRInstances.InstanceJoinJWT != Config.LastInstance.JoinToken?.JoinToken) {
             var token = new JsonConfigJoinToken() {
                 WorldId = MetaPort.Instance.CurrentWorldId,
@@ -480,26 +482,34 @@ public class Instances : MelonMod {
     private static bool _ranHQToolsStart;
     private static bool _ranHQCVRWorldStart;
 
+    internal static bool AttemptToUseTicked(JsonConfigJoinToken joinToken) {
+        // Attempt to join with an instance token (needs to have more than 1 minute time left)
+        if (ModConfig.MeAttemptToSaveAndLoadToken.Value) {
+            if (joinToken.ExpirationDate - DateTime.UtcNow > TimeSpan.FromMinutes(1)) {
+                MelonLogger.Msg($"Attempting to join instance using the join token...");
+                LoadWorldUsingToken(joinToken);
+                return true;
+            }
+            else {
+                MelonLogger.Msg($"Skip attempting to rejoin last instance using a token, because the token expired or is about to. " +
+                                $"Expire Date: {joinToken.ExpirationDate.ToLocalTime()}");
+            }
+        }
+        return false;
+    }
+
     private static void Initialize() {
 
         // Funny race condition >.> Let's not
         if (!_ranHQToolsStart || !_ranHQCVRWorldStart) return;
 
-        // Attempt to join with an instance token (needs to have more than 1 minute time left)
-        if (ModConfig.MeAttemptToSaveAndLoadToken.Value && Config.LastInstance?.JoinToken != null) {
-            if (Config.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow > TimeSpan.FromMinutes(1)) {
-                MelonLogger.Msg($"Attempting to join previous instance using the join token...");
-                LoadWorldUsingToken(Config.LastInstance.JoinToken);
-                return;
-            }
-            else {
-                MelonLogger.Msg($"Skip attempting to rejoin last instance using a token, because the token expired or is about to. " +
-                                $"Expire Date: {Config.LastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
-            }
-        }
-
         // Let's attempt to join the last instance
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && Config.LastInstance != null) {
+
+            // Attempt to join with an instance token
+            if (ModConfig.MeAttemptToSaveAndLoadToken.Value && Config.LastInstance.JoinToken != null) {
+                if (AttemptToUseTicked(Config.LastInstance.JoinToken)) return;
+            }
 
             // Check if joining last instance timed out
             if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && DateTime.UtcNow - Config.RejoinLocation.ClosedDateTime > TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value)) {

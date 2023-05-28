@@ -104,7 +104,7 @@ public static class ModConfig {
             description: "Whether to prevent joining empty instances or not. Empty instances might be closing already, " +
                          "which will result in joining an instance and then getting disconnection spam.");
 
-        MeAttemptToSaveAndLoadToken = _melonCategory.CreateEntry("AttemptToSaveAndLoadToken", false,
+        MeAttemptToSaveAndLoadToken = _melonCategory.CreateEntry("AttemptToSaveAndLoadToken", true,
             description: "Whether to attempt to save current instance token when restarting and then use it to join. This " +
                          "will allow rejoining private instances, but it might fail and cause you to not load into an offline world.");
     }
@@ -349,7 +349,10 @@ public static class ModConfig {
             var buttonIcon = LoadedWorldImages.Contains(instanceInfo.WorldId) ? instanceInfo.WorldId : "";
             var button = categoryInstances.AddButton($"{index}. {instanceInfo.InstanceName}",
                 buttonIcon, $"Join {instanceInfo.InstanceName}!");
-            button.OnPress += () => Instances.OnInstanceSelected(instanceInfo.InstanceId);
+            button.OnPress += () => {
+                if (instanceInfo.JoinToken != null && Instances.AttemptToUseTicked(instanceInfo.JoinToken)) return;
+                Instances.OnInstanceSelected(instanceInfo.InstanceId);
+            };
         }
     }
 
