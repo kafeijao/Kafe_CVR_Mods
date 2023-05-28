@@ -2,7 +2,7 @@
 
 [![Download Latest Logger++.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest Logger++.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/Logger++.dll)
 
-**Note:**: This is a **__plugin__**, it goes in the `/Plugins` folder, not the ~~`/Mods`~~ one!
+**Note:** This is a **__plugin__**, it goes in the `/Plugins` folder, not the ~~`/Mods`~~ one!
 
 This **Plugin** allows you to pick some extra logs to be forwarded to the melon console. No more error messages will be
 lost in the player log!
