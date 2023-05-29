@@ -27,6 +27,7 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<bool> MeShowHistoryWindow;
     internal static MelonPreferences_Entry<bool> MeHistoryWindowOpened;
+    internal static MelonPreferences_Entry<float> MeHistoryFontSize;
 
     // Asset Bundle
     public static GameObject ChatBoxPrefab;
@@ -35,8 +36,8 @@ public static class ModConfig {
     private const string ChatBoxPrefabAssetPath = "Assets/Chatbox/ChatBox.prefab";
     private const string ChatBoxHistoryPrefabAssetPath = "Assets/Chatbox/History.prefab";
 
-    internal static string javascriptPatchesContent;
-    private const string ChatBoxJSPatches = "chatbox.cohtml.cvrtest.ui.patches.js";
+    internal static string JavascriptPatchesContent;
+    private const string ChatBoxJsPatches = "chatbox.cohtml.cvrtest.ui.patches.js";
 
     // Files
     internal enum Sound {
@@ -98,6 +99,8 @@ public static class ModConfig {
         MeHistoryWindowOpened = _melonCategory.CreateEntry("HistoryWindowOpened", false,
             description: "Whether the history window is opened or not.");
 
+        MeHistoryFontSize = _melonCategory.CreateEntry("HistoryFontSize", 32f,
+            description: "The size of the font in the history window. Default is 32.");
     }
 
     public static void LoadAssemblyResources(Assembly assembly) {
@@ -161,14 +164,14 @@ public static class ModConfig {
         }
 
         try {
-            using var resourceStream = assembly.GetManifestResourceStream(ChatBoxJSPatches);
+            using var resourceStream = assembly.GetManifestResourceStream(ChatBoxJsPatches);
             if (resourceStream == null) {
-                MelonLogger.Error($"Failed to load {ChatBoxJSPatches}!");
+                MelonLogger.Error($"Failed to load {ChatBoxJsPatches}!");
                 return;
             }
 
             using var streamReader = new StreamReader(resourceStream);
-            javascriptPatchesContent = streamReader.ReadToEnd();
+            JavascriptPatchesContent = streamReader.ReadToEnd();
         }
         catch (Exception ex) {
             MelonLogger.Error("Failed to load the resource: " + ex.Message);
@@ -233,6 +236,7 @@ public static class ModConfig {
         AddMelonSlider(modPage, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0, "Timeout (secs)");
         AddMelonSlider(modPage, MeChatBoxOpacity, 0.1f, 1f, 2);
         AddMelonSlider(modPage, MeChatBoxSize, 0f, 2f, 2);
+        AddMelonSlider(modPage, MeHistoryFontSize, 25f, 50f, 0);
     }
 
 }

@@ -25,6 +25,9 @@ public class HistoryBehavior : MonoBehaviour {
     public static readonly Color ColorPink = new Color(.9882f, .2f, .5f);
     public static readonly Color ColorGreen = new Color(.2f, 1f, .2f);
 
+    private const float TimestampFontSizeModifier = 1.125f;
+    private const float UsernameFontSizeModifier = 1.5625f;
+
     private Transform _quickMenuGo;
 
     // Menu Current Settings
@@ -70,6 +73,9 @@ public class HistoryBehavior : MonoBehaviour {
     // Templates
     private GameObject _templateChatEntry;
 
+    // Messages
+    private List<Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>> MessagesTMPComponents = new();
+
     internal enum MenuTarget {
         QuickMenu,
         World,
@@ -83,7 +89,7 @@ public class HistoryBehavior : MonoBehaviour {
         switch (targetType) {
             case MenuTarget.QuickMenu:
                 menuControllerTransform.SetParent(_quickMenuGo.transform, true);
-                menuControllerTransform.localPosition = new Vector3(0.76f, 0f, 0f);
+                menuControllerTransform.localPosition = new Vector3(0.76f, -0.095f, -0.001f);
                 menuControllerTransform.localRotation = Quaternion.identity;
                 _rootRectTransform.transform.localScale = _menuScaleVector;
                 _rootRectPickup.enabled = false;
@@ -160,6 +166,7 @@ public class HistoryBehavior : MonoBehaviour {
 
             // Main
             _rootRectTransform = GetComponent<RectTransform>();
+            _rootRectTransform.gameObject.layer = LayerMask.NameToLayer("UI Internal");
             _rootRectTransform.gameObject.SetActive(ModConfig.MeShowHistoryWindow.Value);
             ModConfig.MeShowHistoryWindow.OnEntryValueChanged.Subscribe((_, currentValue) => {
                 _rootRectTransform.gameObject.SetActive(currentValue);
@@ -232,6 +239,15 @@ public class HistoryBehavior : MonoBehaviour {
                 AddMessage(DateTime.Now, MetaPort.Instance.ownerId, MetaPort.Instance.username, true, false, msg);
             };
 
+            // Set font size listeners
+            ModConfig.MeHistoryFontSize.OnEntryValueChanged.Subscribe((_, newValue) => {
+                foreach (var components in MessagesTMPComponents) {
+                    components.Item1.fontSize = newValue * TimestampFontSizeModifier;
+                    components.Item2.fontSize = newValue * UsernameFontSizeModifier;
+                    components.Item3.fontSize = newValue;
+                }
+            });
+
             gameObject.SetActive(false);
             Instance = this;
         }
@@ -245,16 +261,21 @@ public class HistoryBehavior : MonoBehaviour {
         chatEntry.SetAsFirstSibling();
         var timestampTmp = chatEntry.Find("Header/Timestamp").GetComponent<TextMeshProUGUI>();
         timestampTmp.text = $"[{date.ToString("T", CultureInfo.CurrentCulture)}]";
+        timestampTmp.fontSize = ModConfig.MeHistoryFontSize.Value * TimestampFontSizeModifier;
         var usernameComponent = chatEntry.Find("Header/Username");
         var usernameButton = usernameComponent.GetComponent<Button>();
         usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(senderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
         usernameTmp.text = senderUsername;
+        usernameTmp.fontSize = ModConfig.MeHistoryFontSize.Value * UsernameFontSizeModifier;
         if (isSelf) usernameTmp.color = ColorBlue;
         else usernameTmp.color = isFriend ? ColorGreen : Color.white;
 
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
         messageTmp.text = message;
+        messageTmp.fontSize = ModConfig.MeHistoryFontSize.Value;
+
+        MessagesTMPComponents.Add(new Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>(timestampTmp, usernameTmp, messageTmp));
     }
 
 

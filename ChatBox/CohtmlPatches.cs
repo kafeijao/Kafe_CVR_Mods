@@ -58,7 +58,7 @@ internal static class CohtmlPatches {
 
                 // Inject our Cohtml
                 __instance.gameMenuView.Listener.FinishLoad += _ => {
-                    __instance.gameMenuView.View.ExecuteScript(ModConfig.javascriptPatchesContent);
+                    __instance.gameMenuView.View.ExecuteScript(ModConfig.JavascriptPatchesContent);
                     _initialized = true;
                 };
 

@@ -136,6 +136,26 @@ public class ChatBox : MelonMod {
         if (Input.GetKeyDown(KeyCode.Insert) && _isChatBoxKeyboardOpened) {
             CohtmlPatches.SendAutoCompleteEvent();
         }
+
+        // Todo: remove these
+        if (Input.GetKeyDown(KeyCode.Period)) {
+            var firstPlayer = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault();
+            var guid = "5affbc06-d288-f39b-6fd0-b54a51b86612";
+            if (firstPlayer != null) guid = firstPlayer.Uuid;
+            API.OnMessageReceived?.Invoke(
+                API.MessageSource.Internal,
+                guid,
+                "Hey, you. You're finally awake. You were trying to cross the border, right? Walked right into that Imperial ambush, same as us, and that thief over there. Damn you Stormcloaks. Skyrim was fine until you came along. Empire was nice and lazy. If they hadn't been looking for you, I could've stolen that horse and be halfway to Hammerfell.",
+                true,
+                true);
+        }
+        if (Input.GetKeyDown(KeyCode.Comma)) {
+            var firstPlayer = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault();
+            var guid = "5affbc06-d288-f39b-6fd0-b54a51b86612";
+            if (firstPlayer != null) guid = firstPlayer.Uuid;
+            API.OnIsTypingReceived?.Invoke(API.MessageSource.Internal, guid, true, true);
+        }
+
     }
 
     private static float _timer;
