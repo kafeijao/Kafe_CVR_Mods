@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
-using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using ABI_RC.Core;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.EventSystem;
@@ -15,6 +15,7 @@ using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using CVRInstances = ABI_RC.Core.Networking.IO.Instancing.Instances;
 
@@ -130,10 +131,6 @@ public class Instances : MelonMod {
 
     private static void UpdateRejoinLocation() {
 
-        #if DEBUG
-        MelonLogger.Msg("[UpdateRejoinLocation] Updating...");
-        #endif
-
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
             && ModConfig.MeRejoinPreviousLocation.Value
             && MetaPort.Instance.CurrentInstanceId != ""
@@ -213,19 +210,26 @@ public class Instances : MelonMod {
         // If we got a token for a different instance, nuke it
         if (Config.LastInstance.JoinToken?.InstanceId != MetaPort.Instance.CurrentInstanceId) Config.LastInstance.JoinToken = null;
         if (CVRInstances.InstanceJoinJWT != Config.LastInstance.JoinToken?.JoinToken) {
-            var token = new JsonConfigJoinToken() {
-                WorldId = MetaPort.Instance.CurrentWorldId,
-                InstanceId = MetaPort.Instance.CurrentInstanceId,
-                JoinToken = CVRInstances.InstanceJoinJWT,
-                FQDN = CVRInstances.Fqdn,
-                Port = CVRInstances.Port,
-            };
-            token.CalculateExpiration();
-            Config.LastInstance.JoinToken = token;
-            #if DEBUG
-            MelonLogger.Msg($"Instance token was updated! Expiration: {token.ExpirationDate.ToLocalTime()}");
-            #endif
-            SaveConfig();
+            try {
+                var token = new JsonConfigJoinToken() {
+                    WorldId = MetaPort.Instance.CurrentWorldId,
+                    InstanceId = MetaPort.Instance.CurrentInstanceId,
+                    JoinToken = CVRInstances.InstanceJoinJWT,
+                    FQDN = CVRInstances.Fqdn,
+                    Port = CVRInstances.Port,
+                };
+                token.CalculateExpiration();
+
+                Config.LastInstance.JoinToken = token;
+                #if DEBUG
+                MelonLogger.Msg($"Instance token was updated! Expiration: {token.ExpirationDate.ToLocalTime()}");
+                #endif
+                SaveConfig();
+            }
+            catch (Exception ex) {
+                MelonLogger.Error(ex);
+                throw;
+            }
         }
     }
 
@@ -310,6 +314,37 @@ public class Instances : MelonMod {
         public Quaternion GetRotation() => Quaternion.Euler(X, Y, Z);
     }
 
+    private static DateTime GetJWTExpirationDateTime(string token) {
+        var parts = token.Split('.');
+        if (parts.Length != 3) {
+            throw new Exception($"[GetJWTExpirationDateTime] Invalid JWT token: wrong number of parts ({parts.Length})!");
+        }
+        var payload = parts[1];
+        var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(payload));
+        var payloadData = JObject.Parse(payloadJson);
+        var exp = payloadData["exp"].Value<long>();
+        return DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
+    }
+
+    private static byte[] Base64UrlDecode(string input) {
+        var output = input;
+        output = output.Replace('-', '+'); // 62nd char of encoding
+        output = output.Replace('_', '/'); // 63rd char of encoding
+        switch (output.Length % 4) { // Pad with trailing '='s
+            case 0:
+                break; // No pad chars in this case
+            case 2:
+                output += "==";
+                break; // Two pad chars
+            case 3:
+                output += "=";
+                break; // One pad char
+            default:
+                throw new Exception("[Base64UrlDecode] Illegal base64url string!");
+        }
+        return Convert.FromBase64String(output);
+    }
+
     public record JsonConfigJoinToken {
         public string WorldId;
         public string InstanceId;
@@ -319,10 +354,7 @@ public class Instances : MelonMod {
         public DateTime ExpirationDate;
 
         public void CalculateExpiration() {
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(JoinToken);
-            var exp = Convert.ToInt64(jwtToken.Claims.First(claim => claim.Type == "exp").Value);
-            ExpirationDate = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
+            ExpirationDate = GetJWTExpirationDateTime(JoinToken);
         }
     }
 
