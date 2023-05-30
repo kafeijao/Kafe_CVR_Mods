@@ -205,24 +205,17 @@ public class Instances : MelonMod {
         SaveConfig();
     }
 
-    private static void UpdateInstanceToken() {
-        if (Config.LastInstance == null) return;
-        // If we got a token for a different instance, nuke it
-        if (Config.LastInstance.JoinToken?.InstanceId != MetaPort.Instance.CurrentInstanceId) Config.LastInstance.JoinToken = null;
-        if (CVRInstances.InstanceJoinJWT != Config.LastInstance.JoinToken?.JoinToken) {
+    private static void UpdateInstanceToken(JsonConfigInstance configLastInstance) {
+        if (CVRInstances.InstanceJoinJWT != configLastInstance.JoinToken?.Token) {
+            if (configLastInstance.InstanceId != GetJWTInstanceId(CVRInstances.InstanceJoinJWT)) {
+                MelonLogger.Warning($"[UpdateInstanceToken] The provided token doesn't match the current instances... Ignoring... " +
+                                    $"Current: {configLastInstance.InstanceId}, Token: {GetJWTInstanceId(CVRInstances.InstanceJoinJWT)}");
+                return;
+            }
             try {
-                var token = new JsonConfigJoinToken() {
-                    WorldId = MetaPort.Instance.CurrentWorldId,
-                    InstanceId = MetaPort.Instance.CurrentInstanceId,
-                    JoinToken = CVRInstances.InstanceJoinJWT,
-                    FQDN = CVRInstances.Fqdn,
-                    Port = CVRInstances.Port,
-                };
-                token.CalculateExpiration();
-
-                Config.LastInstance.JoinToken = token;
+                configLastInstance.JoinToken = new JsonConfigJoinToken(CVRInstances.InstanceJoinJWT, CVRInstances.Fqdn, CVRInstances.Port);
                 #if DEBUG
-                MelonLogger.Msg($"Instance token was updated! Expiration: {token.ExpirationDate.ToLocalTime()}");
+                MelonLogger.Msg($"Instance token was updated! Expiration: {configLastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
                 #endif
                 SaveConfig();
             }
@@ -235,8 +228,11 @@ public class Instances : MelonMod {
 
     private static IEnumerator UpdateLastInstance(string worldId, string instanceId, string instanceName) {
 
-        // Already have this instance saved
-        if (Config.LastInstance?.InstanceId == instanceId) yield break;
+        // Already have this instance saved, let's just check for the token
+        if (Config.LastInstance?.InstanceId == instanceId) {
+            UpdateInstanceToken(Config.LastInstance);
+            yield break;
+        }
 
         // Grab the image url of the world, if we already had it
         var worldImageUrl = Config.RecentInstances.FirstOrDefault(i => i.WorldId == worldId && i.WorldImageUrl != null)
@@ -258,8 +254,9 @@ public class Instances : MelonMod {
             InstanceId = instanceId,
             InstanceName = instanceName,
         };
-
         Config.LastInstance = instanceInfo;
+        // Save the current token
+        UpdateInstanceToken(Config.LastInstance);
 
         // Remove duplicates and Prepend to the list, while maintaining the list on the max limit
         Config.RecentInstances.RemoveAll(i => i.InstanceId == instanceId);
@@ -314,14 +311,23 @@ public class Instances : MelonMod {
         public Quaternion GetRotation() => Quaternion.Euler(X, Y, Z);
     }
 
-    private static DateTime GetJWTExpirationDateTime(string token) {
+    private static JObject GetPayload(string token) {
         var parts = token.Split('.');
         if (parts.Length != 3) {
-            throw new Exception($"[GetJWTExpirationDateTime] Invalid JWT token: wrong number of parts ({parts.Length})!");
+            throw new Exception($"[GetJWTInstanceId] Invalid JWT token: wrong number of parts ({parts.Length})!");
         }
         var payload = parts[1];
         var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(payload));
-        var payloadData = JObject.Parse(payloadJson);
+        return JObject.Parse(payloadJson);
+    }
+
+    private static string GetJWTInstanceId(string token) {
+        var payloadData = GetPayload(token);
+        return payloadData["InstanceId"].Value<string>();
+    }
+
+    private static DateTime GetJWTExpirationDateTime(string token) {
+        var payloadData = GetPayload(token);
         var exp = payloadData["exp"].Value<long>();
         return DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
     }
@@ -345,17 +351,11 @@ public class Instances : MelonMod {
         return Convert.FromBase64String(output);
     }
 
-    public record JsonConfigJoinToken {
-        public string WorldId;
-        public string InstanceId;
-        public string JoinToken;
-        public string FQDN;
-        public short Port;
-        public DateTime ExpirationDate;
-
-        public void CalculateExpiration() {
-            ExpirationDate = GetJWTExpirationDateTime(JoinToken);
-        }
+    public record JsonConfigJoinToken(string Token, string FQDN, short Port) {
+        public string Token = Token;
+        public string FQDN = FQDN;
+        public short Port = Port;
+        public DateTime ExpirationDate = GetJWTExpirationDateTime(Token);
     }
 
     public record JsonConfigInstance {
@@ -428,26 +428,19 @@ public class Instances : MelonMod {
             instanceID = MetaPort.Instance.CurrentInstanceId
         });
         if (baseResponse is { Data: not null }) {
-            var token = new JsonConfigJoinToken() {
-                WorldId = MetaPort.Instance.CurrentWorldId,
-                InstanceId = MetaPort.Instance.CurrentInstanceId,
-                JoinToken = baseResponse.Data.Jwt,
-                FQDN = baseResponse.Data.Host.Fqdn,
-                Port = baseResponse.Data.Host.Port
-            };
-            token.CalculateExpiration();
-            Config.LastInstance.JoinToken = token;
-            MelonLogger.Msg($"Successfully grabbed an instance token! Expires at: {token.ExpirationDate.ToLocalTime()}");
+            // Check for token updates
+            UpdateInstanceToken(Config.LastInstance);
+            MelonLogger.Msg($"Successfully grabbed an instance token! Expires at: {Config.LastInstance.JoinToken?.ExpirationDate.ToLocalTime()}");
             SaveConfig();
         }
     }
 
-    private static void LoadWorldUsingToken(JsonConfigJoinToken joinToken) {
-        CVRInstances.RequestedInstance = joinToken.InstanceId;
-        CVRInstances.InstanceJoinJWT = joinToken.JoinToken;
-        CVRInstances.Fqdn = joinToken.FQDN;
-        CVRInstances.Port = joinToken.Port;
-        Content.LoadIntoWorld(joinToken.WorldId);
+    private static void LoadWorldUsingToken(JsonConfigInstance instanceInfo) {
+        CVRInstances.RequestedInstance = instanceInfo.InstanceId;
+        CVRInstances.InstanceJoinJWT = instanceInfo.JoinToken.Token;
+        CVRInstances.Fqdn = instanceInfo.JoinToken.FQDN;
+        CVRInstances.Port = instanceInfo.JoinToken.Port;
+        Content.LoadIntoWorld(instanceInfo.WorldId);
     }
 
     private static IEnumerator CreateAndJoinOnlineInstance() {
@@ -514,17 +507,17 @@ public class Instances : MelonMod {
     private static bool _ranHQToolsStart;
     private static bool _ranHQCVRWorldStart;
 
-    internal static bool AttemptToUseTicked(JsonConfigJoinToken joinToken) {
+    internal static bool AttemptToUseTicked(JsonConfigInstance instanceInfo) {
         // Attempt to join with an instance token (needs to have more than 1 minute time left)
-        if (ModConfig.MeAttemptToSaveAndLoadToken.Value) {
-            if (joinToken.ExpirationDate - DateTime.UtcNow > TimeSpan.FromMinutes(1)) {
-                MelonLogger.Msg($"Attempting to join instance using the join token...");
-                LoadWorldUsingToken(joinToken);
+        if (instanceInfo?.JoinToken != null && ModConfig.MeAttemptToSaveAndLoadToken.Value) {
+            if (instanceInfo.JoinToken.ExpirationDate - DateTime.UtcNow > TimeSpan.FromMinutes(1)) {
+                MelonLogger.Msg($"[AttemptToUseTicked] Attempting to join instance using the join token... Expire Date: {instanceInfo.JoinToken.ExpirationDate.ToLocalTime()}");
+                LoadWorldUsingToken(instanceInfo);
                 return true;
             }
             else {
-                MelonLogger.Msg($"Skip attempting to rejoin last instance using a token, because the token expired or is about to. " +
-                                $"Expire Date: {joinToken.ExpirationDate.ToLocalTime()}");
+                MelonLogger.Msg($"[AttemptToUseTicked] Skip attempting to rejoin last instance using a token, because the token expired or is about to. " +
+                                $"Expire Date: {instanceInfo.JoinToken.ExpirationDate.ToLocalTime()}");
             }
         }
         return false;
@@ -540,7 +533,7 @@ public class Instances : MelonMod {
 
             // Attempt to join with an instance token
             if (ModConfig.MeAttemptToSaveAndLoadToken.Value && Config.LastInstance.JoinToken != null) {
-                if (AttemptToUseTicked(Config.LastInstance.JoinToken)) return;
+                if (AttemptToUseTicked(Config.LastInstance)) return;
             }
 
             // Check if joining last instance timed out
@@ -611,9 +604,6 @@ public class Instances : MelonMod {
         [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.PopulateLastMessage))]
         public static void After_RichPresence_PopulateLastMessage() {
             try {
-
-                // Check for token updates
-                UpdateInstanceToken();
 
                 // Update current instance
                 MelonCoroutines.Start(UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName));

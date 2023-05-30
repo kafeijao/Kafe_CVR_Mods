@@ -350,7 +350,7 @@ public static class ModConfig {
             var button = categoryInstances.AddButton($"{index}. {instanceInfo.InstanceName}",
                 buttonIcon, $"Join {instanceInfo.InstanceName}!");
             button.OnPress += () => {
-                if (instanceInfo.JoinToken != null && Instances.AttemptToUseTicked(instanceInfo.JoinToken)) return;
+                if (instanceInfo.JoinToken != null && Instances.AttemptToUseTicked(instanceInfo)) return;
                 Instances.OnInstanceSelected(instanceInfo.InstanceId);
             };
         }
