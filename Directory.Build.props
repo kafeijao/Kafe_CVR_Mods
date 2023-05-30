@@ -43,6 +43,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MelonLoader.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Mono.Cecil">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Cecil.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Accessibility">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Accessibility.dll</HintPath>
             <Private>False</Private>

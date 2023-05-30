@@ -47,7 +47,8 @@ public static class ModConfig {
         [JsonConverter(typeof(StringEnumConverter))]
         public DllType Type = DllType.Mod;
         public string UpdatedAt = "";
-        public string GetDestinationPath(string fileName) => Path.Combine(GetPath(Type), fileName);
+        public string GetDestinationFilePath(string fileName) => Path.Combine(GetPath(Type), fileName);
+        public string GetDestinationFolderPath() => GetPath(Type);
     }
 
     public static void SaveJsonConfig() {

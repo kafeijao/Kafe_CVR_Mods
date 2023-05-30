@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using MelonLoader;
+using Mono.Cecil;
 using Newtonsoft.Json.Linq;
 
 namespace Kafe.CVRUnverifiedModUpdaterPlugin;
@@ -38,7 +39,43 @@ public class CVRUnverifiedModUpdaterPlugin : MelonPlugin {
         ModConfig.SaveJsonConfig();
     }
 
-    public static void DownloadLatestReleaseAssets(ModConfig.JsonConfigRepo repo) {
+    private static void ClearSillyNames(string folderToCheck, string downloadedFilePath) {
+
+        var assembly = AssemblyDefinition.ReadAssembly(downloadedFilePath);
+        var attribute = assembly.CustomAttributes.FirstOrDefault(ca => ca.AttributeType.FullName == "MelonLoader.MelonInfoAttribute");
+        assembly.Dispose();
+        if (attribute == null || attribute.ConstructorArguments.Count < 2 ||
+            attribute.ConstructorArguments[1].Value is not string modName) {
+            MelonLogger.Warning($"The mod at {downloadedFilePath} is not a MelonLoader mod... Skipping attempting to remove duplicates...");
+            return;
+        }
+
+        // Get all dll files from the folder (not recursive)
+        var dllFiles = Directory.GetFiles(folderToCheck, "*.dll");
+
+        foreach (var dllFile in dllFiles) {
+            // Skip the downloaded file
+            if (dllFile.Equals(downloadedFilePath, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            using var dllAssembly = AssemblyDefinition.ReadAssembly(dllFile);
+            var dllAttribute = dllAssembly.CustomAttributes.FirstOrDefault(ca => ca.AttributeType.FullName == "MelonLoader.MelonInfoAttribute");
+
+            // If it's not a melon loader mod or the name is different keep looking...
+            if (dllAttribute == null ||
+                dllAttribute.ConstructorArguments.Count <= 1 ||
+                dllAttribute.ConstructorArguments[1].Value is not string dllModName ||
+                dllModName != modName) continue;
+
+            MelonLogger.Msg($"Found a duplicate mod at {dllFile}. Probably because it had a funny name and we downloaded with the correct name. Deleting it...");
+
+            // If the mod names match, delete the file (we need to dispose the file first otherwise it's in use)
+            dllAssembly.Dispose();
+            File.Delete(dllFile);
+        }
+    }
+
+    private static void DownloadLatestReleaseAssets(ModConfig.JsonConfigRepo repo) {
 
         var request = WebRequest.Create(repo.GetUrl()) as HttpWebRequest;
         request!.Method = "GET";
@@ -46,7 +83,7 @@ public class CVRUnverifiedModUpdaterPlugin : MelonPlugin {
 
         try {
             using var response = request.GetResponse() as HttpWebResponse;
-            using var reader = new StreamReader(response.GetResponseStream());
+            using var reader = new StreamReader(response!.GetResponseStream()!);
             var json = reader.ReadToEnd();
             var release = JObject.Parse(json);
 
@@ -66,8 +103,13 @@ public class CVRUnverifiedModUpdaterPlugin : MelonPlugin {
                 MelonLogger.Msg($"Found a newer version of {repo.Owner}/{repo.Repo}/{name}! Updating...");
 
                 // Download the mod
-                using var client = new WebClient();
-                client.DownloadFile(downloadUrl, matchedFile.GetDestinationPath(name));
+                var destinationFilePath = matchedFile.GetDestinationFilePath(name);
+                using (var client = new WebClient()) {
+                    client.DownloadFile(downloadUrl, destinationFilePath);
+                }
+
+                // Delete current mods (this is to prevent when silly people have silly names like OSC (1).dll)
+                ClearSillyNames(matchedFile.GetDestinationFolderPath(), destinationFilePath);
 
                 matchedFile.UpdatedAt = updatedAt;
                 ModConfig.SaveJsonConfig();

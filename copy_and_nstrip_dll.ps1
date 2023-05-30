@@ -1,6 +1,7 @@
 # CVR and Melon Loader Dependencies
 $0HarmonydllPath    = "\MelonLoader\0Harmony.dll"
 $melonLoaderdllPath = "\MelonLoader\MelonLoader.dll"
+$CecilallPath          = "\MelonLoader\Mono.Cecil.dll"
 $cvrManagedDataPath = "\ChilloutVR_Data\Managed"
 
 $cvrPath = $env:CVRPATH
@@ -48,6 +49,7 @@ Write-Host "Copying the DLLs from the CVR, MelonLoader, and Mods folder to the .
 
 Copy-Item $cvrPath$0HarmonydllPath -Destination $managedLibsFolder
 Copy-Item $cvrPath$melonLoaderdllPath -Destination $managedLibsFolder
+Copy-Item $cvrPath$CecilallPath -Destination $managedLibsFolder
 Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $managedLibsFolder
 
 
