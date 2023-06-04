@@ -74,7 +74,7 @@ public class HistoryBehavior : MonoBehaviour {
     private GameObject _templateChatEntry;
 
     // Messages
-    private List<Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>> MessagesTMPComponents = new();
+    private readonly List<Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>> _messagesTMPComponents = new();
 
     internal enum MenuTarget {
         QuickMenu,
@@ -89,7 +89,7 @@ public class HistoryBehavior : MonoBehaviour {
         switch (targetType) {
             case MenuTarget.QuickMenu:
                 menuControllerTransform.SetParent(_quickMenuGo.transform, true);
-                menuControllerTransform.localPosition = new Vector3(0.76f, -0.095f, -0.001f);
+                menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
                 menuControllerTransform.localRotation = Quaternion.identity;
                 _rootRectTransform.transform.localScale = _menuScaleVector;
                 _rootRectPickup.enabled = false;
@@ -230,18 +230,18 @@ public class HistoryBehavior : MonoBehaviour {
             ToggleHistoryWindow(ModConfig.MeHistoryWindowOpened.Value);
 
             // Set the message listeners
-            API.OnMessageReceived += (source, senderGuid, msg, notify, displayMessage) => {
+            API.OnMessageReceived += (source, senderGuid, msg, _, _) => {
                 if (source != API.MessageSource.Internal) return;
                 AddMessage(DateTime.Now, senderGuid, CVRPlayerManager.Instance.TryGetPlayerName(senderGuid), MetaPort.Instance.ownerId == senderGuid, Friends.FriendsWith(senderGuid), msg);
             };
-            API.OnMessageSent += (source, msg, notify, show) => {
+            API.OnMessageSent += (source, msg, _, _) => {
                 if (source != API.MessageSource.Internal) return;
                 AddMessage(DateTime.Now, MetaPort.Instance.ownerId, MetaPort.Instance.username, true, false, msg);
             };
 
             // Set font size listeners
             ModConfig.MeHistoryFontSize.OnEntryValueChanged.Subscribe((_, newValue) => {
-                foreach (var components in MessagesTMPComponents) {
+                foreach (var components in _messagesTMPComponents) {
                     components.Item1.fontSize = newValue * TimestampFontSizeModifier;
                     components.Item2.fontSize = newValue * UsernameFontSizeModifier;
                     components.Item3.fontSize = newValue;
@@ -275,7 +275,7 @@ public class HistoryBehavior : MonoBehaviour {
         messageTmp.text = message;
         messageTmp.fontSize = ModConfig.MeHistoryFontSize.Value;
 
-        MessagesTMPComponents.Add(new Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>(timestampTmp, usernameTmp, messageTmp));
+        _messagesTMPComponents.Add(new Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>(timestampTmp, usernameTmp, messageTmp));
     }
 
 
