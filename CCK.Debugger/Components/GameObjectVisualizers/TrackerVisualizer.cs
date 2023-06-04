@@ -7,7 +7,7 @@ namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class TrackerVisualizer : GameObjectVisualizer {
 
-    protected override string GetName() => "[CCK.Debugger] Tracker Visualizer";
+    private const string GameObjectWrapperName = "[CCK.Debugger] Label Visualizer";
 
     public static void ToggleTrackers(bool isOn) {
 
@@ -36,10 +36,18 @@ public class TrackerVisualizer : GameObjectVisualizer {
 
                 var target = tracker.referenceGameObject;
 
+                // If wrapper doesn't exist, create it
+                var wrapperTransform = target.transform.Find(GameObjectWrapperName);
+                var wrapper = wrapperTransform == null
+                    ? new GameObject(GameObjectWrapperName) { layer = target.layer }
+                    : wrapperTransform.gameObject;
+                wrapper.transform.SetParent(target.transform, false);
+                wrapper.SetActive(false);
+
                 // Create the component if doesn't exist
-                if (!target.TryGetComponent(out TrackerVisualizer visualizer)) {
-                    visualizer = target.AddComponent<TrackerVisualizer>();
-                    visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetTrackerVisualizerObject(), target);
+                if (!wrapper.TryGetComponent(out TrackerVisualizer visualizer)) {
+                    visualizer = wrapper.AddComponent<TrackerVisualizer>();
+                    visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetTrackerVisualizerObject(), wrapper);
                 }
 
                 // Since we're enabling remove from the list to disable
@@ -47,6 +55,7 @@ public class TrackerVisualizer : GameObjectVisualizer {
 
                 visualizer.SetupVisualizer(avatarHeight);
                 visualizer.enabled = true;
+                wrapper.SetActive(true);
 
                 visualizer.UpdateState();
             }

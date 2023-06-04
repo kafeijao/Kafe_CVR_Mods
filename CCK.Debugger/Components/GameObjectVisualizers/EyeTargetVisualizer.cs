@@ -22,7 +22,7 @@ public class EyeTargetVisualizer : GameObjectVisualizer {
         if (candidateTransform == null) {
             candidateTransform = new GameObject(candidateId).transform;
             candidateTransform.SetParent(parentOfTarget.transform);
-            candidateTransform.gameObject.SetActive(true);
+            candidateTransform.gameObject.SetActive(false);
         }
         var target = candidateTransform.gameObject;
 
@@ -34,6 +34,7 @@ public class EyeTargetVisualizer : GameObjectVisualizer {
 
         visualizer._candidate = candidate;
         visualizer.SetupVisualizer();
+        target.SetActive(true);
     }
 
     protected override void SetupVisualizer(float scale = 1f) {

@@ -7,7 +7,7 @@ namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class LabeledVisualizer : GameObjectVisualizer {
 
-    protected override string GetName() => "[CCK.Debugger] Label Visualizer";
+    private const string GameObjectWrapperName = "[CCK.Debugger] Label Visualizer";
 
     private string _label;
     private RectTransform _labelTransform;
@@ -17,14 +17,22 @@ public class LabeledVisualizer : GameObjectVisualizer {
 
     public static void Create(GameObject target, string label = "") {
 
-        // If the component still doesn't exist, create it!
-        if (!target.TryGetComponent(out LabeledVisualizer visualizer)) {
-            visualizer = target.AddComponent<LabeledVisualizer>();
-            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetLabelVisualizerObject(), target);
+        // If wrapper doesn't exist, create it
+        var wrapperTransform = target.transform.Find(GameObjectWrapperName);
+        var wrapper = wrapperTransform == null
+            ? new GameObject(GameObjectWrapperName) { layer = target.layer }
+            : wrapperTransform.gameObject;
+        wrapper.transform.SetParent(target.transform, false);
+        wrapper.SetActive(false);
+
+        if (!wrapper.TryGetComponent(out LabeledVisualizer visualizer)) {
+            visualizer = wrapper.AddComponent<LabeledVisualizer>();
+            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetLabelVisualizerObject(), wrapper);
         }
 
         visualizer._label = label;
         visualizer.SetupVisualizer();
+        wrapper.SetActive(true);
     }
 
     protected override void SetupVisualizer(float scale = 1f) {

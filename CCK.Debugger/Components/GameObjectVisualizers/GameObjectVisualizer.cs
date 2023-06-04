@@ -10,7 +10,7 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
     protected static readonly Dictionary<GameObject, GameObjectVisualizer> VisualizersAll = new();
     protected static readonly Dictionary<GameObject, GameObjectVisualizer> VisualizersActive = new();
 
-    protected abstract string GetName();
+    protected virtual string GetName() => "Visualizer";
 
     private GameObject _targetGo;
     protected GameObject VisualizerGo;
@@ -44,7 +44,10 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
 
         // Hide by default
         VisualizerGo.SetActive(false);
+    }
 
+    private void Awake() {
+        // Needs to be on Awake because OnDestroy is only called if the game object was active, and same goes for awake
         VisualizersAll[_targetGo] = this;
     }
 

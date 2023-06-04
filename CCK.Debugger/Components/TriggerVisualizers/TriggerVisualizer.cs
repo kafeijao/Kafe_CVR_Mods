@@ -12,11 +12,13 @@ public abstract class TriggerVisualizer : MonoBehaviour {
     private static readonly Dictionary<MonoBehaviour, TriggerVisualizer> VisualizersAll = new();
     private static readonly Dictionary<MonoBehaviour, TriggerVisualizer> VisualizersActive = new();
 
-    private const string GameObjectName = "[CCK.Debugger] Trigger Visualizer";
+    private const string GameObjectName = "Visualizer";
+    private const string GameObjectWrapperName = "[CCK.Debugger] Trigger Visualizer";
 
     protected Material MaterialStandard;
     protected Material MaterialNeitri;
 
+    private GameObject _wrapperGo;
     protected MonoBehaviour TriggerBehavior;
     protected GameObject VisualizerGo;
 
@@ -25,7 +27,17 @@ public abstract class TriggerVisualizer : MonoBehaviour {
     public static TriggerVisualizer CreateVisualizer(MonoBehaviour trigger) {
 
         // Check if the component already exists, if so ignore the creation request
-        if (trigger.TryGetComponent(out TriggerVisualizer visualizer)) return visualizer;
+        var wrapperTransform = trigger.transform.Find(GameObjectWrapperName);
+        if (wrapperTransform != null && wrapperTransform.TryGetComponent(out TriggerVisualizer visualizer)) {
+            return visualizer;
+        }
+
+        // Create the wrapper
+        var wrapper = wrapperTransform == null
+            ? new GameObject(GameObjectWrapperName) { layer = trigger.gameObject.layer }
+            : wrapperTransform.gameObject;
+        wrapper.transform.SetParent(trigger.transform, false);
+        wrapper.SetActive(false);
 
         // Create a visualizer for the proper type ;_; why triggers don't have a base class
         Type visType;
@@ -43,17 +55,23 @@ public abstract class TriggerVisualizer : MonoBehaviour {
         }
 
         // Instantiate the proper visualizer for the right type of trigger
-        visualizer = (TriggerVisualizer) trigger.gameObject.AddComponent(visType);
+        visualizer = (TriggerVisualizer) wrapper.AddComponent(visType);
         visualizer.TriggerBehavior = trigger;
-
-        // Disable the behavior
         visualizer.enabled = false;
-        VisualizersAll[trigger] = visualizer;
+        visualizer._wrapperGo = wrapper;
+        // This wrapper is so we can create the visualizer on a disabled GO to prevent awake from being called before we set the Pointer
+        wrapper.SetActive(true);
+
         return visualizer;
     }
 
+    private void Awake() {
+        // Needs to be on Awake because OnDestroy is only called if the game object was active, and same goes for awake
+        VisualizersAll[TriggerBehavior] = this;
+    }
+
     private void InitializeVisualizer(Mesh mesh) {
-        VisualizerGo = new GameObject(GameObjectName) { layer = TriggerBehavior.gameObject.layer };
+        VisualizerGo = new GameObject(GameObjectName) { layer = _wrapperGo.layer };
 
         // Create mesh filter
         var meshFilter = VisualizerGo.AddComponent<MeshFilter>();
@@ -85,8 +103,8 @@ public abstract class TriggerVisualizer : MonoBehaviour {
         var renderer = VisualizerGo.AddComponent<MeshRenderer>();
         renderer.materials = new[] { MaterialStandard, MaterialNeitri };
 
-        // Add as a child to the pointer
-        VisualizerGo.transform.SetParent(TriggerBehavior.transform, false);
+        // Add as a child to the wrapper
+        VisualizerGo.transform.SetParent(_wrapperGo.transform, false);
 
         // Hide by default
         VisualizerGo.SetActive(false);
