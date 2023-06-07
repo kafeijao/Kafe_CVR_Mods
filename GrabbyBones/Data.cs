@@ -257,8 +257,9 @@ internal static class Data {
         }
 
         internal bool ShouldBreak() {
-            var avatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance._avatarHeight : BoneOwnerPuppetMaster._avatarHeight;
-            var breakDistance = avatarHeight * AvatarSizeToBreakDistance;
+            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance._avatarHeight : BoneOwnerPuppetMaster._avatarHeight;
+            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance._avatarHeight : GrabberHandPuppetMaster._avatarHeight;
+            var breakDistance = (boneOwnerAvatarHeight + grabbedAvatarHeight) * AvatarSizeToBreakDistance;
             var currentDistance = Vector3.Distance(HandInfo.GrabbingOffset.position, TargetChildBone.position);
             if (currentDistance > breakDistance) {
                 #if DEBUG
@@ -368,6 +369,8 @@ internal static class Data {
 
         internal override float GetRadius(Transform childNode) => GetRadius(_magicaBoneCloth, childNode);
 
+        internal override float GetLength(Transform childNode) => GetLength(_magicaBoneCloth, childNode);
+
         internal static float GetRadius(MagicaBoneCloth magicaBone, Transform childNode) {
             var transformIndex = magicaBone.useTransformList.IndexOf(childNode);
             var clothDataIndex = magicaBone.clothData.useVertexList.IndexOf(transformIndex);
@@ -377,6 +380,21 @@ internal static class Data {
 
             var depth = magicaBone.ClothData.vertexDepthList[clothDataIndex];
             return magicaBone.Params.GetRadius(depth);
+        }
+
+        internal static float GetLength(MagicaBoneCloth magicaBone, Transform childNode) {
+            // Unfortunately magica doesn't have a total length property (that I could find)
+            var totalLength = 0f;
+            var currentBone = childNode;
+            while (currentBone.parent != null) {
+                var nextBone = currentBone.parent;
+                totalLength += Vector3.Distance(currentBone.position, nextBone.position);
+                currentBone = nextBone;
+                if (magicaBone.clothTarget.rootList.Contains(currentBone)) {
+                    return totalLength;
+                }
+            }
+            return 1f;
         }
 
         internal override bool HasInstance(MonoBehaviour script) => script == _magicaBoneCloth;
@@ -411,6 +429,8 @@ internal static class Data {
 
         internal override float GetRadius(Transform childNode) => GetRadius(_dynamicBone, childNode);
 
+        internal override float GetLength(Transform childNode) => _dynamicBone.m_BoneTotalLength;
+
         internal override string GetName() => _dynamicBone.name;
 
         internal static float GetRadius(DynamicBone dynamicBone, Transform childNode) {
@@ -426,8 +446,6 @@ internal static class Data {
         }
 
         internal override bool HasInstance(MonoBehaviour script) => script == _dynamicBone;
-
-
     }
 
     private static Transform[] GetIkBones(Transform root, Transform child) {
@@ -491,6 +509,7 @@ internal static class Data {
         internal abstract void DisablePhysics();
         internal abstract void RestorePhysics();
         internal abstract float GetRadius(Transform childNode);
+        internal abstract float GetLength(Transform childNode);
         internal abstract string GetName();
         internal abstract bool HasInstance(MonoBehaviour script);
     }

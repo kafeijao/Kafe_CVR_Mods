@@ -27,6 +27,10 @@ public class GrabbyBones : MelonMod {
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
+
+        #if DEBUG_ROOT_GEN
+        MelonLogger.Warning("This mod was compiled with the DEBUG_ROOT_GEN mode on. There might be an excess of logging and performance overhead...");
+        #endif
     }
 
     private static readonly HashSet<GrabbyBoneInfo> GrabbyBonesCache = new();
@@ -145,20 +149,20 @@ public class GrabbyBones : MelonMod {
             AvatarHandInfo.SetSkipIKSolver();
         }
 
-        private void LateUpdate() {
-            if (!ModConfig.MeEnabled.Value) return;
-
-            try {
-                // We need the very last positions accurately, so it is compatible with (VRIK, and LeapMotion mod)
-                OnVeryLateUpdate();
-
-                // We need to run the skipped FABRIK solver after VRIK, otherwise vr will be funny
-                AvatarHandInfo.ExecuteIKSolver();
-            }
-            catch (Exception e) {
-                MelonLogger.Error(e);
-            }
-        }
+        // private void LateUpdate() {
+        //     if (!ModConfig.MeEnabled.Value) return;
+        //
+        //     try {
+        //         // We need the very last positions accurately, so it is compatible with (VRIK, and LeapMotion mod)
+        //         OnVeryLateUpdate();
+        //
+        //         // We need to run the skipped FABRIK solver after VRIK, otherwise vr will be funny
+        //         AvatarHandInfo.ExecuteIKSolver();
+        //     }
+        //     catch (Exception e) {
+        //         MelonLogger.Error(e);
+        //     }
+        // }
     }
 
     [HarmonyPatch]
@@ -187,6 +191,21 @@ public class GrabbyBones : MelonMod {
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}.");
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
+        public static void After_PlayerSetup_LateUpdate(PlayerSetup __instance) {
+            // This late update runs after VRIK but before db
+            try {
+                OnVeryLateUpdate();
+                // We need to run the skipped FABRIK solver after VRIK, otherwise vr will be funny
+                AvatarHandInfo.ExecuteIKSolver();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_LateUpdate)}.");
                 MelonLogger.Error(e);
             }
         }
@@ -389,6 +408,13 @@ public class GrabbyBones : MelonMod {
         private static Dictionary<Transform, HashSet<Transform>> GetDynBoneRoots(Animator animator, DynamicBone dynamicBone, Transform root, IEnumerable<Transform> childNodes, int it = 0) {
 
             var result = new Dictionary<Transform, HashSet<Transform>>();
+
+            // Ignore if current node is on the ignore
+            if (dynamicBone.m_Exclusions.Contains(root)) {
+                MelonLogger.Warning($"Exclusions contain the root... Iteration: {it}");
+                return result;
+            }
+
             var currentChildren = childNodes.Where(ct => ct != null && ct != root && !dynamicBone.m_Exclusions.Contains(ct) && ct.IsChildOf(root)).ToHashSet();
 
             #if DEBUG_ROOT_GEN
@@ -402,7 +428,9 @@ public class GrabbyBones : MelonMod {
             var isComponentInside = dynamicBone.transform != root && dynamicBone.transform.IsChildOf(root);
 
             // Root bone with multiple children won't be rotated
-            var cantRotateDueChildCount = it == 0 && currentChildren.Count(c => c.parent == root) > 1;
+            var rootInfo = dynamicBone.TransformInfoList[dynamicBone.GetTransformList.IndexOf(root)];
+            var cantRotateDueChildCount = rootInfo is { IsRoot: true, HasMultipleChildren: true };
+            // var cantRotateDueChildCount = it == 0 && currentChildren.Count(c => c.parent == root) > 1;
 
             // Let's not move the humanoid bones (if configured to do so)
             var isHumanoidBone = ModConfig.MePreventGrabIKBones.Value && animator.isHuman && ((HumanBodyBones[])Enum.GetValues(typeof(HumanBodyBones))).Any(b => b != HumanBodyBones.LastBone && animator.GetBoneTransform(b) == root);
