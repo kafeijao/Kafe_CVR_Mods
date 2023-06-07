@@ -25,6 +25,7 @@ public static class LogParser {
         "ABI_RC.VideoPlayer.Scripts.Players.AvPro.AvProPlayer.get_Time () (at",
         "ABI_RC.VideoPlayer.Scripts.Players.AvPro.AvProPlayer.CleanupVideoPlayers () (at",
         "ABI_RC.VideoPlayer.Scripts.ViewManagerVideoPlayer.E_NotifyUser (System.String text)",
+        "ABI.CCK.Components.CVRVideoPlayer.Pause (System.Boolean broadcast, System.String username) (at",
     };
 
     // Misc Spam Messages

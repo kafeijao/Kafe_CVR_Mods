@@ -27,6 +27,6 @@ using MelonLoader;
 namespace Kafe.LoggerPlusPlus.Properties;
 internal static class AssemblyInfoParams {
     public const string Name = "Logger++";
-    public const string Version = "0.0.2";
+    public const string Version = "0.0.3";
     public const string Author = "kafeijao";
 }
