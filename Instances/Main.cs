@@ -8,6 +8,7 @@ using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.API;
 using ABI_RC.Core.Networking.API.Responses;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.MovementSystem;
@@ -226,7 +227,7 @@ public class Instances : MelonMod {
         }
     }
 
-    private static IEnumerator UpdateLastInstance(string worldId, string instanceId, string instanceName) {
+    private static IEnumerator UpdateLastInstance(string worldId, string instanceId, string instanceName, int remotePlayersCount) {
 
         // Already have this instance saved, let's just check for the token
         if (Config.LastInstance?.InstanceId == instanceId) {
@@ -253,6 +254,7 @@ public class Instances : MelonMod {
             WorldImageUrl = worldImageUrl,
             InstanceId = instanceId,
             InstanceName = instanceName,
+            RemotePlayersCount = remotePlayersCount,
         };
         Config.LastInstance = instanceInfo;
         // Save the current token
@@ -363,6 +365,7 @@ public class Instances : MelonMod {
         public string WorldImageUrl = null;
         public string InstanceId;
         public string InstanceName;
+        public int RemotePlayersCount = 0;
         public JsonConfigJoinToken JoinToken = null;
     }
 
@@ -533,7 +536,12 @@ public class Instances : MelonMod {
 
             // Attempt to join with an instance token
             if (ModConfig.MeAttemptToSaveAndLoadToken.Value && Config.LastInstance.JoinToken != null) {
-                if (AttemptToUseTicked(Config.LastInstance)) return;
+                if (!ModConfig.MePreventRejoiningEmptyInstances.Value || Config.LastInstance.RemotePlayersCount > 0) {
+                    if (AttemptToUseTicked(Config.LastInstance)) return;
+                }
+                else {
+                    MelonLogger.Msg($"Skipping rejoining using token, because the instance is probably closing/closed. [MePreventRejoiningEmptyInstances=true]");
+                }
             }
 
             // Check if joining last instance timed out
@@ -606,7 +614,11 @@ public class Instances : MelonMod {
             try {
 
                 // Update current instance
-                MelonCoroutines.Start(UpdateLastInstance(MetaPort.Instance.CurrentWorldId,MetaPort.Instance.CurrentInstanceId, MetaPort.Instance.CurrentInstanceName));
+                MelonCoroutines.Start(UpdateLastInstance(
+                    MetaPort.Instance.CurrentWorldId,
+                    MetaPort.Instance.CurrentInstanceId,
+                    MetaPort.Instance.CurrentInstanceName,
+                    CVRPlayerManager.Instance.NetworkPlayers.Count));
 
                 // Initialize the save config job when we reach an online instance
                 if (!_startedJob) {

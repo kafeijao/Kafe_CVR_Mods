@@ -220,9 +220,8 @@ public static class ModConfig {
         }
         _isRestarting = true;
 
-        // If there are still people in the world and our token has less than 5 mins, grab a new instance token
+        // If our token has less than 5 mins, grab a new instance token
         if (MeAttemptToSaveAndLoadToken.Value
-            && CVRPlayerManager.Instance.NetworkPlayers.Count > 0
             && Instances.Config.LastInstance.JoinToken != null
             && Instances.Config.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow < TimeSpan.FromMinutes(5)) {
             MelonLogger.Msg($"Fetching a new instance token, since ours is pretty old or expired," +
@@ -350,7 +349,14 @@ public static class ModConfig {
             var button = categoryInstances.AddButton($"{index}. {instanceInfo.InstanceName}",
                 buttonIcon, $"Join {instanceInfo.InstanceName}!");
             button.OnPress += () => {
-                if (instanceInfo.JoinToken != null && Instances.AttemptToUseTicked(instanceInfo)) return;
+                if (instanceInfo.JoinToken != null) {
+                    if (!MePreventRejoiningEmptyInstances.Value || instanceInfo.RemotePlayersCount > 0) {
+                        if (Instances.AttemptToUseTicked(instanceInfo)) return;
+                    }
+                    else {
+                        MelonLogger.Msg($"Skipping rejoining using token, because the instance is probably closing/closed. [MePreventRejoiningEmptyInstances=true]");
+                    }
+                }
                 Instances.OnInstanceSelected(instanceInfo.InstanceId);
             };
         }
