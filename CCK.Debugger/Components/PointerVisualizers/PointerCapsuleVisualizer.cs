@@ -8,6 +8,14 @@ public class PointerCapsuleVisualizer : PointerVisualizer {
 
     protected void Start() {
         VisualizerGo.transform.localScale = Vector3.zero;
+
+        // Update the rotation to match the pointer direction
+        VisualizerGo.transform.localRotation = PointerCollider.direction switch {
+            0 => Quaternion.Euler(0f, 0f, 90f),
+            1 => Quaternion.Euler(0f, 0f, 0f),
+            2 => Quaternion.Euler(90f, 0f, 0f),
+            _ => VisualizerGo.transform.localRotation
+        };
     }
 
     private void Update() {
