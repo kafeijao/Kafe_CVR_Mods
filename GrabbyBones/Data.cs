@@ -298,7 +298,7 @@ internal static class Data {
             // Initialize stuff to update the angles
             _currentAngleParameterName = Info.GetName() + ParameterAngleSuffix;
             _currentAngleParameterNameLocal = Animator.StringToHash("#" + _currentAngleParameterName);
-            _initialRotation = TargetChildBone.localRotation;
+            _initialRotation = TargetChildBone.parent.localRotation;
             _oldAngle = -1;
         }
 
@@ -330,8 +330,8 @@ internal static class Data {
         }
 
         internal void UpdateCurrentAngle() {
-            var newAngle = Mathf.Clamp01(Quaternion.Angle(_initialRotation, TargetChildBone.localRotation) / 180f);
-            // Debug.Log($"Angle: {Quaternion.Angle(_initialRotation, TargetChildBone.localRotation)} / 180 = {newAngle} | {TargetChildBone.localRotation.ToString("F3")}");
+            var newAngle = Mathf.Clamp01(Quaternion.Angle(_initialRotation, TargetChildBone.parent.localRotation) / 180f);
+            // MelonLogger.Msg($"Angle: {Quaternion.Angle(_initialRotation, TargetChildBone.parent.localRotation)} / 180 = {newAngle} | {TargetChildBone.parent.localRotation.ToString("F3")}");
             if (Mathf.Approximately(newAngle, _oldAngle)) return;
             _oldAngle = newAngle;
             if (IsBoneFromLocalPlayer) {

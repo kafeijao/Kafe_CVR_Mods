@@ -14,7 +14,12 @@ things happening.
 - [x] Use the bone radius for the grabbing area
 - [x] Use `[NGB]` tag somewhere on the GameObject name that contains the dynamic/magica component to prevent being
   grabbed.
+- [x] Use `[NGBB]` tag on a bones belonging to the chain to prevent a single specific bone from being grabbed.
 - [x] Animator parameters for detecting when a bone is grabbed, or the grabbed bone.
+- [x] Use `Rotation Limit Angle`, `Rotation Limit Hinge`, `Rotation Limit Polygon`, and `Rotation Limit Spline` from
+  FinalIK to limit how grabbed bones can move. You can also use
+  the [Final-IK-Stub](https://github.com/VRLabs/Final-IK-Stub/tree/main) instead of the full `FinalIK` package (but you
+  won't have visualizers in unity)
 - [ ] Pose bones (Waiting on the modding network)
 - [ ] Synchronize grabbing and posing (Waiting for the modding network)
 

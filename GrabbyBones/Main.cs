@@ -19,6 +19,7 @@ public class GrabbyBones : MelonMod {
     private const float AvatarSizeToHandProportions = 0.1f;
 
     private const string IgnoreGrabbyBonesTag = "[NGB]";
+    private const string IgnoreGrabbyBonesBoneTag = "[NGBB]";
 
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
@@ -88,6 +89,10 @@ public class GrabbyBones : MelonMod {
                 if (handInfo.GrabbingPoint.IsChildOf(root.RootTransform) || root.RootTransform.IsChildOf(handInfo.GrabbingPoint)) break;
 
                 foreach (var childTransform in root.ChildTransforms) {
+
+                    // Ignore bones with the ignore bone tag
+                    if (childTransform.name.Contains(IgnoreGrabbyBonesBoneTag)) continue;
+
                     var radius = grabbyBone.GetRadius(childTransform);
                     var currentDistance = Vector3.Distance(handInfo.GrabbingPoint.position, childTransform.position);
                     // MelonLogger.Msg($"\tPicked closest! radius: {radius}, currentDistance: {currentDistance}, maxDistance: {radius + avatarHeight * AvatarSizeToHandProportions}");
@@ -142,11 +147,13 @@ public class GrabbyBones : MelonMod {
         private void FixedUpdate() {
             if (!ModConfig.MeEnabled.Value) return;
 
-            // Update the angle parameters
-            AvatarHandInfo.UpdateAngleParameters();
-
             // Prevent the IK Solver from running at the usual time. We're going to run manually later.
             AvatarHandInfo.SetSkipIKSolver();
+        }
+
+        private void LateUpdate() {
+            // Update the angle parameters
+            AvatarHandInfo.UpdateAngleParameters();
         }
 
         // private void LateUpdate() {
