@@ -5,7 +5,8 @@
 **Note:** This is a **__plugin__**, it goes in the `/Plugins` folder, not the ~~`/Mods`~~ one!
 
 This **Plugin** allows you to pick some extra logs to be forwarded to the melon console. No more error messages will be
-lost in the player log!
+lost in the player log! Note that some of these logs might miss some information, like the IL offset so check the trace
+on the `Player.log` if you need that information.
 
 ## Features
 - Bring logging from the game logs to the Melon Console.
@@ -28,6 +29,7 @@ lost in the player log!
   - AvPro messages: *off by default*
   - Known SPAM-y messages: *off by default*
   - Known pointless messages: *off by default*
+- Enable full logs with full stack trace for all types of message (info/warnings/errors) in Melon Prefs.
 
 ---
 

@@ -28,6 +28,12 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeShowSpamMessages;
     internal static MelonPreferences_Entry<bool> MeShowUselessMessages;
 
+    internal static MelonPreferences_Entry<bool> MeFullStackForErrors;
+    internal static MelonPreferences_Entry<bool> MeFullStackForExceptions;
+    internal static MelonPreferences_Entry<bool> MeFullStackForAsserts;
+    internal static MelonPreferences_Entry<bool> MeFullStackForWarnings;
+    internal static MelonPreferences_Entry<bool> MeFullStackForLogs;
+
     public static void InitializeMelonPrefs() {
 
         // Melon Config
@@ -74,6 +80,21 @@ public static class ModConfig {
 
         MeShowUselessMessages = _melonCategory.CreateEntry("ShowUselessMessages", false,
             description: "Whether only show known useless logs or not.");
+
+        MeFullStackForErrors = _melonCategory.CreateEntry("FullStackForErrors", false,
+            description: "Whether the Error logs will include full stack traces or not.");
+
+        MeFullStackForExceptions = _melonCategory.CreateEntry("FullStackForExceptions", false,
+            description: "Whether the Exceptions logs will include full stack traces or not.");
+
+        MeFullStackForAsserts = _melonCategory.CreateEntry("FullStackForAsserts", false,
+            description: "Whether the Asserts logs will include full stack traces or not.");
+
+        MeFullStackForWarnings = _melonCategory.CreateEntry("FullStackForWarnings", false,
+            description: "Whether the Warnings logs will include full stack traces or not.");
+
+        MeFullStackForLogs = _melonCategory.CreateEntry("FullStackForLogs", false,
+            description: "Whether the Info logs will include full stack traces or not.");
     }
 
 }

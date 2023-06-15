@@ -12,6 +12,36 @@ public class LoggerPlusPlus : MelonPlugin {
 
         ModConfig.InitializeMelonPrefs();
 
+        var defaultStackLogTypeError = Application.GetStackTraceLogType(LogType.Error);
+        if (ModConfig.MeFullStackForErrors.Value) Application.SetStackTraceLogType(LogType.Error, StackTraceLogType.Full);
+        ModConfig.MeFullStackForErrors.OnEntryValueChanged.Subscribe((_, newValue) => {
+            Application.SetStackTraceLogType(LogType.Error, newValue ? StackTraceLogType.Full : defaultStackLogTypeError);
+        });
+
+        var defaultStackLogTypeAssert = Application.GetStackTraceLogType(LogType.Assert);
+        if (ModConfig.MeFullStackForAsserts.Value) Application.SetStackTraceLogType(LogType.Assert, StackTraceLogType.Full);
+        ModConfig.MeFullStackForAsserts.OnEntryValueChanged.Subscribe((_, newValue) => {
+            Application.SetStackTraceLogType(LogType.Assert, newValue ? StackTraceLogType.Full : defaultStackLogTypeAssert);
+        });
+
+        var defaultStackLogTypeException = Application.GetStackTraceLogType(LogType.Exception);
+        if (ModConfig.MeFullStackForExceptions.Value) Application.SetStackTraceLogType(LogType.Exception, StackTraceLogType.Full);
+        ModConfig.MeFullStackForExceptions.OnEntryValueChanged.Subscribe((_, newValue) => {
+            Application.SetStackTraceLogType(LogType.Exception, newValue ? StackTraceLogType.Full : defaultStackLogTypeException);
+        });
+
+        var defaultStackLogTypeWarning = Application.GetStackTraceLogType(LogType.Warning);
+        if (ModConfig.MeFullStackForWarnings.Value) Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.Full);
+        ModConfig.MeFullStackForWarnings.OnEntryValueChanged.Subscribe((_, newValue) => {
+            Application.SetStackTraceLogType(LogType.Warning, newValue ? StackTraceLogType.Full : defaultStackLogTypeWarning);
+        });
+
+        var defaultStackLogTypeLog = Application.GetStackTraceLogType(LogType.Log);
+        if (ModConfig.MeFullStackForLogs.Value) Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.Full);
+        ModConfig.MeFullStackForLogs.OnEntryValueChanged.Subscribe((_, newValue) => {
+            Application.SetStackTraceLogType(LogType.Log, newValue ? StackTraceLogType.Full : defaultStackLogTypeLog);
+        });
+
         Application.logMessageReceived += LogMessageReceived;
         Application.logMessageReceivedThreaded += LogMessageReceived;
 
