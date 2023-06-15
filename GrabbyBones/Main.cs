@@ -152,24 +152,11 @@ public class GrabbyBones : MelonMod {
         }
 
         private void LateUpdate() {
-            // Update the angle parameters
+            if (!ModConfig.MeEnabled.Value) return;
+
+            // Update the angle parameters after everything ran
             AvatarHandInfo.UpdateAngleParameters();
         }
-
-        // private void LateUpdate() {
-        //     if (!ModConfig.MeEnabled.Value) return;
-        //
-        //     try {
-        //         // We need the very last positions accurately, so it is compatible with (VRIK, and LeapMotion mod)
-        //         OnVeryLateUpdate();
-        //
-        //         // We need to run the skipped FABRIK solver after VRIK, otherwise vr will be funny
-        //         AvatarHandInfo.ExecuteIKSolver();
-        //     }
-        //     catch (Exception e) {
-        //         MelonLogger.Error(e);
-        //     }
-        // }
     }
 
     [HarmonyPatch]
@@ -207,6 +194,8 @@ public class GrabbyBones : MelonMod {
         public static void After_PlayerSetup_LateUpdate(PlayerSetup __instance) {
             // This late update runs after VRIK but before db
             try {
+                if (!ModConfig.MeEnabled.Value) return;
+
                 OnVeryLateUpdate();
                 // We need to run the skipped FABRIK solver after VRIK, otherwise vr will be funny
                 AvatarHandInfo.ExecuteIKSolver();
