@@ -36,10 +36,12 @@ public class RealisticFlight : MelonMod {
             HumanBodyBones.LeftLowerArm,
             HumanBodyBones.LeftUpperArm,
             HumanBodyBones.LeftHand,
+            HumanBodyBones.LeftThumbProximal,
             // Right
             HumanBodyBones.RightLowerArm,
             HumanBodyBones.RightUpperArm,
             HumanBodyBones.RightHand,
+            HumanBodyBones.RightThumbProximal,
         };
 
         [HarmonyPostfix]
@@ -65,9 +67,9 @@ public class RealisticFlight : MelonMod {
                     return;
                 }
 
-                MelonLogger.Msg($"Adding the Action Detector to the avatar...");
+                MelonLogger.Msg($"Adding the Action Detector to the avatar {__instance._avatar.name} game object...");
 
-                var actionDetector = __instance.gameObject.AddComponent<ActionDetector>();
+                var actionDetector = __instance._avatar.AddComponent<ActionDetector>();
                 actionDetector.avatarDescriptor = __instance._avatarDescriptor;
                 actionDetector.animator = __instance._animator;
             }
