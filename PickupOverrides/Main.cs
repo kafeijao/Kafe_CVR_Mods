@@ -2,10 +2,11 @@
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
+using UnityEngine;
 
 namespace Kafe.PickupOverrides;
 
-internal record PickupOverrideSettings {
+internal record PickupSettings {
     public bool AutoHold { get; set; }
     public float MaxHoldDistance { get; set; }
     public float MaxGrabDistance { get; set; }
@@ -24,7 +25,7 @@ public class PickupOverrides : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntryOverrideMaxGrabDistance;
     private static MelonPreferences_Entry<float> _melonEntryMaxGrabDistanceValue;
 
-    private static readonly Dictionary<CVRPickupObject, PickupOverrideSettings> PickupSettings = new();
+    private static readonly Dictionary<CVRPickupObject, PickupSettings> PickupSettings = new();
 
     public override void OnInitializeMelon() {
 
@@ -65,11 +66,13 @@ public class PickupOverrides : MelonMod {
 
     private static void UpdateAllPickups() {
         foreach (var pickup in PickupSettings.Keys) {
-            if (pickup != null) UpdatePickup(pickup);
+            UpdatePickup(pickup);
         }
     }
 
     private static void UpdatePickup(CVRPickupObject pickup) {
+
+        if (pickup == null) return;
 
         // Update auto-hold
         pickup.autoHold = _melonEntryOverrideAutoHold.Value
@@ -87,30 +90,39 @@ public class PickupOverrides : MelonMod {
             : PickupSettings[pickup].MaxGrabDistance;
     }
 
+    private class PickupDestroyDetector : MonoBehaviour {
+
+        private CVRPickupObject _pickup;
+
+        private void Awake() {
+            _pickup = GetComponent<CVRPickupObject>();
+            PickupSettings.Add(_pickup, new PickupSettings {
+                AutoHold = _pickup.autoHold,
+                MaxHoldDistance = _pickup.maxDistance,
+                MaxGrabDistance = _pickup.maximumGrabDistance,
+            });
+            UpdatePickup(_pickup);
+        }
+
+        private void OnDestroy() {
+            PickupSettings.Remove(_pickup);
+        }
+    }
+
     [HarmonyPatch]
     private class HarmonyPatches {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_InteractableManager), nameof(CVR_InteractableManager.AddPickup))]
-        private static void AfterAddPickup(ref CVRPickupObject pickupObject) {
-            PickupSettings.Add(pickupObject, new PickupOverrideSettings {
-                AutoHold = pickupObject.autoHold,
-                MaxHoldDistance = pickupObject.maxDistance,
-                MaxGrabDistance = pickupObject.maximumGrabDistance,
-            });
-            UpdatePickup(pickupObject);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_InteractableManager), nameof(CVR_InteractableManager.RemovePickup))]
-        private static void AfterRemovePickup(ref CVRPickupObject pickupObject) {
-            PickupSettings.Remove(pickupObject);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_InteractableManager), nameof(CVR_InteractableManager.OnSceneUnLoaded))]
-        private static void AfterUnloadingScene() {
-            PickupSettings.Clear();
+        private static void After_CVR_InteractableManager_AddPickup(CVRPickupObject pickupObject) {
+            try {
+                if (pickupObject == null) return;
+                pickupObject.gameObject.AddComponent<PickupDestroyDetector>();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVR_InteractableManager_AddPickup)}");
+                MelonLogger.Error(e);
+            }
         }
     }
 }
