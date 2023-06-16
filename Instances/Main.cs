@@ -152,6 +152,7 @@ public class Instances : MelonMod {
                 Position = new JsonVector3(pos),
                 RotationEuler = new JsonVector3(rot),
             };
+            Config.LastInstance.RemotePlayersCount = CVRPlayerManager.Instance.NetworkPlayers.Count;
 
             SaveConfig();
         }
@@ -206,24 +207,27 @@ public class Instances : MelonMod {
         SaveConfig();
     }
 
-    private static void UpdateInstanceToken(JsonConfigInstance configLastInstance) {
-        if (CVRInstances.InstanceJoinJWT != configLastInstance.JoinToken?.Token) {
-            if (configLastInstance.InstanceId != GetJWTInstanceId(CVRInstances.InstanceJoinJWT)) {
-                MelonLogger.Warning($"[UpdateInstanceToken] The provided token doesn't match the current instances... Ignoring... " +
-                                    $"Current: {configLastInstance.InstanceId}, Token: {GetJWTInstanceId(CVRInstances.InstanceJoinJWT)}");
-                return;
-            }
-            try {
-                configLastInstance.JoinToken = new JsonConfigJoinToken(CVRInstances.InstanceJoinJWT, CVRInstances.Fqdn, CVRInstances.Port);
-                #if DEBUG
+    private static void UpdateInstanceToken(JsonConfigInstance configLastInstance, JsonConfigJoinToken token = null) {
+        // Ignore if the token to be update is the same
+        var newToken = token?.Token ?? CVRInstances.InstanceJoinJWT;
+        if (newToken == configLastInstance.JoinToken?.Token) return;
+
+        if (configLastInstance.InstanceId != GetJWTInstanceId(newToken)) {
+            MelonLogger.Warning($"[UpdateInstanceToken] The provided token doesn't match the current instances... Ignoring... " +
+                                $"Current: {configLastInstance.InstanceId}, Token: {GetJWTInstanceId(newToken)}");
+            return;
+        }
+        try {
+            configLastInstance.JoinToken = token ?? new JsonConfigJoinToken(CVRInstances.InstanceJoinJWT, CVRInstances.Fqdn, CVRInstances.Port);
+            configLastInstance.RemotePlayersCount = CVRPlayerManager.Instance.NetworkPlayers.Count;
+            #if DEBUG
                 MelonLogger.Msg($"Instance token was updated! Expiration: {configLastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
-                #endif
-                SaveConfig();
-            }
-            catch (Exception ex) {
-                MelonLogger.Error(ex);
-                throw;
-            }
+            #endif
+            SaveConfig();
+        }
+        catch (Exception ex) {
+            MelonLogger.Error(ex);
+            throw;
         }
     }
 
@@ -257,6 +261,7 @@ public class Instances : MelonMod {
             RemotePlayersCount = remotePlayersCount,
         };
         Config.LastInstance = instanceInfo;
+
         // Save the current token
         UpdateInstanceToken(Config.LastInstance);
 
@@ -290,8 +295,8 @@ public class Instances : MelonMod {
     public record JsonConfig {
         public int ConfigVersion = CurrentConfigVersion;
         public JsonConfigInstance LastInstance = null;
-        public readonly List<JsonConfigInstance> RecentInstances = new();
         public JsonRejoinLocation RejoinLocation = null;
+        public readonly List<JsonConfigInstance> RecentInstances = new();
     }
 
     public record JsonRejoinLocation {
@@ -428,11 +433,11 @@ public class Instances : MelonMod {
 
     internal static async Task SaveCurrentInstanceToken() {
         var baseResponse = await ApiConnection.MakeRequest<InstanceJoinResponse>(ApiConnection.ApiOperation.InstanceJoin, new {
-            instanceID = MetaPort.Instance.CurrentInstanceId
+            instanceID = MetaPort.Instance.CurrentInstanceId,
         });
         if (baseResponse is { Data: not null }) {
             // Check for token updates
-            UpdateInstanceToken(Config.LastInstance);
+            UpdateInstanceToken(Config.LastInstance, new JsonConfigJoinToken(baseResponse.Data.Jwt, baseResponse.Data.Host.Fqdn, baseResponse.Data.Host.Port));
             MelonLogger.Msg($"Successfully grabbed an instance token! Expires at: {Config.LastInstance.JoinToken?.ExpirationDate.ToLocalTime()}");
             SaveConfig();
         }
