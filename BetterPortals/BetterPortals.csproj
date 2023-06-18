@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\betterportals.assetbundle">
+            <LogicalName>betterportals.assetbundle</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\CVRTest_ui_Patches.js">
+          <LogicalName>betterportals.cohtml.cvrtest.ui.patches.js</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+</Project>
