@@ -12,6 +12,7 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeJoinPortalWhenClose;
     internal static MelonPreferences_Entry<float> MeEnterPortalDistance;
     internal static MelonPreferences_Entry<bool> MeNeedInputToTriggerJoining;
+    internal static MelonPreferences_Entry<bool> MeNotifyOnInvisiblePortalDrop;
 
 
     // Asset Resources
@@ -39,6 +40,8 @@ public static class ModConfig {
         MeNeedInputToTriggerJoining = MelonCategory.CreateEntry("NeedInputToTriggerJoining", true,
             description: "Whether it requires special input to join the portal or not.");
 
+        MeNotifyOnInvisiblePortalDrop = MelonCategory.CreateEntry("NotifyOnInvisiblePortalDrop", true,
+            description: "Whether it notifies when a portal was dropped on top if you (making it invisible) or not.");
     }
 
     public static void LoadAssemblyResources(Assembly assembly) {

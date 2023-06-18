@@ -4,6 +4,7 @@ using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking.IO.Instancing;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.UI;
 using ABI_RC.Core.Util;
 using HarmonyLib;
 using MelonLoader;
@@ -207,6 +208,15 @@ public class BetterPortals : MelonMod {
                 if (__instance.type != CVRPortalManager.PortalType.Instance) return;
 
                 __instance.textObject.text = GetPortalText(__instance.Portal, __instance.portalTime);
+
+                // Warn user if dropped on top of them
+                if (ModConfig.MeNotifyOnInvisiblePortalDrop.Value) {
+                    var playerDistance = Vector3.Distance(PlayerSetup.Instance._movementSystem.rotationPivot.position, __instance.transform.position);
+                    var maxDistance = MetaPort.Instance.settings.GetSettingsFloat("GeneralPortalSafeDistance") / 100f;
+                    if (!__instance.IsVisible && __instance.IsInitialized && playerDistance <= maxDistance && __instance.portalOwner != MetaPort.Instance.ownerId) {
+                        CohtmlHud.Instance.ViewDropText("", "A portal was dropped on top of you, walk away to make it visible.");
+                    }
+                }
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVRPortalManager_WriteData)}");

@@ -10,6 +10,7 @@ Simple mod that improves portal's usability.
 - Added a timer with the seconds left until the portal closes
 - Added joining portals by getting on top of it (distance configurable)
 - Added requiring an input (`J` or `Trigger` press) to enter a portal
+- Get a notification an invisible portal was dropped (on top of you)
 
 ## Disclosure
 
