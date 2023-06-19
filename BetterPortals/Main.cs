@@ -35,6 +35,12 @@ public class BetterPortals : MelonMod {
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
     }
 
+    private static Vector3 GetPlayerRootPosition() {
+        return PlayerSetup.Instance._movementSystem.rotationPivot.position with {
+            y = PlayerSetup.Instance._movementSystem.transform.position.y
+        };
+    }
+
     private static IEnumerator HandlePortalPlacementCooldown() {
         _portalPlacementCoolingDown = true;
         yield return new WaitForSeconds(5);
@@ -113,7 +119,7 @@ public class BetterPortals : MelonMod {
         CVRPortalManager currentMinDistancePortal = null;
 
         foreach (var cvrPortalManager in Portals.List.FindAll(x => x.IsVisible && x.IsInitialized && x.type == CVRPortalManager.PortalType.Instance)) {
-            var portalDistance = Vector3.Distance(PlayerSetup.Instance._movementSystem.transform.position, cvrPortalManager.transform.position);
+            var portalDistance = Vector3.Distance(GetPlayerRootPosition(), cvrPortalManager.transform.position);
             if (portalDistance < ModConfig.MeEnterPortalDistance.Value && portalDistance < currentMinDistance) {
                 currentMinDistance = portalDistance;
                 currentMinDistancePortal = cvrPortalManager;
@@ -171,7 +177,7 @@ public class BetterPortals : MelonMod {
                     MelonCoroutines.Start(HandlePortalPlacementCooldown());
                 }
                 else if (ModConfig.MePlacePortalsMidAir.Value) {
-                    var target = __instance._movementSystem.transform.position + Vector3.Scale(rotationPivot.forward, Offset).normalized;
+                    var target = GetPlayerRootPosition() + Vector3.Scale(rotationPivot.forward, Offset).normalized;
                     CVRSyncHelper.SpawnPortal(instanceID, target.x, target.y, target.z);
                     MelonCoroutines.Start(HandlePortalPlacementCooldown());
                 }
@@ -248,7 +254,6 @@ public class BetterPortals : MelonMod {
                 __instance.gameMenuView.Listener.FinishLoad += _ => {
                     __instance.gameMenuView.View.ExecuteScript(ModConfig.JavascriptPatchesContent);
                 };
-
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_ViewManager_Start)}");
