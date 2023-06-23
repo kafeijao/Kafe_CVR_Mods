@@ -18,8 +18,8 @@ public static class ModNetwork {
 
     private enum Tag : ushort {
         Subscribe = 13997,
-        Unsubscribe = 13997,
-        Message = 13997,
+        Unsubscribe = 13998,
+        Message = 13999,
     }
 
     private enum SeedPolicy {
@@ -138,6 +138,7 @@ public static class ModNetwork {
 
         // Mandatory message parameters
         using var writer = DarkRiftWriter.Create();
+        writer.Write((ushort) 1);
         writer.Write(ModId);
 
         using var message = Message.Create(msgTag, writer);
