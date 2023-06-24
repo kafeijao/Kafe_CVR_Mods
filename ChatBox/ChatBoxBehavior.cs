@@ -312,17 +312,23 @@ public class ChatBoxBehavior : MonoBehaviour {
         _textBubbleRoundImg.color = color;
     }
 
+    private API.MessageSource _previousSource = API.MessageSource.Internal;
+
     private void OnMessage(API.MessageSource source, string msg, bool notify) {
         StopTyping();
+
+        // Ignore non-internal msg if currently displaying an internal one, and Cancel the bubble reset
+        if (_textBubbleGo.activeSelf) {
+            if (_previousSource == API.MessageSource.Internal && source != API.MessageSource.Internal) return;
+            StopCoroutine(_resetTextAfterDelayCoroutine);
+        }
+        _previousSource = source;
 
         // Update the text
         if (_textBubbleOutputTMP.text != msg) {
             _textBubbleOutputTMP.text = msg;
         }
 
-        if (_textBubbleGo.activeSelf) {
-            StopCoroutine(_resetTextAfterDelayCoroutine);
-        }
         _resetTextAfterDelayCoroutine = StartCoroutine(ResetTextAfterDelay(msg.Length));
         _textBubbleGo.SetActive(true);
         _textBubbleHexagonImg.gameObject.SetActive(notify);

@@ -59,7 +59,7 @@ public class ChatBox : MelonMod {
 
             // Filter the list with usernames that start with the last word
             if (!isEmptyStart) {
-                var lastSpaceIndex = currentInput.LastIndexOf(' ');
+                var lastSpaceIndex = Math.Max(currentInput.LastIndexOf(' '), currentInput.LastIndexOf('@'));
                 var lastWord = currentInput;
                 if (lastSpaceIndex != -1 && lastSpaceIndex < currentInput.Length - 1) {
                     lastWord = currentInput.Substring(lastSpaceIndex + 1);
