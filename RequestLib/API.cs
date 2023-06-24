@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using MelonLoader;
-
-namespace Kafe.RequestLib;
+﻿namespace Kafe.RequestLib;
 
 public static class API {
 
@@ -12,37 +9,37 @@ public static class API {
     }
 
     internal static readonly List<string> RegisteredMods = new();
+    internal static readonly Dictionary<string, string[]> RemotePlayerMods = new();
+
+    public static Action<string, string[]> PlayerInfoUpdate;
+
+    static API() {
+        PlayerInfoUpdate += (playerGuid, registeredMods) => RemotePlayerMods[playerGuid] = registeredMods;
+    }
 
     public static void RegisterMod() {
-        var modName = GetModName();
+        var modName = RequestLib.GetModName();
         if (!RegisteredMods.Contains(modName)) {
             RegisteredMods.Add(modName);
         }
     }
 
     public static void UnRegisterMod() {
-        var modName = GetModName();
+        var modName = RequestLib.GetModName();
         if (RegisteredMods.Contains(modName)) {
             RegisteredMods.Remove(modName);
         }
     }
 
-    public static void SendRequestAll(string message, Action<RequestResult> onResponse) {
-        ModNetwork.SendRequest(GetModName(), message, onResponse);
+    public static void SendRequest(string playerGuid, string message, Action<RequestResult> onResponse) {
+        ModNetwork.SendRequest(RequestLib.GetModName(), playerGuid, message, onResponse);
     }
 
-    private static string GetModName() {
-        try {
-            var callingFrame = new StackTrace().GetFrame(2);
-            var callingAssembly = callingFrame.GetMethod().Module.Assembly;
-            var callingMelonAttr = callingAssembly.CustomAttributes.FirstOrDefault(
-                    attr => attr.AttributeType == typeof(MelonInfoAttribute));
-            return (string) callingMelonAttr!.ConstructorArguments[1].Value;
-        }
-        catch (Exception ex) {
-            MelonLogger.Error("[GetModName] Attempted to get a mod's name...");
-            MelonLogger.Error(ex);
-        }
-        return null;
+    public static bool HasRequestLib(string playerGuid) {
+        return !ModNetwork.IsOfflineInstance() && RemotePlayerMods.ContainsKey(playerGuid);
+    }
+
+    public static bool HasMod(string playerGuid) {
+        return HasRequestLib(playerGuid) && RemotePlayerMods[playerGuid].Contains(RequestLib.GetModName());
     }
 }
