@@ -6,15 +6,19 @@ The mod adds a text ChatBox over the player's head, allowing them to send messag
 ChatBoxes of other players can be configured to display only from your friends (off by default), note that everyone will
 be able to see your ChatBoxes.
 
-The mod also allows players to customize the display duration, size, and opacity of the ChatBox. You can bring the 
-keyboard by pressing `Y` or by using the button in BTKUI Misc section.
+## Features
+- Press `Y` or click the BTKUI button in the Misc section to bring the keyboard to send messages.
+- Heavily customizable via BKTUI settings menu in the Misc section.
+- Modify the notification sounds by replacing the `.wav` sound files at `/UserData/Chatbox/` folder (next to the `/Mods`
+  folder). Make sure the naming is the same.
+- Add a boolean to your animator of your avatar named `ChatBox/Typing` or `#ChatBox/Typing` (if you want it local). It
+  will be set to `true` when you're writing a message (ChatBox keyboard opened), and `false` otherwise.
+- View the ChatBox History window via the BTKUI button in the Misc section.
+- Keep the ChatBox History window on the center of the QuickMenu or place it on the right.
+- Press `Arrow up`/`Arrow down` (keyboard) to iterate through the sent messages. You can also click `Prev` if you're in
+  VR.
+- Press `Insert` (keyboard) or `Auto` in VR to attempt to auto-complete usernames. 
 
-You can toggle the sounds for when someone starts typing and send a message. You can replace the sounds in the
-`/UserData/Chatbox/` folder (next to the `/Mods` folder). Also you can customize the distance when you stop hearing the
-notifications and volume.
-
-You can add a boolean to your animator of your avatar named `ChatBox/Typing` or `#ChatBox/Typing` (if you want it local)
-. It will be set to `true` when you're writing a message (ChatBox keyboard opened), and `false` otherwise.
 
 ---
 
@@ -23,7 +27,7 @@ You can add a boolean to your animator of your avatar named `ChatBox/Typing` or 
 There's an API for mods to use [API Class](https://github.com/kafeijao/Kafe_CVR_Mods/blob/master/ChatBox/API.cs) if you
 want to integrate.
 
-You can also check [OSC Mod](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) for the ChatBox interation
+You can also check [OSC Mod](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) for the ChatBox integration
 endpoints.
 
 ## Credits

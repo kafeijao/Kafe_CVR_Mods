@@ -16,6 +16,7 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeOnlyViewFriends;
     internal static MelonPreferences_Entry<bool> MeSoundOnStartedTyping;
     internal static MelonPreferences_Entry<bool> MeSoundOnMessage;
+    internal static MelonPreferences_Entry<bool> MeMessageMentionGlobalAudio;
     internal static MelonPreferences_Entry<float> MeSoundsVolume;
     internal static MelonPreferences_Entry<float> MeNotificationSoundMaxDistance;
     internal static MelonPreferences_Entry<float> MeMessageTimeoutSeconds;
@@ -26,8 +27,10 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeIgnoreModMessages;
 
     internal static MelonPreferences_Entry<bool> MeShowHistoryWindow;
+    internal static MelonPreferences_Entry<bool> MeHistoryWindowOnCenter;
     internal static MelonPreferences_Entry<bool> MeHistoryWindowOpened;
     internal static MelonPreferences_Entry<float> MeHistoryFontSize;
+
 
     // Asset Bundle
     public static GameObject ChatBoxPrefab;
@@ -43,14 +46,17 @@ public static class ModConfig {
     internal enum Sound {
         Typing,
         Message,
+        MessageMention,
     }
 
     private const string ChatBoxSoundTyping = "chatbox.sound.typing.wav";
     private const string ChatBoxSoundMessage = "chatbox.sound.message.wav";
+    private const string ChatBoxSoundMessageMention = "chatbox.sound.message.mention.wav";
 
     private static readonly Dictionary<Sound, string> AudioClipResourceNames = new() {
         {Sound.Typing, ChatBoxSoundTyping},
         {Sound.Message, ChatBoxSoundMessage},
+        {Sound.MessageMention, ChatBoxSoundMessageMention},
     };
 
     internal static readonly Dictionary<Sound, AudioClip> AudioClips = new();
@@ -68,6 +74,9 @@ public static class ModConfig {
 
         MeSoundOnMessage = _melonCategory.CreateEntry("SoundOnMessage", true,
             description: "Whether there should be a sound when someone sends a message or not.");
+
+        MeMessageMentionGlobalAudio = _melonCategory.CreateEntry("MessageMentionGlobalAudio", true,
+            description: "Whether the sound when someone mentions your username in a message should be global or not.");
 
         MeSoundsVolume = _melonCategory.CreateEntry("SoundsVolume", 0.5f,
             description: "The volume of the sounds for the notification of typing/messages. Goes from 0 to 1.");
@@ -93,10 +102,13 @@ public static class ModConfig {
         MeIgnoreModMessages = _melonCategory.CreateEntry("IgnoreModMessages", false,
             description: "Whether to ignore messages sent via other Mods or not.");
 
+        MeHistoryWindowOnCenter = _melonCategory.CreateEntry("HistoryWindowOnCenter", true,
+            description: "Whether to show the history window on the center of the Quick Menu or not.");
+
         MeShowHistoryWindow = _melonCategory.CreateEntry("ShowHistoryWindow", true,
             description: "Whether to show the history window or not.");
 
-        MeHistoryWindowOpened = _melonCategory.CreateEntry("HistoryWindowOpened", false,
+        MeHistoryWindowOpened = _melonCategory.CreateEntry("HistoryWindowOpened", true,
             description: "Whether the history window is opened or not.");
 
         MeHistoryFontSize = _melonCategory.CreateEntry("HistoryFontSize", 32f,
@@ -184,7 +196,7 @@ public static class ModConfig {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry, string overrideName = null) {
+    private static BTKUILib.UIObjects.Components.ToggleButton AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry, string overrideName = null) {
         var toggle = category.AddToggle(overrideName ?? entry.DisplayName, entry.Description, entry.Value);
         toggle.OnValueUpdated += b => {
             if (b != entry.Value) entry.Value = b;
@@ -192,6 +204,7 @@ public static class ModConfig {
         entry.OnEntryValueChanged.Subscribe((_, newValue) => {
             if (newValue != toggle.ToggleValue) toggle.ToggleValue = newValue;
         });
+        return toggle;
     }
 
     private static void AddMelonSlider(BTKUILib.UIObjects.Page page, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces, string overrideName = null) {
@@ -207,21 +220,64 @@ public static class ModConfig {
     private static void SetupBTKUI(CVR_MenuManager manager) {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
+        // Load icons
+        const string iconMsg = $"{nameof(ChatBox)}-Msg";
+        BTKUILib.QuickMenuAPI.PrepareIcon("Misc", iconMsg,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Msg.png"));
+        const string iconMsgSettings = $"{nameof(ChatBox)}-Msg_Settings";
+        BTKUILib.QuickMenuAPI.PrepareIcon("Misc", iconMsgSettings,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Msg_Settings.png"));
+        const string iconMsgWindow = $"{nameof(ChatBox)}-Msg_Window";
+        BTKUILib.QuickMenuAPI.PrepareIcon("Misc", iconMsgWindow,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Msg_Window.png"));
+
         var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
         var miscCategory = miscPage.AddCategory(nameof(ChatBox));
 
-        miscCategory.AddButton("Send Message", "", "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
+        miscCategory.AddButton("Send Message", iconMsg, "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
             manager.ToggleQuickMenu(false);
             ChatBox.OpenKeyboard(false, "");
         };
 
-        var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", "", $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));
+        var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", iconMsgSettings, $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));
         modPage.MenuTitle = $"{nameof(ChatBox)} Settings";
 
         var modSettingsCategory = modPage.AddCategory("Settings");
 
+        var historyOnCenter = AddMelonToggle(miscCategory, MeHistoryWindowOnCenter, "History Window on Center");
+
+        BTKUILib.UIObjects.Page historyPage = null;
+        if (historyOnCenter.ToggleValue) {
+            historyPage = miscCategory.AddPage($"{nameof(ChatBox)} History", iconMsgWindow, "", nameof(ChatBox));
+        }
+        historyOnCenter.OnValueUpdated += isOn => {
+            historyPage?.SubpageButton.Delete();
+            historyPage?.Delete();
+            if (isOn) {
+                historyPage = miscCategory.AddPage($"{nameof(ChatBox)} History", iconMsgWindow, "", nameof(ChatBox));
+            }
+            HistoryBehavior.IsBTKUIHistoryPageOpened = false;
+            HistoryBehavior.Instance.ParentTo(HistoryBehavior.MenuTarget.QuickMenu);
+        };
+        BTKUILib.QuickMenuAPI.OnOpenedPage += (targetPage, lastPage) => {
+            if (!historyOnCenter.ToggleValue) return;
+            HistoryBehavior.IsBTKUIHistoryPageOpened = targetPage == "btkUI-ChatBox-ChatBoxHistory";
+            HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
+        };
+        BTKUILib.QuickMenuAPI.OnTabChange += (targetTab, lastTab) => {
+            if (!historyOnCenter.ToggleValue) return;
+            HistoryBehavior.IsBTKUIHistoryPageOpened = false;
+            HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
+        };
+        BTKUILib.QuickMenuAPI.OnBackAction += (targetPage, lastPage) => {
+            if (!historyOnCenter.ToggleValue) return;
+            HistoryBehavior.IsBTKUIHistoryPageOpened = false;
+            HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
+        };
+
         AddMelonToggle(modSettingsCategory, MeSoundOnStartedTyping, "Typing Sound");
         AddMelonToggle(modSettingsCategory, MeSoundOnMessage, "Message Sound");
+        AddMelonToggle(modSettingsCategory, MeMessageMentionGlobalAudio, "Mention Sound Global");
         AddMelonToggle(modSettingsCategory, MeOnlyViewFriends, "Only Friends");
         AddMelonToggle(modSettingsCategory, MeMessageTimeoutDependsLength, "Dynamic Timeout");
         AddMelonToggle(modSettingsCategory, MeIgnoreOscMessages, "Hide OSC Msgs");

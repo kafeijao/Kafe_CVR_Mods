@@ -15,11 +15,26 @@
         <EmbeddedResource Include="Resources\Sounds_Message.wav">
             <LogicalName>chatbox.sound.message.wav</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Sounds_Message_Mention.wav">
+            <LogicalName>chatbox.sound.message.mention.wav</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="Resources\Sounds_Typing.wav">
             <LogicalName>chatbox.sound.typing.wav</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="Resources\CVRTest_ui_Patches.js">
             <LogicalName>chatbox.cohtml.cvrtest.ui.patches.js</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\ChatBox_Msg.png">
+            <LogicalName>resources.ChatBox_Msg.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Msg_Settings.png">
+            <LogicalName>resources.ChatBox_Msg_Settings.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Msg_Window.png">
+            <LogicalName>resources.ChatBox_Msg_Window.png</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
 

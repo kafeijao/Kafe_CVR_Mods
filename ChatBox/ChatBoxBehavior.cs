@@ -53,6 +53,7 @@ public class ChatBoxBehavior : MonoBehaviour {
     private Image _textBubbleRoundImg;
     private TextMeshProUGUI _textBubbleOutputTMP;
     private AudioSource _textBubbleAudioSource;
+    private AudioSource _textBubbleMentionAudioSource;
 
     private CanvasGroup _canvasGroup;
 
@@ -149,16 +150,29 @@ public class ChatBoxBehavior : MonoBehaviour {
         _canvasGroup.alpha = _chatBoxOpacity;
         _textBubbleAudioSource.volume = _volume;
         _typingAudioSource.volume = _volume;
+        _textBubbleMentionAudioSource.volume = _volume;
 
         _textBubbleTransform.localPosition = new Vector3(0, NameplateOffsetBubble + NameplateOffsetBubbleMultiplier * (_chatBoxSize - 1), 0);
         _textBubbleTransform.localScale = Vector3.one * _chatBoxSize;
 
         // Resizing the typing thing is stupid ?
-        // _typingTransform.localPosition = new Vector3(NameplateOffsetXTyping + NameplateOffsetXTypingMultiplier * _chatBoxSize, NameplateOffsetYTyping + NameplateOffsetYTypingMultiplier * _chatBoxSize, 0);
+        // _typingTransform.locsalPosition = new Vector3(NameplateOffsetXTyping + NameplateOffsetXTypingMultiplier * _chatBoxSize, NameplateOffsetYTyping + NameplateOffsetYTypingMultiplier * _chatBoxSize, 0);
         // _typingTransform.localScale = TypingScaleMultiplier * (_chatBoxSize + 1);
 
         _typingAudioSource.maxDistance = _notificationSoundMaxDistance;
         _textBubbleAudioSource.maxDistance = _notificationSoundMaxDistance;
+
+        void SetCustomRolloff(bool isGlobal) {
+            var customRolloff = new AnimationCurve();
+            customRolloff.AddKey(0.0f, 1.0f);
+            customRolloff.AddKey(_notificationSoundMaxDistance, isGlobal ? 1.0f : 0f);
+            _textBubbleMentionAudioSource.maxDistance = _notificationSoundMaxDistance;
+            _textBubbleMentionAudioSource.SetCustomCurve(AudioSourceCurveType.CustomRolloff, customRolloff);
+        }
+        SetCustomRolloff(ModConfig.MeMessageMentionGlobalAudio.Value);
+        ModConfig.MeMessageMentionGlobalAudio.OnEntryValueChanged.Subscribe((_, newValue) => {
+            SetCustomRolloff(newValue);
+        });
     }
 
     private void Start() {
@@ -218,6 +232,15 @@ public class ChatBoxBehavior : MonoBehaviour {
         _textBubbleAudioSource.clip = ModConfig.AudioClips[ModConfig.Sound.Message];
         _textBubbleAudioSource.loop = false;
         _textBubbleAudioSource.playOnAwake = false;
+
+        // Add Message Mention Audio Source
+        _textBubbleMentionAudioSource = _textBubbleGo.AddComponent<AudioSource>();
+        _textBubbleMentionAudioSource.spatialBlend = 1f;
+        _textBubbleMentionAudioSource.minDistance = 0.5f;
+        _textBubbleMentionAudioSource.rolloffMode = AudioRolloffMode.Custom;
+        _textBubbleMentionAudioSource.clip = ModConfig.AudioClips[ModConfig.Sound.MessageMention];
+        _textBubbleMentionAudioSource.loop = false;
+        _textBubbleMentionAudioSource.playOnAwake = false;
 
         UpdateChatBox();
 
@@ -305,7 +328,12 @@ public class ChatBoxBehavior : MonoBehaviour {
         _textBubbleHexagonImg.gameObject.SetActive(notify);
         _textBubbleRoundImg.gameObject.SetActive(!notify);
         SetColor(source);
-        if (notify && ModConfig.MeSoundOnMessage.Value) _textBubbleAudioSource.Play();
+        if (notify && ModConfig.MeSoundOnMessage.Value) {
+            _textBubbleAudioSource.Play();
+            if (msg.IndexOf($"@{MetaPort.Instance.username}", StringComparison.OrdinalIgnoreCase) >= 0) {
+                _textBubbleMentionAudioSource.PlayDelayed(0.5f);
+            }
+        }
     }
 
     private IEnumerator ResetTextAfterDelay(int msgLength) {

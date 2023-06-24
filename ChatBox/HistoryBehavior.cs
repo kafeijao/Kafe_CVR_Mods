@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using ABI_RC.Core.AudioEffects;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
@@ -8,6 +9,7 @@ using HarmonyLib;
 using MelonLoader;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Kafe.ChatBox;
@@ -28,6 +30,9 @@ public class HistoryBehavior : MonoBehaviour {
     private const float TimestampFontSizeModifier = 1.125f;
     private const float UsernameFontSizeModifier = 1.5625f;
 
+    private static readonly int UILayer = LayerMask.NameToLayer("UI");
+    private static readonly int UIInternalLayer = LayerMask.NameToLayer("UI Internal");
+
     private Transform _quickMenuGo;
 
     // Menu Current Settings
@@ -45,6 +50,7 @@ public class HistoryBehavior : MonoBehaviour {
     // Main Sub-Components
     private GameObject _togglesView;
     private GameObject _header;
+    private TextMeshProUGUI _titleText;
     private GameObject _scrollView;
     private GameObject _pickupHighlight;
 
@@ -82,6 +88,15 @@ public class HistoryBehavior : MonoBehaviour {
         HUD,
     }
 
+    private void SetGameLayerRecursive(GameObject go, int layer) {
+        go.layer = layer;
+        foreach (Transform child in go.transform) {
+            SetGameLayerRecursive(child.gameObject, layer);
+        }
+    }
+
+    private static bool _skipNextInteraction;
+
     internal void ParentTo(MenuTarget targetType) {
 
         var menuControllerTransform = (RectTransform) transform;
@@ -89,7 +104,14 @@ public class HistoryBehavior : MonoBehaviour {
         switch (targetType) {
             case MenuTarget.QuickMenu:
                 menuControllerTransform.SetParent(_quickMenuGo.transform, true);
-                menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
+                if (ModConfig.MeHistoryWindowOnCenter.Value) {
+                    menuControllerTransform.localPosition = new Vector3(-0.05f, -0.055f, -0.001f);
+                    SetGameLayerRecursive(menuControllerTransform.gameObject, UIInternalLayer);
+                }
+                else {
+                    menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
+                    SetGameLayerRecursive(menuControllerTransform.gameObject, UILayer);
+                }
                 menuControllerTransform.localRotation = Quaternion.identity;
                 _rootRectTransform.transform.localScale = _menuScaleVector;
                 _rootRectPickup.enabled = false;
@@ -101,6 +123,7 @@ public class HistoryBehavior : MonoBehaviour {
                 var rot = menuControllerTransform.rotation;
                 menuControllerTransform.SetParent(null, true);
                 menuControllerTransform.SetPositionAndRotation(pos, rot);
+                SetGameLayerRecursive(menuControllerTransform.gameObject, UILayer);
                 break;
 
             case MenuTarget.HUD:
@@ -110,12 +133,15 @@ public class HistoryBehavior : MonoBehaviour {
                 menuControllerTransform.SetParent(target.transform, true);
                 _rootRectPickup.enabled = false;
                 _rootRectPickupHighlight.enabled = false;
+                SetGameLayerRecursive(menuControllerTransform.gameObject, UILayer);
                 break;
         }
 
         _currentMenuParent = targetType;
         UpdateWhetherMenuIsShown();
         UpdateButtonStates();
+        UpdateBackgroundAndTitleVisibility();
+        _skipNextInteraction = true;
     }
 
     private void UpdateButtonStates() {
@@ -133,18 +159,37 @@ public class HistoryBehavior : MonoBehaviour {
         _grabImage.color = _grabToggle.isOn ? ColorGreen : Color.white;
     }
 
-    private void UpdateWhetherMenuIsShown() {
+    internal static bool IsBTKUIHistoryPageOpened = false;
+
+    internal void UpdateWhetherMenuIsShown() {
         if (!CVR_MenuManager.Instance._quickMenuOpen && _currentMenuParent == MenuTarget.QuickMenu) {
             gameObject.SetActive(false);
+            CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = 10;
         }
         else {
-            gameObject.SetActive(true);
+            if (!ModConfig.MeHistoryWindowOnCenter.Value) {
+                gameObject.SetActive(true);
+                CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = 10;
+            }
+            else if (ModConfig.MeHistoryWindowOnCenter.Value && IsBTKUIHistoryPageOpened) {
+                gameObject.SetActive(true);
+                CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = -1;
+            }
+            else {
+                gameObject.SetActive(false);
+                CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = 10;
+            }
         }
+    }
+
+    private void UpdateBackgroundAndTitleVisibility() {
+        var isShown = ModConfig.MeHistoryWindowOpened.Value && (!ModConfig.MeHistoryWindowOnCenter.Value || _currentMenuParent != MenuTarget.QuickMenu);
+        _rootRectImage.enabled = isShown;
+        _titleText.alpha = isShown ? 1f : 0f;
     }
 
     private void ToggleHistoryWindow(bool isOpened) {
 
-        _rootRectImage.enabled = isOpened;
         _rootRectPickup.enabled = _grabToggle != null && _grabToggle.isOn;
         _rootRectPickupHighlight.enabled = _rootRectPickup.enabled;
         _rootRectCollider.enabled = isOpened;
@@ -177,6 +222,7 @@ public class HistoryBehavior : MonoBehaviour {
             // Grab Main Sub-Components
             _togglesView = _rootRectTransform.Find("TogglesView").gameObject;
             _header = _rootRectTransform.Find("Header").gameObject;
+            _titleText = _rootRectTransform.Find("Header/Title").GetComponent<TextMeshProUGUI>();
             _scrollView = _rootRectTransform.Find("Scroll View").gameObject;
             if (!MetaPort.Instance.isUsingVr) {
                 // In desktop lets increase the scroll sensitivity
@@ -195,7 +241,10 @@ public class HistoryBehavior : MonoBehaviour {
 
             // Message Button
             _messageButton = _rootRectTransform.Find("TogglesView/Message").GetComponent<Button>();
-            _messageButton.onClick.AddListener(() => ChatBox.OpenKeyboard(true, ""));
+            _messageButton.onClick.AddListener(() => {
+                if (CVR_MenuManager.Instance._quickMenuOpen) CVR_MenuManager.Instance.ToggleQuickMenu(false);
+                ChatBox.OpenKeyboard(true, "");
+            });
 
             // Pin Toggle
             _pinToggle = _rootRectTransform.Find("TogglesView/Pin").GetComponent<Toggle>();
@@ -212,6 +261,7 @@ public class HistoryBehavior : MonoBehaviour {
             _grabImage = _rootRectTransform.Find("TogglesView/Grab/Checkmark").GetComponent<Image>();
             _rootRectPickup = _rootRectTransform.GetComponent<CVRPickupObject>();
             _rootRectPickup.enabled = false;
+            _rootRectPickup.generateTeleTarget = false;
             _rootRectPickupHighlight = _rootRectTransform.Find("PickupHighlight").GetComponent<MeshRenderer>();
             _rootRectPickupHighlight.enabled = false;
             _grabToggle.onValueChanged.AddListener(isOn => {
@@ -297,9 +347,176 @@ public class HistoryBehavior : MonoBehaviour {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.ToggleQuickMenu))]
-        private static void AfterMenuToggle() {
-            if (!Instance) return;
-            Instance.UpdateWhetherMenuIsShown();
+        private static void After_CVR_MenuManager_ToggleQuickMenu() {
+            try {
+                if (!Instance) return;
+                Instance.UpdateWhetherMenuIsShown();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_ToggleQuickMenu)}");
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
+        private static void After_ControllerRay_LateUpdate(ControllerRay __instance) {
+            // Cancer code for Ui events when our Unity UI is on top of the QM
+            try {
+                
+                if (!Instance) return;
+
+                if (!MetaPort.Instance.isUsingVr) return;
+
+                // Only do the events if
+                if (!Instance.gameObject.activeInHierarchy || !ModConfig.MeHistoryWindowOnCenter.Value ||
+                    Instance._currentMenuParent != MenuTarget.QuickMenu) return;
+            
+                var isInteracting = __instance.hand ? CVRInputManager.Instance.interactLeftDown : CVRInputManager.Instance.interactRightDown;
+
+                // Raycast the internal looking for unity UI in the internal UI layer
+                if (!Physics.Raycast(__instance.transform.TransformPoint(__instance.RayDirection * -0.15f),
+                        __instance.transform.TransformDirection(__instance.RayDirection), out var hitInfo1,
+                        float.PositiveInfinity, LayerMask.GetMask("UI Internal"))) return;
+                
+                var hitTransform = hitInfo1.collider.transform;
+
+                // Only do this for our menu
+                if (!hitTransform.IsChildOf(Instance.transform)) return;
+
+                Button component3 = hitTransform.GetComponent<Button>();
+                Toggle component4 = hitTransform.GetComponent<Toggle>();
+                Slider component5 = hitTransform.GetComponent<Slider>();
+                EventTrigger eventTrigger = hitTransform.GetComponent<EventTrigger>();
+                InputField component6 = hitTransform.GetComponent<InputField>();
+                TMP_InputField component7 = hitTransform.GetComponent<TMP_InputField>();
+                Dropdown component8 = hitTransform.GetComponent<Dropdown>();
+                ScrollRect component9 = hitTransform.GetComponent<ScrollRect>();
+
+
+               
+                if (component3 != __instance.lastButton) {
+                  if (component3 != null) component3.OnPointerEnter(null);
+                  if (__instance.lastButton != null) __instance.lastButton.OnPointerExit(null);
+                  __instance.lastButton = component3;
+                }
+                if (component4 != __instance.lastToggle) {
+                  if (component4 != null) component4.OnPointerEnter(null);
+                  if (__instance.lastToggle != null) __instance.lastToggle.OnPointerExit(null);
+                  __instance.lastToggle = component4;
+                }
+                if (component8 != __instance.lastDropdown) {
+                  if (component8 != null) component8.OnPointerEnter(null);
+                  if (__instance.lastDropdown != null) __instance.lastDropdown.OnPointerExit(null);
+                  __instance.lastDropdown = component8;
+                }
+                if (component6 != __instance.lastInputField) {
+                  if (component6 != null) component6.OnPointerEnter(null);
+                  if (__instance.lastInputField != null) __instance.lastInputField.OnPointerExit(null);
+                  __instance.lastInputField = component6;
+                }
+                if (component7 != __instance.lastTMPInputField) {
+                  if (component7 != null) component7.OnPointerEnter(null);
+                  if (__instance.lastTMPInputField != null) __instance.lastTMPInputField.OnPointerExit(null);
+                  __instance.lastTMPInputField = component7;
+                }
+                if (eventTrigger == null && component3 != null) eventTrigger = component3.GetComponentInParent<EventTrigger>();
+                if (eventTrigger == null && component4 != null) eventTrigger = component4.GetComponentInParent<EventTrigger>();
+                if (eventTrigger == null && component5 != null) eventTrigger = component5.GetComponentInParent<EventTrigger>();
+                if (eventTrigger == null && component6 != null) eventTrigger = component6.GetComponentInParent<EventTrigger>();
+                if (eventTrigger == null && component7 != null) eventTrigger = component7.GetComponentInParent<EventTrigger>();
+                if (eventTrigger == null && component9 != null) eventTrigger = component9.GetComponentInParent<EventTrigger>();
+                if (eventTrigger != null && eventTrigger != __instance.lastEventTrigger) {
+                  if (__instance.lastEventTrigger != null) {
+                    foreach (EventTrigger.Entry trigger in __instance.lastEventTrigger.triggers) {
+                      if (trigger.eventID == EventTriggerType.PointerExit) trigger.callback.Invoke(null);
+                    }
+                  }
+                  __instance.lastEventTrigger = eventTrigger;
+                  foreach (EventTrigger.Entry trigger in eventTrigger.triggers) {
+                    if (trigger.eventID == EventTriggerType.PointerEnter) {
+                      if (CVRWorld.Instance.uiHighlightSoundObjects.Contains(eventTrigger.gameObject)) InterfaceAudio.Play(AudioClipField.Hover);
+                      trigger.callback.Invoke(null);
+                    }
+                  }
+                }
+                if (component9) {
+                  if (Mathf.Abs(CVRInputManager.Instance.scrollValue) > 0.0) {
+                    Vector2 anchoredPosition = component9.content.anchoredPosition;
+                    if (component9.vertical) anchoredPosition.y -= CVRInputManager.Instance.scrollValue * 1000f;
+                    else if (component9.horizontal) anchoredPosition.x -= CVRInputManager.Instance.scrollValue * 1000f;
+                    component9.content.anchoredPosition = anchoredPosition;
+                  }
+                }
+                else {
+                  ScrollRect componentInParent4 = __instance.hitTransform.GetComponentInParent<ScrollRect>();
+                  if (componentInParent4 != null && Mathf.Abs(CVRInputManager.Instance.scrollValue) > 0.0) {
+                    Vector2 anchoredPosition = componentInParent4.content.anchoredPosition;
+                    if (componentInParent4.vertical) anchoredPosition.y -= CVRInputManager.Instance.scrollValue * 1000f;
+                    else if (componentInParent4.horizontal) anchoredPosition.x -= CVRInputManager.Instance.scrollValue * 1000f;
+                    componentInParent4.content.anchoredPosition = anchoredPosition;
+                  }
+                }
+
+                if (isInteracting) {
+
+                    // Skip interaction after parenting
+                    if (_skipNextInteraction) {
+                        _skipNextInteraction = false;
+                        return;
+                    }
+
+                    if (component3) {
+                        component3.onClick.Invoke();
+                    }
+                    if (component4) {
+                        component4.isOn = !component4.isOn;
+                    }
+                    if (component5) {
+                        __instance.lastSlider = component5;
+                        __instance.lastSliderRect = component5.GetComponent<RectTransform>();
+                        __instance.SetSliderValueFromRay(component5, hitInfo1, __instance.lastSliderRect);
+                    }
+                    if (component9 != null) {
+                        __instance.lastScrollView = component9;
+                        __instance.scrollStartPositionView = __instance.GetScreenPositionFromRaycastHit(hitInfo1, component9.viewport);
+                        __instance.scrollStartPositionContent = component9.content.anchoredPosition;
+                        __instance.SetScrollViewValueFromRay(component9, hitInfo1);
+                    }
+                    if (component8 != null) {
+                        if (component8.transform.childCount != 3) {
+                            component8.Hide();
+                        }
+                        else {
+                            component8.Show();
+                        }
+                        foreach (Toggle componentsInChild in component8.gameObject.GetComponentsInChildren<Toggle>(true)) {
+                            if (componentsInChild.GetComponent<BoxCollider>() == null) {
+                                BoxCollider boxCollider = componentsInChild.gameObject.AddComponent<BoxCollider>();
+                                boxCollider.isTrigger = true;
+                                RectTransform component10 = componentsInChild.gameObject.GetComponent<RectTransform>();
+                                boxCollider.size = new Vector3(Mathf.Max(component10.sizeDelta.x, component10.rect.width), component10.sizeDelta.y, 0.1f);
+                                boxCollider.center = new Vector3(boxCollider.size.x * (0.5f - component10.pivot.x), boxCollider.size.y * (0.5f - component10.pivot.y), 0.0f);
+                            }
+                        }
+                    }
+                    if (component6) {
+                        component6.Select();
+                        component6.ActivateInputField();
+                        ViewManager.Instance.openMenuKeyboard(component6);
+                    }
+                    if (component7) {
+                        component7.Select();
+                        component7.ActivateInputField();
+                        ViewManager.Instance.openMenuKeyboard(component7);
+                    }
+                }
+                
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_ControllerRay_LateUpdate)}");
+                MelonLogger.Error(e);
+            }
         }
     }
 }
