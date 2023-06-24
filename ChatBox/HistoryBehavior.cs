@@ -322,6 +322,10 @@ public class HistoryBehavior : MonoBehaviour {
         else usernameTmp.color = isFriend ? ColorGreen : Color.white;
 
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
+
+        // // Color our own username in messages (I disabled formatting so this won't work ;_;
+        // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{MetaPort.Instance.username}</color>";
+        // message = Regex.Replace(message, Regex.Escape("@" + MetaPort.Instance.username), coloredUsername, RegexOptions.IgnoreCase);
         messageTmp.text = message;
         messageTmp.fontSize = ModConfig.MeHistoryFontSize.Value;
 

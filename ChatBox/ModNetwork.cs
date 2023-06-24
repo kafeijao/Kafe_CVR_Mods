@@ -14,7 +14,7 @@ public static class ModNetwork {
 
     private const string ModId = $"MelonMod.Kafe.{nameof(ChatBox)}";
 
-    private const int CharactersMaxCount = 2000;
+    private const int CharactersMaxCount = 1000;
 
     private enum Tag : ushort {
         Subscribe = 13997,

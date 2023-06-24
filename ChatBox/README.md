@@ -18,6 +18,7 @@ be able to see your ChatBoxes.
 - Press `Arrow up`/`Arrow down` (keyboard) to iterate through the sent messages. You can also click `Prev` if you're in
   VR.
 - Press `Insert` (keyboard) or `Auto` in VR to attempt to auto-complete usernames. 
+- Use `@username` to mention people in messages.
 
 
 ---
