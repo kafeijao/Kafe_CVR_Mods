@@ -56,6 +56,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logger++", "Logger++\Logger
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterPortals", "BetterPortals\BetterPortals.csproj", "{14799FDA-25CB-40CD-B787-0050146851D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeleportRequest", "TeleportRequest\TeleportRequest.csproj", "{D75B219B-A126-4F45-A89C-58275E7E7E2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -174,5 +176,9 @@ Global
 		{14799FDA-25CB-40CD-B787-0050146851D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14799FDA-25CB-40CD-B787-0050146851D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14799FDA-25CB-40CD-B787-0050146851D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
