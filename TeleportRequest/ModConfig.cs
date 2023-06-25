@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Systems.MovementSystem;
 using MelonLoader;
 using UnityEngine;
 
@@ -61,8 +62,13 @@ public static class ModConfig {
         BTKUILib.QuickMenuAPI.OnPlayerSelected += (playerName, playerID) => {
             playerCat.ClearChildren();
             if (RequestLib.API.HasRequestLib(playerID)) {
-                var teleportButton = playerCat.AddButton("Request to Teleport", "", $"Send a request to teleport to the {playerName}");
-                teleportButton.OnPress += () => TeleportRequest.RequestToTeleport(playerName, playerID);
+                if (MovementSystem.Instance.canFly) {
+                    var teleportButton = playerCat.AddButton("Request to Teleport", "", $"Send a request to teleport to the {playerName}");
+                    teleportButton.OnPress += () => TeleportRequest.RequestToTeleport(playerName, playerID);
+                }
+                else {
+                    playerCat.AddButton("World doesn't allow Flight", "", $"This world doesn't allow flight, so we can't request :(");
+                }
             }
             else {
                 playerCat.AddButton("Has no RequestLib", "", $"This player doesn't have the RequestLib, so we can't request :(");
