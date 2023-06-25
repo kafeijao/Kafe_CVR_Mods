@@ -91,7 +91,6 @@ internal static class CohtmlPatches {
         }
 
         internal static void OnResponse(string requestId, string result) {
-            MelonLogger.Msg($"[{requestId}] -> {result}");
 
             var request = DeleteRequest(requestId);
             if (request == null) return;
@@ -99,10 +98,10 @@ internal static class CohtmlPatches {
             Enum.TryParse<OptionType>(result, true, out var responseType);
             switch (responseType) {
                 case OptionType.Accept:
-                    ModNetwork.SendResponse(request.ID, request.Name, true);
+                    ModNetwork.SendResponse(request.ID, true, "");
                     break;
                 case OptionType.Decline:
-                    ModNetwork.SendResponse(request.ID, request.Name, false);
+                    ModNetwork.SendResponse(request.ID, false, "");
                     break;
             }
         }
