@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text.RegularExpressions;
 using ABI_RC.Core.AudioEffects;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking.IO.Social;
@@ -80,12 +81,40 @@ public class HistoryBehavior : MonoBehaviour {
     private GameObject _templateChatEntry;
 
     // Messages
-    private readonly List<Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>> _messagesTMPComponents = new();
+    private static readonly HashSet<ChatBoxEntry> ChatBoxEntries = new();
+
+    internal static Action MessageVisibilityChanged;
 
     internal enum MenuTarget {
         QuickMenu,
         World,
         HUD,
+    }
+
+    private class ChatBoxEntry {
+        private string _senderGuid;
+        private GameObject _gameObject;
+        private TextMeshProUGUI _usernameTmp;
+        private TextMeshProUGUI _timestampTmp;
+        private TextMeshProUGUI _messageTmp;
+
+        public ChatBoxEntry(string senderGuid, GameObject gameObject, TextMeshProUGUI usernameTmp, TextMeshProUGUI timestampTmp, TextMeshProUGUI messageTmp) {
+            _senderGuid = senderGuid;
+            _gameObject = gameObject;
+            _usernameTmp = usernameTmp;
+            _timestampTmp = timestampTmp;
+            _messageTmp = messageTmp;
+        }
+
+        internal void UpdateFontSize(float newValue) {
+            _timestampTmp.fontSize = newValue * TimestampFontSizeModifier;
+            _usernameTmp.fontSize = newValue * UsernameFontSizeModifier;
+            _messageTmp.fontSize = newValue;
+        }
+
+        internal void UpdateVisibility() {
+            _gameObject.SetActive(ConfigJson.ShouldShowMessage(_senderGuid));
+        }
     }
 
     private void SetGameLayerRecursive(GameObject go, int layer) {
@@ -106,12 +135,11 @@ public class HistoryBehavior : MonoBehaviour {
                 menuControllerTransform.SetParent(_quickMenuGo.transform, true);
                 if (ModConfig.MeHistoryWindowOnCenter.Value) {
                     menuControllerTransform.localPosition = new Vector3(-0.05f, -0.055f, -0.001f);
-                    SetGameLayerRecursive(menuControllerTransform.gameObject, UIInternalLayer);
                 }
                 else {
                     menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
-                    SetGameLayerRecursive(menuControllerTransform.gameObject, UILayer);
                 }
+                SetGameLayerRecursive(menuControllerTransform.gameObject, UIInternalLayer);
                 menuControllerTransform.localRotation = Quaternion.identity;
                 _rootRectTransform.transform.localScale = _menuScaleVector;
                 _rootRectPickup.enabled = false;
@@ -133,7 +161,7 @@ public class HistoryBehavior : MonoBehaviour {
                 menuControllerTransform.SetParent(target.transform, true);
                 _rootRectPickup.enabled = false;
                 _rootRectPickupHighlight.enabled = false;
-                SetGameLayerRecursive(menuControllerTransform.gameObject, UILayer);
+                SetGameLayerRecursive(menuControllerTransform.gameObject, UIInternalLayer);
                 break;
         }
 
@@ -282,6 +310,12 @@ public class HistoryBehavior : MonoBehaviour {
             // Set the message listeners
             API.OnMessageReceived += (source, senderGuid, msg, _, _) => {
                 if (source != API.MessageSource.Internal) return;
+
+                // Check for profanity and replace if needed
+                if (ModConfig.MeProfanityFilter.Value) {
+                    msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
+                }
+
                 AddMessage(DateTime.Now, senderGuid, CVRPlayerManager.Instance.TryGetPlayerName(senderGuid), MetaPort.Instance.ownerId == senderGuid, Friends.FriendsWith(senderGuid), msg);
             };
             API.OnMessageSent += (source, msg, _, _) => {
@@ -289,14 +323,19 @@ public class HistoryBehavior : MonoBehaviour {
                 AddMessage(DateTime.Now, MetaPort.Instance.ownerId, MetaPort.Instance.username, true, false, msg);
             };
 
-            // Set font size listeners
+            // Set font size listener
             ModConfig.MeHistoryFontSize.OnEntryValueChanged.Subscribe((_, newValue) => {
-                foreach (var components in _messagesTMPComponents) {
-                    components.Item1.fontSize = newValue * TimestampFontSizeModifier;
-                    components.Item2.fontSize = newValue * UsernameFontSizeModifier;
-                    components.Item3.fontSize = newValue;
+                foreach (var entry in ChatBoxEntries) {
+                    entry.UpdateFontSize(newValue);
                 }
             });
+
+            // Set message visibility change listener
+            MessageVisibilityChanged += () => {
+                foreach (var entry in ChatBoxEntries) {
+                    entry.UpdateVisibility();
+                }
+            };
 
             gameObject.SetActive(false);
             Instance = this;
@@ -311,13 +350,11 @@ public class HistoryBehavior : MonoBehaviour {
         chatEntry.SetAsFirstSibling();
         var timestampTmp = chatEntry.Find("Header/Timestamp").GetComponent<TextMeshProUGUI>();
         timestampTmp.text = $"[{date.ToString("T", CultureInfo.CurrentCulture)}]";
-        timestampTmp.fontSize = ModConfig.MeHistoryFontSize.Value * TimestampFontSizeModifier;
         var usernameComponent = chatEntry.Find("Header/Username");
         var usernameButton = usernameComponent.GetComponent<Button>();
         usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(senderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
         usernameTmp.text = senderUsername;
-        usernameTmp.fontSize = ModConfig.MeHistoryFontSize.Value * UsernameFontSizeModifier;
         if (isSelf) usernameTmp.color = ColorBlue;
         else usernameTmp.color = isFriend ? ColorGreen : Color.white;
 
@@ -327,9 +364,11 @@ public class HistoryBehavior : MonoBehaviour {
         // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{MetaPort.Instance.username}</color>";
         // message = Regex.Replace(message, Regex.Escape("@" + MetaPort.Instance.username), coloredUsername, RegexOptions.IgnoreCase);
         messageTmp.text = message;
-        messageTmp.fontSize = ModConfig.MeHistoryFontSize.Value;
 
-        _messagesTMPComponents.Add(new Tuple<TextMeshProUGUI, TextMeshProUGUI, TextMeshProUGUI>(timestampTmp, usernameTmp, messageTmp));
+        var entry = new ChatBoxEntry(senderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);
+        entry.UpdateVisibility();
+        entry.UpdateFontSize(ModConfig.MeHistoryFontSize.Value);
+        ChatBoxEntries.Add(entry);
     }
 
 

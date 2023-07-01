@@ -27,6 +27,7 @@ public class ChatBox : MelonMod {
     public override void OnInitializeMelon() {
 
         ModConfig.InitializeMelonPrefs();
+        ConfigJson.LoadConfigJson();
         ModConfig.InitializeBTKUI();
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 

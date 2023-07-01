@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Text.RegularExpressions;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.Object_Behaviour;
@@ -85,6 +86,9 @@ public class ChatBoxBehavior : MonoBehaviour {
             // Ignore our own messages
             if (senderGuid == MetaPort.Instance.ownerId) return;
 
+            // If visibility options say we shouldn't display, don't :)
+            if (!ConfigJson.ShouldShowMessage(senderGuid)) return;
+
             // Handle typing source ignores
             if (ModConfig.MeIgnoreOscMessages.Value && source == API.MessageSource.OSC) return;
             if (ModConfig.MeIgnoreModMessages.Value && source == API.MessageSource.Mod) return;
@@ -105,9 +109,17 @@ public class ChatBoxBehavior : MonoBehaviour {
             // Ignore our own messages
             if (senderGuid == MetaPort.Instance.ownerId) return;
 
+            // If visibility options say we shouldn't display, don't :)
+            if (!ConfigJson.ShouldShowMessage(senderGuid)) return;
+
             // Handle typing source ignores
             if (ModConfig.MeIgnoreOscMessages.Value && source == API.MessageSource.OSC) return;
             if (ModConfig.MeIgnoreModMessages.Value && source == API.MessageSource.Mod) return;
+
+            // Check for profanity and replace if needed
+            if (ModConfig.MeProfanityFilter.Value) {
+                msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
+            }
 
             #if DEBUG
             MelonLogger.Msg($"Received a Message message from: {senderGuid} -> {msg}");

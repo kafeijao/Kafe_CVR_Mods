@@ -36,6 +36,30 @@
         <EmbeddedResource Include="Resources\ChatBox_Msg_Window.png">
             <LogicalName>resources.ChatBox_Msg_Window.png</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Add.png">
+            <LogicalName>resources.ChatBox_Add.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Delete.png">
+            <LogicalName>resources.ChatBox_Delete.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Menu_Pin.png">
+            <LogicalName>resources.ChatBox_Menu_Pin.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Profanity.png">
+            <LogicalName>resources.ChatBox_Profanity.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Remove.png">
+            <LogicalName>resources.ChatBox_Remove.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Visibility_Show.png">
+            <LogicalName>resources.ChatBox_Visibility_Show.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Visibility_Hide.png">
+            <LogicalName>resources.ChatBox_Visibility_Hide.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\ChatBox_Visibility_Default.png">
+            <LogicalName>resources.ChatBox_Visibility_Default.png</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
 
 </Project>

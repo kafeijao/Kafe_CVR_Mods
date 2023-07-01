@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Text;
+﻿using System.Text;
 using ABI_RC.Core.Networking;
-using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using DarkRift;
 using DarkRift.Client;
@@ -31,6 +29,8 @@ public static class ModNetwork {
         Typing = 0,
         SendMessage = 1,
     }
+
+    private const uint Version = 1;
 
     internal static void SendTyping(API.MessageSource source, bool isTyping, bool notification) {
         var sent = SendMsgToAllPlayers(MessageType.Typing, writer => {
@@ -77,10 +77,15 @@ public static class ModNetwork {
 
         try {
 
-            // Todo: Check if blocked people can send us messages. And if they do nuke it
-
-            // Ignore messages from non-friends
-            if (ModConfig.MeOnlyViewFriends.Value && !Friends.FriendsWith(senderGuid)) return;
+            // Read the version of the message
+            var msgVersion = reader.ReadUInt32();
+            if (msgVersion != Version) {
+                var isNewer = msgVersion > Version;
+                var playerName = CVRPlayerManager.Instance.TryGetPlayerName(senderGuid);
+                MelonLogger.Warning($"Received a msg from {playerName} with a {(isNewer ? "newer" : "older")} version of the ChatBox mod." +
+                                    $"Please {(isNewer ? "update your mod" : "ask them to update their mod")} if you want to see their messages.");
+                return;
+            }
 
             var msgTypeRaw = reader.ReadByte();
 
@@ -124,7 +129,7 @@ public static class ModNetwork {
         }
         catch (Exception) {
             MelonLogger.Warning($"Received a malformed message from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}, " +
-                                $"they might be running an outdated version of the mod, or I broke something, or they're trying to do something funny.");
+                                $"they might be running an outdated/updated version of the mod, or I broke something, or they're trying to do something funny.");
         }
     }
 
@@ -164,6 +169,9 @@ public static class ModNetwork {
         writer.Write(ModId);
         writer.Write((int) SeedPolicy.ToAll);
 
+        // Set the message version
+        writer.Write(Version);
+
         // Set the message type (for our internal behavior)
         writer.Write((byte) msgType);
 
@@ -193,7 +201,12 @@ public static class ModNetwork {
         writer.Write(ModId);
         writer.Write((int) SeedPolicy.ToSpecific);
         writer.Write(playerGuids.Length);
-        writer.Write(playerGuids);
+        foreach (var playerGuid in playerGuids) {
+            writer.Write(playerGuid);
+        }
+
+        // Set the message version
+        writer.Write(Version);
 
         // Set the message type (for our internal behavior)
         writer.Write((byte) msgType);

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
+using BTKUILib.UIObjects.Components;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -30,6 +31,8 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeHistoryWindowOnCenter;
     internal static MelonPreferences_Entry<bool> MeHistoryWindowOpened;
     internal static MelonPreferences_Entry<float> MeHistoryFontSize;
+
+    internal static MelonPreferences_Entry<bool> MeProfanityFilter;
 
 
     // Asset Bundle
@@ -113,6 +116,9 @@ public static class ModConfig {
 
         MeHistoryFontSize = _melonCategory.CreateEntry("HistoryFontSize", 32f,
             description: "The size of the font in the history window. Default is 32.");
+
+        MeProfanityFilter = _melonCategory.CreateEntry("ProfanityFilter", true,
+            description: "Whether to use the profanity filter or not.");
     }
 
     public static void LoadAssemblyResources(Assembly assembly) {
@@ -191,8 +197,7 @@ public static class ModConfig {
 
     }
 
-
-    public static void InitializeBTKUI() {
+    internal static void InitializeBTKUI() {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
@@ -222,17 +227,43 @@ public static class ModConfig {
 
         // Load icons
         const string iconMsg = $"{nameof(ChatBox)}-Msg";
-        BTKUILib.QuickMenuAPI.PrepareIcon("Misc", iconMsg,
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconMsg,
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Msg.png"));
         const string iconMsgSettings = $"{nameof(ChatBox)}-Msg_Settings";
-        BTKUILib.QuickMenuAPI.PrepareIcon("Misc", iconMsgSettings,
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconMsgSettings,
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Msg_Settings.png"));
         const string iconMsgWindow = $"{nameof(ChatBox)}-Msg_Window";
-        BTKUILib.QuickMenuAPI.PrepareIcon("Misc", iconMsgWindow,
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconMsgWindow,
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Msg_Window.png"));
 
+        const string iconAdd = $"{nameof(ChatBox)}-Add";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconAdd,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Add.png"));
+        const string iconDelete = $"{nameof(ChatBox)}-Delete";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconDelete,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Delete.png"));
+        const string iconMenuPin = $"{nameof(ChatBox)}-Menu_Pin";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconMenuPin,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Menu_Pin.png"));
+        const string iconProfanity = $"{nameof(ChatBox)}-Profanity";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconProfanity,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Profanity.png"));
+        const string iconRemove = $"{nameof(ChatBox)}-Remove";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconRemove,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Remove.png"));
+
+        const string iconVisShow = $"{nameof(ChatBox)}-Visibility_Show";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconVisShow,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Visibility_Show.png"));
+        const string iconVisHide = $"{nameof(ChatBox)}-Visibility_Hide";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconVisHide,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Visibility_Hide.png"));
+        const string iconVisDefault = $"{nameof(ChatBox)}-Visibility_Default";
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(ChatBox), iconVisDefault,
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.ChatBox_Visibility_Default.png"));
+
         var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
-        var miscCategory = miscPage.AddCategory(nameof(ChatBox));
+        var miscCategory = miscPage.AddCategory(nameof(ChatBox), nameof(ChatBox));
 
         miscCategory.AddButton("Send Message", iconMsg, "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
             manager.ToggleQuickMenu(false);
@@ -259,17 +290,17 @@ public static class ModConfig {
             HistoryBehavior.IsBTKUIHistoryPageOpened = false;
             HistoryBehavior.Instance.ParentTo(HistoryBehavior.MenuTarget.QuickMenu);
         };
-        BTKUILib.QuickMenuAPI.OnOpenedPage += (targetPage, lastPage) => {
+        BTKUILib.QuickMenuAPI.OnOpenedPage += (targetPage, _) => {
             if (!historyOnCenter.ToggleValue) return;
             HistoryBehavior.IsBTKUIHistoryPageOpened = targetPage == "btkUI-ChatBox-ChatBoxHistory";
             HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
         };
-        BTKUILib.QuickMenuAPI.OnTabChange += (targetTab, lastTab) => {
+        BTKUILib.QuickMenuAPI.OnTabChange += (_, _) => {
             if (!historyOnCenter.ToggleValue) return;
             HistoryBehavior.IsBTKUIHistoryPageOpened = false;
             HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
         };
-        BTKUILib.QuickMenuAPI.OnBackAction += (targetPage, lastPage) => {
+        BTKUILib.QuickMenuAPI.OnBackAction += (_, _) => {
             if (!historyOnCenter.ToggleValue) return;
             HistoryBehavior.IsBTKUIHistoryPageOpened = false;
             HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
@@ -279,11 +310,46 @@ public static class ModConfig {
         AddMelonToggle(modSettingsCategory, MeSoundOnMessage, "Message Sound");
         AddMelonToggle(modSettingsCategory, MeMessageMentionGlobalAudio, "Mention Sound Global");
         AddMelonToggle(modSettingsCategory, MeOnlyViewFriends, "Only Friends");
+        MeOnlyViewFriends.OnEntryValueChanged.Subscribe((_, _) => HistoryBehavior.MessageVisibilityChanged?.Invoke());
         AddMelonToggle(modSettingsCategory, MeMessageTimeoutDependsLength, "Dynamic Timeout");
         AddMelonToggle(modSettingsCategory, MeIgnoreOscMessages, "Hide OSC Msgs");
         AddMelonToggle(modSettingsCategory, MeIgnoreModMessages, "Hide Mod Msgs");
 
-        var pinButtonBTKUI = modSettingsCategory.AddButton("Pin History to QM", "",
+        var profanityPage = modSettingsCategory.AddPage("Manage Profanity", iconProfanity, "Manage the profanity filter.", nameof(ChatBox));
+        var profanityCat = profanityPage.AddCategory("");
+        var profanityListCat = profanityPage.AddCategory("ProfanityList");
+        var profanityToggle = AddMelonToggle(profanityCat, MeProfanityFilter, "Use Profanity Filter");
+        Button addProfanity = null;
+        Button removeProfanity = null;
+        PopulateProfanity(MeProfanityFilter.Value);
+        profanityToggle.OnValueUpdated += PopulateProfanity;
+        void PopulateProfanityList() {
+            profanityListCat.ClearChildren();
+            foreach (var profanityWord in ConfigJson.GetProfanityList()) {
+                profanityListCat.AddButton(profanityWord, iconDelete, $"Removes the word {profanityWord} from the list.").OnPress += () => {
+                    ConfigJson.RemoveProfanity(profanityWord);
+                    PopulateProfanityList();
+                };
+            }
+        }
+        void PopulateProfanity(bool isFilterOn) {
+            addProfanity?.Delete();
+            removeProfanity?.Delete();
+            PopulateProfanityList();
+            if (!isFilterOn) return;
+            addProfanity = profanityCat.AddButton("Add Profanity", iconAdd, "Add a profanity word to the list (it's case insensitive).");
+            addProfanity.OnPress += () => BTKUILib.QuickMenuAPI.OpenKeyboard("", word => {
+                ConfigJson.AddProfanity(word);
+                PopulateProfanityList();
+            });
+            removeProfanity = profanityCat.AddButton("Remove Profanity", iconRemove, "Remove a profanity word from the list.");
+            removeProfanity.OnPress += () => BTKUILib.QuickMenuAPI.OpenKeyboard("", word => {
+                ConfigJson.RemoveProfanity(word);
+                PopulateProfanityList();
+            });
+        }
+
+        var pinButtonBTKUI = modSettingsCategory.AddButton("Pin History to QM", iconMenuPin,
             "Pins the History Window back to quick menu. Useful if you lost your window :)");
         pinButtonBTKUI.OnPress += () => HistoryBehavior.Instance.ParentTo(HistoryBehavior.MenuTarget.QuickMenu);
 
@@ -293,6 +359,34 @@ public static class ModConfig {
         AddMelonSlider(modPage, MeChatBoxOpacity, 0.1f, 1f, 2);
         AddMelonSlider(modPage, MeChatBoxSize, 0f, 2f, 2);
         AddMelonSlider(modPage, MeHistoryFontSize, 25f, 50f, 0);
+
+        // Player visibility overrides
+        var playerCat = BTKUILib.QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(ChatBox), nameof(ChatBox));
+        void UpdateOverrideButton(string playerName, string playerID) {
+            playerCat.ClearChildren();
+            var playerOverride = ConfigJson.GetUserOverride(playerID);
+            var buttonTooltip = playerOverride switch {
+                ConfigJson.UserOverride.Default => "Default - It will respect the setting to only show from friends.",
+                ConfigJson.UserOverride.Show => "Show - Messages will be shown regardless the only show from friends setting.",
+                ConfigJson.UserOverride.Hide => "Hide - Messages will not be displayed for this user.",
+                _ => "N/A"
+            };
+            var buttonIcon = playerOverride switch {
+                ConfigJson.UserOverride.Default => iconVisDefault,
+                ConfigJson.UserOverride.Show => iconVisShow,
+                ConfigJson.UserOverride.Hide => iconVisHide,
+                _ => "N/A"
+            };
+            playerCat.AddButton("", buttonIcon, buttonTooltip).OnPress += () => {
+                var values = Enum.GetValues(typeof(ConfigJson.UserOverride)).Cast<ConfigJson.UserOverride>().ToArray();
+                var currentIndex = Array.IndexOf(values, playerOverride);
+                var nextOverride = values[(currentIndex + 1) % values.Length];
+                ConfigJson.SetUserOverride(playerID, nextOverride);
+                UpdateOverrideButton(playerName, playerID);
+                HistoryBehavior.MessageVisibilityChanged?.Invoke();
+            };
+        }
+        BTKUILib.QuickMenuAPI.OnPlayerSelected += UpdateOverrideButton;
     }
 
 }
