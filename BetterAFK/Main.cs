@@ -46,7 +46,7 @@ public class BetterAFK : MelonMod {
                 }
 
                 // handle setting AFK is we detect the proximity sensor to be off
-                if (!_isAFK && MetaPort.Instance.isUsingVr && OpenVR.System.GetTrackedDeviceActivityLevel(OpenVR.k_unTrackedDeviceIndex_Hmd) != EDeviceActivityLevel.k_EDeviceActivityLevel_UserInteraction) {
+                if (!_isAFK && MetaPort.Instance.isUsingVr && OpenVR.System != null && OpenVR.System.GetTrackedDeviceActivityLevel(OpenVR.k_unTrackedDeviceIndex_Hmd) != EDeviceActivityLevel.k_EDeviceActivityLevel_UserInteraction) {
                     _isAFK = true;
                 }
 
