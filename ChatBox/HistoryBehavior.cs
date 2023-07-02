@@ -92,11 +92,11 @@ public class HistoryBehavior : MonoBehaviour {
     }
 
     private class ChatBoxEntry {
-        private string _senderGuid;
-        private GameObject _gameObject;
-        private TextMeshProUGUI _usernameTmp;
-        private TextMeshProUGUI _timestampTmp;
-        private TextMeshProUGUI _messageTmp;
+        private readonly string _senderGuid;
+        private readonly GameObject _gameObject;
+        private readonly TextMeshProUGUI _usernameTmp;
+        private readonly TextMeshProUGUI _timestampTmp;
+        private readonly TextMeshProUGUI _messageTmp;
 
         public ChatBoxEntry(string senderGuid, GameObject gameObject, TextMeshProUGUI usernameTmp, TextMeshProUGUI timestampTmp, TextMeshProUGUI messageTmp) {
             _senderGuid = senderGuid;
@@ -308,19 +308,49 @@ public class HistoryBehavior : MonoBehaviour {
             ToggleHistoryWindow(ModConfig.MeHistoryWindowOpened.Value);
 
             // Set the message listeners
-            API.OnMessageReceived += (source, senderGuid, msg, _, _) => {
-                if (source != API.MessageSource.Internal) return;
+            API.OnMessageReceived += chatBoxMessage => {
 
-                // Check for profanity and replace if needed
-                if (ModConfig.MeProfanityFilter.Value) {
-                    msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
+                // Ignore messages that are not supposed to be displayed
+                if (!chatBoxMessage.DisplayOnHistory) return;
+
+                // Handle typing source ignores
+                if (ModConfig.MeIgnoreOscMessages.Value && chatBoxMessage.Source == API.MessageSource.OSC) return;
+                if (ModConfig.MeIgnoreModMessages.Value && chatBoxMessage.Source == API.MessageSource.Mod) return;
+
+                // Check Interceptors
+                foreach (var interceptor in API.ReceivingInterceptors) {
+                    try {
+                        if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnHistory) return;
+                    }
+                    catch (Exception ex) {
+                        MelonLogger.Error("An mod's interceptor errored :(");
+                        MelonLogger.Error(ex);
+                    }
                 }
 
-                AddMessage(DateTime.Now, senderGuid, CVRPlayerManager.Instance.TryGetPlayerName(senderGuid), MetaPort.Instance.ownerId == senderGuid, Friends.FriendsWith(senderGuid), msg);
+                AddMessage(chatBoxMessage);
             };
-            API.OnMessageSent += (source, msg, _, _) => {
-                if (source != API.MessageSource.Internal) return;
-                AddMessage(DateTime.Now, MetaPort.Instance.ownerId, MetaPort.Instance.username, true, false, msg);
+            API.OnMessageSent += chatBoxMessage => {
+
+                // Ignore messages that are not supposed to be displayed
+                if (!chatBoxMessage.DisplayOnHistory) return;
+
+                // Handle typing source ignores
+                if (ModConfig.MeIgnoreOscMessages.Value && chatBoxMessage.Source == API.MessageSource.OSC) return;
+                if (ModConfig.MeIgnoreModMessages.Value && chatBoxMessage.Source == API.MessageSource.Mod) return;
+
+                // Check Interceptors
+                foreach (var interceptor in API.SendingInterceptors) {
+                    try {
+                        if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnHistory) return;
+                    }
+                    catch (Exception ex) {
+                        MelonLogger.Error("An mod's interceptor errored :(");
+                        MelonLogger.Error(ex);
+                    }
+                }
+
+                AddMessage(chatBoxMessage);
             };
 
             // Set font size listener
@@ -345,27 +375,52 @@ public class HistoryBehavior : MonoBehaviour {
         }
     }
 
-    private void AddMessage(DateTime date, string senderGuid, string senderUsername, bool isSelf, bool isFriend, string message) {
+    private void AddMessage(API.ChatBoxMessage chatBoxMessage) {
+
+        var isSelf = MetaPort.Instance.ownerId == chatBoxMessage.SenderGuid;
+
         var chatEntry = Instantiate(_templateChatEntry, _contentRectTransform).transform;
         chatEntry.SetAsFirstSibling();
         var timestampTmp = chatEntry.Find("Header/Timestamp").GetComponent<TextMeshProUGUI>();
-        timestampTmp.text = $"[{date.ToString("T", CultureInfo.CurrentCulture)}]";
+        timestampTmp.text = $"[{DateTime.Now.ToString("T", CultureInfo.CurrentCulture)}]";
+
+        // Handle OSC/Mod sources
+        var modNameTmp = chatEntry.Find("Header/ModName").GetComponent<TextMeshProUGUI>();
+        if (chatBoxMessage.Source == API.MessageSource.OSC) {
+            modNameTmp.text = "[OSC]";
+            modNameTmp.color = ChatBoxBehavior.TealTransparency;
+        }
+        else if (chatBoxMessage.Source == API.MessageSource.Mod) {
+            modNameTmp.text = $"[{chatBoxMessage.ModName}]";
+            modNameTmp.color = ChatBoxBehavior.PinkTransparency;
+        }
+
         var usernameComponent = chatEntry.Find("Header/Username");
         var usernameButton = usernameComponent.GetComponent<Button>();
-        usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(senderGuid));
+        usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
-        usernameTmp.text = senderUsername;
-        if (isSelf) usernameTmp.color = ColorBlue;
-        else usernameTmp.color = isFriend ? ColorGreen : Color.white;
+        if (isSelf) {
+            usernameTmp.text = MetaPort.Instance.username;
+            usernameTmp.color = ColorBlue;
+        }
+        else {
+            usernameTmp.text = CVRPlayerManager.Instance.TryGetPlayerName(chatBoxMessage.SenderGuid);
+            usernameTmp.color = Friends.FriendsWith(chatBoxMessage.SenderGuid) ? ColorGreen : Color.white;
+        }
 
+        var msg = chatBoxMessage.Message;
+        // Check for profanity and replace if needed
+        if (ModConfig.MeProfanityFilter.Value) {
+            msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
+        }
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
 
         // // Color our own username in messages (I disabled formatting so this won't work ;_;
         // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{MetaPort.Instance.username}</color>";
         // message = Regex.Replace(message, Regex.Escape("@" + MetaPort.Instance.username), coloredUsername, RegexOptions.IgnoreCase);
-        messageTmp.text = message;
+        messageTmp.text = msg;
 
-        var entry = new ChatBoxEntry(senderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);
+        var entry = new ChatBoxEntry(chatBoxMessage.SenderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);
         entry.UpdateVisibility();
         entry.UpdateFontSize(ModConfig.MeHistoryFontSize.Value);
         ChatBoxEntries.Add(entry);

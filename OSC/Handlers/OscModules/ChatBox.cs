@@ -132,11 +132,12 @@ public class ChatBox : OscHandler {
 
     private static void ReceivedMessage(OscMessage oscMessage) {
 
-        if (oscMessage.Count != 2 && oscMessage.Count != 3) {
+        if (oscMessage.Count is < 2 or > 5) {
             MelonLogger.Msg($"[Error] Attempted to send a ChatBox Msg, but provided an invalid number of arguments. " +
-                            $"Expected 2 or 3 arguments, first for the message, the second for whether the message should" +
-                            $"be sent immediately or put it on the keyboard, and the third for whether it should send a " +
-                            $"sound notification or not.");
+                            $"Expected between 2 and 5 arguments, first for the message, the second for whether the message should" +
+                            $"be sent immediately or put it on the keyboard, optionally a third for whether it should send a " +
+                            $"sound notification or not, optionally a fourth for whether should display in the ChatBox or not, and " +
+                            $"lately optionally a fifth for whether it should display in the history window or not.");
             return;
         }
 
@@ -158,7 +159,7 @@ public class ChatBox : OscHandler {
 
         // Default notify to false
         var notify = false;
-        if (oscMessage.Count == 3) {
+        if (oscMessage.Count >= 3) {
             var possibleNotify = oscMessage[2];
             if (possibleNotify is not bool notifyValue) {
                 MelonLogger.Msg($"[Error] Attempted to send a ChatBox Msg, but provided an invalid bool value for the notify. " +
@@ -169,7 +170,33 @@ public class ChatBox : OscHandler {
             notify = notifyValue;
         }
 
-        Events.Integrations.OnChatBoxMessage(message, sendImmediately, notify);
+        // Default display in ChatBox to true
+        var displayInChatBox = true;
+        if (oscMessage.Count >= 4) {
+            var possibleDisplayInChatBox = oscMessage[3];
+            if (possibleDisplayInChatBox is not bool displayInChatBoxValue) {
+                MelonLogger.Msg($"[Error] Attempted to send a ChatBox Msg, but provided an invalid bool value for the display in the ChatBox. " +
+                                $"Attempted: \"{possibleDisplayInChatBox}\" Type: {possibleDisplayInChatBox?.GetType()}" +
+                                $"The display in ChatBox value has to be a boolean.");
+                return;
+            }
+            displayInChatBox = displayInChatBoxValue;
+        }
+
+        // Default display in History Window to true
+        var displayInHistory = false;
+        if (oscMessage.Count >= 5) {
+            var possibleDisplayInHistory = oscMessage[4];
+            if (possibleDisplayInHistory is not bool displayInHistoryValue) {
+                MelonLogger.Msg($"[Error] Attempted to send a ChatBox Msg, but provided an invalid bool value for the display in the History Window. " +
+                                $"Attempted: \"{possibleDisplayInHistory}\" Type: {possibleDisplayInHistory?.GetType()}" +
+                                $"The display in history window value has to be a boolean.");
+                return;
+            }
+            displayInHistory = displayInHistoryValue;
+        }
+
+        Events.Integrations.OnChatBoxMessage(message, sendImmediately, notify, displayInChatBox, displayInHistory);
     }
 
 }

@@ -627,8 +627,12 @@ You can use this endpoint to send text messages via the Chat Box.
 
 - `arg#1` - Message [*string*], the message content you want to send. The mod allows a maximum of 2000 Characters.
 - `arg#2` - Send Immediately [*bool*], whether the msg is directly sent, or opens the keyboard and pastes the msg.
-- `arg#3` - Sound Notification [*Optional*] [*float*], whether the message will do a sound notification or not. Defaults
-to `False` if not provided.
+- `arg#3` - Sound Notification [*Optional*] [*bool*], whether the message will do a sound notification or not. Defaults
+  to `False` if not provided.
+- `arg#4` - Display in ChatBox [*Optional*] [*bool*], whether the message will be displayed in the ChatBox or not.
+  Defaults to `True` if not provided.
+- `arg#5` - Display in History Window [*Optional*] [*bool*], whether the message will be displayed in the History Window
+  or not. Defaults to `False` if not provided.
 
 ---
 
@@ -641,7 +645,7 @@ You can set the typing state for the ChatBox. Whether it's on or off, and whethe
 #### Arguments
 
 - `arg#2` - Is Typing [*bool*], whether Is Typing is active or not.
-- `arg#3` - Sound Notification [*Optional*] [*float*], whether the start typing will do a sound notification or not. 
+- `arg#3` - Sound Notification [*Optional*] [*bool*], whether the start typing will do a sound notification or not. 
 Defaults to `False` if not provided.
 
 ---

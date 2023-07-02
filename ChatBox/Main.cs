@@ -35,14 +35,14 @@ public class ChatBox : MelonMod {
         TMP_Settings.instance.m_warningsDisabled = true;
 
         // Setup Sent History
-        API.OnMessageSent += (source, msg, notify, show) => {
-            if (source != API.MessageSource.Internal || !show) return;
+        API.OnMessageSent += chatBoxMessage => {
+            if (chatBoxMessage.Source != API.MessageSource.Internal) return;
             _currentHistoryIndex = -1;
 
             // Ignore if the message is the same
-            if (SentHistory.Count > 0 && SentHistory.Last() == msg) return;
+            if (SentHistory.Count > 0 && SentHistory.Last() == chatBoxMessage.Message) return;
 
-            SentHistory.Add(msg);
+            SentHistory.Add(chatBoxMessage.Message);
         };
 
         // Setup the Cohtml Events
@@ -250,7 +250,7 @@ public class ChatBox : MelonMod {
             // Capture the keyboard input, and close it after sending
             try {
                 if (_isChatBoxKeyboardOpened) {
-                    ModNetwork.SendMessage(API.MessageSource.Internal, value, true, true);
+                    ModNetwork.SendMessage(API.MessageSource.Internal, "", value, true, true, true);
                     DisableKeyboard();
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using DarkRift;
 using DarkRift.Client;
 using HarmonyLib;
@@ -13,6 +14,7 @@ public static class ModNetwork {
     private const string ModId = $"MelonMod.Kafe.{nameof(ChatBox)}";
 
     private const int CharactersMaxCount = 1000;
+    private const int ModNameCharactersMaxCount = 50;
 
     private enum Tag : ushort {
         Subscribe = 13997,
@@ -30,7 +32,7 @@ public static class ModNetwork {
         SendMessage = 1,
     }
 
-    private const uint Version = 1;
+    private const uint Version = 2;
 
     internal static void SendTyping(API.MessageSource source, bool isTyping, bool notification) {
         var sent = SendMsgToAllPlayers(MessageType.Typing, writer => {
@@ -38,21 +40,44 @@ public static class ModNetwork {
             writer.Write(isTyping);
             writer.Write(notification);
         });
-        if (sent) API.OnIsTypingSent?.Invoke(source, isTyping, notification);
+        if (sent) API.OnIsTypingSent?.Invoke(new API.ChatBoxTyping(source, MetaPort.Instance.ownerId, isTyping, notification));
     }
 
-    internal static void SendMessage(API.MessageSource source, string msg, bool notification, bool displayMessage) {
+    internal static void SendMessage(API.MessageSource source, string modName, string msg, bool notification, bool displayInChatBox, bool displayInHistory) {
+        if (modName.Length > ModNameCharactersMaxCount) {
+            MelonLogger.Warning($"Mod Name can have a maximum of {ModNameCharactersMaxCount} characters.");
+            return;
+        }
         if (msg.Length > CharactersMaxCount) {
             MelonLogger.Warning($"Messages can have a maximum of {CharactersMaxCount} characters.");
             return;
         }
+
+        var chatBoxMessage = new API.ChatBoxMessage(source, MetaPort.Instance.ownerId, msg, notification, displayInChatBox, displayInHistory, modName);
+        // Check Sending Interceptors
+        foreach (var interceptor in API.SendingInterceptors) {
+            try {
+                var interceptorResult = interceptor.Invoke(chatBoxMessage);
+                if (interceptorResult.PreventDisplayOnChatBox) displayInChatBox = false;
+                if (interceptorResult.PreventDisplayOnHistory) displayInHistory = false;
+                chatBoxMessage = new API.ChatBoxMessage(source, MetaPort.Instance.ownerId, msg, notification, displayInChatBox, displayInHistory, modName);
+            }
+            catch (Exception ex) {
+                MelonLogger.Error("An mod's interceptor errored :(");
+                MelonLogger.Error(ex);
+            }
+        }
+
         var sent = SendMsgToAllPlayers(MessageType.SendMessage, writer => {
             writer.Write((byte) source);
+            writer.Write(modName, Encoding.UTF8);
             writer.Write(msg, Encoding.UTF8);
             writer.Write(notification);
-            writer.Write(displayMessage);
+            writer.Write(displayInChatBox);
+            writer.Write(displayInHistory);
         });
-        if (sent) API.OnMessageSent?.Invoke(source, msg, notification, displayMessage);
+
+        if (sent) API.OnMessageSent?.Invoke(chatBoxMessage);
     }
 
     private static void OnMessage(object sender, MessageReceivedEventArgs e) {
@@ -97,6 +122,7 @@ public static class ModNetwork {
                 case MessageType.Typing:
 
                     var typingSrcByte = reader.ReadByte();
+
                     if (!Enum.IsDefined(typeof(API.MessageSource), typingSrcByte)) {
                         throw new Exception($"[Typing] Received an invalid source byte ({typingSrcByte}).");
                     }
@@ -104,7 +130,8 @@ public static class ModNetwork {
                     var isTyping = reader.ReadBoolean();
                     var notification = reader.ReadBoolean();
 
-                    API.OnIsTypingReceived?.Invoke((API.MessageSource)typingSrcByte, senderGuid, isTyping, notification);
+                    var chatBoxTyping = new API.ChatBoxTyping((API.MessageSource)typingSrcByte, senderGuid, isTyping, notification);
+                    API.OnIsTypingReceived?.Invoke(chatBoxTyping);
                     break;
 
                 case MessageType.SendMessage:
@@ -114,6 +141,12 @@ public static class ModNetwork {
                         throw new Exception($"[SendMessage] Received an invalid source byte ({messageSrcByte}).");
                     }
 
+                    var modName = reader.ReadString(Encoding.UTF8);
+                    if (modName.Length > ModNameCharactersMaxCount) {
+                        MelonLogger.Warning($"Ignored message from {sender} because the mod name it's over {ModNameCharactersMaxCount} characters.");
+                        return;
+                    }
+
                     var msg = reader.ReadString(Encoding.UTF8);
                     if (msg.Length > CharactersMaxCount) {
                         MelonLogger.Warning($"Ignored message from {sender} because it's over {CharactersMaxCount} characters.");
@@ -121,9 +154,11 @@ public static class ModNetwork {
                     }
 
                     var sendNotification = reader.ReadBoolean();
-                    var displayMessage = reader.ReadBoolean();
+                    var displayInChatBox = reader.ReadBoolean();
+                    var displayInHistory = reader.ReadBoolean();
 
-                    API.OnMessageReceived?.Invoke((API.MessageSource)messageSrcByte, senderGuid, msg, sendNotification, displayMessage);
+                    var chatBoxMessage = new API.ChatBoxMessage((API.MessageSource)messageSrcByte, senderGuid, msg, sendNotification, displayInChatBox, displayInHistory, modName);
+                    API.OnMessageReceived?.Invoke(chatBoxMessage);
                     break;
             }
         }

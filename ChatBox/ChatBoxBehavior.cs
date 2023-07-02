@@ -3,13 +3,10 @@ using System.Text.RegularExpressions;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.Object_Behaviour;
+using MelonLoader;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
-#if DEBUG
-using MelonLoader;
-#endif
 
 namespace Kafe.ChatBox;
 
@@ -27,9 +24,9 @@ public class ChatBoxBehavior : MonoBehaviour {
     // Whisper
     private readonly Color BlueTransparency = new Color(0f, 0.6122726f, 0.7490196f, 0.75f);
     // OSC
-    private readonly Color TealTransparency = new Color(0.2494215f, 0.8962264f, 0.8223274f, 0.75f);
+    internal static readonly Color TealTransparency = new Color(0.2494215f, 0.8962264f, 0.8223274f, 0.75f);
     // Mod
-    private readonly Color PinkTransparency = new Color(1f, 0.4009434f, 0.9096327f, 0.75f);
+    internal static readonly Color PinkTransparency = new Color(1f, 0.4009434f, 0.9096327f, 0.75f);
     // Astro - Official InuCast Salmon Colour^tm - Shiba Inu Shaped Bubble
     private readonly Color AstroTransparency = new Color(1f, 0.4980392f, 0.4980392f, 0.75f);
 
@@ -81,40 +78,64 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         ChatBoxes = new Dictionary<string, ChatBoxBehavior>();
 
-        API.OnIsTypingReceived += (source, senderGuid, isTyping, notify) => {
+        API.OnIsTypingReceived += chatBoxIsTyping => {
 
             // Ignore our own messages
-            if (senderGuid == MetaPort.Instance.ownerId) return;
+            if (chatBoxIsTyping.SenderGuid == MetaPort.Instance.ownerId) return;
 
             // If visibility options say we shouldn't display, don't :)
-            if (!ConfigJson.ShouldShowMessage(senderGuid)) return;
+            if (!ConfigJson.ShouldShowMessage(chatBoxIsTyping.SenderGuid)) return;
 
             // Handle typing source ignores
-            if (ModConfig.MeIgnoreOscMessages.Value && source == API.MessageSource.OSC) return;
-            if (ModConfig.MeIgnoreModMessages.Value && source == API.MessageSource.Mod) return;
+            if (ModConfig.MeIgnoreOscMessages.Value && chatBoxIsTyping.Source == API.MessageSource.OSC) return;
+            if (ModConfig.MeIgnoreModMessages.Value && chatBoxIsTyping.Source == API.MessageSource.Mod) return;
 
             #if DEBUG
-            MelonLogger.Msg($"Received a Typing message from: {senderGuid} -> {isTyping}");
+            MelonLogger.Msg($"Received a Typing message from: {chatBoxIsTyping.SenderGuid} -> {chatBoxIsTyping.IsTyping}");
             #endif
-            if (ChatBoxes.TryGetValue(senderGuid, out var chatBoxBehavior)) {
-                chatBoxBehavior.OnTyping(isTyping, notify);
+            if (ChatBoxes.TryGetValue(chatBoxIsTyping.SenderGuid, out var chatBoxBehavior)) {
+                chatBoxBehavior.OnTyping(chatBoxIsTyping.IsTyping, chatBoxIsTyping.TriggerNotification);
             }
         };
 
-        API.OnMessageReceived += (source, senderGuid, msg, notify, displayMessage) => {
+        API.OnMessageReceived += chatBoxMessage => {
 
             // Ignore messages that are not supposed to be displayed
-            if (!displayMessage) return;
+            if (!chatBoxMessage.DisplayOnChatBox) return;
 
             // Ignore our own messages
-            if (senderGuid == MetaPort.Instance.ownerId) return;
+            if (chatBoxMessage.SenderGuid == MetaPort.Instance.ownerId) return;
 
             // If visibility options say we shouldn't display, don't :)
-            if (!ConfigJson.ShouldShowMessage(senderGuid)) return;
+            if (!ConfigJson.ShouldShowMessage(chatBoxMessage.SenderGuid)) return;
 
             // Handle typing source ignores
-            if (ModConfig.MeIgnoreOscMessages.Value && source == API.MessageSource.OSC) return;
-            if (ModConfig.MeIgnoreModMessages.Value && source == API.MessageSource.Mod) return;
+            if (ModConfig.MeIgnoreOscMessages.Value && chatBoxMessage.Source == API.MessageSource.OSC) return;
+            if (ModConfig.MeIgnoreModMessages.Value && chatBoxMessage.Source == API.MessageSource.Mod) return;
+
+            // Check Sending Interceptors
+            foreach (var interceptor in API.SendingInterceptors) {
+                try {
+                    if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnChatBox) return;
+                }
+                catch (Exception ex) {
+                    MelonLogger.Error("An mod's interceptor errored :(");
+                    MelonLogger.Error(ex);
+                }
+            }
+
+            // Check Receiving Interceptors
+            foreach (var interceptor in API.ReceivingInterceptors) {
+                try {
+                    if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnChatBox) return;
+                }
+                catch (Exception ex) {
+                    MelonLogger.Error("An mod's interceptor errored :(");
+                    MelonLogger.Error(ex);
+                }
+            }
+
+            var msg = chatBoxMessage.Message;
 
             // Check for profanity and replace if needed
             if (ModConfig.MeProfanityFilter.Value) {
@@ -122,10 +143,10 @@ public class ChatBoxBehavior : MonoBehaviour {
             }
 
             #if DEBUG
-            MelonLogger.Msg($"Received a Message message from: {senderGuid} -> {msg}");
+            MelonLogger.Msg($"Received a Message message from: {chatBoxMessage.SenderGuid} -> {msg}");
             #endif
-            if (ChatBoxes.TryGetValue(senderGuid, out var chatBoxBehavior)) {
-                chatBoxBehavior.OnMessage(source, msg, notify);
+            if (ChatBoxes.TryGetValue(chatBoxMessage.SenderGuid, out var chatBoxBehavior)) {
+                chatBoxBehavior.OnMessage(chatBoxMessage.Source, msg, chatBoxMessage.TriggerNotification);
             }
         };
 

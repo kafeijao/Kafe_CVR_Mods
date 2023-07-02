@@ -72,6 +72,8 @@ the `copy_and_nstrip_dll.ps1` and then run it, or manually set it via the window
 Edit `copy_and_nstrip_dll.ps1` and look the line bellow, and then replace the Path with your actual path.
 ```$cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"```
 
+You'll probably need to restart your computer so the Environment Variable variable gets updated...
+
 Now you're all set and you can go to the step (2) of the [Building](#building) instructions!
 
 
