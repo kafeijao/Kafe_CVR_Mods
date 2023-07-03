@@ -187,6 +187,6 @@ public static class API {
             MelonLogger.Error(e);
         }
 
-        return InterceptorResult.GetShowRequest();;
+        return InterceptorResult.GetShowRequest();
     }
 }

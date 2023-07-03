@@ -21,4 +21,19 @@
       </EmbeddedResource>
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_AutoAccept.png">
+            <LogicalName>resources.Quadro_Toggle_AutoAccept.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_AutoDecline.png">
+            <LogicalName>resources.Quadro_Toggle_AutoDecline.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_Default.png">
+            <LogicalName>resources.Quadro_Toggle_Default.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_LetMeDecide.png">
+            <LogicalName>resources.Quadro_Toggle_LetMeDecide.png</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+    
 </Project>

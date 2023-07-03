@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Text;
+using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.UI;
 using DarkRift;
 using DarkRift.Client;
 using HarmonyLib;
@@ -13,6 +15,8 @@ using UnityEngine;
 namespace Kafe.RequestLib;
 
 internal static class ModNetwork {
+
+    private const uint Version = 1;
 
     private enum Tag : ushort {
         Subscribe = 13997,
@@ -44,6 +48,10 @@ internal static class ModNetwork {
         SyncUpdate,
         Request,
         Response,
+    }
+
+    internal static void Initialize() {
+        SchedulerSystem.AddJob(HandleTimeouts, 1f, 1f, -1);
     }
 
     private static void SendSyncUpdate(string requesterGuid) {
@@ -136,6 +144,11 @@ internal static class ModNetwork {
             return;
         }
 
+        if (!API.RemotePlayerMods.TryGetValue(senderGuid, out var registeredMods) || !registeredMods.Contains(requestModName)) {
+            MelonLogger.Warning($"Ignored request from {senderGuid} because the Request mod name {requestModName} was not registered. This should never happen...");
+            return;
+        }
+
         if (requestMessage.Length > MessageMaxCharCount) {
             MelonLogger.Warning($"Ignored request from {senderGuid} because the Request message is over {MessageMaxCharCount} characters, sent: {requestMessage.Length}. This should never happen...");
             return;
@@ -146,6 +159,31 @@ internal static class ModNetwork {
         var request = new API.Request(requestModName, timeoutDate, senderGuid, MetaPort.Instance.ownerId, requestMessage, requestMeta);
 
         PendingResponses.Add(pendingResponseGuid, request);
+
+        // Check the settings for how to handle the request
+        switch (ConfigJson.GetUserOverride(senderGuid, requestModName)) {
+
+            case ConfigJson.UserOverride.AutoAccept:
+                MelonLogger.Msg($"[{requestModName}] Auto-Accepted a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
+                SendResponse(pendingResponseGuid, true, "");
+                if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
+                    CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                }
+                return;
+
+            case ConfigJson.UserOverride.AutoDecline:
+                MelonLogger.Msg($"[{requestModName}] Auto-Declined a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
+                SendResponse(pendingResponseGuid, false, "");
+                if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
+                    CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                }
+                return;
+
+            case ConfigJson.UserOverride.Default:
+            case ConfigJson.UserOverride.LetMeDecide:
+                // Let the request run its normal course
+                break;
+        }
 
         // Check whether there is an interceptor blocking the displaying of the request or not
         var interceptorResult = API.RunInterceptor(request);
@@ -158,9 +196,22 @@ internal static class ModNetwork {
         // We're not displaying the request, so we need to decide which result to send.
         else {
             switch (interceptorResult.ResponseResult) {
-                case API.RequestResult.Accepted: SendResponse(pendingResponseGuid, true, interceptorResult.ResponseMetadata);
+                case API.RequestResult.Accepted:
+                    MelonLogger.Msg($"[Interceptor] [{requestModName}] Auto-Accepted a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
+                    SendResponse(pendingResponseGuid, true, interceptorResult.ResponseMetadata);
+                    if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
+                        CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                    }
                     break;
-                case API.RequestResult.Declined: SendResponse(pendingResponseGuid, false, interceptorResult.ResponseMetadata);
+                case API.RequestResult.Declined:
+                    MelonLogger.Msg($"[Interceptor] [{requestModName}] Auto-Declined a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
+                    SendResponse(pendingResponseGuid, false, interceptorResult.ResponseMetadata);
+                    if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
+                        CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                    }
+                    break;
+                case API.RequestResult.TimedOut:
+                    MelonLogger.Msg($"[Interceptor] [{requestModName}] Ignored a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
                     break;
             }
         }
@@ -223,10 +274,23 @@ internal static class ModNetwork {
 
         var senderGuid = reader.ReadString();
 
+        // Ignore messages from blocked people
+        if (MetaPort.Instance.blockedUserIds.Contains(senderGuid)) return;
+
+        // Ignore messages from non-friends
+        if (ModConfig.MeOnlyReceiveFromFriends.Value && !Friends.FriendsWith(senderGuid)) return;
+
         try {
 
-            // Ignore messages from non-friends
-            if (ModConfig.MeOnlyReceiveFromFriends.Value && !Friends.FriendsWith(senderGuid)) return;
+            // Read the version of the message
+            var msgVersion = reader.ReadUInt32();
+            if (msgVersion != Version) {
+                var isNewer = msgVersion > Version;
+                var playerName = CVRPlayerManager.Instance.TryGetPlayerName(senderGuid);
+                MelonLogger.Warning($"Received a msg from {playerName} with a {(isNewer ? "newer" : "older")} version of the ChatBox mod." +
+                                    $"Please {(isNewer ? "update your mod" : "ask them to update their mod")} if you want to see their messages.");
+                return;
+            }
 
             var msgTypeRaw = reader.ReadByte();
 
@@ -280,6 +344,9 @@ internal static class ModNetwork {
         writer.Write(ModId);
         writer.Write((int) SeedPolicy.ToAll);
 
+        // Set the message version
+        writer.Write(Version);
+
         // Set the message type (for our internal behavior)
         writer.Write((byte) msgType);
 
@@ -312,6 +379,9 @@ internal static class ModNetwork {
             writer.Write(playerGuid);
         }
 
+        // Set the message version
+        writer.Write(Version);
+
         // Set the message type (for our internal behavior)
         writer.Write((byte) msgType);
 
@@ -323,20 +393,25 @@ internal static class ModNetwork {
     }
 
     private static void HandleTimeouts() {
+        try {
+            // Check timeouts for pending requests (on the requester)
+            var timedOutRequests = PendingRequests.Where(pair => pair.Value.Timeout < DateTime.UtcNow).ToList();
+            foreach (var timedOutRequest in timedOutRequests) {
+                var response = new API.Response(API.RequestResult.TimedOut, "");
+                timedOutRequest.Value.OnResponse?.Invoke(timedOutRequest.Value, response);
+                PendingRequests.Remove(timedOutRequest.Key);
+            }
 
-        // Check timeouts for pending requests (on the requester)
-        var timedOutRequests = PendingRequests.Where(pair => pair.Value.Timeout < DateTime.UtcNow).ToList();
-        foreach (var timedOutRequest in timedOutRequests) {
-            var response = new API.Response(API.RequestResult.TimedOut, "");
-            timedOutRequest.Value.OnResponse?.Invoke(timedOutRequest.Value, response);
-            PendingRequests.Remove(timedOutRequest.Key);
+            // Check timeouts for pending response (on the requester target)
+            var timedOutResponses = PendingResponses.Where(pair => pair.Value.Timeout < DateTime.UtcNow).ToList();
+            foreach (var timedOutResponse in timedOutResponses) {
+                CohtmlPatches.Request.DeleteRequest(timedOutResponse.Key);
+                PendingResponses.Remove(timedOutResponse.Key);
+            }
         }
-
-        // Check timeouts for pending response (on the requester target)
-        var timedOutResponses = PendingResponses.Where(pair => pair.Value.Timeout < DateTime.UtcNow).ToList();
-        foreach (var timedOutResponse in timedOutResponses) {
-            CohtmlPatches.Request.DeleteRequest(timedOutResponse.Key);
-            PendingResponses.Remove(timedOutResponse.Key);
+        catch (Exception e) {
+            MelonLogger.Error($"Error during HandleTimeouts()");
+            MelonLogger.Error(e);
         }
     }
 
@@ -412,18 +487,6 @@ internal static class ModNetwork {
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_ReceiveReconnectToken)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.PeriodicJobs))]
-        public static void After_NetworkManager_PeriodicJobs() {
-            try {
-                HandleTimeouts();
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_PeriodicJobs)}");
                 MelonLogger.Error(e);
             }
         }

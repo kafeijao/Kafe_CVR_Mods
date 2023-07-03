@@ -28,9 +28,8 @@ public class TeleportRequest : MelonMod {
         switch (response.Result) {
 
             case RequestLib.API.RequestResult.Accepted:
-                var msgAccepted = $"The player {playerName} has <color=green>Accepted</color> the teleport request!";
-                MelonLogger.Msg(msgAccepted);
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), msgAccepted);
+                MelonLogger.Msg($"The player {playerName} has ACCEPTED the teleport request!");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"The player {playerName} has <span style=\"color:green; display:inline\">Accepted</span> the teleport request!");
                 var target = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault(np => np.Uuid == request.TargetPlayerGuid);
                 if (target == null) {
                     MelonLogger.Warning($"The player {playerName} is not in the Instance anymore...");
@@ -44,15 +43,13 @@ public class TeleportRequest : MelonMod {
                 break;
 
             case RequestLib.API.RequestResult.Declined:
-                var msgDeclined = $"The player {playerName} has <color=red>Declined</color> the teleport request!";
-                MelonLogger.Msg(msgDeclined);
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), msgDeclined);
+                MelonLogger.Msg($"The player {playerName} has DECLINED the teleport request!");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"The player {playerName} has <span style=\"color:red; display:inline\">Declined</span> the teleport request!");
                 break;
 
             case RequestLib.API.RequestResult.TimedOut:
-                var msgTimedOut = $"The teleport request to the player {playerName} has <color=yellow>timed out</color>...";
-                MelonLogger.Msg(msgTimedOut);
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), msgTimedOut);
+                MelonLogger.Msg($"The teleport request to the player {playerName} has TIMED OUT...");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"The teleport request to the player {playerName} has <span style=\"color:yellow; display:inline\">Timed Out</span>...");
                 break;
         }
     }

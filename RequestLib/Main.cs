@@ -8,6 +8,7 @@ internal class RequestLib : MelonMod {
 
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
+        ConfigJson.LoadConfigJson();
         ModConfig.InitializeBTKUI();
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
@@ -17,6 +18,8 @@ internal class RequestLib : MelonMod {
             MelonLogger.Msg($"Detected {AssemblyInfoParams.BTKSAImmersiveHudName} mod, we're adding the integration!");
             Integrations.BTKSAImmersiveHudIntegration.Initialize(possibleBtksaImmersiveHud);
         }
+
+        ModNetwork.Initialize();
     }
 
     // public override void OnUpdate() {
