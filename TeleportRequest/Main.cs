@@ -29,7 +29,7 @@ public class TeleportRequest : MelonMod {
 
             case RequestLib.API.RequestResult.Accepted:
                 MelonLogger.Msg($"The player {playerName} has ACCEPTED the teleport request!");
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"The player {playerName} has <span style=\"color:green; display:inline\">Accepted</span> the teleport request!");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The player {playerName} has <span style=\"color:green; display:inline\">Accepted</span> the teleport request!</span>");
                 var target = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault(np => np.Uuid == request.TargetPlayerGuid);
                 if (target == null) {
                     MelonLogger.Warning($"The player {playerName} is not in the Instance anymore...");
@@ -44,12 +44,12 @@ public class TeleportRequest : MelonMod {
 
             case RequestLib.API.RequestResult.Declined:
                 MelonLogger.Msg($"The player {playerName} has DECLINED the teleport request!");
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"The player {playerName} has <span style=\"color:red; display:inline\">Declined</span> the teleport request!");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The player {playerName} has <span style=\"color:red; display:inline\">Declined</span> the teleport request!</span>");
                 break;
 
             case RequestLib.API.RequestResult.TimedOut:
                 MelonLogger.Msg($"The teleport request to the player {playerName} has TIMED OUT...");
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"The teleport request to the player {playerName} has <span style=\"color:yellow; display:inline\">Timed Out</span>...");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The teleport request to the player {playerName} has <span style=\"color:yellow; display:inline\">Timed Out</span>...</span>");
                 break;
         }
     }

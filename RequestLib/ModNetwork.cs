@@ -167,7 +167,7 @@ internal static class ModNetwork {
                 MelonLogger.Msg($"[{requestModName}] Auto-Accepted a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
                 SendResponse(pendingResponseGuid, true, "");
                 if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
-                    CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                    CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                 }
                 return;
 
@@ -175,7 +175,7 @@ internal static class ModNetwork {
                 MelonLogger.Msg($"[{requestModName}] Auto-Declined a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
                 SendResponse(pendingResponseGuid, false, "");
                 if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
-                    CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                    CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                 }
                 return;
 
@@ -200,14 +200,14 @@ internal static class ModNetwork {
                     MelonLogger.Msg($"[Interceptor] [{requestModName}] Auto-Accepted a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
                     SendResponse(pendingResponseGuid, true, interceptorResult.ResponseMetadata);
                     if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
-                        CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                        CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                     }
                     break;
                 case API.RequestResult.Declined:
                     MelonLogger.Msg($"[Interceptor] [{requestModName}] Auto-Declined a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
                     SendResponse(pendingResponseGuid, false, interceptorResult.ResponseMetadata);
                     if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
-                        CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.");
+                        CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                     }
                     break;
                 case API.RequestResult.TimedOut:
@@ -287,8 +287,8 @@ internal static class ModNetwork {
             if (msgVersion != Version) {
                 var isNewer = msgVersion > Version;
                 var playerName = CVRPlayerManager.Instance.TryGetPlayerName(senderGuid);
-                MelonLogger.Warning($"Received a msg from {playerName} with a {(isNewer ? "newer" : "older")} version of the ChatBox mod." +
-                                    $"Please {(isNewer ? "update your mod" : "ask them to update their mod")} if you want to see their messages.");
+                MelonLogger.Warning($"Received a msg from {playerName} with a {(isNewer ? "newer" : "older")} version of the {nameof(RequestLib)} mod." +
+                                    $"Please {(isNewer ? "update your mod" : "ask them to update their mod")} if you want to see their requests.");
                 return;
             }
 
