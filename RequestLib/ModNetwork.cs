@@ -50,6 +50,32 @@ internal static class ModNetwork {
         Response,
     }
 
+    internal static HashSet<API.Request> GetPendingSentRequests(string modName) {
+        return PendingRequests.Values.Where(r => r.ModName == modName).ToHashSet();
+    }
+
+    internal static void CancelSentRequest(API.Request request) {
+        var keysToRemove = PendingRequests.Where(pair => pair.Value == request).Select(pair => pair.Key).ToList();
+        foreach (var key in keysToRemove) {
+            PendingRequests.Remove(key);
+        }
+    }
+
+    internal static HashSet<API.Request> GetPendingReceivedRequests(string modName) {
+        return PendingResponses.Values.Where(r => r.ModName == modName).ToHashSet();
+    }
+
+    internal static void ResolveReceivedRequest(API.Request request, API.RequestResult result, string metadata = "") {
+        var keysToResolve = PendingResponses.Where(pair => pair.Value == request).Select(pair => pair.Key).ToList();
+        foreach (var key in keysToResolve) {
+            CohtmlPatches.Request.DeleteRequest(key);
+            PendingResponses.Remove(key);
+            if (result != API.RequestResult.TimedOut) {
+                SendResponse(key, result == API.RequestResult.Accepted, metadata);
+            }
+        }
+    }
+
     internal static void Initialize() {
         SchedulerSystem.AddJob(HandleTimeouts, 1f, 1f, -1);
     }
@@ -306,7 +332,7 @@ internal static class ModNetwork {
                 case MessageType.SyncUpdate:
                     var playerMods = reader.ReadStrings();
                     API.RemotePlayerMods[senderGuid] = playerMods;
-                    API.PlayerInfoUpdate?.Invoke(senderGuid);
+                    API.PlayerInfoUpdate?.Invoke(new API.PlayerInfo(senderGuid));
                     break;
 
                 case MessageType.Request:

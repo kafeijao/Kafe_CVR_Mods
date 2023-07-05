@@ -1,6 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DocumentationMarkdown>$(MSBuildProjectDirectory)\API.md</DocumentationMarkdown>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Vsxmd" Version="1.4.5">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
     <ItemGroup>
         <Reference Include="BTKUILib">
             <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
@@ -35,5 +47,5 @@
             <LogicalName>resources.Quadro_Toggle_LetMeDecide.png</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
-    
+
 </Project>
