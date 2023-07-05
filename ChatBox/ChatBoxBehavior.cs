@@ -113,28 +113,6 @@ public class ChatBoxBehavior : MonoBehaviour {
             if (ModConfig.MeIgnoreOscMessages.Value && chatBoxMessage.Source == API.MessageSource.OSC) return;
             if (ModConfig.MeIgnoreModMessages.Value && chatBoxMessage.Source == API.MessageSource.Mod) return;
 
-            // Check Sending Interceptors
-            foreach (var interceptor in API.SendingInterceptors) {
-                try {
-                    if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnChatBox) return;
-                }
-                catch (Exception ex) {
-                    MelonLogger.Error("An mod's interceptor errored :(");
-                    MelonLogger.Error(ex);
-                }
-            }
-
-            // Check Receiving Interceptors
-            foreach (var interceptor in API.ReceivingInterceptors) {
-                try {
-                    if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnChatBox) return;
-                }
-                catch (Exception ex) {
-                    MelonLogger.Error("An mod's interceptor errored :(");
-                    MelonLogger.Error(ex);
-                }
-            }
-
             var msg = chatBoxMessage.Message;
 
             // Check for profanity and replace if needed

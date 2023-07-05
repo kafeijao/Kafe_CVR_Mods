@@ -180,7 +180,7 @@ public static class API {
 
 
     /// <summary>
-    /// Allows removing a previously added interceptor to RECEIVED messages to override the display of the messages.
+    /// Allows removing a previously added interceptor to SENT messages to override the display of the messages.
     /// </summary>
     /// <param name="interceptor">A reference for the interceptor previously added.</param>
     public static void RemoveSendingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) => SendingInterceptors.Remove(interceptor);

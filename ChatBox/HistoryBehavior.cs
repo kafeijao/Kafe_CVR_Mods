@@ -317,17 +317,6 @@ public class HistoryBehavior : MonoBehaviour {
                 if (ModConfig.MeIgnoreOscMessages.Value && chatBoxMessage.Source == API.MessageSource.OSC) return;
                 if (ModConfig.MeIgnoreModMessages.Value && chatBoxMessage.Source == API.MessageSource.Mod) return;
 
-                // Check Interceptors
-                foreach (var interceptor in API.ReceivingInterceptors) {
-                    try {
-                        if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnHistory) return;
-                    }
-                    catch (Exception ex) {
-                        MelonLogger.Error("An mod's interceptor errored :(");
-                        MelonLogger.Error(ex);
-                    }
-                }
-
                 AddMessage(chatBoxMessage);
             };
             API.OnMessageSent += chatBoxMessage => {
@@ -338,17 +327,6 @@ public class HistoryBehavior : MonoBehaviour {
                 // Handle typing source ignores
                 if (ModConfig.MeIgnoreOscMessages.Value && chatBoxMessage.Source == API.MessageSource.OSC) return;
                 if (ModConfig.MeIgnoreModMessages.Value && chatBoxMessage.Source == API.MessageSource.Mod) return;
-
-                // Check Interceptors
-                foreach (var interceptor in API.SendingInterceptors) {
-                    try {
-                        if (interceptor.Invoke(chatBoxMessage).PreventDisplayOnHistory) return;
-                    }
-                    catch (Exception ex) {
-                        MelonLogger.Error("An mod's interceptor errored :(");
-                        MelonLogger.Error(ex);
-                    }
-                }
 
                 AddMessage(chatBoxMessage);
             };

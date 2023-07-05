@@ -377,7 +377,7 @@ public static class ModConfig {
                 ConfigJson.UserOverride.Hide => iconVisHide,
                 _ => "N/A"
             };
-            playerCat.AddButton("", buttonIcon, buttonTooltip).OnPress += () => {
+            playerCat.AddButton("Visibility", buttonIcon, buttonTooltip).OnPress += () => {
                 var values = Enum.GetValues(typeof(ConfigJson.UserOverride)).Cast<ConfigJson.UserOverride>().ToArray();
                 var currentIndex = Array.IndexOf(values, playerOverride);
                 var nextOverride = values[(currentIndex + 1) % values.Length];

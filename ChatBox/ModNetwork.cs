@@ -158,6 +158,20 @@ public static class ModNetwork {
                     var displayInHistory = reader.ReadBoolean();
 
                     var chatBoxMessage = new API.ChatBoxMessage((API.MessageSource)messageSrcByte, senderGuid, msg, sendNotification, displayInChatBox, displayInHistory, modName);
+                    // Check Receiving Interceptors
+                    foreach (var interceptor in API.ReceivingInterceptors) {
+                        try {
+                            var interceptorResult = interceptor.Invoke(chatBoxMessage);
+                            if (interceptorResult.PreventDisplayOnChatBox) displayInChatBox = false;
+                            if (interceptorResult.PreventDisplayOnHistory) displayInHistory = false;
+                            chatBoxMessage = new API.ChatBoxMessage((API.MessageSource)messageSrcByte, senderGuid, msg, sendNotification, displayInChatBox, displayInHistory, modName);
+                        }
+                        catch (Exception ex) {
+                            MelonLogger.Error("An mod's interceptor errored :(");
+                            MelonLogger.Error(ex);
+                        }
+                    }
+
                     API.OnMessageReceived?.Invoke(chatBoxMessage);
                     break;
             }
