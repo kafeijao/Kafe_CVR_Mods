@@ -4,6 +4,7 @@
     <PropertyGroup>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationMarkdown>$(MSBuildProjectDirectory)\API.md</DocumentationMarkdown>
+        <VsxmdAutoDeleteXml>True</VsxmdAutoDeleteXml>
     </PropertyGroup>
 
     <ItemGroup>

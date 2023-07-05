@@ -69,10 +69,10 @@ internal static class ModNetwork {
         var keysToResolve = PendingResponses.Where(pair => pair.Value == request).Select(pair => pair.Key).ToList();
         foreach (var key in keysToResolve) {
             CohtmlPatches.Request.DeleteRequest(key);
-            PendingResponses.Remove(key);
             if (result != API.RequestResult.TimedOut) {
                 SendResponse(key, result == API.RequestResult.Accepted, metadata);
             }
+            PendingResponses.Remove(key);
         }
     }
 
