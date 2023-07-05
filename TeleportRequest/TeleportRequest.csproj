@@ -10,6 +10,10 @@
             <HintPath>$(CVRPATH)\Mods\RequestLib.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="ChatBox">
+            <HintPath>$(CVRPATH)\Mods\ChatBox.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
     </ItemGroup>
 
 </Project>

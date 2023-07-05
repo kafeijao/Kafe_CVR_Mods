@@ -7,25 +7,47 @@ namespace Kafe.TeleportRequest;
 
 public static class ModConfig {
 
+    internal static bool HasChatBoxMod = false;
+
     // Melon Prefs
-    // private static MelonPreferences_Category _melonCategory;
-    // internal static MelonPreferences_Entry<TeleportRequest.AutoAcceptPolicy> MeGlobalAutoAcceptPolicy;
+    private static MelonPreferences_Category _melonCategory;
+    internal static MelonPreferences_Entry<bool> MeEnableChatBoxIntegration;
+    internal static MelonPreferences_Entry<bool> MeShowCommandsOnChatBox;
+    internal static MelonPreferences_Entry<bool> MeShowHudMessages;
+
+    internal static MelonPreferences_Entry<string> MeCommandTeleportRequest;
+    internal static MelonPreferences_Entry<string> MeCommandTeleportAccept;
+    internal static MelonPreferences_Entry<string> MeCommandTeleportDecline;
+    internal static MelonPreferences_Entry<string> MeCommandTeleportBack;
 
     public static void InitializeMelonPrefs() {
 
         // Melon Config
-        // _melonCategory = MelonPreferences.CreateCategory(nameof(TeleportRequest));
+        _melonCategory = MelonPreferences.CreateCategory(nameof(TeleportRequest));
 
-        // MeGlobalAutoAcceptPolicy = _melonCategory.CreateEntry("GlobalAutoAcceptPolicy", TeleportRequest.AutoAcceptPolicy.Off,
-        //     description: "What policy should be used for Auto Attempting teleport requests.");
+        MeEnableChatBoxIntegration = _melonCategory.CreateEntry("EnableChatBoxIntegration", true,
+            description: "Whether the ChatBox is listening to the commands or not.");
+        MeShowHudMessages = _melonCategory.CreateEntry("ShowHudMessages", true,
+            description: "Whether to show Hud messages with information about the requests or not.");
+        MeShowCommandsOnChatBox = _melonCategory.CreateEntry("ShowCommandsOnChatBox", true,
+            description: "Whether to show the commands on the ChatBox (local and remote players).");
+
+        MeCommandTeleportRequest = _melonCategory.CreateEntry("CommandTeleportRequest", "/tpr",
+            description: "Command to be used to request to teleport to a player. Default: /tpr");
+        MeCommandTeleportAccept = _melonCategory.CreateEntry("CommandTeleportAccept", "/tpa",
+            description: "Command to be used to request to teleport to a player. Default: /tpa");
+        MeCommandTeleportDecline = _melonCategory.CreateEntry("CommandTeleportDecline", "/tpd",
+            description: "Command to be used to request to teleport to a player. Default: /tpd");
+        MeCommandTeleportBack = _melonCategory.CreateEntry("CommandTeleportBack", "/tpb",
+            description: "Command to be used to request to teleport back to a previous location. Default: /tpb");
     }
 
     public static void InitializeBTKUI() {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry) {
-        var toggle = category.AddToggle(entry.DisplayName, entry.Description, entry.Value);
+    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry, string nameOverride = "") {
+        var toggle = category.AddToggle(string.IsNullOrWhiteSpace(nameOverride) ? entry.DisplayName : nameOverride, entry.Description, entry.Value);
         toggle.OnValueUpdated += b => {
             if (b != entry.Value) entry.Value = b;
         };
@@ -47,15 +69,31 @@ public static class ModConfig {
     private static void SetupBTKUI(CVR_MenuManager manager) {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
-        // var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
-        // var miscCategory = miscPage.AddCategory(nameof(TeleportRequest));
-        //
-        // var modPage = miscCategory.AddPage($"{nameof(TeleportRequest)} Settings", "", $"Configure the settings for {nameof(TeleportRequest)}.", nameof(TeleportRequest));
-        // modPage.MenuTitle = $"{nameof(TeleportRequest)} Settings";
-        //
-        // var modSettingsCategory = modPage.AddCategory("Settings");
-        //
-        // AddMelonToggle(modSettingsCategory, MeOnlyViewFriends);
+        var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
+        var miscCategory = miscPage.AddCategory(nameof(TeleportRequest), nameof(TeleportRequest));
+
+        if (HasChatBoxMod) {
+            AddMelonToggle(miscCategory, MeEnableChatBoxIntegration, "ChatBox Integration");
+            AddMelonToggle(miscCategory, MeShowCommandsOnChatBox, "Show Commands on ChatBox");
+        }
+
+        BTKUILib.UIObjects.Components.Button goBackButton = null;
+        void HandleGoBackButton() {
+            goBackButton?.Delete();
+            var goBackCount = TeleportRequest.GoBackCount();
+            if (goBackCount > 0) {
+                goBackButton = miscCategory.AddButton($"Go Back [{goBackCount}]", "",
+                    $"Goes back to the location before teleporting to a player, there's {goBackCount} previous locations saved.");
+                goBackButton.OnPress += TeleportRequest.TeleportBack;
+            }
+            else {
+                goBackButton = miscCategory.AddButton("Go Back [Not Available]", "", "Can't teleport " +
+                                                                      "back since there is no previous locations to teleport to :(");
+            }
+        }
+
+        TeleportRequest.PreviousTeleportLocationsChanged += HandleGoBackButton;
+        HandleGoBackButton();
 
         var playerCat = BTKUILib.QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(TeleportRequest));
 

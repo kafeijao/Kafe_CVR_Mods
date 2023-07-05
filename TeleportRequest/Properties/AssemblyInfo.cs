@@ -24,11 +24,13 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.RequestLibName, AssemblyInfoParams.BTKUILibName)]
+[assembly: MelonOptionalDependencies(AssemblyInfoParams.ChatBoxName)]
 
 namespace Kafe.TeleportRequest.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.2";
+    public const string Version = "0.0.3";
     public const string Author = "kafeijao";
     public const string BTKUILibName = "BTKUILib";
     public const string RequestLibName = "RequestLib";
+    public const string ChatBoxName = "ChatBox";
 }
