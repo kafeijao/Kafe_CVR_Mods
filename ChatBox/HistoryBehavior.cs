@@ -31,9 +31,6 @@ public class HistoryBehavior : MonoBehaviour {
     private const float TimestampFontSizeModifier = 1.125f;
     private const float UsernameFontSizeModifier = 1.5625f;
 
-    private static readonly int UILayer = LayerMask.NameToLayer("UI");
-    private static readonly int UIInternalLayer = LayerMask.NameToLayer("UI Internal");
-
     private Transform _quickMenuGo;
 
     // Menu Current Settings
@@ -139,7 +136,8 @@ public class HistoryBehavior : MonoBehaviour {
                 else {
                     menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
                 }
-                SetGameLayerRecursive(menuControllerTransform.gameObject, UIInternalLayer);
+
+                SetGameLayerRecursive(menuControllerTransform.gameObject, LayerMask.NameToLayer("UI Internal"));
                 menuControllerTransform.localRotation = Quaternion.identity;
                 _rootRectTransform.transform.localScale = _menuScaleVector;
                 _rootRectPickup.enabled = false;
@@ -151,7 +149,7 @@ public class HistoryBehavior : MonoBehaviour {
                 var rot = menuControllerTransform.rotation;
                 menuControllerTransform.SetParent(null, true);
                 menuControllerTransform.SetPositionAndRotation(pos, rot);
-                SetGameLayerRecursive(menuControllerTransform.gameObject, UILayer);
+                SetGameLayerRecursive(menuControllerTransform.gameObject, LayerMask.NameToLayer("UI"));
                 break;
 
             case MenuTarget.HUD:
@@ -161,7 +159,7 @@ public class HistoryBehavior : MonoBehaviour {
                 menuControllerTransform.SetParent(target.transform, true);
                 _rootRectPickup.enabled = false;
                 _rootRectPickupHighlight.enabled = false;
-                SetGameLayerRecursive(menuControllerTransform.gameObject, UIInternalLayer);
+                SetGameLayerRecursive(menuControllerTransform.gameObject, LayerMask.NameToLayer("UI Internal"));
                 break;
         }
 

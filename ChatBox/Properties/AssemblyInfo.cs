@@ -24,11 +24,11 @@ using MelonLoader;
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
-//[assembly: MelonAdditionalCredits(AstroDoge")] Needs ML 6.1
+//[assembly: MelonAdditionalCredits(AssemblyInfoParams.AstroDoge)] Needs ML 6.1
 
 namespace Kafe.ChatBox.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.6";
+    public const string Version = "1.0.7";
     public const string Author = "kafeijao";
     public const string AstroDoge = "AstroDoge";
     public const string BTKUILibName = "BTKUILib";
