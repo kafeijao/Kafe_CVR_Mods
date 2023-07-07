@@ -1,10 +1,11 @@
-﻿using System.Reflection;
+﻿using System.Collections;
+using System.Reflection;
 using System.Reflection.Emit;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.MovementSystem;
+using ABI.CCK.Components;
 using HarmonyLib;
-using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.RealisticFlight;
@@ -18,119 +19,112 @@ public class FlightController : MonoBehaviour {
 
     private void Flap(float leftVelocity, Vector3 leftFlapDirection, float rightVelocity, Vector3 rightFlapDirection) {
 
-        #if DEBUG
-        MelonLogger.Msg($"Flapped {leftVelocity} | {rightVelocity}");
-        #endif
-
         var movementSystem = MovementSystem.Instance;
-
-        // Clamp ->
-
-        // if ((double) this.proxyPhysics.velocity.magnitude > (double) this.minAppliedVelocity)
-        // this._velocity = Vector3.ClampMagnitude(this.proxyPhysics.velocity, this.maxAppliedVelocity);
-        // Do stuff before clamping so if we go over the limit it wont be an issue
-
-        //
-        // this.appliedVelocityFriction = 0.9
-
-        // Grounded = divide by 5 friction
-        // this.appliedVelocityFriction
-
-        // Use this to scale to the avatar
-        //movementSystem.movementScale;
 
         if (movementSystem.canFly && movementSystem.canMove && !movementSystem.flying &&
             !movementSystem._holoPortEnabled) {
             movementSystem._isGrounded = false;
             movementSystem._isGroundedRaw = false;
 
-            if (movementSystem._currentParent != null)
-                movementSystem._inheritVelocity = movementSystem._currentParent.GetVelocity();
-            var avgVelocity = (leftVelocity + rightVelocity) / 2f;
-            movementSystem._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * 2f * movementSystem.gravity * avgVelocity);
+            if (movementSystem._currentParent != null) movementSystem._inheritVelocity = movementSystem._currentParent.GetVelocity();
+
+            // var avgVelocity = (leftVelocity + rightVelocity) / 2f;
+
+            // // Fling up
+            // movementSystem._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * 5f * movementSystem.gravity * avgVelocity);
+            //
+            // // Convert the flap directions from local to global space
+            // var globalLeftFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(leftFlapDirection);
+            // var globalRightFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(rightFlapDirection);
+            //
+            // // Set the inherited velocity to be this opposite movement direction
+            // movementSystem._inheritVelocity += globalLeftFlapDirection  with { y = 0 } * leftVelocity  * 5f;
+            // movementSystem._inheritVelocity += globalRightFlapDirection with { y = 0 } * rightVelocity * 5f;
+
+            // Convert the flap directions from local to global space
+            var globalLeftFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(leftFlapDirection);
+            globalLeftFlapDirection.Normalize();
+            globalLeftFlapDirection.x *= ModConfig.MeFlapMultiplierHorizontal.Value;
+            globalLeftFlapDirection.z *= ModConfig.MeFlapMultiplierHorizontal.Value;
+
+            var globalRightFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(rightFlapDirection);
+            globalRightFlapDirection.Normalize();
+            globalRightFlapDirection.x *= ModConfig.MeFlapMultiplierHorizontal.Value;
+            globalRightFlapDirection.z *= ModConfig.MeFlapMultiplierHorizontal.Value;
+
+            // Use gravity to take off the floor, use half a jump height as a baseline
+            MovementSystem.Instance._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * movementSystem.gravity);
+            MovementSystem.Instance._gravityVelocity = 0f;
+
+            // Set the inherited velocity to be this opposite movement direction
+            var leftVelocityVector = globalLeftFlapDirection * leftVelocity;
+            var rightVelocityVector = globalRightFlapDirection * rightVelocity;
+
+            var totalVelocityVector = leftVelocityVector + rightVelocityVector;
+            movementSystem._inheritVelocity += totalVelocityVector * ModConfig.MeFlapMultiplier.Value * (MetaPort.Instance.isUsingVr ? 2.5f : 1f);
+
+            // Handle the parameter IsGliding
+            if (_triggerJustFlappedCoroutine != null) StopCoroutine(_triggerJustFlappedCoroutine);
+            _triggerJustFlappedCoroutine = StartCoroutine(TriggerJustFlapped(totalVelocityVector.magnitude));
         }
+    }
+
+    private Coroutine _triggerJustFlappedCoroutine;
+
+    private static IEnumerator TriggerJustFlapped(float velocity) {
+        PlayerSetup.Instance.animatorManager.SetAnimatorParameter("JustFlapped", 1f);
+        PlayerSetup.Instance.animatorManager.SetAnimatorParameter("FlapVelocity", velocity);
+        yield return new WaitForSeconds(0.2f);
+        PlayerSetup.Instance.animatorManager.SetAnimatorParameter("JustFlapped", 0f);
+        PlayerSetup.Instance.animatorManager.SetAnimatorParameter("FlapVelocity", 0f);
     }
 
     private static bool _previousGlide = true;
     private static float _rotationAmount;
-    private float _initialVelMagnitude;
-    private Vector3 _lastAvatarPosition;
 
-    private void HandleGliding(bool isGliding, Vector2 glideVector) {
-        var currentPos = PlayerSetup.Instance._avatar.transform.position;
-        var currentFlyDirectionRaw = (_lastAvatarPosition - currentPos) / Time.deltaTime;
-        _lastAvatarPosition = currentPos;
+    private static Vector3 _lastPosition = Vector3.zero;
+    private static float _lastVelocity = 0f;
+
+    private static void HandleGliding(bool isGliding, Vector2 glideVector) {
 
         var movementSystem = MovementSystem.Instance;
-
         var actualGliding = isGliding && movementSystem.canFly && movementSystem.canMove && !movementSystem.flying && !movementSystem._holoPortEnabled;
+
+        var currentPosition = PlayerSetup.Instance._avatar.transform.position;
 
         if (_previousGlide != actualGliding) {
             if (actualGliding) {
-                _initialVelMagnitude = currentFlyDirectionRaw.magnitude;
+                // Set the initial velocity when start gliding
+                _lastVelocity = ((currentPosition - _lastPosition) / Time.deltaTime).magnitude;
             }
-            else {
-                movementSystem._appliedGravity = Vector3.zero;
-            }
-            movementSystem.gravity = actualGliding ? 0f : 10f;
+
+            // Set the parameter IsGliding
+            PlayerSetup.Instance.animatorManager.SetAnimatorParameter("IsGliding", actualGliding ? 1f : 0f);
+
             _previousGlide = actualGliding;
         }
 
-        _rotationAmount = 0;
+        _lastPosition = currentPosition;
 
-        if (actualGliding) {
+        // If not gliding we can stop here
+        if (!actualGliding) return;
 
-            //var velocity = currentFlyDirectionRaw.magnitude;
+        // Set the rotation to be handled later during the UpdateInput of MouseAndKeyboard input module
+        _rotationAmount = glideVector.x * Mathf.Clamp(_lastVelocity, -0.5f, 1f);
 
-            //MelonLogger.Msg($"Velocity: {_initialVelMagnitude}");
+        var glideFactor = Mathf.Clamp(-glideVector.y, -1f, 1f);
+        var currentGravity = Mathf.Abs(CVRWorld.Instance.gravity) * 0.5f;
 
-            _rotationAmount = glideVector.x * Mathf.Clamp(_initialVelMagnitude, -1f, 1f);
+        // SDraw funny math code, don't ask me how it works (it's magic)
+        _lastVelocity = Mathf.Clamp(_lastVelocity + glideFactor * currentGravity * Time.deltaTime, 0f, float.MaxValue);
+        var currentVelocityVector = Quaternion.Euler(Mathf.Asin(glideFactor) * Mathf.Rad2Deg, PlayerSetup.Instance._avatar.transform.rotation.eulerAngles.y, 0f) * new Vector3(0f, 0f, _lastVelocity);
 
-            //var forwardDirection = Quaternion.Euler(0, movementSystem._headingAngle, 0) * Vector3.forward;
-            var forwardDirection = PlayerSetup.Instance._avatar.transform.forward;
+        // Set the parameter GlidingVelocity
+        PlayerSetup.Instance.animatorManager.SetAnimatorParameter("GlidingVelocity", _lastVelocity);
 
-            forwardDirection.y = glideVector.y;
-            forwardDirection.Normalize();
-            movementSystem._appliedGravity = forwardDirection * _initialVelMagnitude;
-            // movementSystem._velocity = Vector3.zero;
-
-            if (Input.GetKey(KeyCode.Keypad4)) {
-                // CVRInputManager.Instance.lookVector.x -= 0.1f;
-                _rotationAmount = -1f * Time.deltaTime * 60;
-            }
-            else if (Input.GetKey(KeyCode.Keypad6)) {
-                _rotationAmount = 1f * Time.deltaTime * 60;
-                // CVRInputManager.Instance.lookVector.x += 0.1f;
-            }
-            if (Input.GetKey(KeyCode.Keypad8)) {
-                forwardDirection.y = -1f * Time.deltaTime * 60;
-            }
-            else if (Input.GetKey(KeyCode.Keypad2)) {
-                forwardDirection.y = 1f * Time.deltaTime * 60;
-            }
-
-            // // movementSystem._appliedGravity = forwardDirection * _totalVelocity;
-            // movementSystem._appliedGravity = forwardDirection * velocity;
-            // MelonLogger.Msg(movementSystem._appliedGravity.ToString("F2"));
-
-            // When gliding, gravity doesn't affect the character
-            //movementSystem.gravity = 0;
-
-            // Manipulate y of appliedGravity for going up and down
-            // GlideFactor could be a predefined constant to adjust the rate of altitude change
-            // float GlideFactor = 0.1f;
-            // movementSystem._appliedGravity.y += glideVector.y * GlideFactor;
-            //
-            // // Depending on the upward or downward movement, increase or decrease forward speed
-            // // SpeedFactor could be a predefined constant to adjust the rate of speed change
-            // float SpeedFactor = 0.2f;
-            // movementSystem._appliedGravity.z += -movementSystem._appliedGravity.y * SpeedFactor;
-            //
-            // // You might want to clamp the velocity to prevent it going too high or too low
-            // movementSystem._appliedGravity.y = Mathf.Clamp(movementSystem._appliedGravity.y, -1f, 1f);
-            // movementSystem._appliedGravity.z = Mathf.Clamp(movementSystem._appliedGravity.z, 0, 10f);
-        }
-
+        MovementSystem.Instance._appliedGravity = Vector3.zero;
+        MovementSystem.Instance._gravityVelocity = 0f;
+        MovementSystem.Instance._inheritVelocity = currentVelocityVector;
     }
 
     [HarmonyPatch]
@@ -160,6 +154,7 @@ public class FlightController : MonoBehaviour {
             // Update the input module to rotate accordingly
             if (_previousGlide) {
                 __instance._inputManager.lookVector.x += _rotationAmount;
+                _rotationAmount = 0;
             }
         }
 
@@ -204,19 +199,5 @@ public class FlightController : MonoBehaviour {
                 matched.SetOperandAndAdvance(AccessTools.Method(typeof(HarmonyPatches), nameof(SmoothDampCustom)));
             }).InstructionEnumeration();
         }
-
-        //
-        // [HarmonyPrefix]
-        // [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.Update))]
-        // public static void After_MovementSystem_Update(MovementSystem __instance) {
-        //     try {
-        //
-        //     }
-        //     catch (Exception e) {
-        //         MelonLogger.Error($"Error during {nameof(After_MovementSystem_Update)} patch.");
-        //         MelonLogger.Error(e);
-        //         throw;
-        //     }
-        // }
     }
 }

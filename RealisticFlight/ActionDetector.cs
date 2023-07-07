@@ -18,7 +18,7 @@ public class ActionDetector : MonoBehaviour {
     private HumanPose _humanPose;
     private HumanPoseHandler _humanPoseHandler;
 
-    public float timeThreshold = 0.5f;
+    public float timeThreshold = 0.3f;
 
     private const float ArmDownUpThreshold = 0.35f;
     private const float ArmsAlignmentMinAngle = 135f;
@@ -56,7 +56,8 @@ public class ActionDetector : MonoBehaviour {
         public FlapState FlapState = FlapState.Idle;
         public float FlapStartedTime;
         public Vector3 InitialPosition;
-        public Vector3 FlapDirectionNormalized;
+        public Vector3 InitialPositionFromAvatar;
+        public Vector3 FlapDirection;
         public Vector3 PreviousPosition;
         public float DistanceFlapped;
 
@@ -160,9 +161,6 @@ public class ActionDetector : MonoBehaviour {
     private int _rightForearmTwistIdx;
 
     private float GetLeftArmDownUp() {
-        #if DEBUG
-        if (Time.time > _lastUpdate) MelonLogger.Msg($"LeftArmUpDown: {_humanPose.muscles[_leftShoulderUpDownIdx]:F2} + {_humanPose.muscles[_leftArmUpDownIdx]:F2} + {_humanPose.muscles[_leftHandUpDownIdx]:F2} + = {((_humanPose.muscles[_leftShoulderUpDownIdx] + _humanPose.muscles[_leftArmUpDownIdx] + _humanPose.muscles[_leftHandUpDownIdx])/3f):F2}");
-        #endif
         return (_humanPose.muscles[_leftShoulderUpDownIdx] + _humanPose.muscles[_leftArmUpDownIdx] + _humanPose.muscles[_leftHandUpDownIdx]) / 3f;
         // arm down -30, limit -35, up 30 / limit 35
         // MelonLogger.Msg($"ArmUpDown: {humanPose.muscles[_spineLeftRightIdx]:F2} + {humanPose.muscles[_chestLeftRightIdx]:F2} + {humanPose.muscles[_leftShoulderUpDownIdx]:F2} + {humanPose.muscles[_leftArmUpDownIdx]:F2} + {humanPose.muscles[_leftHandUpDownIdx]:F2} + = {((humanPose.muscles[_leftShoulderUpDownIdx] + humanPose.muscles[_leftArmUpDownIdx] + humanPose.muscles[_leftHandUpDownIdx])/5f):F2}");
@@ -170,25 +168,16 @@ public class ActionDetector : MonoBehaviour {
     }
 
     private float GetLeftWristTwist() {
-        #if DEBUG
-        if (Time.time > _lastUpdate) MelonLogger.Msg($"LeftHandTwist: {_humanPose.muscles[_leftArmTwistIdx]:F2} + {_humanPose.muscles[_leftForearmTwistIdx]:F2} ={((_humanPose.muscles[_leftArmTwistIdx]+_humanPose.muscles[_leftForearmTwistIdx])/2f):F2}");
-        #endif
         return (_humanPose.muscles[_leftArmTwistIdx] + _humanPose.muscles[_leftForearmTwistIdx]) / 2f;
         // -0.25/-0.30 when thumb down, +0.25/0.30 when thumb up
     }
 
     private float GetRightArmDownUp() {
-        #if DEBUG
-        if (Time.time > _lastUpdate) MelonLogger.Msg($"RightArmUpDown: {_humanPose.muscles[_rightShoulderUpDownIdx]:F2} + {_humanPose.muscles[_rightArmUpDownIdx]:F2} + {_humanPose.muscles[_rightHandUpDownIdx]:F2} + = {((_humanPose.muscles[_rightShoulderUpDownIdx] + _humanPose.muscles[_rightArmUpDownIdx] + _humanPose.muscles[_rightHandUpDownIdx])/3f):F2}");
-        #endif
         return (_humanPose.muscles[_rightShoulderUpDownIdx] + _humanPose.muscles[_rightArmUpDownIdx] + _humanPose.muscles[_rightHandUpDownIdx]) / 3f;
         // arm down -30, limit -35, up 30 / limit 35
        }
 
     private float GetRightWristTwist() {
-        #if DEBUG
-        if (Time.time > _lastUpdate) MelonLogger.Msg($"RightHandTwist: {_humanPose.muscles[_rightArmTwistIdx]:F2} + {_humanPose.muscles[_rightForearmTwistIdx]:F2} ={((_humanPose.muscles[_rightArmTwistIdx]+_humanPose.muscles[_rightForearmTwistIdx])/2f):F2}");
-        #endif
         return (_humanPose.muscles[_rightArmTwistIdx] + _humanPose.muscles[_rightForearmTwistIdx]) / 2f;
         // -0.25/-0.30 when thumb down, +0.25/0.30 when thumb up
     }
@@ -262,18 +251,9 @@ public class ActionDetector : MonoBehaviour {
         _onLateUpdate -= ProcessUpdate;
     }
 
-    private bool isGlidingOverride = false;
-
     private void ProcessUpdate() {
 
-        if (!ModConfig.MeFlapToFly.Value || !MetaPort.Instance.isUsingVr) return;
-
-        if (Input.GetKeyDown(KeyCode.PageUp)) {
-            isGlidingOverride = true;
-        }
-        if (Input.GetKeyDown(KeyCode.PageDown)) {
-            isGlidingOverride = false;
-        }
+        if (!ModConfig.MeCustomFlightInVR.Value && MetaPort.Instance.isUsingVr || !ModConfig.MeCustomFlightInDesktop.Value && !MetaPort.Instance.isUsingVr) return;
 
         // Process Flapping
         ProcessHandFlap(_leftHandInfo);
@@ -284,8 +264,8 @@ public class ActionDetector : MonoBehaviour {
 
         // Check if we flappin
         if (_leftHandInfo.FlapState == FlapState.Flapped && _rightHandInfo.FlapState == FlapState.Flapped) {
-            Flapped?.Invoke(_leftHandInfo.FlapVelocity, _leftHandInfo.FlapDirectionNormalized,
-                _rightHandInfo.FlapVelocity, _rightHandInfo.FlapDirectionNormalized);
+            Flapped?.Invoke(_leftHandInfo.FlapVelocity, _leftHandInfo.FlapDirection,
+                _rightHandInfo.FlapVelocity, _rightHandInfo.FlapDirection);
             _leftHandInfo.FlapState = FlapState.Idle;
             _rightHandInfo.FlapState = FlapState.Idle;
         }
@@ -299,9 +279,6 @@ public class ActionDetector : MonoBehaviour {
                 // Check if our hands are above our head
                 if (handInfo.HandTransform.position.y > _head.position.y) {
                     handInfo.FlapState = FlapState.StartingFlap;
-                    #if DEBUG
-                    MelonLogger.Msg($"Starting Hand: {handInfo.Side.ToString()}...");
-                    #endif
                 }
 
                 break;
@@ -312,12 +289,10 @@ public class ActionDetector : MonoBehaviour {
                     handInfo.FlapStartedTime = Time.time;
                     var handPosition = handInfo.HandTransform.position;
                     handInfo.InitialPosition = handPosition;
+                    handInfo.InitialPositionFromAvatar = PlayerSetup.Instance._avatar.transform.InverseTransformPoint(handPosition);
                     handInfo.PreviousPosition = handPosition;
                     handInfo.DistanceFlapped = 0f;
                     handInfo.FlapState = FlapState.Flapping;
-                    #if DEBUG
-                    MelonLogger.Msg($"Flapping Hand: {handInfo.Side.ToString()}...");
-                    #endif
                 }
 
                 break;
@@ -329,10 +304,6 @@ public class ActionDetector : MonoBehaviour {
                 if (handInfo.PreviousPosition.y < handInfo.HandTransform.position.y ||
                     Time.time > handInfo.FlapStartedTime + timeThreshold) {
                     handInfo.FlapState = FlapState.Idle;
-
-                    #if DEBUG
-                    MelonLogger.Msg($"Failed! Hand: {handInfo.Side.ToString()}");
-                    #endif
                     break;
                 }
 
@@ -345,11 +316,8 @@ public class ActionDetector : MonoBehaviour {
                     handInfo.FlapState = FlapState.Flapped;
                     // Calculate the flap velocity by using the accumulated flapped distance across the time it took
                     handInfo.FlapVelocity = handInfo.DistanceFlapped / (Time.time - handInfo.FlapStartedTime);
-                    handInfo.FlapDirectionNormalized = (handInfo.InitialPosition - currentHandPosition).normalized;
-
-                    #if DEBUG
-                    MelonLogger.Msg($"Flapped Hand: {handInfo.Side.ToString()}");
-                    #endif
+                    // handInfo.FlapDirectionNormalized = (handInfo.InitialPosition - currentHandPosition).normalized;
+                    handInfo.FlapDirection = handInfo.InitialPositionFromAvatar - PlayerSetup.Instance._avatar.transform.InverseTransformPoint(currentHandPosition);
                 }
 
                 break;
@@ -358,64 +326,13 @@ public class ActionDetector : MonoBehaviour {
                 // Keep checking the timer to cancel...
                 if (Time.time > handInfo.FlapStartedTime + timeThreshold) {
                     handInfo.FlapState = FlapState.Idle;
-                    #if DEBUG
-                    MelonLogger.Msg($"Failed! Hand: {handInfo.Side.ToString()}");
-                    #endif
                 }
 
                 break;
         }
-
     }
 
-    private float _lastUpdate = 0f;
-
     private void ProcessHandsGlide() {
-        // // leftArmSceneUpAngle: 71.04 | rightArmSceneUpAngle: 113.31 | armsAngle: 169.87 | armStretchLeft: 0.42/0.42=1.00 | armStretchRight: 0.42/0.42=1.00 | armsStretched: True | armStretch: 0.42/0.42=1.00
-        //
-        //
-        // // Get the angles between arms and scene up
-        // float leftArmSceneUpAngle = Vector3.Angle(_leftHandInfo.ArmTransform.up, Vector3.up);
-        // float rightArmSceneUpAngle = Vector3.Angle(_rightHandInfo.ArmTransform.up, Vector3.up);
-        //
-        // // Get the angle between arms
-        // float armsAngle = Vector3.Angle(_leftHandInfo.ArmTransform.up, _rightHandInfo.ArmTransform.up);
-        //
-        //
-        // // Calculate angle in degrees between hand's right direction (thumb direction) and reference direction
-        // // rightThump up = 0, rightThumb down = 180, left is the opposite
-        // float leftThumbSceneUpAngle = Vector3.Angle(_leftHandInfo.HandTransform.right, Vector3.up);
-        // float rightThumbSceneUpAngle = Vector3.Angle(_rightHandInfo.HandTransform.right, Vector3.up);
-        //
-        // bool handsAreKindaFlat =
-        //     leftThumbSceneUpAngle is >= 25f and <= 155f && rightThumbSceneUpAngle is >= 25f and <= 155f;
-        //
-        // // Conditions to check if the avatar is in gliding position
-        // bool armsStretched = _leftHandInfo.GetCurrentArmSpan() > _leftHandInfo.ArmLength * 0.9f &&
-        //                      _rightHandInfo.GetCurrentArmSpan() > _rightHandInfo.ArmLength * 0.9f;
-        //
-        // bool armsPointingOpposite = armsAngle > 150f;
-        // bool armsNotTooVertical =
-        //     leftArmSceneUpAngle is >= 40f and <= 140f && rightArmSceneUpAngle is >= 40f and <= 140f;
-        //
-        // if (armsStretched && armsPointingOpposite && armsNotTooVertical && handsAreKindaFlat) {
-        //     if (_leftHandInfo.GlideState != GlideState.Gliding || _rightHandInfo.GlideState != GlideState.Gliding) {
-        //         _leftHandInfo.GlideState = GlideState.Gliding;
-        //         _rightHandInfo.GlideState = GlideState.Gliding;
-        //         #if DEBUG
-        //         MelonLogger.Msg("Gliding started...");
-        //         #endif
-        //     }
-        // }
-        // else {
-        //     if (_leftHandInfo.GlideState != GlideState.Idle || _rightHandInfo.GlideState != GlideState.Idle) {
-        //         _leftHandInfo.GlideState = GlideState.Idle;
-        //         _rightHandInfo.GlideState = GlideState.Idle;
-        //         #if DEBUG
-        //         MelonLogger.Msg("Gliding stopped...");
-        //         #endif
-        //     }
-        // }
 
         // Update Human Pose
         _humanPoseHandler.GetHumanPose(ref _humanPose);
@@ -435,9 +352,7 @@ public class ActionDetector : MonoBehaviour {
         var leftArmDirection = _leftHandInfo.HandTransform.position - _leftHandInfo.ArmTransform.position;
         var rightArmDirection = _rightHandInfo.HandTransform.position - _rightHandInfo.ArmTransform.position;
         var armsAligned = Vector3.Angle(leftArmDirection, rightArmDirection) >= ArmsAlignmentMinAngle;
-        #if DEBUG
-        if (Time.time > _lastUpdate) MelonLogger.Msg($"ArmsAngle: {Vector3.Angle(leftArmDirection, rightArmDirection):F2}, aligned: {armsAligned}");
-        #endif
+
         // float armsAngle = Vector3.Angle(leftArmDirection, rightArmDirection);
         // var areArmsOpposed = leftArmDownUp * rightArmDownUp < 0 || Math.Abs(leftArmDownUp + rightArmDownUp) < ArmDownUpDifferenceThreshold;
 
@@ -451,12 +366,12 @@ public class ActionDetector : MonoBehaviour {
 
         var glidingVector = new Vector2(x, y);
 
-        if (isGlidingOverride || !isGrounded && armsStretched && armsAligned
-            && leftArmDownUp is <= ArmDownUpThreshold and >= -ArmDownUpThreshold
-            && rightArmDownUp is <= ArmDownUpThreshold and >= -ArmDownUpThreshold
-            && leftWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold
-            && rightWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold) {
+        var armsAngled = leftArmDownUp is <= ArmDownUpThreshold and >= -ArmDownUpThreshold
+                   && rightArmDownUp is <= ArmDownUpThreshold and >= -ArmDownUpThreshold
+                   && leftWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold
+                   && rightWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold;
 
+        if (!isGrounded && armsStretched && armsAligned && armsAngled) {
             Gliding?.Invoke(true, glidingVector);
             if (_leftHandInfo.GlideState != GlideState.Gliding || _rightHandInfo.GlideState != GlideState.Gliding) {
                 _leftHandInfo.GlideState = GlideState.Gliding;
@@ -471,34 +386,41 @@ public class ActionDetector : MonoBehaviour {
             }
         }
 
-
-        if (Time.time > _lastUpdate) {
-
-            #if DEBUG
-            MelonLogger.Msg($"armsStretched: {armsStretched} | " +
-                            $"armsAligned: {armsAligned} | " +
-                            $"leftArmDownUp: {leftArmDownUp:F2} | " +
-                            $"rightArmDownUp: {rightArmDownUp:F2} | " +
-                            $"leftWristTwist: {leftWristTwist:F2} | " +
-                            $"rightWristTwist: {rightWristTwist:F2} | " +
-                            $"isGliding: {isGliding} | " +
-                            $"glidingVector: {glidingVector.ToString("F2")} | " +
-                            "");
-            #endif
-
-            // MelonLogger.Msg($"leftArmSceneUpAngle: {leftArmSceneUpAngle:F2} | " +
-            //                 $"rightArmSceneUpAngle: {rightArmSceneUpAngle:F2} | " +
-            //                 $"armsAngle: {armsAngle:F2} | " +
-            //                 $"leftThumbSceneUpAngle: {leftThumbSceneUpAngle:F2} | " +
-            //                 $"rightThumbSceneUpAngle: {rightThumbSceneUpAngle:F2} | " +
-            //
-            //                 $"leftArmSum: {_leftHandInfo.GetCurrentArmAngleSum():F2} | " +
-            //                 $"leftArmAngle: {_leftHandInfo.GetCurrentArmAngle():F2} | " +
-            //                 $"leftHandAngle: {_leftHandInfo.GetCurrentHandAngle():F2} | " +
-            //                 "");
-            _lastUpdate = Time.time + 1f;
-        }
+        #if DEBUG
+        _armsStretched = armsStretched;
+        _armsAligned = armsAligned;
+        _leftArmDownUp = leftArmDownUp;
+        _rightArmDownUp = rightArmDownUp;
+        _leftWristTwist = leftWristTwist;
+        _rightWristTwist = rightWristTwist;
+        _isGliding = _leftHandInfo.GlideState == GlideState.Gliding && _rightHandInfo.GlideState == GlideState.Gliding;
+        _glidingVector = glidingVector;
+        #endif
     }
+
+    #if DEBUG
+    private const int LabelHeight = 24;
+    private bool _armsStretched;
+    private bool _armsAligned;
+    private float _leftArmDownUp;
+    private float _rightArmDownUp;
+    private float _leftWristTwist;
+    private float _rightWristTwist;
+    private bool _isGliding;
+    private Vector3 _glidingVector;
+
+    private void OnGUI() {
+        var i = 0;
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_armsStretched: {_armsStretched}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_armsAligned: {_armsAligned}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_leftArmDownUp: {_leftArmDownUp:F2}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightArmDownUp: {_rightArmDownUp:F2}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_leftWristTwist: {_leftWristTwist:F2}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightWristTwist: {_rightWristTwist:F2}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_isGliding: {_isGliding}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_glidingVector: {_glidingVector.ToString("F2")}");
+    }
+    #endif
 
     [HarmonyPatch]
     internal class HarmonyPatches {

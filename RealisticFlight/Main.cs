@@ -11,16 +11,6 @@ public class RealisticFlight : MelonMod {
 
         ModConfig.InitializeMelonPrefs();
 
-        // Check for BTKUILib
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "BTKUILib") != null) {
-            MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
-            ModConfig.InitializeBTKUI();
-        }
-        else {
-            MelonLogger.Warning($"BTKUILib mod NOT detected! You won't have access to the Instances History feature!");
-        }
-
-
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
@@ -91,7 +81,5 @@ public class RealisticFlight : MelonMod {
                 MelonLogger.Error(e);
             }
         }
-
-
     }
 }
