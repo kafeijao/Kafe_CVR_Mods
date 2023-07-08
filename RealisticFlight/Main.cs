@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Player;
 using HarmonyLib;
+using Kafe.RealisticFlight.Properties;
 using MelonLoader;
 using UnityEngine;
 
@@ -11,6 +12,16 @@ public class RealisticFlight : MelonMod {
 
         ModConfig.InitializeMelonPrefs();
 
+        // Initialize the json config
+        ConfigJson.LoadConfigJson();
+
+        // Check for BTKUILib
+        var possibleBTKUILib = RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.BTKUILibName);
+        if (possibleBTKUILib != null) {
+            MelonLogger.Msg($"Detected {AssemblyInfoParams.BTKUILibName} mod, we're adding the integration!");
+            Integrations.BTKUILibIntegration.InitializeBTKUI();
+        }
+
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
@@ -21,17 +32,18 @@ public class RealisticFlight : MelonMod {
 
         private static readonly List<HumanBodyBones> BonesToCheck = new() {
             HumanBodyBones.Hips,
+            HumanBodyBones.Neck,
             HumanBodyBones.Head,
             // Left
             HumanBodyBones.LeftLowerArm,
             HumanBodyBones.LeftUpperArm,
             HumanBodyBones.LeftHand,
-            HumanBodyBones.LeftThumbProximal,
+            // HumanBodyBones.LeftThumbProximal,
             // Right
             HumanBodyBones.RightLowerArm,
             HumanBodyBones.RightUpperArm,
             HumanBodyBones.RightHand,
-            HumanBodyBones.RightThumbProximal,
+            // HumanBodyBones.RightThumbProximal,
         };
 
         [HarmonyPostfix]

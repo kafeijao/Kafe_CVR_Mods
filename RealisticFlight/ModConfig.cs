@@ -28,6 +28,13 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<float> MeFlapMultiplier;
     internal static MelonPreferences_Entry<float> MeFlapMultiplierHorizontal;
 
+    internal static MelonPreferences_Entry<bool> MeGlidingRotationLikeAirfoils;
+    internal static MelonPreferences_Entry<float> MeRotationAirfoilsSensitivity;
+
+    internal static MelonPreferences_Entry<bool> MeUseAvatarOverrides;
+
+    internal static MelonPreferences_Entry<bool> MeBothArmsDownToStoGliding;
+
     public static void InitializeMelonPrefs() {
 
         // Melon Config
@@ -45,8 +52,17 @@ public static class ModConfig {
         MeFlapMultiplier = _melonCategory.CreateEntry("FlapMultiplier", 1.0f,
             description: "Intensity of the Flap, 1 should be the default, higher values will yield stronger flaps and vice-versa.");
 
-        MeFlapMultiplierHorizontal = _melonCategory.CreateEntry("FlapMultiplierHorizontal", 1.0f,
-            description: "Intensity of the Flap Horizontally, 1 should be the default, higher values will yield stronger flings forward/sides and vice-versa.");
+        MeFlapMultiplierHorizontal = _melonCategory.CreateEntry("FlapMultiplierHorizontal", 2.0f,
+            description: "Intensity of the Flap Horizontally, 2 should be the default, higher values will yield stronger flings forward/sides and vice-versa.");
+
+        MeGlidingRotationLikeAirfoils = _melonCategory.CreateEntry("GlidingRotationLikeAirfoils", false,
+            description: "Whether rotate by rotating your wrists like airfoils or not.");
+
+        MeRotationAirfoilsSensitivity = _melonCategory.CreateEntry("RotationAirfoilsSensitivity", 1f,
+            description: "Rotation sensitivity of the Airfoils, 1 should be the default.");
+
+        MeBothArmsDownToStoGliding = _melonCategory.CreateEntry("BothArmsDownToStoGliding", false,
+            description: "Whether you need to put both arms down to stop flying or not. Might make it harder to unintentional gliding disable.");
 
         // Max Applied Velocity Settings
         MeMaxAppliedVelocity = _melonCategory.CreateEntry("MaxAppliedVelocity", 10000f,
@@ -65,6 +81,11 @@ public static class ModConfig {
         MePreClampVelocityMultiplier = _melonCategory.CreateEntry("PreClampVelocityMultiplier", 0.01f,
             description: "Value to be multiplied with the velocity before clamping the velocity magnitude to MaxAppliedVelocity." +
                          "By having this we allow higher values of velocity to linearly impact the velocity. Defaults to 1.",
+            is_hidden: true);
+
+        // BTKUI menu settings
+        MeUseAvatarOverrides = _melonCategory.CreateEntry("UseAvatarOverrides", false,
+            description: "Whether to have setting overrides for specific avatars.",
             is_hidden: true);
     }
 }

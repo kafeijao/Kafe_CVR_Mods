@@ -21,10 +21,18 @@ public class ActionDetector : MonoBehaviour {
     public float timeThreshold = 0.3f;
 
     private const float ArmDownUpThreshold = 0.35f;
+    private const float ArmDownUpStopThreshold = -0.40f;
+
+    private const float ArmAngleMaxThreshold = 125f;
+    private const float ArmAngleMinThreshold = 55f;
+
+    private const float ArmAngleMinBreakThreshold = 30f;
+
     private const float ArmsAlignmentMinAngle = 135f;
     private const float WristTwistThreshold = 0.30f;
 
     private Transform _head;
+    private Transform _neck;
     private Transform _hips;
 
     public static Action<float, Vector3, float, Vector3> Flapped;
@@ -55,7 +63,6 @@ public class ActionDetector : MonoBehaviour {
         public Transform HandTransform;
         public FlapState FlapState = FlapState.Idle;
         public float FlapStartedTime;
-        public Vector3 InitialPosition;
         public Vector3 InitialPositionFromAvatar;
         public Vector3 FlapDirection;
         public Vector3 PreviousPosition;
@@ -66,80 +73,90 @@ public class ActionDetector : MonoBehaviour {
         // Gliding
         public GlideState GlideState;
         public Transform AvatarRoot;
+        public Transform HipsTransform;
+        public Transform NeckTransform;
         public Transform ArmTransform;
         public Transform ElbowTransform;
-        public Transform ThumbTransform;
+        // public Transform ThumbTransform;
         public float ArmLength;
 
-        public float GetCurrentArmSpan() => Vector3.Distance(ArmTransform.position, HandTransform.position);
-
-        public float GetCurrentArmAngleSum() {
-            // First, calculate the global up vector of the parent transform (e.g., the body)
-            var parentUp = ArmTransform.parent.up;
-
-            // Then, calculate the vectors that the arm, elbow and hand should point along
-            var armVector = ElbowTransform.position - ArmTransform.position;
-            var elbowVector = HandTransform.position - ElbowTransform.position;
-            var handVector = HandTransform.forward; // assuming the hand points in its forward direction
-
-            // Next, calculate the angles between these vectors and the global up vector of the parent
-            var armAngle = Vector3.Angle(parentUp, armVector);
-            var elbowAngle = Vector3.Angle(armVector, elbowVector);
-            var handAngle = Vector3.Angle(elbowVector, handVector);
-
-            // Now sum up the angles to get the total angle
-            return armAngle + elbowAngle + handAngle;
-        }
-
-        public float GetCurrentHandAngle() {
-
-            // You can get the direction in which the thumb is pointing by subtracting the position of the hand from the position of the thumb
-            var thumbDirection = ThumbTransform.position - HandTransform.position;
-
-            // Normalize the direction
-            thumbDirection.Normalize();
-
-            // Get the direction in which the character is pointing
-            var characterDirection = AvatarRoot.forward;
-
-            // Project the thumb's direction onto the scene up axis
-            var projectedThumbDirection = Vector3.ProjectOnPlane(thumbDirection, AvatarRoot.up);
-
-            // Normalize the projected direction
-            projectedThumbDirection.Normalize();
-
-            // Get the angle between the thumb direction and the character direction in degrees
-            var angle = Vector3.Angle(projectedThumbDirection, characterDirection);
-
-            return angle;
-        }
+        public float GetCurrentArmSpan() => Vector3.Distance(ArmTransform.position, HandTransform.position) / Mathf.Max(AvatarRoot.transform.lossyScale.x, 0.00001f);
+        //
+        // public float GetCurrentArmAngleSum() {
+        //     // First, calculate the global up vector of the parent transform (e.g., the body)
+        //     var parentUp = ArmTransform.parent.up;
+        //
+        //     // Then, calculate the vectors that the arm, elbow and hand should point along
+        //     var armVector = ElbowTransform.position - ArmTransform.position;
+        //     var elbowVector = HandTransform.position - ElbowTransform.position;
+        //     var handVector = HandTransform.forward; // assuming the hand points in its forward direction
+        //
+        //     // Next, calculate the angles between these vectors and the global up vector of the parent
+        //     var armAngle = Vector3.Angle(parentUp, armVector);
+        //     var elbowAngle = Vector3.Angle(armVector, elbowVector);
+        //     var handAngle = Vector3.Angle(elbowVector, handVector);
+        //
+        //     // Now sum up the angles to get the total angle
+        //     return armAngle + elbowAngle + handAngle;
+        // }
+        //
+        // public float GetCurrentHandAngle() {
+        //
+        //     // You can get the direction in which the thumb is pointing by subtracting the position of the hand from the position of the thumb
+        //     var thumbDirection = ThumbTransform.position - HandTransform.position;
+        //
+        //     // Normalize the direction
+        //     thumbDirection.Normalize();
+        //
+        //     // Get the direction in which the character is pointing
+        //     var characterDirection = AvatarRoot.forward;
+        //
+        //     // Project the thumb's direction onto the scene up axis
+        //     var projectedThumbDirection = Vector3.ProjectOnPlane(thumbDirection, AvatarRoot.up);
+        //
+        //     // Normalize the projected direction
+        //     projectedThumbDirection.Normalize();
+        //
+        //     // Get the angle between the thumb direction and the character direction in degrees
+        //     var angle = Vector3.Angle(projectedThumbDirection, characterDirection);
+        //
+        //     return angle;
+        // }
+        //
+        // public float GetCurrentArmAngle() {
+        //
+        //     // Get the direction in which the arm is pointing by subtracting the position of the shoulder from the position of the hand
+        //     var armDirection = HandTransform.position - HandTransform.parent.position;
+        //
+        //     // Normalize the direction
+        //     armDirection.Normalize();
+        //
+        //     // Project the arm's direction onto the scene up axis
+        //     var projectedArmDirection = Vector3.ProjectOnPlane(armDirection, AvatarRoot.up);
+        //
+        //     // Normalize the projected direction
+        //     projectedArmDirection.Normalize();
+        //
+        //     // Calculate the dot product between the scene's up vector and the arm's direction. This will give us the cosine of the angle between these vectors
+        //     var cosineAngle = Vector3.Dot(AvatarRoot.up, armDirection);
+        //
+        //     // The acos function returns the angle in radians, so convert it to degrees
+        //     var angleInDegrees = Mathf.Acos(cosineAngle) * Mathf.Rad2Deg;
+        //
+        //     // Since the range of acos is 0 to 180, we need to change it to -90 to 90. If the arm is pointing down, the z component of armDirection will be negative.
+        //     if (armDirection.z < 0) {
+        //         angleInDegrees = -angleInDegrees;
+        //     }
+        //
+        //     return angleInDegrees;
+        // }
 
         public float GetCurrentArmAngle() {
-
-            // Get the direction in which the arm is pointing by subtracting the position of the shoulder from the position of the hand
-            var armDirection = HandTransform.position - HandTransform.parent.position;
-
-            // Normalize the direction
+            var bottomDirection = NeckTransform.position - HipsTransform.parent.position;
+            bottomDirection.Normalize();
+            var armDirection = ArmTransform.position - HandTransform.parent.position;
             armDirection.Normalize();
-
-            // Project the arm's direction onto the scene up axis
-            var projectedArmDirection = Vector3.ProjectOnPlane(armDirection, AvatarRoot.up);
-
-            // Normalize the projected direction
-            projectedArmDirection.Normalize();
-
-            // Calculate the dot product between the scene's up vector and the arm's direction. This will give us the cosine of the angle between these vectors
-            var cosineAngle = Vector3.Dot(AvatarRoot.up, armDirection);
-
-            // The acos function returns the angle in radians, so convert it to degrees
-            var angleInDegrees = Mathf.Acos(cosineAngle) * Mathf.Rad2Deg;
-
-            // Since the range of acos is 0 to 180, we need to change it to -90 to 90. If the arm is pointing down, the z component of armDirection will be negative.
-            if (armDirection.z < 0) {
-                angleInDegrees = -angleInDegrees;
-            }
-
-            return angleInDegrees;
+            return Vector3.Angle(bottomDirection, armDirection);
         }
     }
 
@@ -210,36 +227,42 @@ public class ActionDetector : MonoBehaviour {
         _rightForearmTwistIdx = muscleMap[GetDescriptionFromEnumValue(MuscleBone.RightForearmTwistInOut)];
 
         _head = animator.GetBoneTransform(HumanBodyBones.Head);
+        _neck = animator.GetBoneTransform(HumanBodyBones.Neck);
         _hips = animator.GetBoneTransform(HumanBodyBones.Hips);
 
         var lArmTransform = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
         var lElbowTransform = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
         var lHandTransform = animator.GetBoneTransform(HumanBodyBones.LeftHand);
-        var lThumbTransform = animator.GetBoneTransform(HumanBodyBones.LeftThumbProximal);
+        // var lThumbTransform = animator.GetBoneTransform(HumanBodyBones.LeftThumbProximal);
 
         _leftHandInfo = new HandInfo {
             Side = Hand.Left,
             AvatarRoot = avatarDescriptor.transform,
+            HipsTransform = _hips,
+            NeckTransform = _neck,
             ArmTransform = lArmTransform,
             ElbowTransform = lElbowTransform,
             HandTransform = lHandTransform,
-            ThumbTransform = lThumbTransform,
-            ArmLength = Vector3.Distance(lArmTransform.position, lElbowTransform.position) +
-                        Vector3.Distance(lElbowTransform.position, lHandTransform.position),
+            // ThumbTransform = lThumbTransform,
+            ArmLength = (Vector3.Distance(lArmTransform.position, lElbowTransform.position) +
+                        Vector3.Distance(lElbowTransform.position, lHandTransform.position))
+                        / Mathf.Max(avatarDescriptor.transform.lossyScale.x, 0.00001f),
         };
 
         var rHandTransform = animator.GetBoneTransform(HumanBodyBones.RightHand);
         var rElbowTransform = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
         var rArmTransform = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
-        var rThumbTransform = animator.GetBoneTransform(HumanBodyBones.RightThumbProximal);
+        // var rThumbTransform = animator.GetBoneTransform(HumanBodyBones.RightThumbProximal);
 
         _rightHandInfo = new HandInfo {
             Side = Hand.Right,
             AvatarRoot = avatarDescriptor.transform,
+            HipsTransform = _hips,
+            NeckTransform = _neck,
             ArmTransform = rArmTransform,
             ElbowTransform = rElbowTransform,
             HandTransform = rHandTransform,
-            ThumbTransform = rThumbTransform,
+            // ThumbTransform = rThumbTransform,
             ArmLength = Vector3.Distance(rArmTransform.position, rElbowTransform.position) +
                         Vector3.Distance(rElbowTransform.position, rHandTransform.position),
         };
@@ -255,12 +278,15 @@ public class ActionDetector : MonoBehaviour {
 
         if (!ModConfig.MeCustomFlightInVR.Value && MetaPort.Instance.isUsingVr || !ModConfig.MeCustomFlightInDesktop.Value && !MetaPort.Instance.isUsingVr) return;
 
+        // Ignore if the avatar is disabled
+        if (ModConfig.MeUseAvatarOverrides.Value && !ConfigJson.GetCurrentAvatarEnabled()) return;
+
         // Process Flapping
         ProcessHandFlap(_leftHandInfo);
         ProcessHandFlap(_rightHandInfo);
 
         // Process Gliding
-        ProcessHandsGlide();
+        ProcessHandsGlide(_leftHandInfo, _rightHandInfo);
 
         // Check if we flappin
         if (_leftHandInfo.FlapState == FlapState.Flapped && _rightHandInfo.FlapState == FlapState.Flapped) {
@@ -288,7 +314,6 @@ public class ActionDetector : MonoBehaviour {
                 if (handInfo.HandTransform.position.y <= _head.position.y) {
                     handInfo.FlapStartedTime = Time.time;
                     var handPosition = handInfo.HandTransform.position;
-                    handInfo.InitialPosition = handPosition;
                     handInfo.InitialPositionFromAvatar = PlayerSetup.Instance._avatar.transform.InverseTransformPoint(handPosition);
                     handInfo.PreviousPosition = handPosition;
                     handInfo.DistanceFlapped = 0f;
@@ -332,7 +357,7 @@ public class ActionDetector : MonoBehaviour {
         }
     }
 
-    private void ProcessHandsGlide() {
+    private void ProcessHandsGlide(HandInfo leftHandInfo, HandInfo rightHandInfo) {
 
         // Update Human Pose
         _humanPoseHandler.GetHumanPose(ref _humanPose);
@@ -340,11 +365,15 @@ public class ActionDetector : MonoBehaviour {
         var isGrounded = MovementSystem.Instance._isGrounded;
 
         // Conditions to check if the avatar is in gliding position
-        var armsStretched = _leftHandInfo.GetCurrentArmSpan() > _leftHandInfo.ArmLength * 0.9f &&
-                             _rightHandInfo.GetCurrentArmSpan() > _rightHandInfo.ArmLength * 0.9f;
+        var armsStretched = _leftHandInfo.GetCurrentArmSpan() > _leftHandInfo.ArmLength * 0.8f &&
+                             _rightHandInfo.GetCurrentArmSpan() > _rightHandInfo.ArmLength * 0.8f;
 
-        var leftArmDownUp = GetLeftArmDownUp();
-        var rightArmDownUp = GetRightArmDownUp();
+        // var leftArmDownUp = GetLeftArmDownUp();
+        // var rightArmDownUp = GetRightArmDownUp();
+
+        var leftArmDownUp = leftHandInfo.GetCurrentArmAngle();
+        var rightArmDownUp = rightHandInfo.GetCurrentArmAngle();
+
         var leftWristTwist = GetLeftWristTwist();
         var rightWristTwist = GetRightWristTwist();
 
@@ -356,18 +385,27 @@ public class ActionDetector : MonoBehaviour {
         // float armsAngle = Vector3.Angle(leftArmDirection, rightArmDirection);
         // var areArmsOpposed = leftArmDownUp * rightArmDownUp < 0 || Math.Abs(leftArmDownUp + rightArmDownUp) < ArmDownUpDifferenceThreshold;
 
-        // Calculate normalized arm down up.
-        var leftArmNormalized = leftArmDownUp / ArmDownUpThreshold; // values range from -1 to +1
-        var rightArmNormalized = -rightArmDownUp / ArmDownUpThreshold; // values range from -1 to +1, inverted for right arm
-        var x = (leftArmNormalized + rightArmNormalized) / 2f;
+        float x;
+        if (ModConfig.MeGlidingRotationLikeAirfoils.Value) {
+            x = leftWristTwist - rightWristTwist;
+            x *= ModConfig.MeRotationAirfoilsSensitivity.Value;
+        }
+        else {
+            var leftArmNormalized = Mathf.Lerp(-1, 1, Mathf.InverseLerp(ArmAngleMinThreshold, ArmAngleMaxThreshold, Mathf.Clamp(leftArmDownUp, ArmAngleMinThreshold, ArmAngleMaxThreshold)));
+            // Calculate normalized arm down up.
+            // var leftArmNormalized = leftArmDownUp / ArmDownUpThreshold; // values range from -1 to +1
+            var rightArmNormalized = Mathf.Lerp(1, -1, Mathf.InverseLerp(ArmAngleMinThreshold, ArmAngleMaxThreshold, Mathf.Clamp(rightArmDownUp, ArmAngleMinThreshold, ArmAngleMaxThreshold)));
+            // var rightArmNormalized = -rightArmDownUp / ArmDownUpThreshold; // values range from -1 to +1, inverted for right arm
+            x = (leftArmNormalized + rightArmNormalized) / 2f * 0.5f;
+        }
 
         // Calculate normalized wrist twist. We can average the left and right values here too.
         var y = ((leftWristTwist / WristTwistThreshold) + (rightWristTwist / WristTwistThreshold)) / 2f;
 
         var glidingVector = new Vector2(x, y);
 
-        var armsAngled = leftArmDownUp is <= ArmDownUpThreshold and >= -ArmDownUpThreshold
-                   && rightArmDownUp is <= ArmDownUpThreshold and >= -ArmDownUpThreshold
+        var armsAngled = leftArmDownUp is <= ArmAngleMaxThreshold and >= ArmAngleMinThreshold
+                   && rightArmDownUp is <= ArmAngleMaxThreshold and >= ArmAngleMinThreshold
                    && leftWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold
                    && rightWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold;
 
@@ -377,6 +415,12 @@ public class ActionDetector : MonoBehaviour {
                 _leftHandInfo.GlideState = GlideState.Gliding;
                 _rightHandInfo.GlideState = GlideState.Gliding;
             }
+        }
+        // Is currently gliding, to stop both arms need to go down
+        else if (ModConfig.MeBothArmsDownToStoGliding.Value && !isGrounded
+                 && _leftHandInfo.GlideState == GlideState.Gliding && _rightHandInfo.GlideState == GlideState.Gliding
+                 && (leftArmDownUp > ArmAngleMinBreakThreshold || rightArmDownUp > ArmAngleMinBreakThreshold)) {
+            Gliding?.Invoke(true, glidingVector);
         }
         else {
             Gliding?.Invoke(false, glidingVector);
@@ -395,6 +439,8 @@ public class ActionDetector : MonoBehaviour {
         _rightWristTwist = rightWristTwist;
         _isGliding = _leftHandInfo.GlideState == GlideState.Gliding && _rightHandInfo.GlideState == GlideState.Gliding;
         _glidingVector = glidingVector;
+        _leftArmAngle = _leftHandInfo.GetCurrentArmAngle();
+        _rightArmAngle = _rightHandInfo.GetCurrentArmAngle();
         #endif
     }
 
@@ -408,6 +454,8 @@ public class ActionDetector : MonoBehaviour {
     private float _rightWristTwist;
     private bool _isGliding;
     private Vector3 _glidingVector;
+    private float _leftArmAngle;
+    private float _rightArmAngle;
 
     private void OnGUI() {
         var i = 0;
@@ -419,6 +467,16 @@ public class ActionDetector : MonoBehaviour {
         GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightWristTwist: {_rightWristTwist:F2}");
         GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_isGliding: {_isGliding}");
         GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_glidingVector: {_glidingVector.ToString("F2")}");
+        i++;
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_leftArmAngle: {_leftArmAngle:F2}");
+        GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightArmAngle: {_rightArmAngle:F2}");
+        // GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_leftShoulderUpDownIdx: {_humanPose.muscles[_leftShoulderUpDownIdx]:F2}");
+        // GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_leftArmUpDownIdx: {_humanPose.muscles[_leftArmUpDownIdx]:F2}");
+        // GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_leftHandUpDownIdx: {_humanPose.muscles[_leftHandUpDownIdx]:F2}");
+        // i++;
+        // GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightShoulderUpDownIdx: {_humanPose.muscles[_rightShoulderUpDownIdx]:F2}");
+        // GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightArmUpDownIdx: {_humanPose.muscles[_rightArmUpDownIdx]:F2}");
+        // GUI.Label(new Rect(0, LabelHeight*i++, 256, LabelHeight), $"_rightHandUpDownIdx: {_humanPose.muscles[_rightHandUpDownIdx]:F2}");
     }
     #endif
 

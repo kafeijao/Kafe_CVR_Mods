@@ -23,11 +23,13 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 // [assembly: MelonAdditionalCredits(AssemblyInfoParams.SDraw)] Needs ML 6.1
 
 namespace Kafe.RealisticFlight.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.3";
+    public const string Version = "0.0.4";
     public const string Author = "kafeijao";
     public const string SDraw = "SDraw";
+    public const string BTKUILibName = "BTKUILib";
 }

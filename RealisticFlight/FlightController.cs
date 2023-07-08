@@ -21,25 +21,12 @@ public class FlightController : MonoBehaviour {
 
         var movementSystem = MovementSystem.Instance;
 
-        if (movementSystem.canFly && movementSystem.canMove && !movementSystem.flying &&
-            !movementSystem._holoPortEnabled) {
+        if (movementSystem.canFly && movementSystem.canMove && !movementSystem.flying && !movementSystem._holoPortEnabled) {
+
             movementSystem._isGrounded = false;
             movementSystem._isGroundedRaw = false;
 
             if (movementSystem._currentParent != null) movementSystem._inheritVelocity = movementSystem._currentParent.GetVelocity();
-
-            // var avgVelocity = (leftVelocity + rightVelocity) / 2f;
-
-            // // Fling up
-            // movementSystem._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * 5f * movementSystem.gravity * avgVelocity);
-            //
-            // // Convert the flap directions from local to global space
-            // var globalLeftFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(leftFlapDirection);
-            // var globalRightFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(rightFlapDirection);
-            //
-            // // Set the inherited velocity to be this opposite movement direction
-            // movementSystem._inheritVelocity += globalLeftFlapDirection  with { y = 0 } * leftVelocity  * 5f;
-            // movementSystem._inheritVelocity += globalRightFlapDirection with { y = 0 } * rightVelocity * 5f;
 
             // Convert the flap directions from local to global space
             var globalLeftFlapDirection = PlayerSetup.Instance._avatar.transform.TransformDirection(leftFlapDirection);
@@ -61,7 +48,10 @@ public class FlightController : MonoBehaviour {
             var rightVelocityVector = globalRightFlapDirection * rightVelocity;
 
             var totalVelocityVector = leftVelocityVector + rightVelocityVector;
-            movementSystem._inheritVelocity += totalVelocityVector * ModConfig.MeFlapMultiplier.Value * (MetaPort.Instance.isUsingVr ? 2.5f : 1f);
+            var flapMultiplier = ModConfig.MeUseAvatarOverrides.Value
+                ? ConfigJson.GetCurrentAvatarFlapModifier()
+                : ModConfig.MeFlapMultiplier.Value;
+            movementSystem._inheritVelocity += totalVelocityVector * flapMultiplier * (MetaPort.Instance.isUsingVr ? 2.5f : 1f);
 
             // Handle the parameter IsGliding
             if (_triggerJustFlappedCoroutine != null) StopCoroutine(_triggerJustFlappedCoroutine);
