@@ -33,7 +33,8 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<bool> MeUseAvatarOverrides;
 
-    internal static MelonPreferences_Entry<bool> MeBothArmsDownToStoGliding;
+    internal static MelonPreferences_Entry<bool> MeBothArmsDownToStopGliding;
+    internal static MelonPreferences_Entry<bool> MeBothArmsUpToStopGliding;
 
     public static void InitializeMelonPrefs() {
 
@@ -61,8 +62,11 @@ public static class ModConfig {
         MeRotationAirfoilsSensitivity = _melonCategory.CreateEntry("RotationAirfoilsSensitivity", 1f,
             description: "Rotation sensitivity of the Airfoils, 1 should be the default.");
 
-        MeBothArmsDownToStoGliding = _melonCategory.CreateEntry("BothArmsDownToStoGliding", false,
+        MeBothArmsDownToStopGliding = _melonCategory.CreateEntry("BothArmsDownToStopGliding", false,
             description: "Whether you need to put both arms down to stop flying or not. Might make it harder to unintentional gliding disable.");
+
+        MeBothArmsUpToStopGliding = _melonCategory.CreateEntry("BothArmsUpToStopGliding", false,
+            description: "Whether you need to put both arms up to stop flying or not. Might make it harder to unintentional gliding disable.");
 
         // Max Applied Velocity Settings
         MeMaxAppliedVelocity = _melonCategory.CreateEntry("MaxAppliedVelocity", 10000f,

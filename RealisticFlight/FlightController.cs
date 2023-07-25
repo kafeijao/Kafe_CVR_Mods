@@ -39,19 +39,28 @@ public class FlightController : MonoBehaviour {
             globalRightFlapDirection.x *= ModConfig.MeFlapMultiplierHorizontal.Value;
             globalRightFlapDirection.z *= ModConfig.MeFlapMultiplierHorizontal.Value;
 
-            // Use gravity to take off the floor, use half a jump height as a baseline
-            MovementSystem.Instance._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * movementSystem.gravity);
-            MovementSystem.Instance._gravityVelocity = 0f;
-
             // Set the inherited velocity to be this opposite movement direction
             var leftVelocityVector = globalLeftFlapDirection * leftVelocity;
             var rightVelocityVector = globalRightFlapDirection * rightVelocity;
 
             var totalVelocityVector = leftVelocityVector + rightVelocityVector;
-            var flapMultiplier = ModConfig.MeUseAvatarOverrides.Value
-                ? ConfigJson.GetCurrentAvatarFlapModifier()
-                : ModConfig.MeFlapMultiplier.Value;
-            movementSystem._inheritVelocity += totalVelocityVector * flapMultiplier * (MetaPort.Instance.isUsingVr ? 2.5f : 1f);
+            var flapMultiplier = ConfigJson.GetCurrentAvatarFlapModifier();
+
+            var velocityToAdd = totalVelocityVector * flapMultiplier * (MetaPort.Instance.isUsingVr ? 2.5f : 1f);
+
+            // If we're not gliding make it go up
+            if (!_previousGlide) {
+                // Use gravity to take off the floor, use half a jump height as a baseline
+                MovementSystem.Instance._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * movementSystem.gravity);
+                MovementSystem.Instance._gravityVelocity = 0f;
+            }
+            // If it's already gliding, add to the last velocity
+            else {
+                var localVelocity = PlayerSetup.Instance._avatar.transform.InverseTransformDirection(velocityToAdd);
+                _lastVelocity += localVelocity.z;
+            }
+
+            movementSystem._inheritVelocity += velocityToAdd;
 
             // Handle the parameter IsGliding
             if (_triggerJustFlappedCoroutine != null) StopCoroutine(_triggerJustFlappedCoroutine);

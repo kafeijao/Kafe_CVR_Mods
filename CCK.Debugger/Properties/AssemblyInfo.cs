@@ -22,11 +22,13 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(ConsoleColor.Green)]
 [assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
-[assembly: MelonOptionalDependencies("BTKUILib")]
+[assembly: MelonOptionalDependencies(AssemblyInfoParams.BTKUILibName)]
+//[assembly: MelonAdditionalCredits(AssemblyInfoParams.AstroDoge)] Needs ML 6.1
 
 namespace Kafe.CCK.Debugger.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "2.0.2";
     public const string Author = "kafeijao";
     public const string Name = "CCK.Debugger";
+    public const string BTKUILibName = "BTKUILib";
 }

@@ -27,6 +27,7 @@ public class ActionDetector : MonoBehaviour {
     private const float ArmAngleMinThreshold = 55f;
 
     private const float ArmAngleMinBreakThreshold = 30f;
+    private const float ArmAngleMaxBreakThreshold = 150f;
 
     private const float ArmsAlignmentMinAngle = 135f;
     private const float WristTwistThreshold = 0.30f;
@@ -34,6 +35,7 @@ public class ActionDetector : MonoBehaviour {
     private Transform _head;
     private Transform _neck;
     private Transform _hips;
+    private Transform _spine;
 
     public static Action<float, Vector3, float, Vector3> Flapped;
     public static Action<bool, Vector2> Gliding;
@@ -229,6 +231,7 @@ public class ActionDetector : MonoBehaviour {
         _head = animator.GetBoneTransform(HumanBodyBones.Head);
         _neck = animator.GetBoneTransform(HumanBodyBones.Neck);
         _hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+        _spine = animator.GetBoneTransform(HumanBodyBones.Spine);
 
         var lArmTransform = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
         var lElbowTransform = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
@@ -302,8 +305,8 @@ public class ActionDetector : MonoBehaviour {
 
         switch (handInfo.FlapState) {
             case FlapState.Idle:
-                // Check if our hands are above our head
-                if (handInfo.HandTransform.position.y > _head.position.y) {
+                // Check if our hands are above our head, or we're gliding
+                if (handInfo.HandTransform.position.y > _head.position.y || (_isGliding && handInfo.HandTransform.position.y > _spine.position.y)) {
                     handInfo.FlapState = FlapState.StartingFlap;
                 }
 
@@ -311,7 +314,7 @@ public class ActionDetector : MonoBehaviour {
 
             case FlapState.StartingFlap:
                 // Check if our hands stop being above our head, which means we start the flap
-                if (handInfo.HandTransform.position.y <= _head.position.y) {
+                if (handInfo.HandTransform.position.y <= _head.position.y || (_isGliding && handInfo.HandTransform.position.y > _spine.position.y)) {
                     handInfo.FlapStartedTime = Time.time;
                     var handPosition = handInfo.HandTransform.position;
                     handInfo.InitialPositionFromAvatar = PlayerSetup.Instance._avatar.transform.InverseTransformPoint(handPosition);
@@ -337,7 +340,7 @@ public class ActionDetector : MonoBehaviour {
                 handInfo.DistanceFlapped += Vector3.Distance(handInfo.PreviousPosition, currentHandPosition);
                 handInfo.PreviousPosition = currentHandPosition;
                 // Check if our hands are under our Hips
-                if (handInfo.HandTransform.position.y < _hips.position.y) {
+                if (handInfo.HandTransform.position.y < _hips.position.y || (_isGliding && handInfo.HandTransform.position.y < _spine.position.y)) {
                     handInfo.FlapState = FlapState.Flapped;
                     // Calculate the flap velocity by using the accumulated flapped distance across the time it took
                     handInfo.FlapVelocity = handInfo.DistanceFlapped / (Time.time - handInfo.FlapStartedTime);
@@ -356,6 +359,8 @@ public class ActionDetector : MonoBehaviour {
                 break;
         }
     }
+
+    private bool _isGliding;
 
     private void ProcessHandsGlide(HandInfo leftHandInfo, HandInfo rightHandInfo) {
 
@@ -387,15 +392,12 @@ public class ActionDetector : MonoBehaviour {
 
         float x;
         if (ModConfig.MeGlidingRotationLikeAirfoils.Value) {
-            x = leftWristTwist - rightWristTwist;
+            x = rightWristTwist - leftWristTwist;
             x *= ModConfig.MeRotationAirfoilsSensitivity.Value;
         }
         else {
             var leftArmNormalized = Mathf.Lerp(-1, 1, Mathf.InverseLerp(ArmAngleMinThreshold, ArmAngleMaxThreshold, Mathf.Clamp(leftArmDownUp, ArmAngleMinThreshold, ArmAngleMaxThreshold)));
-            // Calculate normalized arm down up.
-            // var leftArmNormalized = leftArmDownUp / ArmDownUpThreshold; // values range from -1 to +1
             var rightArmNormalized = Mathf.Lerp(1, -1, Mathf.InverseLerp(ArmAngleMinThreshold, ArmAngleMaxThreshold, Mathf.Clamp(rightArmDownUp, ArmAngleMinThreshold, ArmAngleMaxThreshold)));
-            // var rightArmNormalized = -rightArmDownUp / ArmDownUpThreshold; // values range from -1 to +1, inverted for right arm
             x = (leftArmNormalized + rightArmNormalized) / 2f * 0.5f;
         }
 
@@ -409,25 +411,33 @@ public class ActionDetector : MonoBehaviour {
                    && leftWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold
                    && rightWristTwist is <= WristTwistThreshold and >= -WristTwistThreshold;
 
-        if (!isGrounded && armsStretched && armsAligned && armsAngled) {
-            Gliding?.Invoke(true, glidingVector);
-            if (_leftHandInfo.GlideState != GlideState.Gliding || _rightHandInfo.GlideState != GlideState.Gliding) {
-                _leftHandInfo.GlideState = GlideState.Gliding;
-                _rightHandInfo.GlideState = GlideState.Gliding;
-            }
+        var isProperGliding = armsStretched && armsAligned && armsAngled;
+
+        // Handle the arms up/down settings
+        var isJankyGliding = false;
+        var bothArmsDown = leftArmDownUp < ArmAngleMinBreakThreshold && rightArmDownUp < ArmAngleMinBreakThreshold;
+        var bothArmsUp = leftArmDownUp > ArmAngleMaxBreakThreshold && rightArmDownUp > ArmAngleMaxBreakThreshold;
+        if (ModConfig.MeBothArmsDownToStopGliding.Value && ModConfig.MeBothArmsUpToStopGliding.Value) {
+            isJankyGliding = _isGliding && !bothArmsDown && !bothArmsUp;
         }
-        // Is currently gliding, to stop both arms need to go down
-        else if (ModConfig.MeBothArmsDownToStoGliding.Value && !isGrounded
-                 && _leftHandInfo.GlideState == GlideState.Gliding && _rightHandInfo.GlideState == GlideState.Gliding
-                 && (leftArmDownUp > ArmAngleMinBreakThreshold || rightArmDownUp > ArmAngleMinBreakThreshold)) {
+        else if (ModConfig.MeBothArmsDownToStopGliding.Value) {
+            isJankyGliding = _isGliding && !bothArmsDown;
+        }
+        else if (ModConfig.MeBothArmsUpToStopGliding.Value) {
+            isJankyGliding = _isGliding && !bothArmsUp;
+        }
+
+        if (!isGrounded && (isProperGliding || isJankyGliding)) {
             Gliding?.Invoke(true, glidingVector);
+            _isGliding = true;
+            _leftHandInfo.GlideState = GlideState.Gliding;
+            _rightHandInfo.GlideState = GlideState.Gliding;
         }
         else {
             Gliding?.Invoke(false, glidingVector);
-            if (_leftHandInfo.GlideState != GlideState.Idle || _rightHandInfo.GlideState != GlideState.Idle) {
-                _leftHandInfo.GlideState = GlideState.Idle;
-                _rightHandInfo.GlideState = GlideState.Idle;
-            }
+            _isGliding = false;
+            _leftHandInfo.GlideState = GlideState.Idle;
+            _rightHandInfo.GlideState = GlideState.Idle;
         }
 
         #if DEBUG

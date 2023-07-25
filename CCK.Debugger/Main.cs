@@ -8,6 +8,7 @@ using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.CCK.Debugger.Components;
 using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
+using Kafe.CCK.Debugger.Properties;
 using MelonLoader;
 using UnityEngine;
 
@@ -74,9 +75,9 @@ public class CCKDebugger : MelonMod {
         }
 
         // Check for BTKUILib
-        if (RegisteredMelons.Any(m => m.Info.Name == "BTKUILib")) {
+        if (RegisteredMelons.Any(m => m.Info.Name == AssemblyInfoParams.BTKUILibName)) {
             MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
-            Config.InitializeBTKUI();
+            Integrations.BTKUILibIntegration.InitializeBTKUI();
         }
         else {
             MelonLogger.Warning("We optionally support BTKUILib, it allows to restore the menu to the quick menu. Consider installing the BTKUILib Mod.");

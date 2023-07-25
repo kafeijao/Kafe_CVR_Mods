@@ -44,6 +44,7 @@ public static class ModNetwork {
     }
 
     internal static void SendMessage(API.MessageSource source, string modName, string msg, bool notification, bool displayInChatBox, bool displayInHistory) {
+        if (string.IsNullOrEmpty(msg)) return;
         if (modName.Length > ModNameCharactersMaxCount) {
             MelonLogger.Warning($"Mod Name can have a maximum of {ModNameCharactersMaxCount} characters.");
             return;

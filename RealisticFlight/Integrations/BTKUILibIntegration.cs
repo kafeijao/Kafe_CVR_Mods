@@ -23,7 +23,8 @@ public static class BTKUILibIntegration {
 
         AddMelonToggle(miscCategory, ModConfig.MeCustomFlightInDesktop, "Enabled in Desktop");
         AddMelonToggle(miscCategory, ModConfig.MeCustomFlightInVR, "Enabled in VR");
-        AddMelonToggle(miscCategory, ModConfig.MeBothArmsDownToStoGliding, "Arms down to stop Gliding");
+        AddMelonToggle(miscCategory, ModConfig.MeBothArmsDownToStopGliding, "Arms down to stop Gliding");
+        AddMelonToggle(miscCategory, ModConfig.MeBothArmsUpToStopGliding, "Arms up to stop Gliding");
 
         var advancedPage = miscCategory.AddPage("Advanced Settings", icon, "Advanced settings for realistic flight.", nameof(RealisticFlight));
         var general = advancedPage.AddCategory("General");

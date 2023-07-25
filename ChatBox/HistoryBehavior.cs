@@ -28,6 +28,9 @@ public class HistoryBehavior : MonoBehaviour {
     public static readonly Color ColorPink = new Color(.9882f, .2f, .5f);
     public static readonly Color ColorGreen = new Color(.2f, 1f, .2f);
 
+    public static readonly Color ColorBackground = new Color(0f, 0f, 0f, 0.749f);
+    public static readonly Color ColorBTKUIMenuBackground = new Color(41f / 255f, 41f / 255f, 41f / 255f, 1f);
+
     private const float TimestampFontSizeModifier = 1.125f;
     private const float UsernameFontSizeModifier = 1.5625f;
 
@@ -47,6 +50,7 @@ public class HistoryBehavior : MonoBehaviour {
 
     // Main Sub-Components
     private GameObject _togglesView;
+    private Image _togglesViewBackground;
     private GameObject _header;
     private TextMeshProUGUI _titleText;
     private GameObject _scrollView;
@@ -54,6 +58,7 @@ public class HistoryBehavior : MonoBehaviour {
 
     // Power Toggle
     private Toggle _powerToggle;
+    private Image _powerBackground;
     private Image _powerImage;
 
     // Message Button
@@ -132,6 +137,7 @@ public class HistoryBehavior : MonoBehaviour {
                 menuControllerTransform.SetParent(_quickMenuGo.transform, true);
                 if (ModConfig.MeHistoryWindowOnCenter.Value) {
                     menuControllerTransform.localPosition = new Vector3(-0.05f, -0.055f, -0.001f);
+                    ModConfig.MeHistoryWindowOpened.Value = true;
                 }
                 else {
                     menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
@@ -171,6 +177,11 @@ public class HistoryBehavior : MonoBehaviour {
     }
 
     private void UpdateButtonStates() {
+        var attachedToBTKUI = _currentMenuParent == MenuTarget.QuickMenu && ModConfig.MeHistoryWindowOnCenter.Value;
+        _powerImage.enabled = !attachedToBTKUI;
+        _powerToggle.enabled = !attachedToBTKUI;
+        _powerBackground.color = attachedToBTKUI ? ColorBTKUIMenuBackground : ColorBackground;
+        _togglesViewBackground.color = attachedToBTKUI ? ColorBTKUIMenuBackground : ColorBackground;
         _powerToggle.SetIsOnWithoutNotify(ModConfig.MeHistoryWindowOpened.Value);
         _powerImage.color = _powerToggle.isOn ? ColorPink : Color.white;
 
@@ -247,6 +258,7 @@ public class HistoryBehavior : MonoBehaviour {
 
             // Grab Main Sub-Components
             _togglesView = _rootRectTransform.Find("TogglesView").gameObject;
+            _togglesViewBackground = _togglesView.GetComponent<Image>();
             _header = _rootRectTransform.Find("Header").gameObject;
             _titleText = _rootRectTransform.Find("Header/Title").GetComponent<TextMeshProUGUI>();
             _scrollView = _rootRectTransform.Find("Scroll View").gameObject;
@@ -258,6 +270,7 @@ public class HistoryBehavior : MonoBehaviour {
 
             // Power Toggle
             _powerToggle = _rootRectTransform.Find("PowerToggle").GetComponent<Toggle>();
+            _powerBackground = _powerToggle.transform.Find("Background").GetComponent<Image>();
             _powerImage = _rootRectTransform.Find("PowerToggle/Checkmark").GetComponent<Image>();
             _powerToggle.onValueChanged.AddListener(ToggleHistoryWindow);
             ModConfig.MeHistoryWindowOpened.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
