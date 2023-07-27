@@ -1,48 +1,59 @@
 ﻿using System.Text.RegularExpressions;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using HarmonyLib;
 using Kafe.RequestLib;
 using MelonLoader;
 
 namespace Kafe.TeleportRequest.Integrations;
 
-public static class ChatBox {
+public static class ChatBoxIntegration {
+
+    private static ChatBox.API.InterceptorResult CreateInterceptor(ChatBox.API.ChatBoxMessage chatBoxMessage) {
+
+        // We only want the messages we sent
+        if (chatBoxMessage.SenderGuid != MetaPort.Instance.ownerId) return Kafe.ChatBox.API.InterceptorResult.Ignore;
+
+        var isOurCommand = false;
+
+        // Prevent the command messages from showing on people's chat box and history
+        if (chatBoxMessage.Message.StartsWith(ModConfig.MeCommandTeleportRequest.Value, StringComparison.OrdinalIgnoreCase)) {
+            HandleTeleportRequest(chatBoxMessage.Message);
+            isOurCommand = true;
+        }
+        else if (chatBoxMessage.Message.StartsWith(ModConfig.MeCommandTeleportAccept.Value, StringComparison.OrdinalIgnoreCase)) {
+            HandleTeleportResponse(chatBoxMessage.Message, true);
+            isOurCommand = true;
+        }
+        else if (chatBoxMessage.Message.StartsWith(ModConfig.MeCommandTeleportDecline.Value, StringComparison.OrdinalIgnoreCase)) {
+            HandleTeleportResponse(chatBoxMessage.Message, false);
+            isOurCommand = true;
+        }
+        else if (chatBoxMessage.Message.Equals(ModConfig.MeCommandTeleportBack.Value, StringComparison.OrdinalIgnoreCase)) {
+            TeleportRequest.TeleportBack();
+            isOurCommand = true;
+        }
+
+        // We received a Command, let's prevent the ChatBox from displaying the message
+        if (isOurCommand && !ModConfig.MeShowCommandsOnChatBox.Value) return new Kafe.ChatBox.API.InterceptorResult(true, true);
+
+        // Ignore everything else
+        return Kafe.ChatBox.API.InterceptorResult.Ignore;
+    }
 
     internal static void InitializeChatBox() {
 
-        ModConfig.HasChatBoxMod = true;
-
-        Kafe.ChatBox.API.AddSendingInterceptor(chatBoxMessage => {
-
-            // We only want the messages we sent
-            if (chatBoxMessage.SenderGuid != MetaPort.Instance.ownerId) return Kafe.ChatBox.API.InterceptorResult.Ignore;
-
-            var isOurCommand = false;
-
-            // Prevent the command messages from showing on people's chat box and history
-            if (chatBoxMessage.Message.StartsWith(ModConfig.MeCommandTeleportRequest.Value, StringComparison.OrdinalIgnoreCase)) {
-                HandleTeleportRequest(chatBoxMessage.Message);
-                isOurCommand = true;
-            }
-            else if (chatBoxMessage.Message.StartsWith(ModConfig.MeCommandTeleportAccept.Value, StringComparison.OrdinalIgnoreCase)) {
-                HandleTeleportResponse(chatBoxMessage.Message, true);
-                isOurCommand = true;
-            }
-            else if (chatBoxMessage.Message.StartsWith(ModConfig.MeCommandTeleportDecline.Value, StringComparison.OrdinalIgnoreCase)) {
-                HandleTeleportResponse(chatBoxMessage.Message, false);
-                isOurCommand = true;
-            }
-            else if (chatBoxMessage.Message.Equals(ModConfig.MeCommandTeleportBack.Value, StringComparison.OrdinalIgnoreCase)) {
-                TeleportRequest.TeleportBack();
-                isOurCommand = true;
-            }
-
-            // We received a Command, let's prevent the ChatBox from displaying the message
-            if (isOurCommand && !ModConfig.MeShowCommandsOnChatBox.Value) return new Kafe.ChatBox.API.InterceptorResult(true, true);
-
-            // Ignore everything else
-            return Kafe.ChatBox.API.InterceptorResult.Ignore;
-        });
+        try {
+            ModConfig.HasChatBoxMod = true;
+            // Get the reference to the CreateInterceptor without it being declared in the global scope...
+            var methodInfo = AccessTools.Method(typeof(ChatBoxIntegration), nameof(CreateInterceptor));
+            var delegateFunc = Delegate.CreateDelegate(typeof(Func<Kafe.ChatBox.API.ChatBoxMessage, Kafe.ChatBox.API.InterceptorResult>), methodInfo);
+            ChatBox.API.AddSendingInterceptor((Func<Kafe.ChatBox.API.ChatBoxMessage, Kafe.ChatBox.API.InterceptorResult>)delegateFunc);
+        }
+        catch (Exception ex) {
+            MelonLogger.Error("Error during the interaction with ChatBox (InitializeChatBox)");
+            MelonLogger.Error(ex);
+        }
     }
 
     private static bool CheckMatchingUsernames(string usernamePrefix, out CVRPlayerEntity matchedUsername) {

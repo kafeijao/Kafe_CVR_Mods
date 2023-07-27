@@ -1,5 +1,6 @@
 using ABI_RC.Core;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Vivox;
 using HarmonyLib;
 using MelonLoader;
 
@@ -20,7 +21,7 @@ public class WrongMic : MelonMod {
         }
         setting.SetValueString(microphoneName);
         MetaPort.Instance.settings.settingsHaveChanged = true;
-        RootLogic.Instance.comms.MicrophoneName = microphoneName;
+        VivoxCvarHandler.InputDevice.Value = microphoneName;
     }
 
     [HarmonyPatch]

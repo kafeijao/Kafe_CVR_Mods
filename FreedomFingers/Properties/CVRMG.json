@@ -1,0 +1,22 @@
+{
+  "_id": 101,
+  "name": "FreedomFingers",
+  "modversion": "1.0.4",
+  "gameversion": "2022r171",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "This removes the annoying index controller toggle to switch between finger tracking and animation, replacing it with a gesture lock toggle. Where your fingers are tracked **all** the time but you can pick whether you want gestures or not.\n\nYou can enable notifications in the melon config, to know whether the gestures are enabled or not.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers) for more info.\n\n",
+  "searchtags": [
+    "index",
+    "finger",
+    "gesture",
+    "toggle",
+    "tracking"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/FreedomFingers.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers",
+  "changelog": "- Fixed gesture toggle not working\n- Fixed finger tracking not always enabled.",
+  "embedcolor": "16C60C"
+}

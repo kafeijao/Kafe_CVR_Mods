@@ -21,11 +21,11 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
-[assembly: MelonColor(ConsoleColor.Green)]
-[assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonColor(255, 0, 255, 0)]
+[assembly: MelonAuthorColor(255, 128, 128, 0)]
 
 namespace Kafe.BetterAFK.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.3";
+    public const string Version = "0.0.4";
     public const string Author = "kafeijao";
 }

@@ -1,8 +1,7 @@
 ﻿using System.Collections;
-using ABI_RC.Core.Base;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
-using ABI_RC.Core.Savior;
 using HarmonyLib;
 using MelonLoader;
 using TMPro;
@@ -53,7 +52,7 @@ public class ChatBox : MelonMod {
         };
         CohtmlPatches.AutoCompleteRequested += (currentInput, index) => {
             if (CVRPlayerManager.Instance == null) return;
-            var usernames = new List<string> { MetaPort.Instance.username };
+            var usernames = new List<string> { AuthManager.username };
             usernames.AddRange(CVRPlayerManager.Instance.NetworkPlayers.Select(u => u.Username));
 
             var isEmptyStart = string.IsNullOrEmpty(currentInput) || currentInput.EndsWith(" ") || currentInput.EndsWith("@");
@@ -130,7 +129,7 @@ public class ChatBox : MelonMod {
     public override void OnUpdate() {
 
         if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
-            && !_isChatBoxKeyboardOpened && !ViewManager.Instance._gameMenuOpen) {
+            && !_isChatBoxKeyboardOpened && /*!ViewManager.Instance._gameMenuOpen*/ !Traverse.Create(ViewManager.Instance).Field<bool>("_gameMenuOpen").Value) {
             OpenKeyboard(true, "");
         }
 
@@ -158,15 +157,15 @@ public class ChatBox : MelonMod {
         }
     }
 
+    private static IEnumerator DisableKeyboardWithDelay() {
+        // This delay is here because the menu close menu event happens before the SendToWorldUi
+        // Which would disable _openedKeyboard before we could send the message
+        yield return new WaitForSeconds(0.1f);
+        DisableKeyboard();
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
-
-        private static IEnumerator DisableKeyboardWithDelay() {
-            // This delay is here because the menu close menu event happens before the SendToWorldUi
-            // Which would disable _openedKeyboard before we could send the message
-            yield return new WaitForSeconds(0.1f);
-            DisableKeyboard();
-        }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerNameplate), nameof(PlayerNameplate.Start))]
@@ -206,28 +205,29 @@ public class ChatBox : MelonMod {
             }
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(InputManager), nameof(InputManager.Update))]
-        public static void After_InputManager_Update(InputManager __instance) {
-            // If typing on the keyboard Revert the mute/unmute events
-            try {
-                // If the keyboard is closed -> ignore
-                if (!_isChatBoxKeyboardOpened) return;
-
-                // Otherwise lets prevent the mic toggle/push to talk
-                if (__instance.pushToTalk) {
-                    Audio.SetMicrophoneActive(false);
-                }
-                else if (CVRInputManager.Instance.muteDown) {
-                    // Toggle again, so we revert the toggling xD
-                    Audio.ToggleMicrophone();
-                }
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_InputManager_Update)}");
-                MelonLogger.Error(e);
-            }
-        }
+        // Todo: Test if needed? Otherwise try to use ViewManager.Instance.gameMenuTextInputFocused
+        // [HarmonyPostfix]
+        // [HarmonyPatch(typeof(InputManager), nameof(InputManager.Update))]
+        // public static void After_InputManager_Update(InputManager __instance) {
+        //     // If typing on the keyboard Revert the mute/unmute events
+        //     try {
+        //         // If the keyboard is closed -> ignore
+        //         if (!_isChatBoxKeyboardOpened) return;
+        //
+        //         // Otherwise lets prevent the mic toggle/push to talk
+        //         if (VivoxCvarHandler.PushToTalk.Value) {
+        //             VivoxDeviceHandler.InputMuted = true;
+        //         }
+        //         else if (CVRInputManager.Instance.voiceDown) {
+        //             // Toggle again, so we revert the toggling xD
+        //             VivoxDeviceHandler.InputMuted = !VivoxDeviceHandler.InputMuted;
+        //         }
+        //     }
+        //     catch (Exception e) {
+        //         MelonLogger.Error($"Error during the patched function {nameof(After_InputManager_Update)}");
+        //         MelonLogger.Error(e);
+        //     }
+        // }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.UiStateToggle), typeof(bool))]

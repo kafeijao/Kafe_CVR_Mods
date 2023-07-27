@@ -5,6 +5,7 @@ using ABI_RC.Core.Util.AssetFiltering;
 using ABI.CCK.Components;
 using HarmonyLib;
 using EyeMovementFix.CCK;
+using Kafe.EyeMovementFix.Properties;
 using MelonLoader;
 using UnityEngine;
 
@@ -36,7 +37,7 @@ public class EyeMovementFix : MelonMod {
         SharedFilter._avatarWhitelist.Add(typeof(EyeRotationLimits));
 
         // Check for portable mirror
-        _hasPortableMirror = RegisteredMelons.FirstOrDefault(m => m.Info.Name == "PortableMirrorMod") != null;
+        _hasPortableMirror = RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.PortableMirrorModName) != null;
 
         if (_hasPortableMirror && _meIgnorePortableMirrors.Value) {
             MelonLogger.Msg($"Detected PortableMirror mod, and as per this mod config we're going to prevent " +
@@ -80,37 +81,6 @@ public class EyeMovementFix : MelonMod {
 
     [HarmonyPatch]
     private static class HarmonyPatches {
-
-        [HarmonyTranspiler]
-        [HarmonyPatch(typeof(CVRParameterStreamEntry), nameof(CVRParameterStreamEntry.CheckUpdate))]
-        private static IEnumerable<CodeInstruction> Transpiler_CVRParameterStreamEntry_CheckUpdate(IEnumerable<CodeInstruction> instructions, ILGenerator il) {
-            // Sorry Daky I added the transpiler ;_;
-            // The other code was too big and would probably break with any update
-
-            var skippedX = false;
-
-            // Look for all: component.eyeAngle.x;
-            var matcher = new CodeMatcher(instructions).MatchForward(false,
-                OpCodes.Ldloc_S,
-                new CodeMatch(i => i.opcode == OpCodes.Ldflda && i.operand is FieldInfo { Name: "eyeAngle" }),
-                new CodeMatch(i => i.opcode == OpCodes.Ldfld && i.operand is FieldInfo { Name: "x" }));
-
-            // Replace the 2nd match with: component.eyeAngle.y;
-            return matcher.Repeat(innerMatcher => {
-                // Skip first match, the first match is assigning correctly the X vector to the X angle
-                if (!skippedX) {
-                    skippedX = true;
-                    innerMatcher.Advance(2);
-                }
-                // Find the second match which is assigning EyeMovementLeftY/EyeMovementRightY the eyeAngle.x and fix it
-                else {
-                    skippedX = false;
-                    innerMatcher.Advance(2);
-                    // Set operand to Y instead of X of the Vector2
-                    innerMatcher.SetOperandAndAdvance(AccessTools.Field(typeof(Vector2), "y"));
-                }
-            }).InstructionEnumeration();
-        }
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Start))]

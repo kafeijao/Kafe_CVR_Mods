@@ -2,6 +2,7 @@
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.InputManagement;
 using ABI.CCK.Components;
 using cohtml;
 using cohtml.Net;
@@ -286,7 +287,7 @@ public class CohtmlMenuController : MonoBehaviour {
             var resolutionY = (int)(_scaleY * 2500);
 
             _cohtmlView.CohtmlUISystem = cohtmlUISystem;
-            _cohtmlView.AutoFocus = false;
+            // _cohtmlView.AutoFocus = false;
             _cohtmlView.IsTransparent = true;
             _cohtmlView.PixelPerfect = true;
             _cohtmlView.Width = resolutionX;
@@ -355,7 +356,7 @@ public class CohtmlMenuController : MonoBehaviour {
             if (RaycastCohtmlPlane(Instance._cohtmlView, ray, out var distance, out var viewCoords)) {
 
                 // Mark as pointing the menu
-                CVRInputManager.Instance.controllerPointingMenu = true;
+                // CVRInputManager.Instance.controllerPointingMenu = true;
 
                 if (!controllerRay.uiActive) return;
 
@@ -420,7 +421,7 @@ public class CohtmlMenuController : MonoBehaviour {
 
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.LateUpdate))]
+        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.Update))]
         private static void After_CVR_MenuManager_LateUpdate(CVR_MenuManager __instance) {
             if (_errored) return;
             try {
@@ -473,7 +474,7 @@ public class CohtmlMenuController : MonoBehaviour {
 
             if (hasHit)  {
                 // Mark as pointing the menu
-                CVRInputManager.Instance.controllerPointingMenu = true;
+                // CVRInputManager.Instance.controllerPointingMenu = true;
 
                 // Grab the x and y positions
                 _desktopQuickMenuLastCoords.x = x;

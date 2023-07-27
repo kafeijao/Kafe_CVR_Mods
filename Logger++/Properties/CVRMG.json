@@ -1,0 +1,20 @@
+{
+  "_id": 159,
+  "name": "Logger++",
+  "modversion": "0.0.4",
+  "gameversion": "2022r170",
+  "loaderversion": "v0.5.7",
+  "modtype": "Plugin",
+  "author": "kafeijao",
+  "description": "Simple `Plugin` that redirects **and** filters unity logs to the Melon Loader console.\n\n__**Features**__\n- Enable/Disable filters (melon prefs).\n- Rate Limit the same log to only be printed every 5 secs max.\n- Enable full stack traces for `info`/`warning`/`error` Logs.\n\n**Note:** The IL offsets are not printed in the MelonLogger console because unity adds those internally :(\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++) for more in-depth info.\n\n",
+  "searchtags": [
+    "logger",
+    "log",
+    "debug"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r53/Logger++.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++",
+  "changelog": "- Added option to enable full stack traces for info/warning/errors logs.",
+  "embedcolor": "16C60C"
+}

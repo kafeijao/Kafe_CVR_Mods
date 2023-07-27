@@ -1,7 +1,13 @@
 # BetterLipsync
 
-[![Download Latest BetterLipsync.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest BetterLipsync.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/BetterLipsync.dll)
+![Download Latest BetterLipsync.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest BetterLipsync.dll")
 
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
+
+
+## Info
 
 Refactor the viseme controller use the 
 [oculus lipsync](https://developer.oculus.com/documentation/unity/audio-ovrlipsync-unity/).

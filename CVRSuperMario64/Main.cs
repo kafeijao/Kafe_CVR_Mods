@@ -1,8 +1,9 @@
 ﻿using System.Security.Cryptography;
-using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
 using ABI_RC.Systems.Camera;
+using ABI_RC.Systems.InputManagement;
 using HarmonyLib;
+using Kafe.CVRSuperMario64.Properties;
 using MelonLoader;
 using UnityEngine;
 
@@ -111,7 +112,7 @@ public class CVRSuperMario64 : MelonMod {
         }
 
         // Check for BTKUILib
-        if (RegisteredMelons.Any(m => m.Info.Name == "BTKUILib")) {
+        if (RegisteredMelons.Any(m => m.Info.Name == AssemblyInfoParams.BTKUILibName)) {
             MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
             Config.InitializeBTKUI();
         }
@@ -155,7 +156,8 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRInputManager), nameof(CVRInputManager.Start))]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
-            __instance.gameObject.AddComponent<MarioInputModule>();
+            var moduleMario = new MarioInputModule();
+            __instance.AddInputModule(moduleMario);
         }
 
         [HarmonyPostfix]

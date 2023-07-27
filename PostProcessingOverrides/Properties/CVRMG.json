@@ -1,0 +1,21 @@
+{
+  "_id": 140,
+  "name": "PostProcessingOverrides",
+  "modversion": "0.0.3",
+  "gameversion": "2022r170",
+  "loaderversion": "v0.5.7",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "__**Features**__:\n- Enable/Disable/Force/Override Post processing configurations for the current world (persistent).\n- Choose between Original, Global, Custom, and Off for which Post Processing configuration type should be use for the current world.\n- Chose which Configuration Type a world gets when you join for the first time (via melon preferences).\n- While using Global or Custom, you can configure the settings to be: Off, Original, or Override.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PostProcessingOverrides) for more in-depth info.\n\n",
+  "searchtags": [
+    "post",
+    "processing",
+    "overrides",
+    "bloom"
+  ],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r48/PostProcessingOverrides.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PostProcessingOverrides",
+  "changelog": "- Added bloom threshold override.\n- Fixed not overriding the PP in some worlds.",
+  "embedcolor": "16C60C"
+}

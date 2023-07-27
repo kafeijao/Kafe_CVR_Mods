@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Vsxmd" Version="1.4.5">
+        <PackageReference Include="Vsxmd" Version="1.4.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -26,12 +26,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="Resources\CVRTestPatches.js">
-        <LogicalName>cohtml.cvrtest.patches.js</LogicalName>
-      </EmbeddedResource>
-      <EmbeddedResource Include="Resources\CVRUIPatches.js">
-        <LogicalName>cohtml.cvrui.patches.js</LogicalName>
-      </EmbeddedResource>
+        <EmbeddedResource Include="Resources\CVRTestPatches.js">
+            <LogicalName>cohtml.cvrtest.patches.js</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\CVRUIPatches.js">
+            <LogicalName>cohtml.cvrui.patches.js</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

@@ -1,9 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Text;
-using ABI_RC.Core;
 using ABI_RC.Core.Base;
-using ABI_RC.Core.EventSystem;
 using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.API;
@@ -14,10 +12,12 @@ using ABI_RC.Core.UI;
 using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
+using Kafe.Instances.Properties;
 using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using CVRInstances = ABI_RC.Core.Networking.IO.Instancing.Instances;
 
 namespace Kafe.Instances;
@@ -110,9 +110,9 @@ public class Instances : MelonMod {
         ModConfig.InitializeBTKUI();
 
         // Check for ChatBox
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "ChatBox") != null) {
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null) {
             MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration!");
-            Integrations.ChatBox.InitializeChatBox();
+            Integrations.ChatBoxIntegration.InitializeChatBox();
         }
 
         InstanceSelected += (instanceId, isInitial) => {
@@ -382,7 +382,7 @@ public class Instances : MelonMod {
         yield return new WaitUntil(() => task.IsCompleted);
         var instanceDetails = task.Result;
 
-        var hasOtherUsers = instanceDetails?.Data?.Members?.Exists(u => u.Name != MetaPort.Instance.username);
+        var hasOtherUsers = instanceDetails?.Data?.Members?.Exists(u => u.Name != AuthManager.username);
 
         if (instanceDetails?.Data == null || (hasOtherUsers.HasValue && !hasOtherUsers.Value)) {
 
@@ -572,23 +572,35 @@ public class Instances : MelonMod {
     [HarmonyPatch]
     internal class HarmonyPatches {
 
+        private static bool _isInitialHomeWorldLoad = false;
+
         [HarmonyPrefix]
         [HarmonyPatch(typeof(HQTools), nameof(HQTools.Start))]
-        public static bool Before_HQTools_Start() {
+        public static void Before_HQTools_Start() {
             try {
-                // Original method code, since we're skipping the execution
-                CVRTools.ConfigureHudAffinity();
-                AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
-
-                _ranHQToolsStart = true;
-                Initialize();
-                return false;
+                _isInitialHomeWorldLoad = true;
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(Before_HQTools_Start)}");
                 MelonLogger.Error(e);
             }
+        }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Content), nameof(Content.LoadIntoWorld))]
+        public static bool Before_Content_LoadIntoWorld() {
+            try {
+                if (_isInitialHomeWorldLoad) {
+                    _isInitialHomeWorldLoad = false;
+                    _ranHQToolsStart = true;
+                    Initialize();
+                    return false;
+                }
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(Before_Content_LoadIntoWorld)}");
+                MelonLogger.Error(e);
+            }
             return true;
         }
 
@@ -600,14 +612,13 @@ public class Instances : MelonMod {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
-        public static IEnumerator After_CVRWorld_Start(IEnumerator result) {
-            while (result.MoveNext()) yield return result.Current;
+        public static void After_CVRWorld_Start() {
 
             // MelonLogger.Msg($"[After_CVRWorld_Start] LoadedWorldCount: {MetaPort.Instance.worldsLoadedCounter} Name: {SceneManager.GetActiveScene().name}");
             // [After_CVRWorld_Start] LoadedWorldCount: 1 Name: Headquarters
 
             // If it's the HQ Scene
-            if (MetaPort.Instance.worldsLoadedCounter == 1) {
+            if (!_ranHQCVRWorldStart && SceneManager.GetActiveScene().name == "Headquarters") {
                 _ranHQCVRWorldStart = true;
                 Initialize();
             }

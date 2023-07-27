@@ -1,7 +1,7 @@
 ﻿using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using MelonLoader;
-using Rug.Osc;
+using Rug.Osc.Core;
 using UnityEngine;
 
 namespace Kafe.OSC.Handlers.OscModules;

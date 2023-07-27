@@ -462,7 +462,6 @@ public class ActionDetector : MonoBehaviour {
     private float _rightArmDownUp;
     private float _leftWristTwist;
     private float _rightWristTwist;
-    private bool _isGliding;
     private Vector3 _glidingVector;
     private float _leftArmAngle;
     private float _rightArmAngle;

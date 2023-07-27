@@ -1,0 +1,22 @@
+{
+  "_id": 134,
+  "name": "CVRSuperMario64",
+  "modversion": "1.0.2",
+  "gameversion": "2022r171",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "The SM64 Mario mod lets you play as Mario in ChilloutVR Worlds using the Super Mario 64 engine. You can control Mario, attack other players who are also playing as Mario, and interact with colliders in the world.\nYou can also check the CVR Camera, it allows to control Mario using its perspective (also has camera settings)\n\n**__Note__**: You need to download and install a specific SM64 ROM, follow the [Instructions](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64#rom-installation)\n\nThe mod comes with several pre-made public props like Mario, power-up caps, and teleporters, and you can also create your own using the CCK (Still in development, and might break compatibility soon). Just search props for: `SM64`\nSpawning the `SM64 Mario` prop should get you started.\n\nWhile the mod tries to work with all world's colliders, sometimes fails, either by not working at all or causing lag.\n\nA world that works nicely with this mod is: `Inas Chill Apartment`\n\nThe mod has a bunch of configurations, I highly recommend to change them to your liking.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64) for more in-depth info.\n\n",
+  "searchtags": [
+    "sm64",
+    "mario",
+    "super",
+    "64",
+    "engine"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/CVRSuperMario64.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64",
+  "changelog": "- Fixed for 2022r171",
+  "embedcolor": "16C60C"
+}

@@ -20,15 +20,16 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
-[assembly: MelonColor(ConsoleColor.Green)]
-[assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
-[assembly: MelonOptionalDependencies(AssemblyInfoParams.BTKUILibName)]
-//[assembly: MelonAdditionalCredits(AssemblyInfoParams.AstroDoge)] Needs ML 6.1
+[assembly: MelonColor(255, 0, 255, 0)]
+[assembly: MelonAuthorColor(255, 128, 128, 0)]
+[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
+[assembly: MelonAdditionalCredits(AssemblyInfoParams.AstroDoge)]
 
 namespace Kafe.CCK.Debugger.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "2.0.2";
+    public const string Version = "2.0.3";
     public const string Author = "kafeijao";
+    public const string AstroDoge = "AstroDoge";
     public const string Name = "CCK.Debugger";
     public const string BTKUILibName = "BTKUILib";
 }

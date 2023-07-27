@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-    
+
     <ItemGroup>
         <Reference Include="ChatBox">
             <HintPath>$(CVRPATH)\Mods\ChatBox.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="Rug.Osc" Version="1.2.5" />
-        <PackageReference Include="Fody" Version="6.6.3" PrivateAssets="all" />
-        <PackageReference Include="ILMerge.Fody" Version="1.23.0" PrivateAssets="all" />
+        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18"/>
+        <PackageReference Include="Rug.Osc.Core" Version="1.0.0"/>
     </ItemGroup>
+
+    <Target Name="CopyRugOscCoreToManagedLibs" BeforeTargets="BeforeBuild">
+        <!-- Copy the Rug.Osc.Core DLL to a known location, you might have to modify the location if it doesn't match with yours -->
+        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\Rug.Osc.Core\1.0.0\lib\netstandard2.1\Rug.Osc.Core.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;"/>
+    </Target>
 
 </Project>

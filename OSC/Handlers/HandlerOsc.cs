@@ -2,8 +2,8 @@
 using System.Net;
 using Kafe.OSC.Handlers.OscModules;
 using MelonLoader;
-using Rug.Osc;
 using Kafe.OSC.Utils;
+using Rug.Osc.Core;
 
 namespace Kafe.OSC.Handlers;
 

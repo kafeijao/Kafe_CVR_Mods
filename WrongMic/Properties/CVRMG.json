@@ -1,0 +1,23 @@
+{
+  "_id": 157,
+  "name": "WrongMic",
+  "modversion": "0.0.4",
+  "gameversion": "2022r171",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Really simple mod that saves the microphone in separated configs, depending whether you are in `Desktop` or `VR`.\n\nNo configuration required! Just install, change the microphone with the usual in-game menus if it's wrong, and then forget about it. Say goodbye to people tell you __**Wrong Mic**__!\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/WrongMic) for more in-depth info.\n\n",
+  "searchtags": [
+    "wrong",
+    "mic",
+    "microphone",
+    "audio",
+    "desktop",
+    "vr"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/WrongMic.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/WrongMic",
+  "changelog": "- Fixed for 2022r171",
+  "embedcolor": "16C60C"
+}

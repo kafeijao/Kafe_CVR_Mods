@@ -1,6 +1,8 @@
 ﻿using ABI_RC.Core;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Vivox;
 using ABI_RC.Systems.Camera;
 using ABI.CCK.Components;
 using HarmonyLib;
@@ -236,15 +238,19 @@ public sealed class TargetCandidate : IReusable {
 
                 // See if it's the local player
                 if (targetCandidate._controller.isLocal) {
-                    targetCandidate._username = MetaPort.Instance.username;
-                    return Mathf.InverseLerp(0f, 0.1f, RootLogic.Instance.comms.Players[0].Amplitude);
+                    targetCandidate._username = AuthManager.username;
+                    // Todo: If we can get the amplitude for remotes, get the local one as well
+                    // return Mathf.InverseLerp(0f, 0.1f, VivoxDeviceHandler.InputAmplitude);
+                    return VivoxDeviceHandler.InputActive ? 0.1f : 0f;
                 }
 
                 // See if it's any other player, check if their avatar holder instances match
                 foreach (var entity in CVRPlayerManager.Instance.NetworkPlayers) {
                     if (targetCandidate._controller.transform.parent != entity.AvatarHolder.transform) continue;
                     targetCandidate._username = entity.Username;
-                    return Mathf.InverseLerp(0f, 0.1f, entity.TalkerAmplitude);
+                    // Todo: Try to get the voice amplitude for remotes
+                    // return Mathf.InverseLerp(0f, 0.1f, entity.PlayerNameplate.wasTalking);
+                    return entity.PlayerNameplate.wasTalking ? 0.1f : 0f;
                 }
             }
 

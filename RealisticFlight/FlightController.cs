@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.InputManagement;
 using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
@@ -148,11 +149,11 @@ public class FlightController : MonoBehaviour {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(InputModuleMouseKeyboard), nameof(InputModuleMouseKeyboard.UpdateInput))]
-        public static void After_InputModuleMouseKeyboard_Update(InputModuleMouseKeyboard __instance) {
+        [HarmonyPatch(typeof(CVRInputManager), nameof(CVRInputManager.UpdateInput))]
+        public static void After_InputModuleMouseKeyboard_Update(CVRInputManager __instance) {
             // Update the input module to rotate accordingly
             if (_previousGlide) {
-                __instance._inputManager.lookVector.x += _rotationAmount;
+                __instance.lookVector.x += _rotationAmount;
                 _rotationAmount = 0;
             }
         }

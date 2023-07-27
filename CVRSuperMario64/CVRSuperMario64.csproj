@@ -7,7 +7,7 @@
             <Private>False</Private>
         </Reference>
     </ItemGroup>
-    
+
     <ItemGroup>
         <EmbeddedResource Include="libsm64\Plugins\sm64.dll">
             <LogicalName>sm64.dll</LogicalName>

@@ -1,6 +1,6 @@
 ﻿using Kafe.OSC.Components;
 using MelonLoader;
-using Rug.Osc;
+using Rug.Osc.Core;
 using UnityEngine;
 
 namespace Kafe.OSC.Handlers.OscModules;

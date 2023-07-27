@@ -169,7 +169,7 @@ public static class ModConfig {
 
                 // I want this sync, should be fast since we're loading from the disk and not the webs
                 while (!uwr.isDone) {}
-                if (uwr.isNetworkError || uwr.isHttpError) {
+                if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError or UnityWebRequest.Result.DataProcessingError) {
                     MelonLogger.Error($"{uwr.error}");
                 }
                 else {

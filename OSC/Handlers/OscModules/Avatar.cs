@@ -3,7 +3,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using Kafe.OSC.Utils;
 using MelonLoader;
-using Rug.Osc;
+using Rug.Osc.Core;
 using UnityEngine;
 
 namespace Kafe.OSC.Handlers.OscModules;

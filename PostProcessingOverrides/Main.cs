@@ -3,6 +3,7 @@ using ABI_RC.Core.Savior;
 using ABI_RC.Systems.Camera;
 using ABI.CCK.Components;
 using HarmonyLib;
+using Kafe.PostProcessingOverrides.Properties;
 using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -79,7 +80,7 @@ public class PostProcessingOverrides : MelonMod {
         }
 
         // Check for BTKUILib
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "BTKUILib") != null) {
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.BTKUILibName) != null) {
             MelonLogger.Msg($"Initializing BTKUI integration...");
             ModConfig.InitializeBTKUI();
         }

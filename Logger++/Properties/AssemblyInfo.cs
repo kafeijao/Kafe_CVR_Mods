@@ -21,8 +21,8 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
-[assembly: MelonColor(ConsoleColor.DarkGray)]
-[assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonColor(255, 169, 169, 169)]
+[assembly: MelonAuthorColor(255, 128, 128, 0)]
 
 namespace Kafe.LoggerPlusPlus.Properties;
 internal static class AssemblyInfoParams {

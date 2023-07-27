@@ -1,5 +1,5 @@
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
-using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
@@ -25,7 +25,7 @@ public class TeleportRequest : MelonMod {
         // Check for ChatBox
         if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == Properties.AssemblyInfoParams.ChatBoxName) != null) {
             MelonLogger.Msg("Detected ChatBox mod! Adding the integration...");
-            Integrations.ChatBox.InitializeChatBox();
+            Integrations.ChatBoxIntegration.InitializeChatBox();
         }
 
         ModConfig.InitializeBTKUI();
@@ -108,7 +108,7 @@ public class TeleportRequest : MelonMod {
         if (ModConfig.MeShowHudMessages.Value) {
             CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>Sending <span style=\"color:green; display:inline\">{playerName}</span> a teleport request...</span>");
         }
-        RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{MetaPort.Instance.username} is requesting to teleport to you.", OnResponse));
+        RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{AuthManager.username} is requesting to teleport to you.", OnResponse));
     }
 
     internal static void TeleportBack() {
@@ -136,7 +136,7 @@ public class TeleportRequest : MelonMod {
         private static void After_CVRWorld_OnEnable(CVRWorld __instance) {
             // Clear previous teleport locations upon joining different worlds
             try {
-                var newWorldGuid = __instance.GetComponent<CVRAssetInfo>().guid;
+                var newWorldGuid = __instance.GetComponent<CVRAssetInfo>().objectId;
                 if (_currentWorld != newWorldGuid) {
                     PreviousTeleportLocations.Clear();
                     PreviousTeleportLocationsChanged?.Invoke();

@@ -1,6 +1,7 @@
-﻿using ABI_RC.Core.Savior;
+﻿using ABI_RC.Systems.InputManagement;
 using Kafe.OSC.Components;
 using Kafe.OSC.Handlers;
+using Kafe.OSC.Properties;
 using Kafe.OSC.Utils;
 using MelonLoader;
 
@@ -51,6 +52,22 @@ public class OSC : MelonMod {
     public MelonPreferences_Entry<bool> meOSCCompatibilityVRCFaceTracking;
 
     private HandlerOsc _handlerOsc;
+
+    private const string RugOscCoreLogicalName = "Rug.Osc.Core.dll";
+
+    // public override void OnEarlyInitializeMelon() {
+    //     // Save the Rug.Osc.Core lib into UserLibs
+    //     try {
+    //         var path = Path.GetFullPath(Path.Combine("UserLibs", RugOscCoreLogicalName));
+    //         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(RugOscCoreLogicalName);
+    //         using var fileStream = new FileStream(path, FileMode.Create);
+    //         stream!.CopyTo(fileStream);
+    //     }
+    //     catch (Exception) {
+    //         MelonLogger.Error($"Failed exporting {RugOscCoreLogicalName} to /UserLibs/.");
+    //         throw;
+    //     }
+    // }
 
     public override void OnInitializeMelon() {
 
@@ -189,17 +206,18 @@ public class OSC : MelonMod {
 
         // Attach OSC Input Module and handle their disabling/enabling
         Events.Scene.InputManagerCreated += () => {
-            var inputModuleOsc = CVRInputManager.Instance.gameObject.AddComponent<InputModuleOSC>();
-            inputModuleOsc.enabled = meOSCInputModule.Value;
+            var inputModuleOsc = new InputModuleOSC();
+            CVRInputManager.Instance.AddInputModule(inputModuleOsc);
+            inputModuleOsc.InputEnabled = meOSCInputModule.Value;
             MelonLogger.Msg("[Input] OSC Input Module Initialized.");
-            meOSCInputModule.OnEntryValueChanged.Subscribe((_, newValue) => inputModuleOsc.enabled = newValue);
+            meOSCInputModule.OnEntryValueChanged.Subscribe((_, newValue) => inputModuleOsc.InputEnabled = newValue);
         };
 
         // Start OSC server
         _handlerOsc = new HandlerOsc();
 
         // Check for ChatBox
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == "ChatBox") != null) {
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null) {
             MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration!");
             Integrations.ChatBox.InitializeChatBox();
         }

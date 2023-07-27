@@ -6,7 +6,7 @@
             <LogicalName>betterportals.assetbundle</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="Resources\CVRTest_ui_Patches.js">
-          <LogicalName>betterportals.cohtml.cvrtest.ui.patches.js</LogicalName>
+            <LogicalName>betterportals.cohtml.cvrtest.ui.patches.js</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
 

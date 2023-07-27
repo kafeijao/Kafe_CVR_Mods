@@ -55,7 +55,7 @@ public class MinimizeWindows : MelonMod {
     internal class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HQTools), nameof(HQTools.Awake))]
+        [HarmonyPatch(typeof(HQTools), nameof(HQTools.Start))]
         public static void After_MetaPort_Awake() {
             try {
                 EnumWindows(MinimizeConsoleWindow, IntPtr.Zero);

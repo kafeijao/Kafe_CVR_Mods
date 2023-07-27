@@ -1,0 +1,22 @@
+{
+  "_id": 168,
+  "name": "ChatBox",
+  "modversion": "1.0.7",
+  "gameversion": "2022r170",
+  "loaderversion": "v0.5.7",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Communicate with other people in the instance using Text and **ChatBox**es!\n\n__**Features**__\n- Press `Y` or BTKUI button in the Misc section to send messages.\n- Heavily customizable via BKTUI settings menu in the Misc section.\n- Modify the notification sounds by replacing the files at `/UserData/Chatbox/`\n- Use bool animator param `ChatBox/Typing` or `#ChatBox/Typing`\n- View the ChatBox History window via the BTKUI button in the Misc section.\n- Press `Arrow up`/`Arrow down` to iterate through the sent messages. You can also click `Prev` if you're in VR.\n- Press `Insert` or `Auto` in VR to attempt to auto-complete usernames.\n- Use `@target-username` to mention people in messages.\n- Self moderation for individual players.\n- Profanity filter (needs to be populated).\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox) for more in-depth info.\n\n",
+  "searchtags": [
+    "chat",
+    "box",
+    "chatbox",
+    "mod",
+    "network"
+  ],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r53/ChatBox.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
+  "changelog": "- Initial Release.\n- Fix auto-completion.\n- Prevent msgs from OSC endpoints to override msgs sent by typing.\n- Added profanity filter.\n- Prevent seeing messages from blocked people.\n- Added self moderation, so you can override showing/hiding messages from specific people.\n Added interceptors (check API in github).\n- Refactored API.\n- Fixed Interceptors API.\n- LayerMask in static constructors is a nono in unity debug mode.",
+  "embedcolor": "16C60C"
+}

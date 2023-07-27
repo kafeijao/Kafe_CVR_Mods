@@ -1,0 +1,23 @@
+﻿[
+  {
+    "_id": 146,
+    "name": "MinimizeWindows",
+    "modversion": "0.0.4",
+    "gameversion": "2022r171",
+    "loaderversion": "v0.6.1",
+    "modtype": "Mod",
+    "author": "kafeijao",
+    "description": "Simple mod allows you to automatically Minimize Game/Melon Loader Console Windows when starting the game. By default it will Minimize the Game window when starting in VR.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MinimizeWindows) for more in-depth info.\n\n",
+    "searchtags": [
+      "window",
+      "minimize",
+      "console",
+      "game"
+    ],
+    "requirements": [],
+    "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/MinimizeWindows.dll",
+    "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MinimizeWindows",
+    "changelog": "- Fixed for 2022r171",
+    "embedcolor": "16C60C"
+  }
+]

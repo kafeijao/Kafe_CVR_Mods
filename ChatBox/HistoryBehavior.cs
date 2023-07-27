@@ -2,9 +2,11 @@
 using System.Text.RegularExpressions;
 using ABI_RC.Core.AudioEffects;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.InputManagement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -389,7 +391,7 @@ public class HistoryBehavior : MonoBehaviour {
         usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
         if (isSelf) {
-            usernameTmp.text = MetaPort.Instance.username;
+            usernameTmp.text = AuthManager.username;
             usernameTmp.color = ColorBlue;
         }
         else {
@@ -405,8 +407,8 @@ public class HistoryBehavior : MonoBehaviour {
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
 
         // // Color our own username in messages (I disabled formatting so this won't work ;_;
-        // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{MetaPort.Instance.username}</color>";
-        // message = Regex.Replace(message, Regex.Escape("@" + MetaPort.Instance.username), coloredUsername, RegexOptions.IgnoreCase);
+        // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{AuthManager.username}</color>";
+        // message = Regex.Replace(message, Regex.Escape("@" + AuthManager.username), coloredUsername, RegexOptions.IgnoreCase);
         messageTmp.text = msg;
 
         var entry = new ChatBoxEntry(chatBoxMessage.SenderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);

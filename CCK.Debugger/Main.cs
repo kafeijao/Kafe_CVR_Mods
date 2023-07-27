@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
@@ -80,7 +81,7 @@ public class CCKDebugger : MelonMod {
             Integrations.BTKUILibIntegration.InitializeBTKUI();
         }
         else {
-            MelonLogger.Warning("We optionally support BTKUILib, it allows to restore the menu to the quick menu. Consider installing the BTKUILib Mod.");
+            MelonLogger.Warning("BTKUILib is a required dependency. It allows to restore the menu to the quick menu.");
         }
 
         #if DEBUG
@@ -262,7 +263,7 @@ public class CCKDebugger : MelonMod {
             }
 
             // Add ourselves to the player list (why not here xd)
-            Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, MetaPort.Instance.username);
+            Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, AuthManager.username);
         }
     }
 }

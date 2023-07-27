@@ -1,5 +1,5 @@
 ﻿using MelonLoader;
-using Rug.Osc;
+using Rug.Osc.Core;
 
 namespace Kafe.OSC.Handlers.OscModules;
 

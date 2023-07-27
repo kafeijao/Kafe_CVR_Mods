@@ -21,12 +21,13 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
-[assembly: MelonColor(ConsoleColor.Green)]
-[assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
-[assembly: MelonAdditionalDependencies("BTKUILib")]
+[assembly: MelonColor(255, 0, 255, 0)]
+[assembly: MelonAuthorColor(255, 128, 128, 0)]
+[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 
 namespace Kafe.PostProcessingOverrides.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "0.0.3";
     public const string Author = "kafeijao";
+    public const string BTKUILibName = "BTKUILib";
 }

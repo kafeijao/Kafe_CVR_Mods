@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using BTKUILib.UIObjects.Objects;
 using MelonLoader;
@@ -400,7 +399,7 @@ public static class ModConfig {
         yield return www.SendWebRequest();
 
         // Log and break if errors
-        if (www.isNetworkError || www.isHttpError) {
+        if (www.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError or UnityWebRequest.Result.DataProcessingError) {
             #if DEBUG
             MelonLogger.Error($"[LoadIconEnumerator] Error on the {worldImageUrl} image download request...");
             MelonLogger.Error(www.error);

@@ -1,12 +1,13 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI_RC.Core.Player;
-using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util;
+using ABI_RC.Systems.IK.TrackingModules;
+using ABI_RC.Systems.InputManagement;
 using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
-using Rug.Osc;
+using Rug.Osc.Core;
 
 namespace Kafe.OSC;
 
@@ -89,8 +90,8 @@ internal class HarmonyPatches {
 
     // Trackers
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(VRTrackerManager), nameof(VRTrackerManager.Update))]
-    internal static void AfterVRTrackerManagerUpdate(VRTrackerManager __instance) {
+    [HarmonyPatch(typeof(SteamVRTrackingModule), nameof(SteamVRTrackingModule.ModuleUpdate))]
+    internal static void AfterVRTrackerManagerUpdate(SteamVRTrackingModule __instance) {
         if (_performanceMode) return;
         Events.Tracking.OnTrackingDataDeviceUpdated(__instance);
     }

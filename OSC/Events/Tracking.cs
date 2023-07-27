@@ -1,6 +1,9 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.IK;
+using ABI_RC.Systems.IK.TrackingModules;
 using HarmonyLib;
+using MelonLoader;
 using UnityEngine;
 using Valve.VR;
 
@@ -24,7 +27,7 @@ public static class Tracking {
     private static Transform _playerSpaceTransform;
     private static Transform _playerHmdTransform;
 
-    private static readonly Dictionary<VRTracker, bool> TrackerLastState = new();
+    private static readonly Dictionary<TrackingPoint, bool> TrackerLastState = new();
 
     public static event Action<bool, TrackingDataSource, int, string> TrackingDeviceConnected;
     public static event Action<TrackingDataSource, int, string, Vector3, Vector3, float> TrackingDataDeviceUpdated;
@@ -49,7 +52,7 @@ public static class Tracking {
         Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
-    public static void OnTrackingDataDeviceUpdated(VRTrackerManager trackerManager) {
+    public static void OnTrackingDataDeviceUpdated(SteamVRTrackingModule steamVRTrackingModule) {
 
         // Ignore if the module is disabled
         if (!_enabled) return;
@@ -58,19 +61,19 @@ public static class Tracking {
             _nextUpdate = Time.time + _updateRate;
 
             // Handle trackers
-            foreach (var vrTracker in trackerManager.trackers) {
+            foreach (var vrTracker in IKSystem.Instance.AllTrackingPoints) {
 
                 // Manage Connected/Disconnected trackers
-                if ((!TrackerLastState.ContainsKey(vrTracker) && vrTracker.active) || (TrackerLastState.ContainsKey(vrTracker) && TrackerLastState[vrTracker] != vrTracker.active)) {
-                    TrackingDeviceConnected?.Invoke(vrTracker.active, GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName);
-                    TrackerLastState[vrTracker] = vrTracker.active;
+                if ((!TrackerLastState.ContainsKey(vrTracker) && vrTracker.isActive) || (TrackerLastState.ContainsKey(vrTracker) && TrackerLastState[vrTracker] != vrTracker.isActive)) {
+                    MelonLogger.Msg($"[Tracker] {vrTracker.isActive}, {vrTracker.identifier}, {vrTracker.name}, {vrTracker.assignedRole.ToString()}, {vrTracker.deviceName}, {vrTracker.inUse}, {vrTracker.isValid}, {vrTracker.suggestedRole.ToString()}");
+                    TrackingDeviceConnected?.Invoke(vrTracker.isActive, GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName);
+                    TrackerLastState[vrTracker] = vrTracker.isActive;
                 }
 
                 // Ignore inactive trackers
-                if (!vrTracker.active) continue;
+                if (!vrTracker.isActive) continue;
 
-                var transform = vrTracker.transform;
-                TrackingDataDeviceUpdated?.Invoke(GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName, transform.position, transform.rotation.eulerAngles, vrTracker.batteryStatus);
+                TrackingDataDeviceUpdated?.Invoke(GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName, vrTracker.position, vrTracker.rotation.eulerAngles, vrTracker.batteryPercentage);
             }
 
             // Handle HMD
@@ -93,19 +96,22 @@ public static class Tracking {
         TrackerLastState.Clear();
     }
 
-    private static int GetIndex(VRTracker vrTracker) {
-        return (int)Traverse.Create(vrTracker).Field<SteamVR_TrackedObject>("_trackedObject").Value.index;
+    private static int GetIndex(TrackingPoint vrTracker) {
+        return vrTracker.displayObject.GetHashCode();
+        // return (int)Traverse.Create(vrTracker).Field<SteamVR_TrackedObject>("_trackedObject").Value.index;
     }
 
-    private static TrackingDataSource GetSource(VRTracker vrTracker) {
-        return vrTracker.role switch {
-            ETrackedControllerRole.Invalid => vrTracker.deviceName == ""
-                ? TrackingDataSource.base_station
-                : TrackingDataSource.unknown,
-            ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
-            ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
-            ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
-            _ => TrackingDataSource.unknown
-        };
+    private static TrackingDataSource GetSource(TrackingPoint vrTracker) {
+        return TrackingDataSource.unknown;
+        // Todo: Figure it out
+        // return vrTracker.assignedRole switch {
+        //     ETrackedControllerRole.Invalid => vrTracker.deviceName == ""
+        //         ? TrackingDataSource.base_station
+        //         : TrackingDataSource.unknown,
+        //     ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
+        //     ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
+        //     ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
+        //     _ => TrackingDataSource.unknown
+        // };
     }
 }

@@ -3,6 +3,7 @@ using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util;
+using ABI_RC.Systems.InputManagement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -91,12 +92,9 @@ public class InputModuleOSC : CVRInputModule {
 
     private CVRInputManager _thisInputManager;
 
-    private new void Start() {
-        _thisInputManager = CVRInputManager.Instance;
-        _thisInputManager.AddInputModule(this);
-    }
+    public override void ModuleAdded() {
 
-    public void Awake() {
+        _thisInputManager = CVRInputManager.Instance;
 
         _sensitivity = MetaPort.Instance.settings.GetSettingInt("ControlMouseSensitivity");
         MetaPort.Instance.settings.settingIntChanged.AddListener((setting, value) => {
@@ -120,7 +118,7 @@ public class InputModuleOSC : CVRInputModule {
         }
     }
 
-    public override void UpdateInput() {
+    public override void Update_Always() {
 
         // Prepare for inline outs
         float floatValue;
@@ -147,15 +145,13 @@ public class InputModuleOSC : CVRInputModule {
         var lookHorizontalComfortValue = comfortLeft ^ comfortRight ? (comfortLeft ? -1f : 1f) : 0f;
         lookHorizontal = Mathf.Clamp( lookHorizontal + InputAxes[AxisNames.LookHorizontal] + lookHorizontalComfortValue, -1f, 1f);
 
-        var playerInVrWithTwoHands = MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.CheckTwoTrackedHands();
-
         // Handle inputs
 
         _thisInputManager.movementVector += new Vector3(horizontal, 0.0f, vertical);
         _thisInputManager.accelerate += Mathf.Clamp(vertical, -1f, 1f);
         _thisInputManager.brake += Mathf.Clamp01(vertical * -1f);
 
-        if (!playerInVrWithTwoHands) {
+        if (!MetaPort.Instance.isUsingVr) {
             _thisInputManager.lookVector += new Vector2(
                 lookHorizontal * (1 + _sensitivity * 0.1f) / 50.0f,
                 InputAxes[AxisNames.LookVertical] * (1 + _sensitivity * 0.1f) / 50.0f);
@@ -201,8 +197,8 @@ public class InputModuleOSC : CVRInputModule {
         }
 
         _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
-        _thisInputManager.mute |= InputButtons[ButtonNames.Voice];
-        _thisInputManager.muteDown |= GetKeyDown(ButtonNames.Voice);
+        _thisInputManager.voice |= InputButtons[ButtonNames.Voice];
+        _thisInputManager.voiceDown |= GetKeyDown(ButtonNames.Voice);
 
         _thisInputManager.interactRightDown |= GetKeyDown(ButtonNames.UseRight);
         _thisInputManager.interactRightUp |= GetKeyUp(ButtonNames.UseRight);
@@ -216,7 +212,7 @@ public class InputModuleOSC : CVRInputModule {
         _thisInputManager.gripRightDown |= GetKeyDown(ButtonNames.GrabRight);
         _thisInputManager.gripRightUp |= GetKeyUp(ButtonNames.GrabRight);
 
-        if (playerInVrWithTwoHands) {
+        if (MetaPort.Instance.isUsingVr) {
             _thisInputManager.gripLeftDown |= GetKeyDown(ButtonNames.GrabLeft);
             _thisInputManager.gripLeftUp |= GetKeyUp(ButtonNames.GrabLeft);
         }
@@ -294,13 +290,13 @@ public class InputModuleOSC : CVRInputModule {
         UpdatePreviousValues();
     }
 
-    public override void UpdateImportantInput() {
-        _thisInputManager.mainMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleRight);
-        _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
-        _thisInputManager.mute |= InputButtons[ButtonNames.Voice];
-        _thisInputManager.muteDown |= GetKeyDown(ButtonNames.Voice);
-        _thisInputManager.scrollValue += InputAxes[AxisNames.MoveHoldFB];
-    }
+    // public override void Update_Always() {
+    //     _thisInputManager.mainMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleRight);
+    //     _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
+    //     _thisInputManager.voice |= InputButtons[ButtonNames.Voice];
+    //     _thisInputManager.voiceDown |= GetKeyDown(ButtonNames.Voice);
+    //     _thisInputManager.scrollValue += InputAxes[AxisNames.MoveHoldFB];
+    // }
 
     private void UpdatePreviousValues() {
         foreach (var axisName in (AxisNames[])Enum.GetValues(typeof(AxisNames))) InputAxesPrevious[axisName] = InputAxes[axisName];

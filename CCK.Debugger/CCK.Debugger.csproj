@@ -9,8 +9,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\UIResources\**" />
-        <EmbeddedResource Include="Resources\AssetBundles\cckdebugger" />
+        <EmbeddedResource Include="Resources\UIResources\**"/>
+        <EmbeddedResource Include="Resources\AssetBundles\cckdebugger"/>
     </ItemGroup>
 
     <ItemGroup>

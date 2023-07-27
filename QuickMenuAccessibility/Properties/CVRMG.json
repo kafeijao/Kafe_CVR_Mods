@@ -1,0 +1,23 @@
+{
+  "_id": 141,
+  "name": "QuickMenuAccessibility",
+  "modversion": "0.0.6",
+  "gameversion": "2022r170",
+  "loaderversion": "v0.5.7",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "__**Features**__:\n- Swap Quick Menu to Right Hand.\n- Swap buttons for Quick Menu with the Main Menu.\n- Make Quick Menu spawn in world space.\n- Change the Quick and Menu buttons to Cycle between menus.\n- When loses tracking on one hand, the QM is set to World Space and cycle menus with single key is turned on.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QuickMenuAccessibility) for more in-depth info.\n\n",
+  "searchtags": [
+    "quick",
+    "menu",
+    "accessibility",
+    "left",
+    "hand",
+    "BTKUILib"
+  ],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r49/QuickMenuAccessibility.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QuickMenuAccessibility",
+  "changelog": "- Updated the namespace of MenuScalePatch to match the newer version.",
+  "embedcolor": "16C60C"
+}

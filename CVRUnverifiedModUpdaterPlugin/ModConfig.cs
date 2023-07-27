@@ -1,4 +1,5 @@
 ﻿using MelonLoader;
+using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -20,10 +21,10 @@ public static class ModConfig {
 
     public static string GetPath(DllType type) {
         switch (type) {
-            case DllType.Mod: return MelonHandler.ModsDirectory;
-            case DllType.ModDesktop: return Path.Combine(MelonHandler.ModsDirectory, "Desktop");
-            case DllType.ModVR: return Path.Combine(MelonHandler.ModsDirectory, "VR");
-            case DllType.Plugin: return MelonHandler.PluginsDirectory;
+            case DllType.Mod: return MelonEnvironment.ModsDirectory;
+            case DllType.ModDesktop: return Path.Combine(MelonEnvironment.ModsDirectory, "Desktop");
+            case DllType.ModVR: return Path.Combine(MelonEnvironment.ModsDirectory, "VR");
+            case DllType.Plugin: return MelonEnvironment.PluginsDirectory;
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, "Attempted to get path with an invalid dll type");
         }

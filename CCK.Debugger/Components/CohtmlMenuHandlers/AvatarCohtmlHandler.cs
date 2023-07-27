@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using ABI_RC.Core;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
@@ -205,7 +206,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         // Attributes section
         var attributesSection = _core.AddSection("Attributes");
-        attributesSection.AddSection("User Name").AddValueGetter(() => isLocal ? MetaPort.Instance.username : currentPlayer.Username);
+        attributesSection.AddSection("User Name").AddValueGetter(() => isLocal ? AuthManager.username : currentPlayer.Username);
         attributesSection.AddSection("User ID").AddValueGetter(() => isLocal ? MetaPort.Instance.ownerId : currentPlayer.Uuid);
         attributesSection.AddSection("Avatar Name/ID").AddValueGetter(() => GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId));
         attributesSection.AddSection("Loading").Value = ToString(!isLoaded || !isInitialized);

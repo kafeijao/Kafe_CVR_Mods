@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Text.RegularExpressions;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.Object_Behaviour;
@@ -347,7 +348,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         SetColor(source);
         if (notify && ModConfig.MeSoundOnMessage.Value) {
             _textBubbleAudioSource.Play();
-            if (msg.IndexOf($"@{MetaPort.Instance.username}", StringComparison.OrdinalIgnoreCase) >= 0) {
+            if (msg.IndexOf($"@{AuthManager.username}", StringComparison.OrdinalIgnoreCase) >= 0) {
                 _textBubbleMentionAudioSource.PlayDelayed(0.5f);
             }
         }
