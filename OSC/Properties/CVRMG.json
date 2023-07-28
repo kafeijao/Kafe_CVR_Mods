@@ -1,8 +1,8 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "1.1.3",
-  "gameversion": "2022r171p1",
+  "modversion": "1.1.5",
+  "gameversion": "2023r171p1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -17,6 +17,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed for 2022r171",
+  "changelog": "- Fixed Tracking endpoints\n- Cached entities for performance.",
   "embedcolor": "16C60C"
 }

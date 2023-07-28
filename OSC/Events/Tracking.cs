@@ -1,11 +1,7 @@
 ﻿using ABI_RC.Core.Player;
-using ABI_RC.Core.Savior;
-using ABI_RC.Systems.IK;
 using ABI_RC.Systems.IK.TrackingModules;
-using HarmonyLib;
-using MelonLoader;
+using Kafe.OSC.Components;
 using UnityEngine;
-using Valve.VR;
 
 namespace Kafe.OSC.Events;
 
@@ -25,9 +21,9 @@ public static class Tracking {
     private static float _nextUpdate;
 
     private static Transform _playerSpaceTransform;
-    private static Transform _playerHmdTransform;
+    // private static Transform _playerHmdTransform;
 
-    private static readonly Dictionary<TrackingPoint, bool> TrackerLastState = new();
+    private static readonly Dictionary<SteamVRTrackingModuleWrapper.TrackerInfo, bool> TrackerLastState = new();
 
     public static event Action<bool, TrackingDataSource, int, string> TrackingDeviceConnected;
     public static event Action<TrackingDataSource, int, string, Vector3, Vector3, float> TrackingDataDeviceUpdated;
@@ -49,7 +45,7 @@ public static class Tracking {
 
         // Set the play space transform when it loads
         Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
-        Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
+        // Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
     public static void OnTrackingDataDeviceUpdated(SteamVRTrackingModule steamVRTrackingModule) {
@@ -60,26 +56,35 @@ public static class Tracking {
         if (Time.time >= _nextUpdate) {
             _nextUpdate = Time.time + _updateRate;
 
+            // var print = Input.GetKeyDown(KeyCode.P);
+
             // Handle trackers
-            foreach (var vrTracker in IKSystem.Instance.AllTrackingPoints) {
+            foreach (var steamVRTracker in SteamVRTrackingModuleWrapper.TrackersInfo.Values) {
+
+                var isActive = steamVRTracker.IsActive && steamVRTracker.IsValid;
 
                 // Manage Connected/Disconnected trackers
-                if ((!TrackerLastState.ContainsKey(vrTracker) && vrTracker.isActive) || (TrackerLastState.ContainsKey(vrTracker) && TrackerLastState[vrTracker] != vrTracker.isActive)) {
-                    MelonLogger.Msg($"[Tracker] {vrTracker.isActive}, {vrTracker.identifier}, {vrTracker.name}, {vrTracker.assignedRole.ToString()}, {vrTracker.deviceName}, {vrTracker.inUse}, {vrTracker.isValid}, {vrTracker.suggestedRole.ToString()}");
-                    TrackingDeviceConnected?.Invoke(vrTracker.isActive, GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName);
-                    TrackerLastState[vrTracker] = vrTracker.isActive;
+                if ((!TrackerLastState.ContainsKey(steamVRTracker) && isActive)
+                    || (TrackerLastState.ContainsKey(steamVRTracker) && TrackerLastState[steamVRTracker] != isActive)) {
+                    // MelonLogger.Msg($"[Tracker] Idx: {steamVRTracker.Index}, IsActive: {steamVRTracker.IsActive}, IsValid: {steamVRTracker.IsValid}, Name: {steamVRTracker.Name}, Class: {steamVRTracker.Class}, Role: {steamVRTracker.Role.ToString()}, DataSource: {steamVRTracker.DataSource.ToString()}, BatteryLevel: {steamVRTracker.BatteryLevel}, Position: {steamVRTracker.Position.ToString("F2")}, Rotation: {steamVRTracker.Rotation.eulerAngles.ToString("F2")}");
+                    TrackingDeviceConnected?.Invoke(isActive, steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name);
+                    TrackerLastState[steamVRTracker] = isActive;
                 }
 
+                // if (print && steamVRTracker.IsActive) {
+                //     MelonLogger.Msg($"[Tracker] Idx: {steamVRTracker.Index}, IsActive: {steamVRTracker.IsActive}, Name: {steamVRTracker.Name}, Class: {steamVRTracker.Class}, Role: {steamVRTracker.Role.ToString()}, DataSource: {steamVRTracker.DataSource.ToString()}, IsValid: {steamVRTracker.IsValid}, BatteryLevel: {steamVRTracker.BatteryLevel}, Position: {steamVRTracker.Position.ToString("F2")}, Rotation: {steamVRTracker.Rotation.eulerAngles.ToString("F2")}");
+                // }
+
                 // Ignore inactive trackers
-                if (!vrTracker.isActive) continue;
+                if (!isActive) continue;
 
-                TrackingDataDeviceUpdated?.Invoke(GetSource(vrTracker), GetIndex(vrTracker), vrTracker.deviceName, vrTracker.position, vrTracker.rotation.eulerAngles, vrTracker.batteryPercentage);
+                TrackingDataDeviceUpdated?.Invoke(steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name, steamVRTracker.Position, steamVRTracker.Rotation.eulerAngles, steamVRTracker.BatteryLevel);
             }
 
-            // Handle HMD
-            if (MetaPort.Instance.isUsingVr && _playerHmdTransform != null) {
-                TrackingDataDeviceUpdated?.Invoke(TrackingDataSource.hmd, 0, "hmd", _playerHmdTransform.position, _playerHmdTransform.rotation.eulerAngles, 0);
-            }
+            // // Handle HMD
+            // if (MetaPort.Instance.isUsingVr && _playerHmdTransform != null) {
+            //     TrackingDataDeviceUpdated?.Invoke(TrackingDataSource.hmd, 0, "hmd", _playerHmdTransform.position, _playerHmdTransform.rotation.eulerAngles, 0);
+            // }
 
             // Handle Play Space
             if (_playerSpaceTransform != null) {
@@ -94,24 +99,5 @@ public static class Tracking {
     internal static void Reset() {
         // Clear the cache to force an update to the connected devices
         TrackerLastState.Clear();
-    }
-
-    private static int GetIndex(TrackingPoint vrTracker) {
-        return vrTracker.displayObject.GetHashCode();
-        // return (int)Traverse.Create(vrTracker).Field<SteamVR_TrackedObject>("_trackedObject").Value.index;
-    }
-
-    private static TrackingDataSource GetSource(TrackingPoint vrTracker) {
-        return TrackingDataSource.unknown;
-        // Todo: Figure it out
-        // return vrTracker.assignedRole switch {
-        //     ETrackedControllerRole.Invalid => vrTracker.deviceName == ""
-        //         ? TrackingDataSource.base_station
-        //         : TrackingDataSource.unknown,
-        //     ETrackedControllerRole.LeftHand => TrackingDataSource.left_controller,
-        //     ETrackedControllerRole.RightHand => TrackingDataSource.right_controller,
-        //     ETrackedControllerRole.OptOut => TrackingDataSource.tracker,
-        //     _ => TrackingDataSource.unknown
-        // };
     }
 }
