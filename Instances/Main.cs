@@ -135,6 +135,7 @@ public class Instances : MelonMod {
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
             && ModConfig.MeRejoinPreviousLocation.Value
             && MetaPort.Instance.CurrentInstanceId != ""
+            && Config?.LastInstance?.InstanceId != null
             && Config.LastInstance.InstanceId == MetaPort.Instance.CurrentInstanceId
             && MovementSystem.Instance.canFly) {
 
@@ -625,8 +626,8 @@ public class Instances : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.PopulateLastMessage))]
-        public static void After_RichPresence_PopulateLastMessage() {
+        [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.ReadPresenceUpdateFromNetwork))]
+        public static void After_RichPresence_ReadPresenceUpdateFromNetwork() {
             try {
 
                 // Update current instance
@@ -665,7 +666,7 @@ public class Instances : MelonMod {
 
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_PopulateLastMessage)}");
+                MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_ReadPresenceUpdateFromNetwork)}");
                 MelonLogger.Error(e);
             }
         }
