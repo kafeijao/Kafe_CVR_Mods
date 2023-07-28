@@ -15,7 +15,7 @@
     "blacklist"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r45/ProfilesExtended.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/ProfilesExtended.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ProfilesExtended",
   "changelog": "- When loading a Profile only load params that are in the AAS (on by default).",
   "embedcolor": "16C60C"

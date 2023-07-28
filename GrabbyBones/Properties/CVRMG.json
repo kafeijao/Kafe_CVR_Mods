@@ -15,7 +15,7 @@
     "bone"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r53/GrabbyBones.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
   "changelog": "- Added the tag `[NGBB]` to prevent grabbing specific bones.\n- Fixed enabled config not disabling properly.\n- Fixed angle parameter being wrongly calculated",
   "embedcolor": "16C60C"

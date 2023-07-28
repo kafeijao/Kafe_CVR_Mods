@@ -14,7 +14,7 @@
     "bloom"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r48/PostProcessingOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/PostProcessingOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PostProcessingOverrides",
   "changelog": "- Added bloom threshold override.\n- Fixed not overriding the PP in some worlds.",
   "embedcolor": "16C60C"

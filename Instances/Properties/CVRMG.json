@@ -1,7 +1,7 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.10",
+  "modversion": "1.0.11",
   "gameversion": "2022r171p1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -14,8 +14,8 @@
     "BTKUILib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/Instances.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed for 2022r171",
+  "changelog": "- Re-adding ChatBox integration.\n- Fixed borked instance names.",
   "embedcolor": "16C60C"
 }

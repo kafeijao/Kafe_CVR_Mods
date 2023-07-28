@@ -1,7 +1,7 @@
 {
   "_id": 169,
   "name": "RequestLib",
-  "modversion": "0.0.6",
+  "modversion": "0.0.7",
   "gameversion": "2022r171p1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -12,8 +12,8 @@
     "lib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/RequestLib.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
-  "changelog": "- Fixed for 2022r171",
+  "changelog": "- Fixed optional requirements.",
   "embedcolor": "16C60C"
 }

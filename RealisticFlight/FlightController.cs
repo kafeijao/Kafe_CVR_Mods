@@ -181,23 +181,24 @@ public class FlightController : MonoBehaviour {
             return Mathf.SmoothDamp(current, target, ref currentVelocity, smoothTime);
         }
 
-        [HarmonyTranspiler]
-        [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.Update))]
-        private static IEnumerable<CodeInstruction> Transpiler_MovementSystem_Update(
-            IEnumerable<CodeInstruction> instructions, ILGenerator il) {
-
-            // Match the 3 call of smooth damp (x, y, and z) of velocity:
-            // Mathf.SmoothDamp(this._velocity.x, 0.0f, ref this._deltaVelocityX, this.appliedVelocityFriction);
-            var matcher = new CodeMatcher(instructions).MatchForward(true, new CodeMatch(i =>
-                    i.opcode == OpCodes.Ldflda && i.operand is FieldInfo fi && fi.Name.StartsWith("_deltaVelocity")),
-                    OpCodes.Ldarg_0,
-                    new CodeMatch(i => i.opcode == OpCodes.Ldfld && i.operand is FieldInfo { Name: "appliedVelocityFriction" }),
-                    new CodeMatch(i => i.opcode == OpCodes.Call && i.operand is MethodInfo { Name: "SmoothDamp" }));
-
-            // Call our custom smooth damp instead for all 3 axis
-            return matcher.Repeat(matched => {
-                matched.SetOperandAndAdvance(AccessTools.Method(typeof(HarmonyPatches), nameof(SmoothDampCustom)));
-            }).InstructionEnumeration();
-        }
+        // Todo: Re-add when we get melon loader that works with CodeMatcher
+        // [HarmonyTranspiler]
+        // [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.Update))]
+        // private static IEnumerable<CodeInstruction> Transpiler_MovementSystem_Update(
+        //     IEnumerable<CodeInstruction> instructions, ILGenerator il) {
+        //
+        //     // Match the 3 call of smooth damp (x, y, and z) of velocity:
+        //     // Mathf.SmoothDamp(this._velocity.x, 0.0f, ref this._deltaVelocityX, this.appliedVelocityFriction);
+        //     var matcher = new CodeMatcher(instructions).MatchForward(true, new CodeMatch(i =>
+        //             i.opcode == OpCodes.Ldflda && i.operand is FieldInfo fi && fi.Name.StartsWith("_deltaVelocity")),
+        //             OpCodes.Ldarg_0,
+        //             new CodeMatch(i => i.opcode == OpCodes.Ldfld && i.operand is FieldInfo { Name: "appliedVelocityFriction" }),
+        //             new CodeMatch(i => i.opcode == OpCodes.Call && i.operand is MethodInfo { Name: "SmoothDamp" }));
+        //
+        //     // Call our custom smooth damp instead for all 3 axis
+        //     return matcher.Repeat(matched => {
+        //         matched.SetOperandAndAdvance(AccessTools.Method(typeof(HarmonyPatches), nameof(SmoothDampCustom)));
+        //     }).InstructionEnumeration();
+        // }
     }
 }

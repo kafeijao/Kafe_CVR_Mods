@@ -18,7 +18,7 @@
     "settings"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r53/PickupOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/PickupOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides",
   "changelog": "- Fixed camera pickup settings not updating without restarting when changing them.",
   "embedcolor": "16C60C"

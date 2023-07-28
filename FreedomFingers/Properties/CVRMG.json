@@ -1,7 +1,7 @@
 {
   "_id": 101,
   "name": "FreedomFingers",
-  "modversion": "1.0.4",
+  "modversion": "1.0.5",
   "gameversion": "2022r171p1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r55-ex/FreedomFingers.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/FreedomFingers.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers",
-  "changelog": "- Fixed gesture toggle not working\n- Fixed finger tracking not always enabled.",
+  "changelog": "- Fixed Gesture Toggle not being able to be placed on the right hand in SteamVR Bindings (game bug).",
   "embedcolor": "16C60C"
 }
