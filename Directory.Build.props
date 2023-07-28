@@ -84,10 +84,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\AwesomeTechnologies.VegetationStudioPro.Runtime.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="BakeryRuntimeAssembly">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\BakeryRuntimeAssembly.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Bhaptics.Tact">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Bhaptics.Tact.dll</HintPath>
             <Private>False</Private>
