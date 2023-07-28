@@ -2,6 +2,7 @@
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
+using ABI_RC.Systems.GameEventSystem;
 using HarmonyLib;
 using MelonLoader;
 using TMPro;
@@ -94,6 +95,13 @@ public class ChatBox : MelonMod {
                 CohtmlPatches.SetKeyboardContent("");
             }
         };
+
+        CVRGameEventSystem.MainMenu.OnClose.AddListener(() => {
+            // When closing the Game Menu (also closes the keyboard) mark keyboard as disabled
+            if ( _isChatBoxKeyboardOpened) {
+                MelonCoroutines.Start(DisableKeyboardWithDelay());
+            }
+        });
     }
 
     internal static void OpenKeyboard(bool delayed, string initialMessage) {
@@ -133,7 +141,7 @@ public class ChatBox : MelonMod {
             OpenKeyboard(true, "");
         }
 
-        if (Input.GetKeyDown(KeyCode.Insert) && _isChatBoxKeyboardOpened) {
+        if (Input.GetKeyDown(KeyCode.Tab) && _isChatBoxKeyboardOpened) {
             CohtmlPatches.SendAutoCompleteEvent();
         }
     }
@@ -155,6 +163,8 @@ public class ChatBox : MelonMod {
         if (_openKeyboardCoroutineToken != null) {
             MelonCoroutines.Stop(_openKeyboardCoroutineToken);
         }
+        // Hack to prevent getting stuck Todo: Probably can be removed after update
+        ViewManager.Instance.textInputFocused = false;
     }
 
     private static IEnumerator DisableKeyboardWithDelay() {
@@ -185,7 +195,7 @@ public class ChatBox : MelonMod {
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.openMenuKeyboard), typeof(string))]
-        public static void After_ViewManager_openMenuKeyboard(ViewManager __instance, ref string previousValue) {
+        public static void Before_ViewManager_openMenuKeyboard(ViewManager __instance, ref string previousValue) {
             // When opening the ChatBox keyboard, send the typing event
             try {
                 if (_isChatBoxKeyboardOpened) {
@@ -200,46 +210,7 @@ public class ChatBox : MelonMod {
                 }
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_ViewManager_openMenuKeyboard)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        // Todo: Test if needed? Otherwise try to use ViewManager.Instance.gameMenuTextInputFocused
-        // [HarmonyPostfix]
-        // [HarmonyPatch(typeof(InputManager), nameof(InputManager.Update))]
-        // public static void After_InputManager_Update(InputManager __instance) {
-        //     // If typing on the keyboard Revert the mute/unmute events
-        //     try {
-        //         // If the keyboard is closed -> ignore
-        //         if (!_isChatBoxKeyboardOpened) return;
-        //
-        //         // Otherwise lets prevent the mic toggle/push to talk
-        //         if (VivoxCvarHandler.PushToTalk.Value) {
-        //             VivoxDeviceHandler.InputMuted = true;
-        //         }
-        //         else if (CVRInputManager.Instance.voiceDown) {
-        //             // Toggle again, so we revert the toggling xD
-        //             VivoxDeviceHandler.InputMuted = !VivoxDeviceHandler.InputMuted;
-        //         }
-        //     }
-        //     catch (Exception e) {
-        //         MelonLogger.Error($"Error during the patched function {nameof(After_InputManager_Update)}");
-        //         MelonLogger.Error(e);
-        //     }
-        // }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.UiStateToggle), typeof(bool))]
-        public static void After_ViewManager_UiStateToggle(ViewManager __instance, bool show) {
-            // When closing the Game Menu (also closes the keyboard) mark keyboard as disabled
-            try {
-                if (!show && _isChatBoxKeyboardOpened) {
-                    MelonCoroutines.Start(DisableKeyboardWithDelay());
-                }
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_ViewManager_UiStateToggle)}");
+                MelonLogger.Error($"Error during the patched function {nameof(Before_ViewManager_openMenuKeyboard)}");
                 MelonLogger.Error(e);
             }
         }

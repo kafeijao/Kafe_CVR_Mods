@@ -17,7 +17,7 @@ be able to see your ChatBoxes.
 - Keep the ChatBox History window on the center of the QuickMenu or place it on the right.
 - Press `Arrow up`/`Arrow down` (keyboard) to iterate through the sent messages. You can also click `Prev` if you're in
   VR.
-- Press `Insert` (keyboard) or `Auto` in VR to attempt to auto-complete usernames. 
+- Press `TAB` (keyboard) or `Auto` in VR to attempt to auto-complete usernames. 
 - Use `@username` to mention people in messages.
 
 
