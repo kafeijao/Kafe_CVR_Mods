@@ -1,7 +1,7 @@
 {
   "_id": 159,
   "name": "Logger++",
-  "modversion": "0.0.4",
+  "modversion": "0.0.5",
   "gameversion": "2023r171p1",
   "loaderversion": "v0.6.1",
   "modtype": "Plugin",
@@ -15,6 +15,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/Logger++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++",
-  "changelog": "- Added option to enable full stack traces for info/warning/errors logs.",
+  "changelog": "- Fixed for 2023r171p1.",
   "embedcolor": "16C60C"
 }

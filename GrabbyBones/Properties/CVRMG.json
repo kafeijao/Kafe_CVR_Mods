@@ -1,7 +1,7 @@
 {
   "_id": 160,
   "name": "GrabbyBones",
-  "modversion": "1.0.2",
+  "modversion": "1.0.3",
   "gameversion": "2023r171p1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
-  "changelog": "- Added the tag `[NGBB]` to prevent grabbing specific bones.\n- Fixed enabled config not disabling properly.\n- Fixed angle parameter being wrongly calculated",
+  "changelog": "- Fixed for 2023r171.",
   "embedcolor": "16C60C"
 }
