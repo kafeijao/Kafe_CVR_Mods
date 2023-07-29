@@ -45,9 +45,9 @@ public class EyeMovementFix : MelonMod {
 
             // Manually patch the add mirror, since we don't want to do it if the mod is not present
             HarmonyInstance.Patch(
-                typeof(CVREyeControllerManager).GetMethod(nameof(CVREyeControllerManager.addMirror)),
+                typeof(CVREyeControllerManager).GetMethod(nameof(CVREyeControllerManager.addMirror), AccessTools.all),
                 null,
-                new HarmonyMethod(typeof(EyeMovementFix).GetMethod(nameof(After_CVREyeControllerManager_addMirror), BindingFlags.NonPublic | BindingFlags.Static))
+                new HarmonyMethod(typeof(EyeMovementFix).GetMethod(nameof(After_CVREyeControllerManager_addMirror), AccessTools.all))
             );
         }
 
@@ -126,17 +126,19 @@ public class EyeMovementFix : MelonMod {
                 #endif
             }
             catch (Exception e) {
+                MelonLogger.Error($"Error during {nameof(CacheInitialEyeRotations)}");
                 MelonLogger.Error(e);
             }
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.AvatarInstantiated))]
-        private static void Before_CVREyeControllerManager_Start(PuppetMaster __instance) {
+        private static void Before_PuppetMaster_AvatarInstantiated(PuppetMaster __instance) {
             try {
                 CacheInitialEyeRotations(__instance.transform);
             }
             catch (Exception e) {
+                MelonLogger.Error($"Error during patch of {nameof(Before_PuppetMaster_AvatarInstantiated)}");
                 MelonLogger.Error(e);
             }
         }
@@ -148,13 +150,14 @@ public class EyeMovementFix : MelonMod {
                 CacheInitialEyeRotations(inAvatar.transform);
             }
             catch (Exception e) {
+                MelonLogger.Error($"Error during patch of {nameof(Before_PlayerSetup_SetupAvatar)}");
                 MelonLogger.Error(e);
             }
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.OnDestroy))]
-        private static void Before_CVREyeControllerManager_Start(CVRAvatar __instance) {
+        private static void Before_CVRAvatar_OnDestroy(CVRAvatar __instance) {
             try {
                 if (BetterEyeController.OriginalLeftEyeLocalRotation.ContainsKey(__instance)) {
                     BetterEyeController.OriginalLeftEyeLocalRotation.Remove(__instance);
@@ -164,6 +167,7 @@ public class EyeMovementFix : MelonMod {
                 }
             }
             catch (Exception e) {
+                MelonLogger.Error($"Error during patch of {nameof(Before_CVRAvatar_OnDestroy)}");
                 MelonLogger.Error(e);
             }
         }

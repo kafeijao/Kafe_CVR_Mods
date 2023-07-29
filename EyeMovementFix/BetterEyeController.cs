@@ -639,26 +639,30 @@ public class BetterEyeController : MonoBehaviour {
 
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Update))]
-        private static void Before_CVREyeController_Update(CVREyeController __instance, out Vector2 __state) {
+        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.LateUpdate))]
+        private static void Before_CVREyeController_LateUpdate(CVREyeController __instance, out Vector2 __state) {
             // Save eye angle before the update from CVR
             __state = __instance.eyeAngle;
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Update))]
-        private static void After_CVREyeController_Update(CVREyeController __instance, ref Vector2 __state) {
-            // Restore the eye angle after the update from CVR
-            // We do this because we're managing that value in LateUpdate
-            __instance.eyeAngle = __state;
-        }
+        // [HarmonyPostfix]
+        // [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Update))]
+        // private static void After_CVREyeController_Update(CVREyeController __instance, ref Vector2 __state) {
+        //     // Restore the eye angle after the update from CVR
+        //     // We do this because we're managing that value in LateUpdate
+        //     __instance.eyeAngle = __state;
+        // }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.LateUpdate))]
-        private static void After_CVREyeController_LateUpdate(CVREyeController __instance) {
+        private static void After_CVREyeController_LateUpdate(CVREyeController __instance, ref Vector2 __state) {
             if (_errored) return;
 
             try {
+                // Restore the eye angle after the update from CVR
+                // We do this because we're managing that value in LateUpdate
+                __instance.eyeAngle = __state;
+
                 // Check if we're ready to run our stuff
                 if (!BetterControllers.ContainsKey(__instance)) return;
                 var betterEyeController = BetterControllers[__instance];

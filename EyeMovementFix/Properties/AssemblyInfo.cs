@@ -26,7 +26,7 @@ using MelonLoader;
 
 namespace Kafe.EyeMovementFix.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "2.0.5";
+    public const string Version = "2.0.6";
     public const string Author = "kafeijao";
     public const string PortableMirrorModName = "PortableMirrorMod";
     public const string CCKDebuggerName = "CCKDebugger";

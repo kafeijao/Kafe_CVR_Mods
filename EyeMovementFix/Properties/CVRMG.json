@@ -1,8 +1,8 @@
 {
   "_id": 118,
   "name": "EyeMovementFix",
-  "modversion": "2.0.5",
-  "gameversion": "2023r171p2",
+  "modversion": "2.0.6",
+  "gameversion": "2023r171p3",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -16,6 +16,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/EyeMovementFix.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/EyeMovementFix",
-  "changelog": "- Fixed for 2023r171",
+  "changelog": "- Fixed for 2023r171p3",
   "embedcolor": "16C60C"
 }
