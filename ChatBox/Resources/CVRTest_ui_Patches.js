@@ -133,4 +133,12 @@ ChatBoxKeyboardInputElement.addEventListener("keyup", function(e){
     }
 });
 
+
+
+// Blur keyboard input
+engine.on("ChatBoxBlurKeyboardInput", function(){
+    document.getElementById('keyoard-input').blur();
+});
+
+
 console.log('ChatBox patches ran successfully!')

@@ -1,8 +1,8 @@
 {
   "_id": 168,
   "name": "ChatBox",
-  "modversion": "1.0.8",
-  "gameversion": "2023r171p1",
+  "modversion": "1.0.9",
+  "gameversion": "2023r171p2",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -17,6 +17,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
-  "changelog": "- Fixed for 2023r171p1\n- Fixed keyboard getting player stuck (TYSM NAK for finding the issue)\n- Changed auto-complete username keybinding to `TAB`",
+  "changelog": "- Fixed for 2023r171p1\n- Fixed keyboard getting player stuck (TYSM NAK for finding the issue)\n- Changed auto-complete username keybinding to `TAB`\n- Added hack to not need to press keys twice when in VR.",
   "embedcolor": "16C60C"
 }

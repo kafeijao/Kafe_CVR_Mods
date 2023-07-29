@@ -29,10 +29,18 @@ internal static class CohtmlPatches {
 
     internal static void SendAutoCompleteEvent() {
         if (!_initialized) {
-            MelonLogger.Warning($"[SetKeyboardContent] Attempted to set the keyboard content, but the view was not initialized.");
+            MelonLogger.Warning($"[SendAutoCompleteEvent] Attempted send the auto-complete event, but the view was not initialized.");
             return;
         }
         ViewManager.Instance.gameMenuView.View.TriggerEvent("ChatBoxAutoComplete");
+    }
+
+    internal static void SendKeyboardBlur() {
+        if (!_initialized) {
+            MelonLogger.Warning($"[SendKeyboardBlur] Attempted to send the blur keyboard event, but the view was not initialized.");
+            return;
+        }
+        ViewManager.Instance.gameMenuView.View.TriggerEvent("ChatBoxBlurKeyboardInput");
     }
 
     [HarmonyPatch]

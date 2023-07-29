@@ -2,6 +2,7 @@
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
 using HarmonyLib;
 using MelonLoader;
@@ -131,6 +132,10 @@ public class ChatBox : MelonMod {
     private static void ActuallyOpenKeyboard(string initialMessage) {
         ViewManager.Instance.openMenuKeyboard(KeyboardId + initialMessage);
         ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
+        // Hack! to blur the focus when writing on chatbox in vr (otherwise you need to press twice the first letter)
+        if (MetaPort.Instance.isUsingVr) {
+            CohtmlPatches.SendKeyboardBlur();
+        }
         _openKeyboardCoroutineToken = null;
     }
 
@@ -163,8 +168,6 @@ public class ChatBox : MelonMod {
         if (_openKeyboardCoroutineToken != null) {
             MelonCoroutines.Stop(_openKeyboardCoroutineToken);
         }
-        // Hack to prevent getting stuck Todo: Probably can be removed after update
-        ViewManager.Instance.textInputFocused = false;
     }
 
     private static IEnumerator DisableKeyboardWithDelay() {
