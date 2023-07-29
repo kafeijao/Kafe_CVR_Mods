@@ -27,7 +27,7 @@ using MelonLoader;
 
 namespace Kafe.OSC.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.1.5";
+    public const string Version = "1.1.6";
     public const string Author = "kafeijao";
     public const string ChatBoxName = "ChatBox";
     public const string CVRParamLibName = "CVRParamLib";

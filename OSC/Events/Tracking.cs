@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.Player;
+using ABI_RC.Systems.IK;
 using ABI_RC.Systems.IK.TrackingModules;
 using Kafe.OSC.Components;
 using UnityEngine;
@@ -20,7 +21,7 @@ public static class Tracking {
     private static float _updateRate;
     private static float _nextUpdate;
 
-    private static Transform _playerSpaceTransform;
+    // private static Transform _playerSpaceTransform;
     // private static Transform _playerHmdTransform;
 
     private static readonly Dictionary<SteamVRTrackingModuleWrapper.TrackerInfo, bool> TrackerLastState = new();
@@ -44,7 +45,7 @@ public static class Tracking {
         });
 
         // Set the play space transform when it loads
-        Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
+        // Scene.PlayerSetup += () => _playerSpaceTransform = PlayerSetup.Instance.transform;
         // Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
@@ -55,6 +56,10 @@ public static class Tracking {
 
         if (Time.time >= _nextUpdate) {
             _nextUpdate = Time.time + _updateRate;
+
+            // Handle Play Space
+            var playSpace = IKSystem.Instance.vrPlaySpace;
+            TrackingDataPlaySpaceUpdated?.Invoke(playSpace.position, playSpace.rotation.eulerAngles);
 
             // var print = Input.GetKeyDown(KeyCode.P);
 
@@ -78,18 +83,13 @@ public static class Tracking {
                 // Ignore inactive trackers
                 if (!isActive) continue;
 
-                TrackingDataDeviceUpdated?.Invoke(steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name, steamVRTracker.Position, steamVRTracker.Rotation.eulerAngles, steamVRTracker.BatteryLevel);
+                TrackingDataDeviceUpdated?.Invoke(steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name, playSpace.TransformPoint(steamVRTracker.Position), (playSpace.rotation * steamVRTracker.Rotation).eulerAngles, steamVRTracker.BatteryLevel);
             }
 
             // // Handle HMD
             // if (MetaPort.Instance.isUsingVr && _playerHmdTransform != null) {
             //     TrackingDataDeviceUpdated?.Invoke(TrackingDataSource.hmd, 0, "hmd", _playerHmdTransform.position, _playerHmdTransform.rotation.eulerAngles, 0);
             // }
-
-            // Handle Play Space
-            if (_playerSpaceTransform != null) {
-                TrackingDataPlaySpaceUpdated?.Invoke(_playerSpaceTransform.position, _playerSpaceTransform.rotation.eulerAngles);
-            }
 
             // Tell props to send their location as well
             Spawnable.OnTrackingTick();

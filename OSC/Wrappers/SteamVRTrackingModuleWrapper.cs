@@ -70,6 +70,10 @@ internal static class SteamVRTrackingModuleWrapper {
 
             // Create tracker info if it doesn't exist
             if (!TrackersInfo.TryGetValue(index, out var trackerInfo)) {
+
+                // Ignore invalid/uninitialized trackers
+                if (!pose.bDeviceIsConnected || !pose.bPoseIsValid) return;
+
                 var stringProperty = _steamVRInstance.GetStringProperty(ETrackedDeviceProperty.Prop_ControllerType_String, out var error1, (uint) index);
                 var deviceName = error1 != ETrackedPropertyError.TrackedProp_Success ? "" : stringProperty;
                 var deviceClass = _openVRSystem.GetTrackedDeviceClass((uint)index);
