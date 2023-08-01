@@ -1,7 +1,7 @@
 {
   "_id": 74,
   "name": "CCK.Debugger",
-  "modversion": "2.0.4",
+  "modversion": "2.0.5",
   "gameversion": "2023r171p2",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -23,6 +23,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
-  "changelog": "- Made BTKUILib mandatory (otherwise it would error)",
+  "changelog": "- Updated the sync type names.\n- Added finger curls to misc even for Desktop.",
   "embedcolor": "16C60C"
 }

@@ -138,19 +138,19 @@ public abstract class ICohtmlHandler {
 
     protected static string GetUsername(string guid) {
         if (string.IsNullOrEmpty(guid)) return "N/A";
-        return Events.Player.PlayersUsernamesCache.ContainsKey(guid) ? Events.Player.PlayersUsernamesCache[guid] : $"Unknown [{guid}]";
+        return Events.Player.PlayersUsernamesCache.TryGetValue(guid, out var value) ? value : $"Unknown [{guid}]";
     }
 
     protected static string GetSpawnableName(string guid) {
         if (string.IsNullOrEmpty(guid)) return "N/A";
         var croppedGuid = guid.Length == 36 ? guid.Substring(guid.Length - 12) : guid;
-        return Events.Spawnable.SpawnableNamesCache.ContainsKey(guid) ? Events.Spawnable.SpawnableNamesCache[guid] : $"Unknown [{croppedGuid}]";
+        return Events.Spawnable.SpawnableNamesCache.TryGetValue(guid, out var value) ? value : $"Unknown [{croppedGuid}]";
     }
 
     protected static string GetAvatarName(string guid) {
         if (string.IsNullOrEmpty(guid)) return "N/A";
         var croppedGuid = guid.Length == 36 ? guid.Substring(guid.Length - 12) : guid;
-        return Events.Avatar.AvatarsNamesCache.ContainsKey(guid) ? Events.Avatar.AvatarsNamesCache[guid] : $"Unknown [{croppedGuid}]";
+        return Events.Avatar.AvatarsNamesCache.TryGetValue(guid, out var value) ? value : $"Unknown [{croppedGuid}]";
     }
 
     protected static string GetTimeDifference(float time) {

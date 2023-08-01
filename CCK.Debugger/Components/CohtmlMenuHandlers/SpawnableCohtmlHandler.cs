@@ -42,9 +42,14 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         };
 
         SyncTypeDict = new Dictionary<int, string> {
-            { 1, "GrabbedByMe" },
-            { 3, "TeleGrabbed" },
+            { -1, "None" },
+            { 0, "Physics" },
+            { 1, "Grabbed" },
             { 2, "Attached" },
+            { 3, "Tele-Grabbed" },
+            { 4, "Seat" },
+            { 5, "Newton?" },
+            { 6, "Animator Driver" },
         };
 
         Events.DebuggerMenu.SpawnableLoaded += (spawnable, isLoaded) => {
@@ -158,10 +163,11 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         attributesSection.AddSection("Is Loading").AddValueGetter(() => ToString(!isLoaded));
         attributesSection.AddSection("Spawned By").AddValueGetter(() => GetUsername(currentSpawnablePropData.SpawnedBy));
         attributesSection.AddSection("Synced By").AddValueGetter(() => GetUsername(currentSpawnablePropData.syncedBy));
-        attributesSection.AddSection("Sync By").AddValueGetter(() => {
+        attributesSection.AddSection("Sync Type").AddValueGetter(() => {
             var syncType = currentSpawnablePropData.syncType;
-            var syncTypeString = SyncTypeDict.ContainsKey(syncType) ? SyncTypeDict[syncType] : currentSpawnable.isPhysicsSynced ? "Physics" : "None";
-            return $"{syncType.ToString()} [{syncTypeString}?]";
+            if (syncType == 0 && !currentSpawnable.isPhysicsSynced) syncType = -1;
+            var syncTypeString = SyncTypeDict.TryGetValue(syncType, out var value) ? value : "Unknown";
+            return $"[{currentSpawnablePropData.syncType.ToString()}] {syncTypeString}";
         });
     }
 
