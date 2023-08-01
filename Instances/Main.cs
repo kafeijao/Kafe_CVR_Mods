@@ -142,6 +142,8 @@ public class Instances : MelonMod {
             var movementSystemTransform = MovementSystem.Instance.transform;
             var pos = MovementSystem.Instance.rotationPivot.position;
             pos.y = movementSystemTransform.position.y;
+            // Don't save the rejoining location if the location is invalid...
+            if (Vector3.Distance(Vector3.zero, pos) > 200000.0 || Mathf.Abs(pos.x) > 200000.0 || Mathf.Abs(pos.y) > 200000.0 || Mathf.Abs(pos.z) > 200000.0) return;
             var rot = MovementSystem.Instance.rotationPivot.eulerAngles;
             rot.x = 0;
             rot.z = 0;
