@@ -4,6 +4,9 @@ using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
+using ABI_RC.Systems.InputManagement;
+using ABI_RC.VideoPlayer.Scripts;
+using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using TMPro;
@@ -132,7 +135,7 @@ public class ChatBox : MelonMod {
     private static void ActuallyOpenKeyboard(string initialMessage) {
         ViewManager.Instance.openMenuKeyboard(KeyboardId + initialMessage);
         ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
-        // Hack! to blur the focus when writing on chatbox in vr (otherwise you need to press twice the first letter)
+        // Hack! to blur the focus when writing on chat box in vr (otherwise you need to press twice the first letter)
         if (MetaPort.Instance.isUsingVr) {
             CohtmlPatches.SendKeyboardBlur();
         }
@@ -142,7 +145,10 @@ public class ChatBox : MelonMod {
     public override void OnUpdate() {
 
         if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
-            && !_isChatBoxKeyboardOpened && /*!ViewManager.Instance._gameMenuOpen*/ !Traverse.Create(ViewManager.Instance).Field<bool>("_gameMenuOpen").Value) {
+            && !_isChatBoxKeyboardOpened
+            && CVRInputManager.Instance != null && !CVRInputManager.Instance.textInputFocused
+            && CVR_MenuManager.Instance != null && !CVR_MenuManager.Instance.textInputFocused
+            && ViewManager.Instance != null && !ViewManager.Instance.textInputFocused) {
             OpenKeyboard(true, "");
         }
 
