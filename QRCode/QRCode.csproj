@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <ItemGroup>
+        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18" />
+        <PackageReference Include="ZXing.Net" Version="0.16.9" />
+        <Reference Include="ZXing.Unity">
+            <HintPath>Resources\ZXing.Net.Bindings.0.16.8.0\Bindings\ZXing.Unity3D\netstandard2.0\ZXing.Unity.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+    
+    <Target Name="CopyRugOscCoreToManagedLibs" BeforeTargets="BeforeBuild">
+        <!-- Copy the zxing.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
+        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\zxing.net\0.16.9\lib\netstandard2.1\zxing.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
+    </Target>
+    
+</Project>

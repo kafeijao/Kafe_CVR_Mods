@@ -1,0 +1,258 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ZXing.Unity</name>
+    </assembly>
+    <members>
+        <member name="T:ZXing.Unity.Color32Image">
+            <summary>
+            representation of an image as Color32 array
+            </summary>
+        </member>
+        <member name="P:ZXing.Unity.Color32Image.Pixels">
+            <summary>
+            the generated code as Color32 array
+            </summary>
+        </member>
+        <member name="P:ZXing.Unity.Color32Image.Width">
+            <summary>
+            the width of the image
+            </summary>
+        </member>
+        <member name="P:ZXing.Unity.Color32Image.Height">
+            <summary>
+            the height of the image
+            </summary>
+        </member>
+        <member name="T:ZXing.Unity.Color32Renderer">
+            <summary>
+            a barcode renderer which returns a Color32 array
+            </summary>
+        </member>
+        <member name="P:ZXing.Unity.Color32Renderer.Foreground">
+            <summary>
+            Gets or sets the foreground color.
+            </summary>
+            <value>
+            The foreground color.
+            </value>
+        </member>
+        <member name="P:ZXing.Unity.Color32Renderer.Background">
+            <summary>
+            Gets or sets the background color.
+            </summary>
+            <value>
+            The background color.
+            </value>
+        </member>
+        <member name="M:ZXing.Unity.Color32Renderer.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.Color32Renderer"/> class.
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.Color32Renderer.Render(ZXing.Common.BitMatrix,ZXing.BarcodeFormat,System.String)">
+            <summary>
+            Renders the specified matrix.
+            </summary>
+            <param name="matrix">The matrix.</param>
+            <param name="format">The format.</param>
+            <param name="content">The content.</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZXing.Unity.Color32Renderer.Render(ZXing.Common.BitMatrix,ZXing.BarcodeFormat,System.String,ZXing.Common.EncodingOptions)">
+            <summary>
+            Renders the specified matrix.
+            </summary>
+            <param name="matrix">The matrix.</param>
+            <param name="format">The format.</param>
+            <param name="content">The content.</param>
+            <param name="options">The options.</param>
+            <returns></returns>
+        </member>
+        <member name="T:ZXing.Unity.BarcodeReader">
+            <summary>
+            A smart class to decode the barcode inside a bitmap object
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.BarcodeReader.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.BarcodeReader"/> class.
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.BarcodeReader.#ctor(ZXing.Reader,System.Func{UnityEngine.Color32[],System.Int32,System.Int32,ZXing.LuminanceSource},System.Func{ZXing.LuminanceSource,ZXing.Binarizer})">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.BarcodeReader"/> class.
+            </summary>
+            <param name="reader">Sets the reader which should be used to find and decode the barcode.
+            If null then MultiFormatReader is used</param>
+            <param name="createLuminanceSource">Sets the function to create a luminance source object for a bitmap.
+            If null, an exception is thrown when Decode is called</param>
+            <param name="createBinarizer">Sets the function to create a binarizer object for a luminance source.
+            If null then HybridBinarizer is used</param>
+        </member>
+        <member name="M:ZXing.Unity.BarcodeReader.#ctor(ZXing.Reader,System.Func{UnityEngine.Color32[],System.Int32,System.Int32,ZXing.LuminanceSource},System.Func{ZXing.LuminanceSource,ZXing.Binarizer},System.Func{System.Byte[],System.Int32,System.Int32,ZXing.RGBLuminanceSource.BitmapFormat,ZXing.LuminanceSource})">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.BarcodeReader"/> class.
+            </summary>
+            <param name="reader">Sets the reader which should be used to find and decode the barcode.
+            If null then MultiFormatReader is used</param>
+            <param name="createLuminanceSource">Sets the function to create a luminance source object for a bitmap.
+            If null, an exception is thrown when Decode is called</param>
+            <param name="createBinarizer">Sets the function to create a binarizer object for a luminance source.
+            If null then HybridBinarizer is used</param>
+            <param name="createRGBLuminanceSource">Sets the function to create a luminance source object for a rgb raw byte array.</param>
+        </member>
+        <member name="P:ZXing.Unity.BarcodeReader.CreateLuminanceSource">
+            <summary>
+            Optional: Gets or sets the function to create a luminance source object for a bitmap.
+            If null a platform specific default LuminanceSource is used
+            </summary>
+            <value>
+            The function to create a luminance source object.
+            </value>
+        </member>
+        <member name="M:ZXing.Unity.BarcodeReader.Decode(UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            Decodes the specified barcode bitmap.
+            </summary>
+            <param name="rawColor32"></param>
+            <param name="width"></param>
+            <param name="height"></param>
+            <returns>the result data or null</returns>
+        </member>
+        <member name="M:ZXing.Unity.BarcodeReader.DecodeMultiple(UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            Decodes the specified barcode bitmap.
+            </summary>
+            <param name="rawColor32"></param>
+            <param name="width"></param>
+            <param name="height"></param>
+            <returns>the result data or null</returns>
+        </member>
+        <member name="T:ZXing.Unity.BarcodeWriter">
+            <summary>
+            A smart class to encode some content to a barcode image
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.BarcodeWriter.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.BarcodeWriter"/> class.
+            </summary>
+        </member>
+        <member name="T:ZXing.Unity.Color32LuminanceSource">
+            <summary>
+            Calculates the luminance values based upon the Color32 structure
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.Color32LuminanceSource.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.Color32LuminanceSource"/> class.
+            </summary>
+            <param name="width">The width.</param>
+            <param name="height">The height.</param>
+        </member>
+        <member name="M:ZXing.Unity.Color32LuminanceSource.#ctor(UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:ZXing.Unity.Color32LuminanceSource"/> class.
+            </summary>
+            <param name="color32s">The color32s.</param>
+            <param name="width">The width.</param>
+            <param name="height">The height.</param>
+        </member>
+        <member name="M:ZXing.Unity.Color32LuminanceSource.SetPixels(UnityEngine.Color32[])">
+            <summary>
+            Sets the pixels.
+            </summary>
+            <param name="color32s">The color32s.</param>
+        </member>
+        <member name="M:ZXing.Unity.Color32LuminanceSource.CreateLuminanceSource(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Should create a new luminance source with the right class type.
+            The method is used in methods crop and rotate.
+            </summary>
+            <param name="newLuminances">The new luminances.</param>
+            <param name="width">The width.</param>
+            <param name="height">The height.</param>
+            <returns></returns>
+        </member>
+        <member name="T:ZXing.Unity.IBarcodeReader">
+            <summary>
+            Interface for a smart class to decode the barcode inside a bitmap object
+            </summary>
+            <summary>
+            Interface for a smart class to decode multiple barcodes inside a bitmap object
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.IBarcodeReader.Decode(UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            Decodes the specified barcode bitmap.
+            </summary>
+            <param name="rawColor32">The image as Color32 array.</param>
+            <param name="width">width of the image which is represented by rawColor32</param>
+            <param name="height">height of the image which is represented by rawColor32</param>
+            <returns>the result data or null</returns>
+        </member>
+        <member name="M:ZXing.Unity.IBarcodeReader.DecodeMultiple(UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            Decodes the specified barcode bitmap.
+            </summary>
+            <param name="rawColor32">The image as Color32 array.</param>
+            <param name="width">width of the image which is represented by rawColor32</param>
+            <param name="height">height of the image which is represented by rawColor32</param>
+            <returns>the result data or null</returns>
+        </member>
+        <member name="T:ZXing.Unity.IBarcodeWriter">
+            <summary>
+            Interface for a smart class to encode some content into a barcode
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.IBarcodeWriter.Write(System.String)">
+            <summary>
+            Creates a visual representation of the contents
+            </summary>
+        </member>
+        <member name="M:ZXing.Unity.IBarcodeWriter.Write(ZXing.Common.BitMatrix)">
+            <summary>
+            Returns a rendered instance of the barcode which is given by a BitMatrix.
+            </summary>
+        </member>
+        <member name="T:ZXing.BarcodeReaderExtensions">
+            <summary>
+            extensions methods which are working directly on any IBarcodeReaderGeneric implementation
+            </summary>
+        </member>
+        <member name="M:ZXing.BarcodeReaderExtensions.Decode(ZXing.IBarcodeReaderGeneric,UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            uses the IBarcodeReaderGeneric implementation and the <see cref="T:ZXing.Unity.Color32LuminanceSource"/> class for decoding
+            </summary>
+            <param name="reader"></param>
+            <param name="rawColor32">the raw image which should be decoded</param>
+            <param name="width">width of the image which is represented by rawColor32</param>
+            <param name="height">height of the image which is represented by rawColor32</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZXing.BarcodeReaderExtensions.DecodeMultiple(ZXing.IBarcodeReaderGeneric,UnityEngine.Color32[],System.Int32,System.Int32)">
+            <summary>
+            uses the IBarcodeReaderGeneric implementation and the <see cref="T:ZXing.Unity.Color32LuminanceSource"/> class for decoding
+            </summary>
+            <param name="reader"></param>
+            <param name="rawColor32"></param>
+            <param name="width">width of the image which is represented by rawColor32</param>
+            <param name="height">height of the image which is represented by rawColor32</param>
+            <returns></returns>
+        </member>
+        <member name="T:ZXing.BarcodeWriterExtensions">
+            <summary>
+            extensions methods which are working directly on any BarcodeWriterGeneric implementation
+            </summary>
+        </member>
+        <member name="M:ZXing.BarcodeWriterExtensions.WriteAsColor32(ZXing.IBarcodeWriterGeneric,System.String)">
+            <summary>
+            uses the BarcodeWriterGeneric implementation and the <see cref="T:ZXing.Unity.Color32Renderer"/> class for encoding
+            </summary>
+            <param name="writer"></param>
+            <param name="content"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,1 @@
+https://github.com/micjahn/ZXing.Net/releases/tag/v0.16.9.0

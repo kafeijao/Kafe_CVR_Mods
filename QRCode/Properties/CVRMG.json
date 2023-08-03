@@ -1,0 +1,20 @@
+{
+  "_id": -1,
+  "name": "BetterAFK",
+  "modversion": "0.0.1",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Read QRCodes with the CVR Camera.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QRCode) for more in-depth info.\n\n",
+  "searchtags": [
+    "qr",
+    "code",
+    "camera"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/QRCode.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QRCode",
+  "changelog": "- Initial Release.",
+  "embedcolor": "16C60C"
+}
