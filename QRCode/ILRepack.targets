@@ -12,6 +12,8 @@
             <!-- Our dll dependencies to be merged, you can add multiple lines, one per dll -->
             <InputAssemblies Include="$(SolutionDir)QRCode\Resources\ZXing.Net.Bindings.0.16.8.0\Bindings\ZXing.Unity3D\netstandard2.0\ZXing.Unity.dll"/>
             <InputAssemblies Include="$(SolutionDir).ManagedLibs\zxing.dll"/>
+            <InputAssemblies Include="$(SolutionDir).ManagedLibs\TextCopy.dll"/>
+            <InputAssemblies Include="$(SolutionDir).ManagedLibs\Microsoft.Extensions.DependencyInjection.Abstractions.dll"/>
         </ItemGroup>
         <Message Text="MERGING: @(InputAssemblies->'%(Filename)') into $(OutputAssembly)" Importance="High"/>
         <ILRepack Internalize="false" LibraryPath="@(IlRepackLibs)" OutputFile="$(OutputPath)$(AssemblyName).dll" InputAssemblies="@(InputAssemblies)"/>
