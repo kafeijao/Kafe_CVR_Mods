@@ -200,6 +200,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         // Dynamic sections
         var categorySyncedParameters = _core.AddSection("Synced Parameters", true);
         var categoryMainAnimatorParameters = _core.AddSection("Main Animator Parameters", true);
+        var sectionAnimatorLayers = _core.AddSection("Animator Layers", true);
         var categoryPickups = _core.AddSection("Pickups", true);
         var categoryAttachments = _core.AddSection("Attachments", true);
         var categoryPointers = _core.AddSection("CVR Spawnable Pointers", true);
@@ -213,10 +214,34 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         // Restore Main Animator Parameters
         var mainAnimator = currentSpawnable.gameObject.GetComponent<Animator>();
         if (mainAnimator != null) {
+
+            // Setup parameters
             foreach (var parameter in mainAnimator.parameters) {
                 var parameterEntry = ParameterEntrySection.Get(mainAnimator, parameter);
                 string GetParamValue() => parameterEntry.GetValue();
                 categoryMainAnimatorParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
+            }
+
+            // Set up the animator layers
+            const string noClipsText = "Playing no Clips";
+            for (var i = 0; i < mainAnimator.layerCount; i++) {
+                var layerIndex = i;
+                var layerSection = sectionAnimatorLayers.AddSection(mainAnimator.GetLayerName(layerIndex), "", true);
+                layerSection.AddSection("Layer Weight").AddValueGetter(() => mainAnimator.GetLayerWeight(layerIndex).ToString("F"));
+                var playingClipsSection = layerSection.AddSection("Playing Clips [Weight:Name]", noClipsText, false, true);
+                playingClipsSection.AddValueGetter(() => {
+                    var clipInfos = mainAnimator.GetCurrentAnimatorClipInfo(layerIndex);
+                    var newSections = new List<Section>();
+                    if (clipInfos.Length <= 0) {
+                        playingClipsSection.QueueDynamicSectionsUpdate(newSections);
+                        return noClipsText;
+                    }
+                    foreach (var animatorClipInfo in clipInfos.OrderByDescending(info => info.weight)) {
+                        newSections.Add(new Section(_core) { Title = animatorClipInfo.weight.ToString("F"), Value = animatorClipInfo.clip.name, Collapsable = false, DynamicSubsections = false});
+                    }
+                    playingClipsSection.QueueDynamicSectionsUpdate(newSections);
+                    return $"Playing {clipInfos.Length} Clips";
+                });
             }
         }
 
