@@ -16,6 +16,9 @@ public class QRCodeBehavior : MonoBehaviour {
     // Queue with barcode results, this will be populated by async tasks
     internal static readonly ConcurrentQueue<ResultHandler.Result> BarcodeParsedResults = new();
 
+    // Keep track of the last time each barcode was printed
+    private readonly ConcurrentDictionary<string, DateTime> _lastPrintTime = new();
+
     private Camera _cam;
     private IBarcodeReader _reader;
 
@@ -71,7 +74,10 @@ public class QRCodeBehavior : MonoBehaviour {
     }
 
     private void HandleBarcodeResult(ResultHandler.Result result) {
+
         var qrCodeEntryTrx = Instantiate(_resultTemplateTrx, _contentTrx, false);
+        qrCodeEntryTrx.SetAsFirstSibling();
+
         var button = qrCodeEntryTrx.GetComponent<Button>();
         var img = qrCodeEntryTrx.Find(ResultImagePath).GetComponent<Image>();
         var title = qrCodeEntryTrx.Find(ResultTitlePath).GetComponent<TextMeshProUGUI>();
@@ -83,13 +89,14 @@ public class QRCodeBehavior : MonoBehaviour {
         button.onClick.AddListener(() => result.Handler());
 
         // Setup the self-destruction
-        StartCoroutine(DelayedRemoveBarcode(qrCodeEntryTrx.gameObject));
+        StartCoroutine(DelayedRemoveBarcode(qrCodeEntryTrx.gameObject, result));
     }
 
-    private static IEnumerator DelayedRemoveBarcode(GameObject barcodeGo) {
+    private IEnumerator DelayedRemoveBarcode(GameObject barcodeGo, ResultHandler.Result result) {
         // Delete barcodes after being displayed for X amount
         yield return new WaitForSeconds(20f);
-        Destroy(barcodeGo);
+        if (barcodeGo != null) Destroy(barcodeGo);
+        _lastPrintTime.TryRemove(result.Message, out _);
     }
 
     private IEnumerator DelayedCaptureScreen() {
@@ -127,9 +134,6 @@ public class QRCodeBehavior : MonoBehaviour {
         }
     }
 
-    // Keep track of the last time each barcode was printed
-    private readonly ConcurrentDictionary<string, DateTime> _lastPrintTime = new();
-
     private void DecodeColor32(Color32[] colors) {
         try {
             var results = _reader.DecodeMultiple(colors, _camPixelWidth, _camPixelHeight);
@@ -143,13 +147,15 @@ public class QRCodeBehavior : MonoBehaviour {
                 // Get the current time
                 var now = DateTime.UtcNow;
 
-                // If the barcode has not been printed in the last 20 seconds
-                if (!_lastPrintTime.ContainsKey(result.Text) || now - _lastPrintTime[result.Text] > TimeSpan.FromSeconds(20)) {
+                var hasLastTime = _lastPrintTime.TryGetValue(result.Text, out var lastTime);
 
-                    MelonLogger.Msg($"Scanned Barcode with the content:\n{result.Text}");
+                // If the barcode has not been printed in the last 20 seconds
+                if (!hasLastTime || now - lastTime > TimeSpan.FromSeconds(20)) {
+
+                    MelonLogger.Msg($"Scanned Barcode with the content: {result.Text}");
 
                     // Update the last print time
-                    _lastPrintTime[result.Text] = now;
+                    _lastPrintTime.TryAdd(result.Text, now);
 
                     ResultHandler.ProcessText(result.Text);
                 }

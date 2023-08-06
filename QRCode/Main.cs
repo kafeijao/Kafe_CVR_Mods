@@ -41,10 +41,7 @@ public class QRCode : MelonMod {
         [HarmonyPatch(typeof(PortableCamera), nameof(PortableCamera.Start))]
         public static void After_PortableCamera_Start(PortableCamera __instance) {
             try {
-                MelonLogger.Msg("Initializing the camera QR Menu...");
-                var targetTransform = PortableCamera.Instance.cameraCanvasGroup.transform.parent;
-                var qrMenu = UnityEngine.Object.Instantiate(ModConfig.QRCodePrefab, targetTransform, false);
-                qrMenu.AddComponent<QRCodeBehavior>();
+                __instance.RegisterMod(new QRCodeCameraVisualMod());
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patch: {nameof(After_PortableCamera_Start)}");

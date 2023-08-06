@@ -1,12 +1,12 @@
 {
   "_id": -1,
-  "name": "BetterAFK",
-  "modversion": "0.0.1",
+  "name": "QRCode",
+  "modversion": "0.0.5",
   "gameversion": "2023r171p2",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Read QRCodes with the CVR Camera.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QRCode) for more in-depth info.\n\n",
+  "description": "Read QRCodes with the CVR Camera. After scanned they show up in the little menu and you can click to interact with them (if you don't click, no action will be done).\n\nQRCodes for `Avatars`, `Props`, `Users`, `Worlds`, and `Instances` will open the corresponding details page in-game.\nURL QRCodes will open the url in your browser.\nAll others will copy the text content of the QRCode into your clipboard.\n\nIf you want to test, search for the `QR Code Demo` Prop, it contains all types of QRCodes.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QRCode) for more in-depth info (including how to make CVR Entities QRCodes).\n\n",
   "searchtags": [
     "qr",
     "code",
