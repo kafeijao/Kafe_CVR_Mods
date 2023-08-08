@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Savior;
+﻿using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using MelonLoader;
@@ -13,82 +14,73 @@ internal class NavMeshTools : MelonMod {
 
     private NavMeshBuilderQueue _navMeshBuilderQueue;
 
-    private bool _isCurrentWorldNavMeshBaked;
-    private bool _isCurrentWorldNavMeshBaking;
+    private readonly HashSet<API.Agent> _currentWorldNavMeshAgentsBaked = new();
+    private readonly HashSet<API.Agent> _currentWorldNavMeshAgentsBaking = new();
+    private readonly HashSet<NavMeshDataInstance> _currentWorldNavMeshDataInstances = new();
 
-    private readonly List<Action<bool>> _queuedBakesForCurrentWorld = new();
+    private readonly List<Tuple<API.Agent, Action<int, bool>>> _queuedBakesForCurrentWorld = new();
 
     public override void OnInitializeMelon() {
 
         _navMeshBuilderQueue = new NavMeshBuilderQueue();
 
-        _navMeshSettings = new NavMeshBuildSettings {
-            agentTypeID = NavMesh.GetSettingsByIndex(0).agentTypeID,
-            agentRadius = 0.5f,
-            agentHeight = 2.0f,
-            agentSlope = 45.0f,
-            agentClimb = 0.4f,
-            tileSize = 512,
-            minRegionArea = 2f,
-        };
+        CVRGameEventSystem.World.OnLoad.AddListener(_ => {
 
-        CVRGameEventSystem.World.OnLoad.AddListener(worldGuid => {
-
-            _isCurrentWorldNavMeshBaked = false;
-            _isCurrentWorldNavMeshBaking = false;
+            _currentWorldNavMeshAgentsBaked.Clear();
+            _currentWorldNavMeshAgentsBaking.Clear();
 
             // Since we changed world, lets invalidate pending bakes
             foreach (var queuedBake in _queuedBakesForCurrentWorld) {
-                CallResultsAction(queuedBake, false);
+                CallResultsAction(queuedBake.Item2, queuedBake.Item1.AgentTypeID, false);
             }
             _queuedBakesForCurrentWorld.Clear();
 
         });
 
+        CVRGameEventSystem.World.OnUnload.AddListener(_ => {
+            // Clear all instances of nav mesh upon leaving the world
+            foreach (var instance in _currentWorldNavMeshDataInstances) {
+                NavMesh.RemoveNavMeshData(instance);
+            }
+            _currentWorldNavMeshDataInstances.Clear();
+        });
+
         Instance = this;
     }
 
-    internal void RequestWorldBake(Action<bool> onBakeFinish, bool force) {
+    internal void RequestWorldBake(API.Agent agent, Action<int, bool> onBakeFinish, bool force) {
 
         // If this world was already baked and we're not forcing, tell the bake is done
-        if (_isCurrentWorldNavMeshBaked && !force) {
-            CallResultsAction(onBakeFinish, true);
+        if (_currentWorldNavMeshAgentsBaked.Contains(agent) && !force) {
+            CallResultsAction(onBakeFinish, agent.AgentTypeID, true);
             return;
         }
 
         // If is currently baking, make it wait for the current bake
-        if (_isCurrentWorldNavMeshBaking) {
-            _queuedBakesForCurrentWorld.Add(onBakeFinish);
+        if (_currentWorldNavMeshAgentsBaking.Contains(agent)) {
+            _queuedBakesForCurrentWorld.Add(new Tuple<API.Agent, Action<int, bool>>(agent, onBakeFinish));
             return;
         }
 
         // Otherwise just bake it!
-        _isCurrentWorldNavMeshBaking = true;
+        _currentWorldNavMeshAgentsBaking.Add(agent);
 
         var allSources = new List<NavMeshBuildSource>();
         var bounds = new Bounds(Vector3.zero, new Vector3(2000f, 2000f, 2000f));
 
-        // MelonLogger.Msg("Collecting Sources...");
-
         // This will collect all the sources in the bounds, including ones you may not want.
         NavMeshBuilder.CollectSources(bounds, ~0, NavMeshCollectGeometry.PhysicsColliders, 0, new List<NavMeshBuildMarkup>(), allSources);
 
-        // MelonLogger.Msg("Getting all good colliders...");
-
         var allowedColliders = GetColliders();
-
-        // MelonLogger.Msg("Filtering good colliders...");
 
         // Filter sources based on specific game objects or conditions.
         var filteredSources = allSources.Where(source => allowedColliders.Contains(source.component.gameObject)).ToList();
 
-        // MelonLogger.Msg("Queuing Task...");
-
-        _navMeshBuilderQueue.EnqueueNavMeshTask(MetaPort.Instance.CurrentWorldId, _navMeshSettings, filteredSources, bounds, onBakeFinish);
+        _navMeshBuilderQueue.EnqueueNavMeshTask(MetaPort.Instance.CurrentWorldId, agent, filteredSources, bounds, onBakeFinish);
     }
 
     public override void OnApplicationQuit() {
-        _navMeshBuilderQueue.StopThread();
+        _navMeshBuilderQueue?.StopThread();
     }
 
     public override void OnUpdate() {
@@ -96,31 +88,32 @@ internal class NavMeshTools : MelonMod {
 
         // If we changed worlds, the bake is irrelevant...
         if (results.Item1 != MetaPort.Instance.CurrentWorldId) {
-            CallResultsAction(results.Item3, false);
+            CallResultsAction(results.Item4, results.Item2.AgentTypeID, false);
             return;
         }
 
         MelonLogger.Msg("Task done! Applying Nav Mesh data...");
 
         // Apply the bake results
-        NavMesh.AddNavMeshData(results.Item2);
-        _isCurrentWorldNavMeshBaked = true;
+        var navMeshDataInstance = NavMesh.AddNavMeshData(results.Item3);
+        _currentWorldNavMeshDataInstances.Add(navMeshDataInstance);
+        _currentWorldNavMeshAgentsBaked.Add(results.Item2);
 
         MelonLogger.Msg("Finished!");
 
         // Call the action of the original requester
-        CallResultsAction(results.Item3, true);
+        CallResultsAction(results.Item4, results.Item2.AgentTypeID, true);
 
         // Call other pending bakes for the current world
         foreach (var queuedBake in _queuedBakesForCurrentWorld) {
-            CallResultsAction(queuedBake, true);
+            CallResultsAction(queuedBake.Item2, queuedBake.Item1.AgentTypeID, true);
         }
         _queuedBakesForCurrentWorld.Clear();
     }
 
-    internal static void CallResultsAction(Action<bool> onResults, bool result) {
+    internal static void CallResultsAction(Action<int, bool> onResults, int agentTypeID, bool result) {
         try {
-            onResults?.Invoke(result);
+            onResults?.Invoke(agentTypeID, result);
         }
         catch (Exception e) {
             MelonLogger.Error($"Error during the callback for finishing a bake... Check the StackTrace to see who's the culprit.");
@@ -165,7 +158,6 @@ internal class NavMeshTools : MelonMod {
     private static readonly int PlayerNetworkLayer = LayerMask.NameToLayer("PlayerNetwork");
     private static readonly int IgnoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
     private static readonly int MirrorReflectionLayer = LayerMask.NameToLayer("MirrorReflection");
-    private NavMeshBuildSettings _navMeshSettings;
 
     private static bool IsGoodCollider(Collider col) {
         var gameObject = col.gameObject;

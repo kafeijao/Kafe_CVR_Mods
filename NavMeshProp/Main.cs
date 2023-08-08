@@ -28,6 +28,19 @@ public class NavMeshProp : MelonMod {
 
         _instance = this;
 
+        // Create our peeb settings to be used in the bakes
+        var peebAgentSettings = new NavMeshTools.API.Agent(
+            .25f,
+            .5f,
+            45f,
+            0.5f,
+            2f,
+            false,
+            0.2f,
+            false,
+            256
+        );
+
         CVRGameEventSystem.Spawnable.OnInstantiate.AddListener((spawnerUserId, spawnable)  => {
 
             if (spawnerUserId != MetaPort.Instance.ownerId) return;
@@ -36,9 +49,13 @@ public class NavMeshProp : MelonMod {
 
             MelonLogger.Msg($"Requesting Bake...");
 
-            NavMeshTools.API.BakeCurrentWorldNavMesh(success => {
+            NavMeshTools.API.BakeCurrentWorldNavMesh(peebAgentSettings, (agentTypeID, success) => {
 
-                // Bake complete! Let's enable the nav mesh
+                if (!success) {
+                    MelonLogger.Warning("The bake has failed for some reason :( The peeb won't have a NavMeshAgent.");
+                }
+
+                // Bake complete! Let's setup and enable our NavMeshAgent
 
                 var agentSc = spawnable.subSyncs.Find(sc => sc.transform != null && sc.transform.name.StartsWith("[NavMeshAgent]"));
                 if (agentSc == null) {
@@ -53,15 +70,21 @@ public class NavMeshProp : MelonMod {
                     _currentPeebAgent = agentSc.transform.gameObject.AddComponent<NavMeshAgent>();
                 }
 
+                // We need to associate our Nav Mesh Agent with the agentTypeID we baked the mesh for
+                _currentPeebAgent.agentTypeID = agentTypeID;
+
+                // Set the NavMeshAgent settings (you should try matching with the ones using in the bake)
                 _currentPeebAgent.radius = 0.25f;
                 _currentPeebAgent.height = 0.5f;
-                _currentPeebAgent.speed = 3f;
-                _currentPeebAgent.angularSpeed = 120f;
+                _currentPeebAgent.speed = 2f;
+                _currentPeebAgent.angularSpeed = 240f;
+                _currentPeebAgent.acceleration = 8f;
                 _currentPeebAgent.stoppingDistance = 2f;
                 _currentPeebAgent.enabled = true;
+
                 _currentPeeb = spawnable;
 
-            }, false);
+            }, true);
         });
 
     }
@@ -79,7 +102,7 @@ public class NavMeshProp : MelonMod {
 
         _currentPeebAgent.SetDestination(playerHeadTarget);
 
-        _currentPeebLookAtTarget.position = _currentPeebAgent.hasPath
+        _currentPeebLookAtTarget.position = _currentPeebAgent.hasPath && Vector3.Distance(_currentPeebAgent.steeringTarget, _currentPeebAgent.pathEndPosition) > 0.1f
             ? _currentPeebAgent.steeringTarget with { y = _currentPeebHeadTransform.position.y }
             : playerHeadTarget;
 
@@ -93,8 +116,31 @@ public class NavMeshProp : MelonMod {
         [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
         public static void After_ControllerRay_LateUpdate() {
             try {
+                if (_instance._currentPeeb == null) return;
+
                 // Save the viewpoints position
                 _previousViewPoint = FollowingPlayer == null ? PlayerSetup.Instance._viewPoint.GetPointPosition() : FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
+
+                // // Handle following local player
+                // if (FollowingPlayer == null) {
+                //     var animator = PlayerSetup.Instance._animator;
+                //     if (animator == null || !animator.isHuman || animator.GetBoneTransform(HumanBodyBones.Head) != null) {
+                //         if (PlayerSetup.Instance._viewPoint == null) return;
+                //         _previousViewPoint = PlayerSetup.Instance._viewPoint.GetPointPosition();
+                //         return;
+                //     }
+                //     _previousViewPoint = animator.GetBoneTransform(HumanBodyBones.Head).position;
+                // }
+                // // Handle remote players
+                // else {
+                //     var animator = FollowingPlayer.PuppetMaster._animator;
+                //     if (animator == null || !animator.isHuman || animator.GetBoneTransform(HumanBodyBones.Head) != null) {
+                //         if (FollowingPlayer.PuppetMaster._viewPoint == null) return;
+                //         _previousViewPoint = FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
+                //         return;
+                //     }
+                //     _previousViewPoint = animator.GetBoneTransform(HumanBodyBones.Head).position;
+                // }
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patch: {nameof(After_ControllerRay_LateUpdate)}");
