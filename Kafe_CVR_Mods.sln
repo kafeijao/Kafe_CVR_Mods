@@ -52,6 +52,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeleportRequest", "Teleport
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRCode", "QRCode\QRCode.csproj", "{B14BF27B-EE15-4348-9BD6-6DCECB2AD6D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavMeshTools", "NavMeshTools\NavMeshTools.csproj", "{B0A6CF12-1CBD-40C4-9D23-3AC35C4967AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavMeshProp", "NavMeshProp\NavMeshProp.csproj", "{AA8C8980-18E8-4A98-A882-73BC639F69E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -162,5 +166,13 @@ Global
 		{B14BF27B-EE15-4348-9BD6-6DCECB2AD6D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B14BF27B-EE15-4348-9BD6-6DCECB2AD6D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B14BF27B-EE15-4348-9BD6-6DCECB2AD6D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0A6CF12-1CBD-40C4-9D23-3AC35C4967AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0A6CF12-1CBD-40C4-9D23-3AC35C4967AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0A6CF12-1CBD-40C4-9D23-3AC35C4967AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0A6CF12-1CBD-40C4-9D23-3AC35C4967AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA8C8980-18E8-4A98-A882-73BC639F69E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA8C8980-18E8-4A98-A882-73BC639F69E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA8C8980-18E8-4A98-A882-73BC639F69E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA8C8980-18E8-4A98-A882-73BC639F69E7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
