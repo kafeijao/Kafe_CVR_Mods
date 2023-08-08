@@ -1,8 +1,5 @@
 ﻿using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
-using ABI_RC.Systems.MovementSystem;
-using MelonLoader;
-using UnityEngine;
 
 namespace Kafe.NavMeshProp;
 
@@ -12,6 +9,10 @@ public static class ModConfig {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
+    private static string GetPropImageUrl(string guid) {
+        return $"https://files.abidata.io/user_content/spawnables/{guid}/{guid}.png";
+    }
+
     private static void SetupBTKUI(CVR_MenuManager manager) {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
         
@@ -19,11 +20,28 @@ public static class ModConfig {
 
         BTKUILib.QuickMenuAPI.OnPlayerSelected += (playerName, playerID) => {
             playerCat.ClearChildren();
-            playerCat.AddButton("Agent Follow", "", $"Sets the agent to follow {playerName}")
-                .OnPress += () => {
-                var newTarget = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault(e => e.Uuid == playerID);
-                NavMeshProp.FollowingPlayer = NavMeshProp.FollowingPlayer == newTarget ? null : newTarget;
-            };
+
+            foreach (var petController in NavMeshProp.PetController.Controllers) {
+
+                var isFollowingPlayer = petController.FollowingPlayer != null && petController.FollowingPlayer.Uuid == playerID;
+
+                var button = playerCat.AddButton($"{(isFollowingPlayer ? "Following" : "Nop")}",
+                    GetPropImageUrl(petController.Spawnable.guid), $"Sets the pet to follow {playerName}");
+
+                button.OnPress += () => {
+                    if (petController == null) {
+                        button.Delete();
+                        return;
+                    }
+
+                    var newTarget = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault(e => e.Uuid == playerID);
+
+                    petController.FollowingPlayer = petController.FollowingPlayer == newTarget ? null : newTarget;
+
+                    isFollowingPlayer = petController.FollowingPlayer != null && petController.FollowingPlayer.Uuid == playerID;
+                    button.ButtonText = isFollowingPlayer ? "Following" : "Nop";
+                };
+            }
         };
     }
 

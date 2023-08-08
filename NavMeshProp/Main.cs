@@ -13,22 +13,11 @@ namespace Kafe.NavMeshProp;
 
 public class NavMeshProp : MelonMod {
 
-    private static NavMeshProp _instance;
-
-    private CVRSpawnable _currentPeeb;
-    private NavMeshAgent _currentPeebAgent;
-    private Transform _currentPeebLookAtTarget;
-    private Transform _currentPeebHeadTransform;
-
-    private static Vector3 _previousViewPoint;
-
     public override void OnInitializeMelon() {
 
         ModConfig.InitializeBTKUI();
 
-        _instance = this;
-
-        // Create our peeb settings to be used in the bakes
+        // Create our peeb agent to be used in the bakes
         var peebAgentSettings = new NavMeshTools.API.Agent(
             .25f,
             .5f,
@@ -41,73 +30,173 @@ public class NavMeshProp : MelonMod {
             256
         );
 
-        CVRGameEventSystem.Spawnable.OnInstantiate.AddListener((spawnerUserId, spawnable)  => {
+        // Register the peeb
+        PetController.AddPetBlueprint("9eeb9eeb-9eeb-9eeb-9eeb-9eeb9eeb9eeb", new PetBlueprint(
+            peebAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
 
-            if (spawnerUserId != MetaPort.Instance.ownerId) return;
-            MelonLogger.Msg($"Spawned {spawnable.guid}");
-            if (spawnable.guid != "9eeb9eeb-9eeb-9eeb-9eeb-9eeb9eeb9eeb") return;
-
-            MelonLogger.Msg($"Requesting Bake...");
-
-            NavMeshTools.API.BakeCurrentWorldNavMesh(peebAgentSettings, (agentTypeID, success) => {
-
-                if (!success) {
-                    MelonLogger.Warning("The bake has failed for some reason :( The peeb won't have a NavMeshAgent.");
+        // Stop pets from following a player when they leave
+        CVRGameEventSystem.Player.OnLeave.AddListener(descriptor => {
+            foreach (var petController in PetController.Controllers) {
+                if (petController.FollowingPlayer != null && petController.FollowingPlayer.PlayerDescriptor == descriptor) {
+                    petController.FollowingPlayer = null;
                 }
-
-                // Bake complete! Let's setup and enable our NavMeshAgent
-
-                var agentSc = spawnable.subSyncs.Find(sc => sc.transform != null && sc.transform.name.StartsWith("[NavMeshAgent]"));
-                if (agentSc == null) {
-                    MelonLogger.Warning("Attempted to load a peeb but it didn't have a syb-sync transform with the name starting in [NavMeshAgent]");
-                    return;
-                }
-
-                _currentPeebLookAtTarget = spawnable.transform.Find("LookAtTarget");
-                _currentPeebHeadTransform = spawnable.transform.Find("Peeb").GetComponent<LookAtIK>().solver.head.transform;
-
-                if (!agentSc.transform.TryGetComponent(out _currentPeebAgent)) {
-                    _currentPeebAgent = agentSc.transform.gameObject.AddComponent<NavMeshAgent>();
-                }
-
-                // We need to associate our Nav Mesh Agent with the agentTypeID we baked the mesh for
-                _currentPeebAgent.agentTypeID = agentTypeID;
-
-                // Set the NavMeshAgent settings (you should try matching with the ones using in the bake)
-                _currentPeebAgent.radius = 0.25f;
-                _currentPeebAgent.height = 0.5f;
-                _currentPeebAgent.speed = 2f;
-                _currentPeebAgent.angularSpeed = 240f;
-                _currentPeebAgent.acceleration = 8f;
-                _currentPeebAgent.stoppingDistance = 2f;
-                _currentPeebAgent.enabled = true;
-
-                _currentPeeb = spawnable;
-
-            }, true);
+            }
         });
-
     }
 
-    public static CVRPlayerEntity FollowingPlayer;
+    internal class PetBlueprint {
 
-    // private bool _lastFailed = false;
+        internal readonly NavMeshTools.API.Agent Agent;
+        internal readonly float Radius;
+        internal readonly float Height;
+        internal readonly float Speed;
+        internal readonly float AngularSpeed;
+        internal readonly float Acceleration;
+        internal readonly float StoppingDistance;
 
-    public override void OnUpdate() {
+        public PetBlueprint(
+            NavMeshTools.API.Agent agent,
+            float radius = 0.25f,
+            float height = 0.5f,
+            float speed = 3f,
+            float angularSpeed = 240f,
+            float acceleration = 8f,
+            float stoppingDistance = 1f) {
+            Agent = agent;
+            Radius = radius;
+            Height = height;
+            Speed = speed;
+            AngularSpeed = angularSpeed;
+            Acceleration = acceleration;
+            StoppingDistance = stoppingDistance;
+        }
+    }
 
-        if (_currentPeeb == null) return;
+    internal class PetController : MonoBehaviour {
 
-        // This was calculated late in the previous frame, so it should be up to date after all the IK bs
-        var playerHeadTarget = _previousViewPoint;
+        internal static readonly HashSet<PetController> Controllers = new();
+        private static readonly Dictionary<string, PetBlueprint> BlueprintHandlers = new();
 
-        _currentPeebAgent.SetDestination(playerHeadTarget);
+        static PetController() {
 
-        _currentPeebLookAtTarget.position = _currentPeebAgent.hasPath && Vector3.Distance(_currentPeebAgent.steeringTarget, _currentPeebAgent.pathEndPosition) > 0.1f
-            ? _currentPeebAgent.steeringTarget with { y = _currentPeebHeadTransform.position.y }
-            : playerHeadTarget;
+            CVRGameEventSystem.Spawnable.OnInstantiate.AddListener((spawnerUserId, spawnable) => {
 
-        _currentPeeb.SetValue(_currentPeeb.syncValues.FindIndex( match => match.name == "Speed"), _currentPeebAgent.velocity.magnitude/_currentPeebAgent.speed);
-        _currentPeeb.needsUpdate = true;
+                // Ignore props spawned by other people
+                if (spawnerUserId != MetaPort.Instance.ownerId) return;
+
+                // Ignore props not in the handlers list
+                if (!BlueprintHandlers.TryGetValue(spawnable.guid, out var blueprint)) return;
+
+                var spawnableGuid = spawnable.guid;
+
+                NavMeshTools.API.BakeCurrentWorldNavMesh(blueprint.Agent, (agentTypeID, success) => {
+
+                    MelonLogger.Msg($"Finished baking the NavMeshData for {spawnableGuid}");
+
+                    if (spawnable == null) {
+                        MelonLogger.Warning($"The spawnable {spawnableGuid} doesn't exist anymore... Probably deleted while baking...");
+                        return;
+                    }
+
+                    if (!success) {
+                        MelonLogger.Warning($"The bake for {spawnableGuid} has failed for some reason... This Pet won't work as it should...");
+                        return;
+                    }
+
+                    var navMeshAgent = spawnable.transform.GetComponentInChildren<NavMeshAgent>(true);
+                    if (navMeshAgent == null) {
+                        MelonLogger.Warning($"The spawnable {spawnableGuid} doesn't have a NavMeshAgent...");
+                        return;
+                    }
+
+                    var lookAtTargetTransform = spawnable.transform.Find("[NavMeshProp] LookAtTarget");
+                    var lookAtIKComponent = spawnable.GetComponentInChildren<LookAtIK>();
+
+                    // We need to associate our Nav Mesh Agent with the agentTypeID we baked the mesh for
+                    navMeshAgent.agentTypeID = agentTypeID;
+
+                    // Set the NavMeshAgent settings (you should try matching with the ones using in the bake)
+                    navMeshAgent.radius = blueprint.Radius;
+                    navMeshAgent.height = blueprint.Height;
+                    navMeshAgent.speed = blueprint.Speed;
+                    navMeshAgent.angularSpeed = blueprint.AngularSpeed;
+                    navMeshAgent.acceleration = blueprint.Acceleration;
+                    navMeshAgent.stoppingDistance = blueprint.StoppingDistance;
+
+                    // Enable the nav agent (because we're controlling it)
+                    navMeshAgent.enabled = true;
+
+                    // Initialize the controller
+                    var controller = spawnable.gameObject.AddComponent<PetController>();
+                    controller.Spawnable = spawnable;
+                    controller.NavMeshAgent = navMeshAgent;
+
+                    // Optionally initialize the look at
+                    if (lookAtTargetTransform != null && lookAtIKComponent != null && lookAtIKComponent.solver is { head: not null } && lookAtIKComponent.solver.head.transform != null) {
+                        controller.HasLookAt = true;
+                        controller.LookAtTargetTransform = lookAtTargetTransform;
+                        controller.LookAtHeadTransform = lookAtIKComponent.solver.head.transform;
+                    }
+
+                    controller.SpawnableSpeedIndex = spawnable.syncValues.FindIndex(match => match.name == "Speed");
+                });
+            });
+
+        }
+
+        internal CVRSpawnable Spawnable;
+        internal NavMeshAgent NavMeshAgent;
+
+        internal bool HasLookAt;
+        internal Transform LookAtTargetTransform;
+        internal Transform LookAtHeadTransform;
+
+        internal CVRPlayerEntity FollowingPlayer;
+        internal Vector3 FollowingPlayerPreviousViewpointPos;
+
+        internal int SpawnableSpeedIndex;
+
+        private void Update() {
+
+            // Set the destination
+            NavMeshAgent.SetDestination(FollowingPlayer == null
+                ? PlayerSetup.Instance.GetPlayerPosition()
+                : FollowingPlayer.AvatarHolder.transform.position);
+
+            // Handle the pet look at (it has been calculated late in the frame)
+            if (HasLookAt) {
+                LookAtTargetTransform.position = NavMeshAgent.hasPath && Vector3.Distance(NavMeshAgent.steeringTarget, NavMeshAgent.pathEndPosition) > 0.1f
+                    ? NavMeshAgent.steeringTarget with { y = LookAtHeadTransform.position.y }
+                    : FollowingPlayerPreviousViewpointPos;
+            }
+
+            // Set the parameters
+            Spawnable.SetValue(SpawnableSpeedIndex, NavMeshAgent.velocity.magnitude/NavMeshAgent.speed);
+
+            // Keep the prop synced by us
+            Spawnable.needsUpdate = true;
+        }
+
+        internal static void VeryLateUpdate() {
+            foreach (var petController in Controllers) {
+                if (!petController.HasLookAt) return;
+                petController.FollowingPlayerPreviousViewpointPos = petController.FollowingPlayer == null
+                    ? PlayerSetup.Instance._viewPoint.GetPointPosition()
+                    : petController.FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
+            }
+        }
+
+        private void Start() {
+            Controllers.Add(this);
+        }
+
+        private void OnDestroy() {
+            Controllers.Remove(this);
+        }
+
+        internal static void AddPetBlueprint(string spawnableGuid, PetBlueprint blueprint) {
+            BlueprintHandlers[spawnableGuid] = blueprint;
+        }
     }
 
     [HarmonyPatch]
@@ -116,31 +205,7 @@ public class NavMeshProp : MelonMod {
         [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
         public static void After_ControllerRay_LateUpdate() {
             try {
-                if (_instance._currentPeeb == null) return;
-
-                // Save the viewpoints position
-                _previousViewPoint = FollowingPlayer == null ? PlayerSetup.Instance._viewPoint.GetPointPosition() : FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
-
-                // // Handle following local player
-                // if (FollowingPlayer == null) {
-                //     var animator = PlayerSetup.Instance._animator;
-                //     if (animator == null || !animator.isHuman || animator.GetBoneTransform(HumanBodyBones.Head) != null) {
-                //         if (PlayerSetup.Instance._viewPoint == null) return;
-                //         _previousViewPoint = PlayerSetup.Instance._viewPoint.GetPointPosition();
-                //         return;
-                //     }
-                //     _previousViewPoint = animator.GetBoneTransform(HumanBodyBones.Head).position;
-                // }
-                // // Handle remote players
-                // else {
-                //     var animator = FollowingPlayer.PuppetMaster._animator;
-                //     if (animator == null || !animator.isHuman || animator.GetBoneTransform(HumanBodyBones.Head) != null) {
-                //         if (FollowingPlayer.PuppetMaster._viewPoint == null) return;
-                //         _previousViewPoint = FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
-                //         return;
-                //     }
-                //     _previousViewPoint = animator.GetBoneTransform(HumanBodyBones.Head).position;
-                // }
+                PetController.VeryLateUpdate();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patch: {nameof(After_ControllerRay_LateUpdate)}");
