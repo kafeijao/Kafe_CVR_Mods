@@ -21,7 +21,7 @@ using MelonLoader;
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(255, 0, 255, 0)]
-[assembly: MelonAuthorColor(255, 128, 128, 0)]
+[assembly: MelonAuthorColor(255, 119, 77, 79)]
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 [assembly: MelonAdditionalCredits(AssemblyInfoParams.AstroDoge)]
 

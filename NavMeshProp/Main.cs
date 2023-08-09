@@ -1,9 +1,7 @@
-﻿using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Core.Player;
+﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
-using HarmonyLib;
 using MelonLoader;
 using RootMotion.FinalIK;
 using UnityEngine;
@@ -33,6 +31,23 @@ public class NavMeshProp : MelonMod {
         // Register the peeb
         PetController.AddPetBlueprint("9eeb9eeb-9eeb-9eeb-9eeb-9eeb9eeb9eeb", new PetBlueprint(
             peebAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
+
+        // Create our shiggy agent to be used in the bakes
+        var shiggyAgentSettings = new NavMeshTools.API.Agent(
+            .15f,
+            .3f,
+            45f,
+            0.3f,
+            2f,
+            false,
+            0.2f,
+            false,
+            256
+        );
+
+        // Register the shiggy
+        PetController.AddPetBlueprint("2befc448-01c7-47fe-87e7-6ed72e9b090b", new PetBlueprint(
+            shiggyAgentSettings, 0.15f, 0.3f, 3f, 240f, 10f, 1.5f));
 
         // Stop pets from following a player when they leave
         CVRGameEventSystem.Player.OnLeave.AddListener(descriptor => {
@@ -72,6 +87,7 @@ public class NavMeshProp : MelonMod {
         }
     }
 
+    [DefaultExecutionOrder(999999)]
     internal class PetController : MonoBehaviour {
 
         internal static readonly HashSet<PetController> Controllers = new();
@@ -139,7 +155,8 @@ public class NavMeshProp : MelonMod {
                     }
 
                     controller.SpawnableSpeedIndex = spawnable.syncValues.FindIndex(match => match.name == "Speed");
-                });
+                    controller.SpawnableOffMeshLinkIndex = spawnable.syncValues.FindIndex(match => match.name == "OffMeshLink");
+                }, true);
             });
 
         }
@@ -155,6 +172,7 @@ public class NavMeshProp : MelonMod {
         internal Vector3 FollowingPlayerPreviousViewpointPos;
 
         internal int SpawnableSpeedIndex;
+        internal int SpawnableOffMeshLinkIndex;
 
         private void Update() {
 
@@ -170,20 +188,23 @@ public class NavMeshProp : MelonMod {
                     : FollowingPlayerPreviousViewpointPos;
             }
 
-            // Set the parameters
-            Spawnable.SetValue(SpawnableSpeedIndex, NavMeshAgent.velocity.magnitude/NavMeshAgent.speed);
+            // Set the spawnable parameters
+            if (SpawnableSpeedIndex != -1) {
+                Spawnable.SetValue(SpawnableSpeedIndex, NavMeshAgent.velocity.magnitude/NavMeshAgent.speed);
+            }
+            if (SpawnableOffMeshLinkIndex != -1) {
+                Spawnable.SetValue(SpawnableOffMeshLinkIndex, NavMeshAgent.isOnOffMeshLink ? 1f : 0f);
+            }
 
             // Keep the prop synced by us
             Spawnable.needsUpdate = true;
         }
 
-        internal static void VeryLateUpdate() {
-            foreach (var petController in Controllers) {
-                if (!petController.HasLookAt) return;
-                petController.FollowingPlayerPreviousViewpointPos = petController.FollowingPlayer == null
-                    ? PlayerSetup.Instance._viewPoint.GetPointPosition()
-                    : petController.FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
-            }
+        private void LateUpdate() {
+            if (!HasLookAt) return;
+            FollowingPlayerPreviousViewpointPos = FollowingPlayer == null
+                ? PlayerSetup.Instance._viewPoint.GetPointPosition()
+                : FollowingPlayer.PuppetMaster._viewPoint.GetPointPosition();
         }
 
         private void Start() {
@@ -196,21 +217,6 @@ public class NavMeshProp : MelonMod {
 
         internal static void AddPetBlueprint(string spawnableGuid, PetBlueprint blueprint) {
             BlueprintHandlers[spawnableGuid] = blueprint;
-        }
-    }
-
-    [HarmonyPatch]
-    internal class HarmonyPatches {
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
-        public static void After_ControllerRay_LateUpdate() {
-            try {
-                PetController.VeryLateUpdate();
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patch: {nameof(After_ControllerRay_LateUpdate)}");
-                MelonLogger.Error(e);
-            }
         }
     }
 }
