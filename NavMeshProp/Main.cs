@@ -1,11 +1,13 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util.AssetFiltering;
 using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using MelonLoader;
 using RootMotion.FinalIK;
 using UnityEngine;
 using UnityEngine.AI;
+using Random = UnityEngine.Random;
 
 namespace Kafe.NavMeshProp;
 
@@ -31,6 +33,23 @@ public class NavMeshProp : MelonMod {
         // Register the peeb
         PetController.AddPetBlueprint("9eeb9eeb-9eeb-9eeb-9eeb-9eeb9eeb9eeb", new PetBlueprint(
             peebAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
+
+        // Create our knuckles agent to be used in the bakes
+        var knucklesAgentSettings = new NavMeshTools.API.Agent(
+            .25f,
+            .5f,
+            45f,
+            0.5f,
+            2f,
+            false,
+            0.2f,
+            false,
+            256
+        );
+
+        // Register the knuckles
+        PetController.AddPetBlueprint("35d70641-6a8f-4830-a2d3-01ff83c331f3", new PetBlueprint(
+            knucklesAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
 
         // Create our shiggy agent to be used in the bakes
         var shiggyAgentSettings = new NavMeshTools.API.Agent(
@@ -155,8 +174,9 @@ public class NavMeshProp : MelonMod {
                     }
 
                     controller.SpawnableSpeedIndex = spawnable.syncValues.FindIndex(match => match.name == "Speed");
+                    controller.SpawnableRandomFloatIndex = spawnable.syncValues.FindIndex(match => match.name == "RandomFloat");
                     controller.SpawnableOffMeshLinkIndex = spawnable.syncValues.FindIndex(match => match.name == "OffMeshLink");
-                }, true);
+                }, false);
             });
 
         }
@@ -172,7 +192,11 @@ public class NavMeshProp : MelonMod {
         internal Vector3 FollowingPlayerPreviousViewpointPos;
 
         internal int SpawnableSpeedIndex;
+        internal int SpawnableRandomFloatIndex;
         internal int SpawnableOffMeshLinkIndex;
+
+        private float timer = 0f;
+        private float _delay = 1f;
 
         private void Update() {
 
@@ -194,6 +218,13 @@ public class NavMeshProp : MelonMod {
             }
             if (SpawnableOffMeshLinkIndex != -1) {
                 Spawnable.SetValue(SpawnableOffMeshLinkIndex, NavMeshAgent.isOnOffMeshLink ? 1f : 0f);
+            }
+            if (SpawnableRandomFloatIndex != -1) {
+                timer += Time.deltaTime;
+                if(timer >= _delay) {
+                    Spawnable.SetValue(SpawnableRandomFloatIndex, Random.value);
+                    timer = 0f;
+                }
             }
 
             // Keep the prop synced by us

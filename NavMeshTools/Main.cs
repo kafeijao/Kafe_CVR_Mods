@@ -142,7 +142,7 @@ internal class NavMeshTools : MelonMod {
         //     _currentWorldNavMeshLinkInstances[results.Item2] = new HashSet<NavMeshLinkInstance>();
         // }
         // MelonLogger.Msg("Generating NavMeshLinks...");
-        // _navMeshLinkAutoPlacer.Generate(results.Item2);
+        // _navMeshLinkAutoPlacer.Generate(results.Item2, results.Item2.Settings.agentRadius * 2);
         // MelonLogger.Msg("\tFinished!");
     }
 
@@ -200,6 +200,7 @@ internal class NavMeshTools : MelonMod {
         return colliders;
     }
 
+    internal static readonly int DefaultLayer = LayerMask.NameToLayer("Default");
     private static readonly int UILayer = LayerMask.NameToLayer("UI");
     private static readonly int UIInternalLayer = LayerMask.NameToLayer("UI Internal");
     private static readonly int PlayerCloneLayer = LayerMask.NameToLayer("PlayerClone");

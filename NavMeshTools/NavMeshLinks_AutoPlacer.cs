@@ -13,11 +13,11 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
 
         #region Variables
 
-        public float tileWidth = 5f;
+        // public float tileWidth = 5f;
 
         [Header("OffMeshLinks")]
-        public float maxJumpHeight = 3f;
-        public float maxJumpDist = 3f;
+        public float maxJumpHeight = 2f;
+        public float maxJumpDist = 2f;
         public LayerMask raycastLayerMask = -1;
         public float sphereCastRadius = 2f;
 
@@ -32,51 +32,40 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
 
 
         //private List< Vector3 > spawnedLinksPositionsList = new List< Vector3 >();
-        private Mesh currentMesh;
-        private List<Edge> edges = new List<Edge>();
 
-        private Vector3 _reUsableV3;
-        private Vector3 _offSetPosY;
 
         #endregion
 
 
         #region GridGen
 
-        public void Generate(API.Agent agent) {
+        public void Generate(API.Agent agent, float edgeDivisionWidth) {
 
             // Clear old visualizers Todo: Remove
             foreach (var lineRenderer in Visulizers) {
                 Destroy(lineRenderer);
             }
             Visulizers.Clear();
+            ignoredNotAgentNavMesh = 0;
+            ignoredHadColliderBetween = 0;
 
-            edges.Clear();
-            //spawnedLinksPositionsList.Clear();
+            MelonLogger.Msg("Generating Mesh Links...");
+            MelonLogger.Msg("\tCalculating Edges...");
+            var edges = CalcEdges();
 
-            CalcEdges();
-            PlaceTiles(agent);
+
+            MelonLogger.Msg("\tPlacing Tiles");
+
+            PlaceTiles(agent, edgeDivisionWidth, edges);
+            MelonLogger.Msg($"\tDone! ignoredNotAgentNavMesh: {ignoredNotAgentNavMesh}, ignoredHadColliderBetween: {ignoredHadColliderBetween}");
         }
 
-
-        public void ClearLinks(API.Agent agent) {
-            var navMeshLinkList = GetComponentsInChildren<NavMeshLink>().ToList();
-            while (navMeshLinkList.Count > 0) {
-                if (navMeshLinkList[0].agentTypeID == agent.AgentTypeID) {
-                    var obj = navMeshLinkList[0].gameObject;
-                    if (obj != null) DestroyImmediate(obj);
-                }
-                navMeshLinkList.RemoveAt(0);
-            }
-        }
-
-        private void PlaceTiles(API.Agent agent) {
-            if (edges.Count == 0) return;
-
-            ClearLinks(agent);
+        private void PlaceTiles(API.Agent agent, float edgeDivisionWidth, List<Edge> edges) {
+            // ClearLinks(agent);
 
             foreach (var edge in edges) {
-                var tilesCountWidth = (int) Mathf.Clamp(edge.length / tileWidth, 0, 10000);
+                // var tilesCountWidth = (int) Mathf.Clamp(edge.length / tileWidth, 0, 10000);
+                var tilesCountWidth = (int) Mathf.Clamp(edge.length / edgeDivisionWidth, 0, 10000);
                 float heightShift = 0;
 
                 for (var columnN = 0; columnN < tilesCountWidth; columnN++) { //every edge length segment
@@ -100,89 +89,72 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
 
         private void CheckPlacePos(Vector3 pos, Quaternion normal, API.Agent agent) {
 
+            // Check if we're on the navmesh of our agent Todo: Is this relevant?
+            if (!NavMesh.SamplePosition(pos, out _, 0.0000001f,
+                    new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
+                ignoredNotAgentNavMesh++;
+                return;
+            }
+
             var startPos = pos + normal * Vector3.forward * agent.Settings.agentRadius * 2;
+
+            // The end pos is just down for slightly more than the max Jump Height
             var endPos = startPos - Vector3.up * maxJumpHeight * 1.1f;
 
             //Debug.DrawLine ( pos + Vector3.right * 0.2f, endPos, Color.white, 2 );
 
+            // Look for a collider on the edge normal direction
             if (!Physics.Linecast(startPos, endPos, out var raycastHit, raycastLayerMask.value, QueryTriggerInteraction.Ignore)) return;
+
+            // Check if there's a nav mesh within the line cast hit
             if (!NavMesh.SamplePosition(raycastHit.point, out var navMeshHit, 1f, new NavMeshQueryFilter { agentTypeID = agent.AgentTypeID, areaMask = NavMesh.AllAreas })) return;
+
             //Debug.DrawLine( pos, navMeshHit.position, Color.black, 15 );
 
             // if (Vector3.Distance(pos, navMeshHit.position) <= 1.1f) return;
             // Ignore heights that the agent can climb
-            if (Vector3.Distance(pos, navMeshHit.position) <= agent.Settings.agentClimb) return;
+            // if (Vector3.Distance(pos, navMeshHit.position) <= agent.Settings.agentClimb) return;
 
             //added these 2 line to check to make sure there aren't flat horizontal links going through walls
             var calcV3 = (pos - normal * Vector3.forward * 0.02f);
 
-            // Todo: Figure out what this is
-            // if ((calcV3.y - navMeshHit.position.y) <= 1f) return;
-            // if (Mathf.Abs(calcV3.y - navMeshHit.position.y) < agent.Settings.agentClimb) return;
+            // Ignore if our agent can climb this, as it should be taken care
+            if (Mathf.Abs(calcV3.y - navMeshHit.position.y) < agent.Settings.agentClimb) return;
 
-            // //SPAWN NAVMESH LINKS
-            // Transform spawnedTransf = Instantiate(
-            //     linkPrefab.transform,
-            //     //pos - normal * Vector3.forward * 0.02f,
-            //     calcV3,
-            //     normal
-            // );
-
-            // // Spawn and setup the NavMeshLink Todo: Investigate if NavMeshLink_TBS brings something or we just use NavMeshLink
-            // var spawnedGo = new GameObject("NM_Link");
-            // var spawnedTransf = spawnedGo.transform;
-            // var navMeshLinkTbs = spawnedGo.AddComponent<NavMeshLink_TBS>();
-            // navMeshLinkTbs.animation_FromStart = "JumpDown";
-            // navMeshLinkTbs.animation_FromEnd = "JumpUp";
-            //
-            // // Setup Nav Mesh Link stuff
-            // var nmLink = spawnedTransf.GetComponent<NavMeshLink>();
-            // nmLink.startPoint = Vector3.zero;
-            // nmLink.endPoint = nmLink.transform.InverseTransformPoint(navMeshHit.position);
-            // nmLink.autoUpdate = true;
-            // nmLink.agentTypeID = agent.AgentTypeID;
-            // nmLink.costModifier = 2;
-            // nmLink.area = 2;
-            // // Todo: Check if these are decent values
-            // nmLink.width = 0.5f;
-            // nmLink.bidirectional = true;
-            //
-            // nmLink.UpdateLink();
-            //
-            // spawnedTransf.SetParent(transform);
+            // Check if there's a collider between the points at the starting height
+            var posABitHigher = pos with { y = pos.y + 0.1f };
+            var directionHorizontal = raycastHit.point with { y = posABitHigher.y } - posABitHigher;
+            if (Physics.Raycast(posABitHigher, directionHorizontal.normalized, directionHorizontal.magnitude, 1 << NavMeshTools.DefaultLayer)) {
+                // Create new visualizers
+                CreateVisualizer(Color.red, true, posABitHigher, raycastHit.point with { y = posABitHigher.y }, 0.025f);
+                ignoredHadColliderBetween++;
+                return;
+            }
 
             // Send the nav mesh link to the bake
             NavMeshTools.Instance.AddNavMeshLink(agent, new NavMeshLinkData() {
-                startPosition = calcV3,
+                // startPosition = calcV3,
+                startPosition = pos,
                 endPosition = navMeshHit.position,
                 width = agent.Settings.agentRadius,
-                costModifier = 2f,
+                costModifier = 10f,
                 bidirectional = true,
                 area = 2,
                 agentTypeID = agent.AgentTypeID,
             });
 
             // Create new visualizers
-            var vis = new GameObject("vis");
-            var lineRenderer = vis.AddComponent<LineRenderer>();
-            // Set line color to green
-            lineRenderer.material.shader = Shader.Find("Unlit/Color");
-            lineRenderer.material.color = Color.green;
-
-            // Set width (you can modify this as needed)
-            lineRenderer.startWidth = lineRenderer.endWidth = 0.05f;
-
-            // Set positions
-            lineRenderer.positionCount = 2;  // We are defining a line with 2 points.
-            lineRenderer.SetPosition(0, calcV3);
-            lineRenderer.SetPosition(1, navMeshHit.position);
-            Visulizers.Add(lineRenderer);
+            CreateVisualizer(Color.green, true, calcV3, navMeshHit.position);
         }
+
+        private int ignoredNotAgentNavMesh = 0;
+        private int ignoredHadColliderBetween = 0;
 
         private void CheckPlacePosHorizontal(Vector3 pos, Quaternion normal, API.Agent agent) {
 
             var startPos = pos + normal * Vector3.forward * agent.Settings.agentRadius * 2;
             var endPos = startPos - normal * Vector3.back * maxJumpDist * 1.1f;
+
             // Cheat forward a little bit so the sphereCast doesn't touch this ledge.
             var cheatStartPos = LerpByDistance(startPos, endPos, cheatOffset);
             //Debug.DrawRay(endPos, Vector3.up, Color.blue, 2);
@@ -190,64 +162,33 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
             //Debug.DrawLine(startPos, endPos, Color.white, 2);
 
             //calculate direction for Spherecast
-            _reUsableV3 = endPos - startPos;
+            var reUsableV3 = endPos - startPos;
             // raise up pos Y value slightly up to check for wall/obstacle
-            _offSetPosY = new Vector3(pos.x, (pos.y + wallCheckYOffset), pos.z);
+            var offSetPosY = pos with { y = pos.y + wallCheckYOffset };
 
             // ray cast to check for walls
-            if (Physics.Raycast(_offSetPosY, _reUsableV3, (maxJumpDist / 2), raycastLayerMask.value)) return;
+            if (Physics.Raycast(offSetPosY, reUsableV3, (maxJumpDist / 2), raycastLayerMask.value)) return;
             //Debug.DrawRay(pos, ReUsableV3, Color.yellow, 15);
 
-            var reverseRayCastSpot = (_offSetPosY + (_reUsableV3));
+            var reverseRayCastSpot = offSetPosY + reUsableV3;
 
             //now raycast back the other way to make sure we're not raycasting through the inside of a mesh the first time.
-            if (Physics.Raycast(reverseRayCastSpot, -_reUsableV3, (maxJumpDist + 1), raycastLayerMask.value)) return;
+            if (Physics.Raycast(reverseRayCastSpot, -reUsableV3, (maxJumpDist + 1), raycastLayerMask.value)) return;
             //Debug.DrawRay(ReverseRayCastSpot, -ReUsableV3, Color.red, 15);
             //Debug.DrawRay(ReverseRayCastSpot, -ReUsableV3, Color.red, 15);
 
             // if no walls 1 unit out then check for other colliders using the Cheat offset so as to not detect the edge we are spherecasting from.
-            if (!Physics.SphereCast(cheatStartPos, sphereCastRadius, _reUsableV3, out var raycastHit, maxJumpDist, raycastLayerMask.value, QueryTriggerInteraction.Ignore)) return;
+            if (!Physics.SphereCast(cheatStartPos, sphereCastRadius, reUsableV3, out var raycastHit, maxJumpDist, raycastLayerMask.value, QueryTriggerInteraction.Ignore)) return;
             // if (Physics.Linecast(startPos, endPos, out raycastHit, raycastLayerMask.value, QueryTriggerInteraction.Ignore))
 
             var cheatRaycastHit = LerpByDistance(raycastHit.point, endPos, .2f);
 
             if (!NavMesh.SamplePosition(cheatRaycastHit, out var navMeshHit, 1f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) return;
-            // Debug.Log("Success");
             // Debug.DrawLine( pos, navMeshHit.position, Color.black, 15 );
 
             // Todo: Figure out what this is
             // if ((Vector3.Distance(pos, navMeshHit.position) < 1.1f)) return;
             // if (Mathf.Abs(Vector3.Distance(pos, navMeshHit.position)) <= agent.Settings.agentClimb) return;
-
-            //SPAWN NAVMESH LINKS
-            // Transform spawnedTransf = Instantiate(
-            //     OnewayLinkPrefab.transform,
-            //     pos - normal * Vector3.forward * 0.02f,
-            //     normal
-            // ) as Transform;
-
-            // // Spawn and setup the NavMeshLink Todo: Investigate if NavMeshLink_TBS brings something or we just use NavMeshLink
-            // var spawnedGo = new GameObject("NM_Link");
-            // var spawnedTransf = spawnedGo.transform;
-            // var navMeshLinkTbs = spawnedGo.AddComponent<NavMeshLink_TBS>();
-            // navMeshLinkTbs.animation_FromStart = "JumpDown";
-            // navMeshLinkTbs.animation_FromEnd = "JumpUp";
-            //
-            // // Setup Nav Mesh Link stuff
-            // var nmLink = spawnedTransf.GetComponent<NavMeshLink>();
-            //
-            // nmLink.autoUpdate = true;
-            // nmLink.agentTypeID = agent.AgentTypeID;
-            // nmLink.costModifier = 2;
-            // nmLink.area = 2;
-            // // Todo: Check if these are decent values
-            // nmLink.width = 0.5f;
-            // nmLink.bidirectional = true;
-            //
-            // nmLink.UpdateLink();
-            //
-            // spawnedTransf.SetParent(transform);
-
 
             var startingPos = pos - normal * Vector3.forward * 0.02f;
 
@@ -256,27 +197,32 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
                 startPosition = startingPos,
                 endPosition = navMeshHit.position,
                 width = agent.Settings.agentRadius,
-                costModifier = 2f,
+                costModifier = 10f,
                 bidirectional = true,
                 area = 2,
                 agentTypeID = agent.AgentTypeID,
             });
 
             // Create new visualizers
+            CreateVisualizer(Color.cyan, true, startingPos, navMeshHit.position);
+        }
+
+        private void CreateVisualizer(Color color, bool constantWidth, Vector3 start, Vector3 end, float width = 0.1f) {
+            // Create new visualizers
             var vis = new GameObject("vis");
             var lineRenderer = vis.AddComponent<LineRenderer>();
-            // Set line color to green
+            // Set line color
             lineRenderer.material.shader = Shader.Find("Unlit/Color");
-            lineRenderer.material.color = Color.cyan;
+            lineRenderer.material.color = color;
 
             // Set width (you can modify this as needed)
-            lineRenderer.startWidth = 0.1f;
-            lineRenderer.endWidth = 0.01f;
+            lineRenderer.startWidth = width;
+            lineRenderer.endWidth = constantWidth ? width : width/10;
 
             // Set positions
             lineRenderer.positionCount = 2;  // We are defining a line with 2 points.
-            lineRenderer.SetPosition(0, startingPos);
-            lineRenderer.SetPosition(1, navMeshHit.position);
+            lineRenderer.SetPosition(0, start);
+            lineRenderer.SetPosition(1, end);
             Visulizers.Add(lineRenderer);
         }
 
@@ -285,8 +231,7 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
 
         //Just a helper function I added to calculate a point between normalized distance of two V3s
         private static Vector3 LerpByDistance(Vector3 a, Vector3 b, float x) {
-            var p = x * Vector3.Normalize(b - a) + a;
-            return p;
+            return x * Vector3.Normalize(b - a) + a;
         }
 
 
@@ -294,10 +239,11 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
 
         private const float TriggerAngle = 0.999f;
 
-        private void CalcEdges() {
+        private List<Edge> CalcEdges() {
+            var edges = new List<Edge>();
             var tr = NavMesh.CalculateTriangulation();
 
-            currentMesh = new Mesh() {
+            var currentMesh = new Mesh() {
                 vertices = tr.vertices,
                 triangles = tr.indices
             };
@@ -325,9 +271,9 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
             for (var i = 0; i < currentMesh.triangles.Length - 1; i += 3) {
                 //CALC FROM MESH OPEN EDGES vertices
 
-                TrisToEdge(currentMesh, i, i + 1);
-                TrisToEdge(currentMesh, i + 1, i + 2);
-                TrisToEdge(currentMesh, i + 2, i);
+                TrisToEdge(edges, currentMesh, i, i + 1);
+                TrisToEdge(edges, currentMesh, i + 1, i + 2);
+                TrisToEdge(edges, currentMesh, i + 2, i);
             }
 
             foreach (var edge in edges) {
@@ -365,9 +311,11 @@ namespace eDmitriyAssets.NavmeshLinksGenerator {
 
                 if (invertFacingNormal) edge.facingNormal = Quaternion.Euler(Vector3.up * 180) * edge.facingNormal;
             }
+
+            return edges;
         }
 
-        private void TrisToEdge(Mesh currMesh, int n1, int n2) {
+        private void TrisToEdge(List<Edge> edges, Mesh currMesh, int n1, int n2) {
             var val1 = currMesh.vertices[currMesh.triangles[n1]];
             var val2 = currMesh.vertices[currMesh.triangles[n2]];
 
