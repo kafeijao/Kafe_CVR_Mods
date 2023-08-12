@@ -93,6 +93,14 @@ public class CVRLipSyncContext : OVRLipSyncContextBase {
         CheckVisemeController();
     }
 
+    private void Start() {
+        // Update smoothing value
+        Smoothing = BetterLipsync.melonEntrySmoothing.Value;
+        BetterLipsync.melonEntrySmoothing.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            if (newValue != oldValue) Smoothing = newValue;
+        });
+    }
+
     private void CheckVisemeController() {
 
         // If we got both a context (this instance) and a viseme controller. We're gucci to go!

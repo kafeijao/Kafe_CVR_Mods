@@ -1,0 +1,22 @@
+{
+  "_id": 107,
+  "name": "ProfilesExtended",
+  "modversion": "1.0.4",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "This mod adds functionality to avatar parameter profiles system.\n\n__**Features**__\n- Exclude parameters from changing by including `*` in their AAS name\n- Exclude parameters not present in the AAS from loading via profiles\n- Bypass the exclusion by including `*` in the profile name\n- Remember **current** parameters across avatar changes or game restarts\n\n__**Config**__\n- Whether to exclude or not parameters not in AAS on profile load. **default:** `true`\n- Define which tags are used. **default**: `*`\n- Remember current parameters across av. changes/game restarts. **default**: `true`\n- Name of profile used to remember parameters. **default**: `Auto`\n\nRefer to the [IN-DEPTH](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ProfilesExtended) documentation for more information.",
+  "searchtags": [
+    "profiles",
+    "avatar",
+    "parameter",
+    "remember",
+    "blacklist"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/ProfilesExtended.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ProfilesExtended",
+  "changelog": "- Fixed for 2023r171.",
+  "embedcolor": "16C60C"
+}

@@ -6,8 +6,8 @@ public static class CompatibilityHacksMenuScalePatch {
 
     public static void Initialize(MelonMod possibleMenuScalePatch) {
 
-        var menuScalePatch = (NAK.Melons.MenuScalePatch.MenuScalePatch) possibleMenuScalePatch;
-        var isCompatibleVersion = menuScalePatch.Info.Version == "4.2.6";
+        var menuScalePatch = (NAK.MenuScalePatch.MenuScalePatch) possibleMenuScalePatch;
+        var isCompatibleVersion = menuScalePatch.Info.Version == "4.2.7";
         if (isCompatibleVersion) {
             MelonLogger.Msg($"[Compatibility] Detected MenuScalePatch mod version {menuScalePatch.Info.Version}. Integrating...");
         }
@@ -16,7 +16,7 @@ public static class CompatibilityHacksMenuScalePatch {
                                 $"This version integration is untested, you might run into errors/strange behavior with the quick menu.");
         }
         QuickMenuAccessibility.AnchorChanged += anchorTransform => {
-            NAK.Melons.MenuScalePatch.Helpers.QuickMenuHelper.Instance.handAnchor = anchorTransform;
+            NAK.MenuScalePatch.Helpers.QuickMenuHelper.Instance.handAnchor = anchorTransform;
         };
 
     }

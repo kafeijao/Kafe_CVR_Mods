@@ -5,19 +5,30 @@ namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 
 public class BoneVisualizer : GameObjectVisualizer {
 
+    private const string GameObjectWrapperName = "[CCK.Debugger] Bone Visualizer";
+
     public static BoneVisualizer Create(GameObject target, float scale) {
 
-        // Check if the component already exists, if so ignore the creation request but enable it
-        if (target.TryGetComponent(out BoneVisualizer visualizer)) {
+        // Check if the component already exists, if so ignore the creation request
+        var wrapperTransform = target.transform.Find(GameObjectWrapperName);
+        if (wrapperTransform != null && wrapperTransform.TryGetComponent(out BoneVisualizer visualizer)) {
             visualizer.SetupVisualizer(scale);
             return visualizer;
         }
 
-        visualizer = target.AddComponent<BoneVisualizer>();
-        visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target, visualizer);
+        // Create the wrapper
+        var wrapper = wrapperTransform == null
+            ? new GameObject(GameObjectWrapperName) { layer = target.layer }
+            : wrapperTransform.gameObject;
+        wrapper.transform.SetParent(target.transform, false);
+        wrapper.SetActive(false);
+
+        visualizer = wrapper.AddComponent<BoneVisualizer>();
+        visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), wrapper);
         visualizer.SetupVisualizer(scale);
 
         visualizer.enabled = false;
+        wrapper.SetActive(true);
         return visualizer;
     }
 

@@ -1,14 +1,14 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.InputManagement;
+using ABI_RC.Systems.InputManagement.XR;
 using UnityEngine;
-
-using Valve.VR;
 
 namespace Kafe.CVRSuperMario64;
 
 public class MarioInputModule : CVRInputModule {
+
     internal static MarioInputModule Instance;
 
     public int controllingMarios;
@@ -23,11 +23,9 @@ public class MarioInputModule : CVRInputModule {
     public float cameraRotation;
     public float cameraPitch;
 
-    public new void Start() {
-        _inputManager = CVRInputManager.Instance;
+    public override void ModuleAdded() {
+        base.ModuleAdded();
         Instance = this;
-        base.Start();
-
         CVRSM64Context.UpdateMarioCount();
     }
 
@@ -83,20 +81,32 @@ public class MarioInputModule : CVRInputModule {
             }
 
             // Thanks NotAKidS for finding the issue and suggesting the fix!
-            if (!ViewManager.Instance.isGameMenuOpen() && !CVR_MenuManager.Instance._quickMenuOpen) {
+            if (!ViewManager.Instance.isGameMenuOpen()) {
 
                 // Lets attempt to do a left hand only movement (let's ignore vive wants because it messes the jump)
-                if (MetaPort.Instance.isUsingVr && !PlayerSetup.Instance._trackerManager.TrackedObjectsContains("vive_controller")) {
+
+                if (MetaPort.Instance.isUsingVr) {
+
+                    // No fun for the vive controllers
+                    if (CVRInputManager._moduleXR == null ||
+                        CVRInputManager._moduleXR._leftModule?.Type == EXRControllerType.Vive ||
+                        CVRInputManager._moduleXR._rightModule?.Type == EXRControllerType.Vive) {
+                        return;
+                    }
+
                     _inputManager.movementVector.z = CVRTools.AxisDeadZone(
-                        InputModuleSteamVR.Instance.vrLookAction.GetAxis(SteamVR_Input_Sources.Any).y,
+                        CVRInputManager._moduleXR._lookAxis.y,
                         MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
                 }
             }
         }
+
+        base.UpdateInput();
     }
 
-    public override void UpdateImportantInput() {
+    public override void Update_Always() {
         // Prevent Mario from moving while we're using the menu
+        if (!ViewManager.Instance.isGameMenuOpen()) return;
         horizontal = 0;
         vertical = 0;
         jump = false;

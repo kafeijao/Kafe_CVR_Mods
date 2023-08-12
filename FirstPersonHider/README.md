@@ -1,5 +1,7 @@
 # FirstPersonHider
 
+[![Download Latest FirstPersonHider.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest FirstPersonHider.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/FirstPersonHider.dll)
+
 This mod allows to hide game objects locally, you will still see stuff in the mirror/camera. This uses the same
 mechanism your head does to shrink, so you don't view your own head.
 

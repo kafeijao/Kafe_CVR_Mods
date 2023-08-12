@@ -1,20 +1,15 @@
 # CVRSuperMario64
 
+[![Download Latest CVRSuperMario64.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest CVRSuperMario64.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CVRSuperMario64.dll)
+
 Mod to integrate the [libsm64](https://github.com/libsm64/libsm64) into CVR. It allows to spawn a Mario prop and control
 it (both in Desktop and VR). Since we're running the actual reverse engineered SM64 engine it should behave exactly like
 in the original game.
 
-This was suggested as a meme idea by [AstroDoge](https://github.com/AstroDogeDX) and then Noachi. Two people make a meme
-idea juicy I guess x)
+As a little extra it also supports multiplayer, mario pvp, mario-player interactions (punch people), and more.
 
----
-
-## CVR Super Mario 64 SDK
-
-There should be public props in CVR that you can use right away. Or if you want to get adventurous you can create your
-own. I also create a [CCK for this mod](https://github.com/kafeijao/Kafe_CVR_CCKs/tree/master/CVRSuperMario64). It
-allows you to create entities used by the mod. Like your own Mario Prop (you can use custom material/shaders), make
-levels with terrain types etc, create interactables to you can trigger the Mario Caps or spawn coins.
+This was suggested as a meme idea by [AstroDoge](https://github.com/AstroDogeDX) and then 
+[NoachiCode](https://github.com/NoachiCode). Two people make a meme idea worthwhile I guess x)
 
 ---
 
@@ -25,6 +20,15 @@ levels with terrain types etc, create interactables to you can trigger the Mario
 2. Rename that file to `baserom.us.z64`
 3. Copy that file to `UserData\` in the ChilloutVR folder. By
    default: `C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\UserData\`
+
+---
+
+## CVR Super Mario 64 SDK
+
+There should be public props in CVR that you can use right away. Or if you want to get adventurous you can create your
+own. I also create a [CCK for this mod](https://github.com/kafeijao/Kafe_CVR_CCKs/tree/master/CVRSuperMario64). It
+allows you to create entities used by the mod. Like your own Mario Prop (you can use custom material/shaders), make
+levels with terrain types etc, create interactables to you can trigger the Mario Caps or spawn coins.
 
 ---
 
@@ -43,6 +47,8 @@ levels with terrain types etc, create interactables to you can trigger the Mario
 - Attack other Marios.
 - Best effort attempt to integrate with CVR world colliders. Depending on the mesh settings/amount might not work/lag.
 - Provide Dedicated components for more versatility to make content interact with Mario.
+- Punch other players (with [Player Ragdoll Mod](https://github.com/SDraw/ml_mods_cvr/tree/master/ml_prm) support)
+- Use the CVR Camera to control mario better. Also has a free camera mod.
 
 ---
 
@@ -80,8 +86,8 @@ the respective cubes to trigger them.
 
 ## Building Instructions for sm64.dll
 
-If you want to build the `libsm64/Plugins/sm64.dll` follow the instructions
-at: [libsm64](https://github.com/libsm64/libsm64).
+If you want to build the `libsm64/Plugins/sm64.dll` follow the instructions at: 
+[libsm64](https://github.com/libsm64/libsm64).
 
 The `libsm64/Plugins/sm64.dll.info` file should have information of which commit I used to build the current supported
 version of the dll.

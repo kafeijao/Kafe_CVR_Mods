@@ -1,5 +1,7 @@
 # PostProcessingOverrides
 
+[![Download Latest PostProcessingOverrides.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest PostProcessingOverrides.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/PostProcessingOverrides.dll)
+
 This mod gives you more control over the world's Post Processing configurations.
 
 Requires [BTKUILib](https://github.com/BTK-Development/BTKUILib)

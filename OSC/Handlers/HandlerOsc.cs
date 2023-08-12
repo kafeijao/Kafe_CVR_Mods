@@ -1,11 +1,11 @@
 ﻿using System.Collections;
 using System.Net;
+using Kafe.OSC.Handlers.OscModules;
 using MelonLoader;
-using OSC.Handlers.OscModules;
-using Rug.Osc;
-using OSC.Utils;
+using Kafe.OSC.Utils;
+using Rug.Osc.Core;
 
-namespace OSC.Handlers;
+namespace Kafe.OSC.Handlers;
 
 internal class HandlerOsc {
 
@@ -19,6 +19,7 @@ internal class HandlerOsc {
     private readonly Spawnable SpawnableHandler;
     private readonly Tracking TrackingHandler;
     private readonly Config ConfigHandler;
+    private readonly OscModules.ChatBox ChatBoxHandler;
 
     private static bool _debugMode;
     private static bool _compatibilityVRCFaceTracking;
@@ -34,19 +35,19 @@ internal class HandlerOsc {
 
         // Handle config debug value and changes
         _debugMode = OSC.Instance.meOSCDebug.Value;
-        OSC.Instance.meOSCDebug.OnValueChanged += (_, newValue) => _debugMode = newValue;
+        OSC.Instance.meOSCDebug.OnEntryValueChanged.Subscribe((_, newValue) => _debugMode = newValue);
 
         // Setup the late update tick to send the current osc packets buffer as a bundle
         if (OSC.Instance.meOSCServerOutUseBundles.Value) {
             Events.Scene.PlayerSetupLateUpdateTicked += LateUpdateTick;
             _useOscBundles = true;
         }
-        OSC.Instance.meOSCServerOutUseBundles.OnValueChanged += (oldUseBundles, newUseBundles) => {
+        OSC.Instance.meOSCServerOutUseBundles.OnEntryValueChanged.Subscribe((oldUseBundles, newUseBundles) => {
             if (oldUseBundles == newUseBundles) return;
             if (newUseBundles) Events.Scene.PlayerSetupLateUpdateTicked += LateUpdateTick;
             else Events.Scene.PlayerSetupLateUpdateTicked -= LateUpdateTick;
             _useOscBundles = newUseBundles;
-        };
+        });
     }
 
     public HandlerOsc() {
@@ -66,7 +67,7 @@ internal class HandlerOsc {
         }
 
         // Handle config listener port changes
-        OSC.Instance.meOSCServerInPort.OnValueChanged += (oldPort, newPort) => {
+        OSC.Instance.meOSCServerInPort.OnEntryValueChanged.Subscribe((oldPort, newPort) => {
             if (oldPort == newPort) return;
             MelonLogger.Msg("[Server] OSC server port config has changed. Restarting server...");
             try {
@@ -82,25 +83,25 @@ internal class HandlerOsc {
             // Restarting the sender as well because it needs the source port
             ConnectSender(OSC.Instance.meOSCServerOutIp.Value, OSC.Instance.meOSCServerOutPort.Value,
                 OSC.Instance.meOSCServerInPort.Value);
-        };
+        });
 
         // Start sender
         MelonLogger.Msg($"[Server] OSC Server started sending to {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
         ConnectSender(OSC.Instance.meOSCServerOutIp.Value, OSC.Instance.meOSCServerOutPort.Value, OSC.Instance.meOSCServerInPort.Value);
 
         // Handle config sender ip/port changes
-        OSC.Instance.meOSCServerOutIp.OnValueChanged += (_, newIp) => {
+        OSC.Instance.meOSCServerOutIp.OnEntryValueChanged.Subscribe((_, newIp) => {
             if (!ConnectSender(newIp, OSC.Instance.meOSCServerOutPort.Value, OSC.Instance.meOSCServerInPort.Value)) return;
             MelonLogger.Msg($"[Server] OSC out IP has changed, new messages will be sent to: {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
-        };
-        OSC.Instance.meOSCServerOutPort.OnValueChanged += (_, newPort) => {
+        });
+        OSC.Instance.meOSCServerOutPort.OnEntryValueChanged.Subscribe((_, newPort) => {
             if (!ConnectSender(OSC.Instance.meOSCServerOutIp.Value, newPort, OSC.Instance.meOSCServerInPort.Value)) return;
             MelonLogger.Msg($"[Server] OSC out Port has changed, new messages will be sent to: {OSC.Instance.meOSCServerOutIp.Value}:{OSC.Instance.meOSCServerOutPort.Value}.");
-        };
+        });
 
         // Handle VRCFaceTracking compatibility
         _compatibilityVRCFaceTracking = OSC.Instance.meOSCCompatibilityVRCFaceTracking.Value;
-        OSC.Instance.meOSCCompatibilityVRCFaceTracking.OnValueChanged += (_, enabled) => _compatibilityVRCFaceTracking = enabled;
+        OSC.Instance.meOSCCompatibilityVRCFaceTracking.OnEntryValueChanged.Subscribe((_, enabled) => _compatibilityVRCFaceTracking = enabled);
 
         // Create instances of the handler modules
         AvatarHandler = new Avatar();
@@ -108,6 +109,7 @@ internal class HandlerOsc {
         SpawnableHandler = new Spawnable();
         TrackingHandler = new Tracking();
         ConfigHandler = new Config();
+        ChatBoxHandler = new OscModules.ChatBox();
 
         Instance = this;
     }
@@ -207,6 +209,9 @@ internal class HandlerOsc {
                     break;
                 case not null when addressLower.StartsWith(Config.AddressPrefixConfig):
                     ConfigHandler.ReceiveMessageHandler(oscMessage);
+                    break;
+                case not null when addressLower.StartsWith(OscModules.ChatBox.AddressPrefixChatBox):
+                    ChatBoxHandler.ReceiveMessageHandler(oscMessage);
                     break;
             }
         }

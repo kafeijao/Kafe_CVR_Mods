@@ -1,5 +1,7 @@
 # CCK.Debugger
 
+[![Download Latest CCK.Debugger.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest CCK.Debugger.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CCK.Debugger.dll)
+
 This mod allows to debug content you upload to CVR, for now it allows debugging `Avatars` and `Props`. It does so by
 creating a menu with a bunch information for the selected object. You can also use to debug your friend's content because
 it allows to see the information about other people's avatars/props.

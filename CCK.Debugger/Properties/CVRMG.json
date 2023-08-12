@@ -1,0 +1,28 @@
+{
+  "_id": 74,
+  "name": "CCK.Debugger",
+  "modversion": "2.0.6",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "The Content Creation Debugger allows you to debug `avatars`, `props` and `misc`.\n\n__**Menu**__ - Menu that displays useful information like:\n- Avatar and Props `synced`/`local` parameter values\n- Prop Pickups and Attach Info\n- Avatar & Props Pointers/Triggers detailed info\n- Avatar animator layer playing clips\n\n__**Visualizers**__ - Toggleable Component visualizers:\n- Pointers and Triggers 3D shape\n- Trigger `OnEnter` (green), `OnExit` (red), `OnStay` (yellow) events\n- IK bones\n- FBT Trackers\n\nSupports [BTKUILib](https://api.cvrmg.com/v1/mods/download/113) to restore the menu position or completely hide it.\n\nClick [here](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger) for a more **in-depth** readme (with pictures).",
+  "searchtags": [
+    "cck",
+    "debug",
+    "debugger",
+    "menu",
+    "avatar",
+    "prop",
+    "pointer",
+    "trigger",
+    "visualizer",
+    "animator",
+    "layer"
+  ],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/CCK.Debugger.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
+  "changelog": "- Added animator layers to props.",
+  "embedcolor": "16C60C"
+}

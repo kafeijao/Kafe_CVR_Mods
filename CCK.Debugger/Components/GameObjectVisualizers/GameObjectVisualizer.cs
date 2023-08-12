@@ -10,22 +10,20 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
     protected static readonly Dictionary<GameObject, GameObjectVisualizer> VisualizersAll = new();
     protected static readonly Dictionary<GameObject, GameObjectVisualizer> VisualizersActive = new();
 
-    private const string GameObjectName = "[CCK.Debugger] GameObject Visualizer";
+    protected virtual string GetName() => "Visualizer";
 
     private GameObject _targetGo;
     protected GameObject VisualizerGo;
     protected Material Material;
 
-    private bool Initialized { get; set; }
-
-    internal void InitializeVisualizer(GameObject prefab, GameObject target, GameObjectVisualizer visualizer) {
+    internal void InitializeVisualizer(GameObject prefab, GameObject target) {
 
         _targetGo = target;
 
         // Instantiate the visualizer GameObject inside of the target
         VisualizerGo = Instantiate(prefab, target.transform);
         VisualizerGo.layer = target.layer;
-        VisualizerGo.name = GameObjectName;
+        VisualizerGo.name = GetName();
 
         // Get the renderer and assign material
         var renderer = VisualizerGo.GetComponent<MeshRenderer>();
@@ -48,14 +46,13 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
         VisualizerGo.SetActive(false);
     }
 
-    protected virtual void Start() {
+    private void Awake() {
+        // Needs to be on Awake because OnDestroy is only called if the game object was active, and same goes for awake
         VisualizersAll[_targetGo] = this;
-        Initialized = true;
-        UpdateState();
     }
 
-    private void UpdateState() {
-        if (!Initialized) return;
+    protected void UpdateState() {
+        if (VisualizerGo == null || _targetGo == null) return;
         VisualizerGo.SetActive(enabled);
         if (enabled && !VisualizersActive.ContainsKey(_targetGo)) {
             VisualizersActive.Add(_targetGo, this);

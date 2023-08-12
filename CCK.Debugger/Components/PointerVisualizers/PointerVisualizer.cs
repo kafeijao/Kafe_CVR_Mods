@@ -10,7 +10,8 @@ public abstract class PointerVisualizer : MonoBehaviour {
     protected static readonly Dictionary<CVRPointer, PointerVisualizer> VisualizersAll = new();
     private static readonly Dictionary<CVRPointer, PointerVisualizer> VisualizersActive = new();
 
-    private const string GameObjectName = "[CCK.Debugger] Pointer Visualizer";
+    private const string GameObjectName = "Visualizer";
+    private const string GameObjectWrapperName = "[CCK.Debugger] Pointer Visualizer";
 
     private Material _materialStandard;
     private Material _materialNeitri;
@@ -18,19 +19,25 @@ public abstract class PointerVisualizer : MonoBehaviour {
     protected CVRPointer Pointer;
     protected GameObject VisualizerGo;
 
-    protected bool Initialized { get; set; }
-
     public static PointerVisualizer CreateVisualizer(CVRPointer pointer) {
 
         // Check if the component already exists, if so ignore the creation request but enable it
-        if (pointer.TryGetComponent(out PointerVisualizer visualizer)) {
+        var wrapperTransform = pointer.transform.Find(GameObjectWrapperName);
+        if (wrapperTransform != null && wrapperTransform.TryGetComponent(out PointerVisualizer visualizer)) {
             return visualizer;
         }
 
+        // Create the wrapper
+        var wrapper = wrapperTransform == null
+            ? new GameObject(GameObjectWrapperName) { layer = pointer.gameObject.layer }
+            : wrapperTransform.gameObject;
+        wrapper.transform.SetParent(pointer.transform, false);
+        wrapper.SetActive(false);
+
         // If there is no collider, assume the type to be a sphere (which is the collider type CVRPointer will add)
         if (!pointer.TryGetComponent(out Collider collider)) {
-            visualizer = pointer.gameObject.AddComponent<PointerSphereVisualizer>();
-            visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
+            visualizer = wrapper.AddComponent<PointerSphereVisualizer>();
+            visualizer.InitializeVisualizer(wrapper, Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
             // We're adding PointerCollider reference later when the visualizer is initialized (Start event)
         }
 
@@ -39,30 +46,30 @@ public abstract class PointerVisualizer : MonoBehaviour {
             switch (collider) {
 
                 case SphereCollider sphereCollider:
-                    var sphereVisualizer = pointer.gameObject.AddComponent<PointerSphereVisualizer>();
+                    var sphereVisualizer = wrapper.AddComponent<PointerSphereVisualizer>();
                     sphereVisualizer.PointerCollider = sphereCollider;
                     visualizer = sphereVisualizer;
-                    visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
+                    visualizer.InitializeVisualizer(wrapper, Misc.GetPrimitiveMesh(PrimitiveType.Sphere));
                     break;
 
                 case BoxCollider boxCollider:
-                    var boxVisualizer = pointer.gameObject.AddComponent<PointerBoxVisualizer>();
+                    var boxVisualizer = wrapper.AddComponent<PointerBoxVisualizer>();
                     boxVisualizer.PointerCollider = boxCollider;
                     visualizer = boxVisualizer;
-                    visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Cube));
+                    visualizer.InitializeVisualizer(wrapper, Misc.GetPrimitiveMesh(PrimitiveType.Cube));
                     break;
 
                 case CapsuleCollider capsuleCollider:
-                    var capsuleVisualizer = pointer.gameObject.AddComponent<PointerCapsuleVisualizer>();
+                    var capsuleVisualizer = wrapper.AddComponent<PointerCapsuleVisualizer>();
                     capsuleVisualizer.PointerCollider = capsuleCollider;
                     visualizer = capsuleVisualizer;
-                    visualizer.InitializeVisualizer(pointer, Misc.GetPrimitiveMesh(PrimitiveType.Capsule));
+                    visualizer.InitializeVisualizer(wrapper, Misc.GetPrimitiveMesh(PrimitiveType.Capsule));
                     break;
 
                 case MeshCollider meshCollider:
-                    var meshVisualizer = pointer.gameObject.AddComponent<PointerMeshVisualizer>();
+                    var meshVisualizer = wrapper.AddComponent<PointerMeshVisualizer>();
                     visualizer = meshVisualizer;
-                    visualizer.InitializeVisualizer(pointer, meshCollider.sharedMesh);
+                    visualizer.InitializeVisualizer(wrapper, meshCollider.sharedMesh);
                     break;
 
                 default:
@@ -75,11 +82,19 @@ public abstract class PointerVisualizer : MonoBehaviour {
 
         visualizer.Pointer = pointer;
         visualizer.enabled = false;
+        // This wrapper is so we can create the visualizer on a disabled GO to prevent awake from being called before we set the Pointer
+        wrapper.SetActive(true);
+
         return visualizer;
     }
 
-    private void InitializeVisualizer(CVRPointer pointer, Mesh mesh) {
-        VisualizerGo = new GameObject(GameObjectName) { layer = pointer.gameObject.layer };
+    private void Awake() {
+        // Needs to be on Awake because OnDestroy is only called if the game object was active, and same goes for awake
+        VisualizersAll[Pointer] = this;
+    }
+
+    private void InitializeVisualizer(GameObject wrapper, Mesh mesh) {
+        VisualizerGo = new GameObject(GameObjectName) { layer = wrapper.layer };
 
         // Create mesh filter
         var sphereMeshFilter = VisualizerGo.AddComponent<MeshFilter>();
@@ -112,21 +127,15 @@ public abstract class PointerVisualizer : MonoBehaviour {
         var renderer = VisualizerGo.AddComponent<MeshRenderer>();
         renderer.materials = new[] { _materialStandard, _materialNeitri };
 
-        // Add as a child to the pointer
-        VisualizerGo.transform.SetParent(pointer.transform, false);
+        // Add as a child to the wrapper
+        VisualizerGo.transform.SetParent(wrapper.transform, false);
 
         // Hide by default
         VisualizerGo.SetActive(false);
     }
 
-    protected virtual void Start() {
-        VisualizersAll[Pointer] = this;
-        Initialized = true;
-        UpdateState();
-    }
-
     private void UpdateState() {
-        if (!Initialized) return;
+        if (VisualizerGo == null || Pointer == null) return;
         VisualizerGo.SetActive(isActiveAndEnabled);
         if (isActiveAndEnabled && !VisualizersActive.ContainsKey(Pointer)) {
             VisualizersActive.Add(Pointer, this);
@@ -148,7 +157,6 @@ public abstract class PointerVisualizer : MonoBehaviour {
     internal static bool HasActive() => VisualizersActive.Count > 0;
 
     internal static void DisableAll() {
-        // Iterate over a copy of the values because they're going to be removed when disabled
         foreach (var visualizer in VisualizersAll.Values.ToList()) {
             visualizer.enabled = false;
         }

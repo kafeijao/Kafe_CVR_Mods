@@ -8,7 +8,7 @@ using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace ProfilesExtended;
+namespace Kafe.ProfilesExtended;
 
 public class ProfilesExtended : MelonMod {
 
@@ -115,10 +115,8 @@ public class ProfilesExtended : MelonMod {
             var removedString = "";
 
             // Otherwise -> Check if there are tags to be ignored
-            var avatarDescriptor = Traverse.Create(PlayerSetup.Instance).Field("_avatarDescriptor").GetValue<CVRAvatar>();
-
-            if (avatarDescriptor.avatarUsesAdvancedSettings) {
-                var settings = avatarDescriptor.avatarSettings.settings;
+            if (PlayerSetup.Instance._avatarDescriptor.avatarUsesAdvancedSettings) {
+                var settings = PlayerSetup.Instance._avatarDescriptor.avatarSettings.settings;
 
                 // Remove all values that are not AAS parameters
                 if (_onlyLoadAASParams) {
@@ -146,7 +144,7 @@ public class ProfilesExtended : MelonMod {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(ViewManager), "RegisterEvents")]
+        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.RegisterEvents))]
         private static void BeforeViewManagerRegisterEvents(ViewManager __instance) {
             // We're detecting the Main Menu change parameter events here
             // Lets bind this before the game binds it, otherwise we can't overwrite it later

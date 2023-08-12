@@ -1,0 +1,19 @@
+{
+  "_id": 170,
+  "name": "TeleportRequest",
+  "modversion": "0.0.5",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "This mod allows you to request to teleport to other players. You're only able to request/accept if the world allows flight.\n\n__**Features**__\n- Request to teleport to a player.\n- Teleport yourself to the previous location before teleporting to a player.\n\n**Note:** This mod has optional integration with [ChatBox](https://api.cvrmg.com/v1/mods/download/168). It allows to write commands in the ChatBox to request to teleport, accept/decline, and go back.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TeleportRequest) for more in-depth info.\n\n",
+  "searchtags": [
+    "request",
+    "lib"
+  ],
+  "requirements": ["[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/TeleportRequest.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TeleportRequest",
+  "changelog": "- Fixed optional requirements.",
+  "embedcolor": "16C60C"
+}

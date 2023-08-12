@@ -1,0 +1,20 @@
+{
+  "_id": 112,
+  "name": "BetterLipsync",
+  "modversion": "1.0.6",
+  "gameversion": "2022r170",
+  "loaderversion": "v0.5.7",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Mod to replace the viseme controller with the oculus lipsync. It will apply to all avatars but just locally (so others without the mod will still see the CVR default visemes behaviour).\n\nIt was implemented to do the heavy work in separated threads, so there shouldn't be a noticeable performance drop.\n\nMake sure to play with the configurations to get the best look for yourself, I've set the default settings to be my personal preference. Some people prefer more smoothing other people prefer less.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterLipsync) for comparison videos and more info.\n\n",
+  "searchtags": [
+    "lipsync",
+    "oculus",
+    "visemes"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r50/BetterLipsync.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterLipsync",
+  "changelog": "- Fixed issue where the Smoothing setting wasn't being set to the value defined.",
+  "embedcolor": "16C60C"
+}

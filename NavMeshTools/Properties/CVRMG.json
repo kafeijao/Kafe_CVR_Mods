@@ -1,0 +1,22 @@
+{
+  "_id": -1,
+  "name": "NavMeshTools",
+  "modversion": "0.0.1",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Simple library that allows to bake NavMeshes in Runtime.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshTools) for more in-depth info.\n\n",
+  "searchtags": [
+    "nav",
+    "mesh",
+    "agent",
+    "ai",
+    "path"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/NavMeshTools.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshTools",
+  "changelog": "- Initial Release.",
+  "embedcolor": "16C60C"
+}

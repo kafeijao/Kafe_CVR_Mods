@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <ItemGroup>
+        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+        <PackageReference Include="TextCopy" Version="6.2.1" />
+        <PackageReference Include="ZXing.Net" Version="0.16.9" />
+        <Reference Include="ZXing.Unity">
+            <HintPath>Resources\ZXing.Net.Bindings.0.16.8.0\Bindings\ZXing.Unity3D\netstandard2.0\ZXing.Unity.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\AssetBundles\qrcode">
+            <LogicalName>qrcode.assetbundle</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+    
+    <Target Name="CopyRugOscCoreToManagedLibs" BeforeTargets="BeforeBuild">
+        <!-- Copy the zxing.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
+        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\zxing.net\0.16.9\lib\netstandard2.1\zxing.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
+        <!-- Copy the TextCopy.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
+        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\textcopy\6.2.1\lib\netstandard2.1\TextCopy.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
+    <!-- Copy the Microsoft.Extensions.DependencyInjection.Abstractions.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
+        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\7.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
+    </Target>
+    
+</Project>

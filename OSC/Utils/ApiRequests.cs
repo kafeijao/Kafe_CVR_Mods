@@ -2,7 +2,7 @@
 using ABI_RC.Core.Networking.API.Responses;
 using MelonLoader;
 
-namespace OSC.Utils;
+namespace Kafe.OSC.Utils;
 
 internal static class ApiRequests {
     internal static async Task<string> RequestAvatarDetailsPageTask(string guid) {

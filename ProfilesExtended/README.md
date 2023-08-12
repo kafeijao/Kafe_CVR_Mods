@@ -1,12 +1,14 @@
 # ProfilesExtended
 
+[![Download Latest ProfilesExtended.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest ProfilesExtended.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/ProfilesExtended.dll)
+
 This mod adds more functionality to the avatar profiles system.
 
 ### Features:
 1. Blacklist parameters from changing that include `*` in their name (not the parameter name in the animator, but the
    one in the AAS)
 2. Bypass the said blacklist by having `*` in the profile name
-3. Remember current parameters across avatar changes or game restarts
+3. Remember current parameters across avatar changes or game restarts if changed via the AAS
 
 ![image of where to set the parameter name](AAS_parameter_name.png)
 

@@ -1,0 +1,22 @@
+{
+  "_id": 168,
+  "name": "ChatBox",
+  "modversion": "1.0.10",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Communicate with other people in the instance using Text and **ChatBox**es!\n\n__**Features**__\n- Press `Y` or BTKUI button in the Misc section to send messages.\n- Heavily customizable via BKTUI settings menu in the Misc section.\n- Modify the notification sounds by replacing the files at `/UserData/Chatbox/`\n- Use bool animator param `ChatBox/Typing` or `#ChatBox/Typing`\n- View the ChatBox History window via the BTKUI button in the Misc section.\n- Press `Arrow up`/`Arrow down` to iterate through the sent messages. You can also click `Prev` if you're in VR.\n- Press `Tab` or `Auto` in VR to attempt to auto-complete usernames.\n- Use `@target-username` to mention people in messages.\n- Self moderation for individual players.\n- Profanity filter (needs to be populated).\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox) for more in-depth info.\n\n",
+  "searchtags": [
+    "chat",
+    "box",
+    "chatbox",
+    "mod",
+    "network"
+  ],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/ChatBox.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
+  "changelog": "- Fixed ChatBox opening when pressing Y with other text opened.",
+  "embedcolor": "16C60C"
+}

@@ -1,4 +1,11 @@
-# Quick Menu Accessibility
+# QuickMenuAccessibility
+
+![Download Latest QuickMenuAccessibility.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest QuickMenuAccessibility.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
+
 
 Simple mod that adds some accessibility features to the Quick Menu. You can access the configurations via Melon Prefs, 
 or via BTKUI **Misc** Menu.

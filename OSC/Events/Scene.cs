@@ -1,4 +1,4 @@
-﻿namespace OSC.Events;
+﻿namespace Kafe.OSC.Events;
 
 public static class Scene {
 

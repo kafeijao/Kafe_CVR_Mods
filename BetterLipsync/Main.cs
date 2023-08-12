@@ -13,7 +13,7 @@ public class BetterLipsync : MelonMod {
 
     private static MelonPreferences_Category _melonCategory;
     private static MelonPreferences_Entry<bool> _melonEntryEnabled;
-    private static MelonPreferences_Entry<int> _melonEntrySmoothing;
+    internal static MelonPreferences_Entry<int> melonEntrySmoothing;
     private static MelonPreferences_Entry<bool> _melonEntryEnhancedMode;
     private static MelonPreferences_Entry<bool> _melonEntrySingleViseme;
     private static MelonPreferences_Entry<bool> _melonEntrySingleVisemeOriginalVolume;
@@ -27,7 +27,7 @@ public class BetterLipsync : MelonMod {
         _melonEntryEnabled = _melonCategory.CreateEntry("Enabled", true,
             description: "Whether this mod will be changing the visemes or not.");
 
-        _melonEntrySmoothing = _melonCategory.CreateEntry("VisemeSmoothing", 50,
+        melonEntrySmoothing = _melonCategory.CreateEntry("VisemeSmoothing", 50,
             description: "How smooth should the viseme transitions be [0, 100] where 100 is maximum smoothing. " +
                          "Requires EnhancedMode activated to work.",
             validator: new IntValidator(0, 100));
@@ -111,12 +111,6 @@ public class BetterLipsync : MelonMod {
 
         // Initialize context
         context.Initialize(isLocalPlayer, playerGuid);
-
-        // Update smoothing value
-        context.Smoothing = _melonEntrySmoothing.Value;
-        _melonEntrySmoothing.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
-            if (newValue != oldValue) context.Smoothing = newValue;
-        });
 
         // Update the mode settings
         context.provider = _melonEntryEnhancedMode.Value

@@ -1,5 +1,7 @@
 # FreedomFingers
 
+[![Download Latest FreedomFingers.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest FreedomFingers.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/FreedomFingers.dll)
+
 Mod suggested by [AstroDoge](https://github.com/AstroDogeDX)
 
 This mod will replace the toggle between hand animations and index finger tracking, with gesture lock/unlock (while

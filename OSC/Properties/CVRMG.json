@@ -1,0 +1,22 @@
+{
+  "_id": 79,
+  "name": "OSC",
+  "modversion": "1.1.6",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "This mod enables interactions with ChilloutVR using OSC. It also focus on compatibility with existing applications. If something is not working create an [issue in github](https://github.com/kafeijao/Kafe_CVR_Mods/issues) and I will fix it asap.\n\n__**Avatar**__\n- Change into new avatars\n- Change/Read parameters\n__**Inputs**__\n- Control your avatar\n- Send actions to the game\n__**Props**__\n- Set/Read prop location\n- Set/Read synced params\n__**Tracking**__\n- Listen to tracking data (location/battery) from `Trackers`, `Controllers`, `HMD`, `Base Stations`, and `Play Space`.\n__**ChatBox**__\n- Send ChaBox messages and typing events\n\n__**New**__ [python library](https://github.com/kafeijao/cvr_osc_lib_py) to abstract this OSC API with examples!\n\nRefer to the [IN-DEPTH](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) documentation for more information.",
+  "searchtags": [
+    "osc",
+    "input",
+    "parameter",
+    "props",
+    "tracking"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/OSC.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
+  "changelog": "- Fixed Tracking endpoints\n- Cached entities for performance.\n- Fixed tracking ednpoints (again)",
+  "embedcolor": "16C60C"
+}

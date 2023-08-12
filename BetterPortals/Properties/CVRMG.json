@@ -1,0 +1,20 @@
+{
+  "_id": 167,
+  "name": "BetterPortals",
+  "modversion": "0.0.4",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "**__Features:__**\n- Added `Drop Portal` button on user's details page\n- Portals always drop, even when there's no surfaces available\n- Display a timer with the seconds left until the portal closes\n- Joining portals by walking on top of it\n- Optionally require an input (`J` or `Trigger` press) to enter a portal\n- Optionally get a notification for invisible portal drops (when they are dropped on top of you)\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterPortals) for more in-depth info.\n\n",
+  "searchtags": [
+    "portal",
+    "better",
+    "drop"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/BetterPortals.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterPortals",
+  "changelog": "- Fixed for 2023r171 EX9",
+  "embedcolor": "16C60C"
+}

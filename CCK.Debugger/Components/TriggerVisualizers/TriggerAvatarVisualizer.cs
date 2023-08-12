@@ -50,7 +50,6 @@ public class TriggerAvatarVisualizer : TriggerVisualizer {
     }
 
     private void Update() {
-        if (!Initialized) return;
 
         // Update the size and position to match the trigger
         VisualizerGo.transform.localScale = TriggerCollider.size;

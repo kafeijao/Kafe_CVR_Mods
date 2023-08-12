@@ -1,0 +1,22 @@
+{
+  "_id": -1,
+  "name": "NavMeshProp",
+  "modversion": "0.0.1",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Simple mod that allows to control a prop nav mesh agent.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshProp) for more in-depth info.\n\n",
+  "searchtags": [
+    "nav",
+    "mesh",
+    "agent",
+    "ai",
+    "prop"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/NavMeshProp.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshProp",
+  "changelog": "- Initial Release.",
+  "embedcolor": "16C60C"
+}

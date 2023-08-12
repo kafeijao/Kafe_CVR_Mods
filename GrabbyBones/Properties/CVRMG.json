@@ -1,0 +1,22 @@
+{
+  "_id": 160,
+  "name": "GrabbyBones",
+  "modversion": "1.0.3",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Adds grabbing to `Dynamic Bones` and `Magica Cloth Bones`.\n\n__**Features**__\n- Uses the bone's radius configuration for grabbing radius.\n- Sets animator parameters. Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones)\n- Can be disabled for specific scripts using `[NGB]` tag on the game object name.\n- Prevent grabbing a specific bone within a script using `[NGBB]` tag on the bone's game object name.\n\n__**Notes**__\n- If you find broken avatars share the avatar and contact me.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones) for more in-depth info.\n\n",
+  "searchtags": [
+    "grab",
+    "bones",
+    "grabby",
+    "physbones",
+    "bone"
+  ],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/GrabbyBones.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
+  "changelog": "- Fixed for 2023r171.",
+  "embedcolor": "16C60C"
+}

@@ -1,13 +1,12 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using HarmonyLib;
+using Kafe.OSC.Utils;
 using MelonLoader;
-using OSC.Utils;
-using Rug.Osc;
+using Rug.Osc.Core;
 using UnityEngine;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 public class Avatar : OscHandler {
 
@@ -16,7 +15,7 @@ public class Avatar : OscHandler {
     internal const string AddressPrefixAvatarParametersLegacy = $"{AddressPrefixAvatar}parameters/";
     private const string AddressPrefixAvatarChange = $"{AddressPrefixAvatar}change";
 
-    private static readonly HashSet<string> CoreParameters = Traverse.Create(typeof(CVRAnimatorManager)).Field("coreParameters").GetValue<HashSet<string>>();
+    private static readonly HashSet<string> CoreParameters = CVRAnimatorManager.coreParameters;
 
     private bool _enabled;
     private bool _bypassJsonConfig;
@@ -60,25 +59,25 @@ public class Avatar : OscHandler {
 
         // Enable according to the config and setup the config listeners
         if (OSC.Instance.meOSCAvatarModule.Value) Enable();
-        OSC.Instance.meOSCAvatarModule.OnValueChanged += (oldValue, newValue) => {
+        OSC.Instance.meOSCAvatarModule.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue && !oldValue) Enable();
             else if (!newValue && oldValue) Disable();
-        };
+        });
 
         // Set whether should bypass json config or not, and handle the config change
         _bypassJsonConfig = OSC.Instance.meOSCAvatarModuleBypassJsonConfig.Value;
-        OSC.Instance.meOSCAvatarModuleBypassJsonConfig.OnValueChanged += (oldValue, newValue) => {
+        OSC.Instance.meOSCAvatarModuleBypassJsonConfig.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue == oldValue) return;
             if (PlayerSetup.Instance.animatorManager != null) {
                 MelonLogger.Msg($"Changed the bypass json config Configuration to {newValue}, the avatar parameter are going to be reloaded...");
                 InitializeNewAvatar(PlayerSetup.Instance.animatorManager);
             }
             _bypassJsonConfig = newValue;
-        };
+        });
 
         // Handle the warning when blocked osc command by config
         _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
-        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
+        OSC.Instance.meOSCDebugConfigWarnings.OnEntryValueChanged.Subscribe((_, enabled) => _debugConfigWarnings = enabled);
     }
 
     internal sealed override void Enable() {

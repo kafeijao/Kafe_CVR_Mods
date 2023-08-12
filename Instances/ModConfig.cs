@@ -23,6 +23,14 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<int> MeInstancesHistoryCount;
 
+    internal static MelonPreferences_Entry<float> MeInstanceCreationJoinAttemptInterval;
+
+    internal static MelonPreferences_Entry<int> MeJoiningLastInstanceMinutesTimeout;
+
+    internal static MelonPreferences_Entry<bool> MePreventRejoiningEmptyInstances;
+
+    internal static MelonPreferences_Entry<bool> MeAttemptToSaveAndLoadToken;
+
     public enum Region {
         Europe,
         UnitedStates,
@@ -34,6 +42,29 @@ public static class ModConfig {
         Friends,
         EveryoneCanInvite,
         OwnerMustInvite,
+    }
+
+    private enum Icon {
+        Logo,
+        History,
+        Privacy,
+        Region,
+        Restart,
+        RestartDesktop,
+        RestartVR,
+    }
+
+    private static string GetName(Icon icon) {
+        switch (icon) {
+            case Icon.Logo: return $"{nameof(Instances)}-Logo";
+            case Icon.History: return $"{nameof(Instances)}-History";
+            case Icon.Privacy: return $"{nameof(Instances)}-Privacy";
+            case Icon.Region: return $"{nameof(Instances)}-Region";
+            case Icon.Restart: return $"{nameof(Instances)}-Restart";
+            case Icon.RestartDesktop: return $"{nameof(Instances)}-RestartDesktop";
+            case Icon.RestartVR: return $"{nameof(Instances)}-RestartVR";
+        }
+        return "";
     }
 
     private const string VREnvArg = "-vr";
@@ -61,6 +92,20 @@ public static class ModConfig {
         MeRejoinPreviousLocation = _melonCategory.CreateEntry("RejoinPreviousLocation", true,
             description: "Whether to teleport to previous location upon rejoining the last instance or not " +
                          $"(only works if rejoining within {Instances.TeleportToLocationTimeout} minutes.");
+
+        MeInstanceCreationJoinAttemptInterval = _melonCategory.CreateEntry("InstanceCreationJoinAttemptInterval", 0.3f,
+            description: "Time in seconds between attempts to join the instance created (defaults to 0.3 seconds).");
+
+        MeJoiningLastInstanceMinutesTimeout = _melonCategory.CreateEntry("JoiningLastInstanceMinutesTimeout", 60,
+            description: "For how many minutes should the game make you join the last instance. Use -1 to disable the timeout.");
+
+        MePreventRejoiningEmptyInstances = _melonCategory.CreateEntry("PreventRejoiningEmptyInstances", true,
+            description: "Whether to prevent joining empty instances or not. Empty instances might be closing already, " +
+                         "which will result in joining an instance and then getting disconnection spam.");
+
+        MeAttemptToSaveAndLoadToken = _melonCategory.CreateEntry("AttemptToSaveAndLoadToken", true,
+            description: "Whether to attempt to save current instance token when restarting and then use it to join. This " +
+                         "will allow rejoining private instances, but it might fail and cause you to not load into an offline world.");
     }
 
 
@@ -75,23 +120,25 @@ public static class ModConfig {
     private static void SetupBTKUI(CVR_MenuManager manager) {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
-        #if DEBUG
-        MelonLogger.Msg($"[InstancesBTKUI] Initializing...");
-        #endif
+        var ass = Assembly.GetExecutingAssembly();
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Logo), ass.GetManifestResourceStream("resources.BTKUILogoInstances.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.History), ass.GetManifestResourceStream("resources.BTKUIIconHistory.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Privacy), ass.GetManifestResourceStream("resources.BTKUIIconPrivacy.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Region), ass.GetManifestResourceStream("resources.BTKUIIconRegion.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.Restart), ass.GetManifestResourceStream("resources.BTKUIIconRestart.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.RestartDesktop), ass.GetManifestResourceStream("resources.BTKUIIconRestartDesktop.png"));
+        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), GetName(Icon.RestartVR), ass.GetManifestResourceStream("resources.BTKUIIconRestartVR.png"));
 
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(Instances), "InstancesIcon",
-            Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.BTKUIIcon.png"));
-
-        var page = new BTKUILib.UIObjects.Page(nameof(Instances), nameof(Instances), true, "InstancesIcon") {
+        var page = new BTKUILib.UIObjects.Page(nameof(Instances), nameof(Instances), true, GetName(Icon.Logo)) {
             MenuTitle = nameof(Instances),
             MenuSubtitle = "Rejoin previous instances",
         };
 
         var categorySettings = page.AddCategory("");
 
-        var restartButton = categorySettings.AddButton("Restart", "",
+        var restartButton = categorySettings.AddButton("Restart", GetName(Icon.Restart),
             "Restart in the current platform you're in currently.");
-        restartButton.OnPress += () => RestartCVR(false);
+        restartButton.OnPress += () => MelonCoroutines.Start(RestartCVR(false));
 
         var joinInitialOnline = categorySettings.AddToggle("Start on Online Home World",
             "Should we create an online instance of your Home World when starting the game? Joining last " +
@@ -131,23 +178,25 @@ public static class ModConfig {
             teleportToWhereWeLeft.ToggleValue = newValue;
         });
 
-        var restartOtherPlatformButton = categorySettings.AddButton($"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}", "",
+        var restartOtherPlatformButton = categorySettings.AddButton(
+            $"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}",
+            GetName(MetaPort.Instance.isUsingVr ? Icon.RestartDesktop : Icon.RestartVR),
             "Restart but switch the platform.");
-        restartOtherPlatformButton.OnPress += () => RestartCVR(true);
+        restartOtherPlatformButton.OnPress += () => MelonCoroutines.Start(RestartCVR(true));
 
-        var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", "", "Set the Type of the starting Online Instance.");
+        var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", GetName(Icon.Privacy), "Set the Type of the starting Online Instance.");
         var multiSelectPrivacy = new MultiSelection("Starting Online Instance Privacy Type", Enum.GetNames(typeof(InstancePrivacyType)), (int) MeStartingInstancePrivacyType.Value);
         multiSelectPrivacy.OnOptionUpdated += privacyType => MeStartingInstancePrivacyType.Value = (InstancePrivacyType) privacyType;
         privacyTypeButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectPrivacy);
         MeStartingInstancePrivacyType.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectPrivacy.SelectedOption = (int) newValue);
 
-        var regionButton = categorySettings.AddButton("Set Starting Region", "", "Set the Region of the starting Online Instance.");
+        var regionButton = categorySettings.AddButton("Set Starting Region", GetName(Icon.Region), "Set the Region of the starting Online Instance.");
         var multiSelectRegion = new MultiSelection("Starting Online Instance Region", Enum.GetNames(typeof(Region)), (int) MeStartingInstanceRegion.Value);
         multiSelectRegion.OnOptionUpdated += regionType => MeStartingInstanceRegion.Value = (Region) regionType;
         regionButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectRegion);
         MeStartingInstanceRegion.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectRegion.SelectedOption = (int) newValue);
 
-        var configureHistoryLimit = categorySettings.AddButton("Set History Limit", "",
+        var configureHistoryLimit = categorySettings.AddButton("Set History Limit", GetName(Icon.History),
             "Define the number of instance to remember, needs to be between 4 and 24.");
         configureHistoryLimit.OnPress += () => {
             BTKUILib.QuickMenuAPI.OpenNumberInput("History Limit [4-24]", MeInstancesHistoryCount.Value, UpdateHistoryCount);
@@ -160,9 +209,25 @@ public static class ModConfig {
         Instances.InstancesConfigChanged += () => SetupInstancesButtons(categoryInstances);
     }
 
-    private static void RestartCVR(bool switchPlatform) {
+    private static bool _isRestarting;
 
-        MelonLogger.Msg($"Pressed the Restart Button... Attempting to restart :)");
+    internal static IEnumerator RestartCVR(bool switchPlatform) {
+
+        if (_isRestarting) {
+            MelonLogger.Warning("[CreateAndJoinOnlineInstance] Already restarting...");
+            yield break;
+        }
+        _isRestarting = true;
+
+        // If our token has less than 5 mins, grab a new instance token
+        if (MeAttemptToSaveAndLoadToken.Value
+            && Instances.Config.LastInstance.JoinToken != null
+            && Instances.Config.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow < TimeSpan.FromMinutes(5)) {
+            MelonLogger.Msg($"Fetching a new instance token, since ours is pretty old or expired," +
+                            $" Expire Date: {Instances.Config.LastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
+            var saveTokenTask = Instances.SaveCurrentInstanceToken();
+            yield return new WaitUntil(() => saveTokenTask.IsCompleted);
+        }
 
         try {
 
@@ -176,10 +241,10 @@ public static class ModConfig {
 
             // Handle platform switches
             if (switchPlatform) {
-                if (MetaPort.Instance.isUsingVr && envArguments.Contains(VREnvArg)) {
+                if (envArguments.Contains(VREnvArg)) {
                     envArguments.Remove(VREnvArg);
                 }
-                else if (!MetaPort.Instance.isUsingVr && !envArguments.Contains(VREnvArg)) {
+                else {
                     envArguments.Add(VREnvArg);
                 }
             }
@@ -190,19 +255,21 @@ public static class ModConfig {
 
             var powerShellLogFile = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), Instances.InstancesPowerShellLog));
 
+            // Get the process ID
+            var processId = Process.GetCurrentProcess().Id;
+
             // Create the PowerShell script as a string
             var scriptContent = @"
             Start-Transcript -Path '" + powerShellLogFile + @"'
-            # Set the process name to wait for
-            $processName = 'ChilloutVR'
             # Wait for the process to stop running
+            $processID = " + processId + @"
             $timeout = New-TimeSpan -Seconds 30
             $sw = [System.Diagnostics.Stopwatch]::StartNew()
-            Write-Host ""Waiting for $processName to stop running...""
+            Write-Host ""Waiting for process with ID $processID to stop running...""
             do {
-                $process = Get-Process -Name $processName -ErrorAction SilentlyContinue
+                $process = Get-Process -Id $processID -ErrorAction SilentlyContinue
                 if ($process -ne $null) {
-                    Write-Host ""Still waiting for $processName to stop running...""
+                    Write-Host ""Still waiting for process with ID $processID to stop running...""
                     Start-Sleep -Seconds 1
                 }
             } while ($process -ne $null -and $sw.Elapsed -lt $timeout)
@@ -216,8 +283,8 @@ public static class ModConfig {
                 Start-Sleep -Seconds 2
             }
             else {
-                Write-Host ""$processName is still running. Timed out after $($timeout.TotalSeconds) seconds.""
-                Write-Host ""Please make sure $processName is not running before starting a new instance.""
+                Write-Host ""Process with ID $processID is still running. Timed out after $($timeout.TotalSeconds) seconds.""
+                Write-Host ""Please make sure the process with ID $processID is not running before starting a new instance.""
                 Start-Sleep -Seconds 10
             }
             Stop-Transcript
@@ -241,6 +308,9 @@ public static class ModConfig {
         catch (Exception e) {
             MelonLogger.Error($"Attempted to restart the game, but something failed really bad :(");
             MelonLogger.Error(e);
+        }
+        finally {
+            _isRestarting = false;
         }
     }
 
@@ -277,7 +347,17 @@ public static class ModConfig {
             var buttonIcon = LoadedWorldImages.Contains(instanceInfo.WorldId) ? instanceInfo.WorldId : "";
             var button = categoryInstances.AddButton($"{index}. {instanceInfo.InstanceName}",
                 buttonIcon, $"Join {instanceInfo.InstanceName}!");
-            button.OnPress += () => Instances.OnInstanceSelected(instanceInfo.InstanceId);
+            button.OnPress += () => {
+                if (instanceInfo.JoinToken != null) {
+                    if (!MePreventRejoiningEmptyInstances.Value || instanceInfo.RemotePlayersCount > 0) {
+                        if (Instances.AttemptToUseTicked(instanceInfo)) return;
+                    }
+                    else {
+                        MelonLogger.Msg($"Skipping rejoining using token, because the instance is probably closing/closed. [MePreventRejoiningEmptyInstances=true]");
+                    }
+                }
+                Instances.OnInstanceSelected(instanceInfo.InstanceId);
+            };
         }
     }
 
@@ -319,7 +399,7 @@ public static class ModConfig {
         yield return www.SendWebRequest();
 
         // Log and break if errors
-        if (www.isNetworkError || www.isHttpError) {
+        if (www.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError or UnityWebRequest.Result.DataProcessingError) {
             #if DEBUG
             MelonLogger.Error($"[LoadIconEnumerator] Error on the {worldImageUrl} image download request...");
             MelonLogger.Error(www.error);

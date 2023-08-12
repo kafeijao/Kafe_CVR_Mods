@@ -14,7 +14,7 @@ using CCKDebugger = Kafe.CCK.Debugger;
 using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 #endif
 
-namespace EyeMovementFix;
+namespace Kafe.EyeMovementFix;
 
 [DefaultExecutionOrder(999999)]
 public class BetterEyeController : MonoBehaviour {
@@ -165,7 +165,7 @@ public class BetterEyeController : MonoBehaviour {
 
         // Todo: Improve this crap
         if (eyeController.isLocal) {
-            var localHeadPoint = Traverse.Create(PlayerSetup.Instance).Field<LocalHeadPoint>("_viewPoint").Value;
+            var localHeadPoint = PlayerSetup.Instance._viewPoint;
             if (localHeadPoint == null) {
                 MelonLogger.Warning($"Failed to get our avatar's viewpoint... Eye Movement will break for me ;_;");
                 betterEyeController.enabled = false;
@@ -175,9 +175,8 @@ public class BetterEyeController : MonoBehaviour {
 
         }
         else {
-            var puppetMaster = Traverse.Create(avatar).Field<PuppetMaster>("puppetMaster").Value;
-            var playerDescriptor = Traverse.Create(puppetMaster).Field<PlayerDescriptor>("_playerDescriptor").Value;
-            var remoteHeadPoint = Traverse.Create(puppetMaster).Field<RemoteHeadPoint>("_viewPoint").Value;
+            var playerDescriptor = avatar.puppetMaster._playerDescriptor;
+            var remoteHeadPoint = avatar.puppetMaster._viewPoint;
             if (remoteHeadPoint == null) {
                 MelonLogger.Warning($"Failed to get {(playerDescriptor == null ? "???" : playerDescriptor.userName)} avatar's viewpoint... Eye Movement will break for them;_;");
                 betterEyeController.enabled = false;
@@ -459,7 +458,8 @@ public class BetterEyeController : MonoBehaviour {
 
     private void OnDestroy() {
         initialized = false;
-        foreach(var (eyeController, _) in BetterControllers.Where(kvp => kvp.Value == this).ToList()) {
+        var eyeControllers = BetterControllers.Where(kvp => kvp.Value == this).Select(kvp => kvp.Key).ToList();
+        foreach(var eyeController in eyeControllers) {
             BetterControllers.Remove(eyeController);
         }
 
@@ -639,26 +639,30 @@ public class BetterEyeController : MonoBehaviour {
 
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVREyeController), "Update")]
-        private static void Before_CVREyeController_Update(CVREyeController __instance, out Vector2 __state) {
+        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.LateUpdate))]
+        private static void Before_CVREyeController_LateUpdate(CVREyeController __instance, out Vector2 __state) {
             // Save eye angle before the update from CVR
             __state = __instance.eyeAngle;
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeController), "Update")]
-        private static void After_CVREyeController_Update(CVREyeController __instance, ref Vector2 __state) {
-            // Restore the eye angle after the update from CVR
-            // We do this because we're managing that value in LateUpdate
-            __instance.eyeAngle = __state;
-        }
+        // [HarmonyPostfix]
+        // [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Update))]
+        // private static void After_CVREyeController_Update(CVREyeController __instance, ref Vector2 __state) {
+        //     // Restore the eye angle after the update from CVR
+        //     // We do this because we're managing that value in LateUpdate
+        //     __instance.eyeAngle = __state;
+        // }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeController), "LateUpdate")]
-        private static void After_CVREyeController_LateUpdate(CVREyeController __instance) {
+        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.LateUpdate))]
+        private static void After_CVREyeController_LateUpdate(CVREyeController __instance, ref Vector2 __state) {
             if (_errored) return;
 
             try {
+                // Restore the eye angle after the update from CVR
+                // We do this because we're managing that value in LateUpdate
+                __instance.eyeAngle = __state;
+
                 // Check if we're ready to run our stuff
                 if (!BetterControllers.ContainsKey(__instance)) return;
                 var betterEyeController = BetterControllers[__instance];
@@ -685,7 +689,7 @@ public class BetterEyeController : MonoBehaviour {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVREyeController), "Start")]
+        [HarmonyPatch(typeof(CVREyeController), nameof(CVREyeController.Start))]
         private static void After_CVREyeControllerManager_Start(ref CVREyeController __instance, ref CVRAvatar ___avatar) {
             if (_errored) return;
 

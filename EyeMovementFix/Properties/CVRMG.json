@@ -1,0 +1,21 @@
+{
+  "_id": 118,
+  "name": "EyeMovementFix",
+  "modversion": "2.0.6",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Mod to attempt to fix some of the current issues with the eye movement.\nThis will affect the local and remote players eye movement but only for the local client. As well as adding new features!\n\n__**Enhancements**__\nThe target system will prefer people that: Are closer both distance and from the view center, are currently talking, are not a mirror reflection, and are the local player (yourself) :)\n\n__**Avatar Eye Rotation Limits**__\n- [Custom CCK Component](https://github.com/kafeijao/Kafe_CVR_CCKs/blob/master/EyeMovementFix)\n- Unity Muscle Rig limits on the eyes.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/EyeMovementFix) for more in-depth info including which issues were addressed.\n\n",
+  "searchtags": [
+    "eye",
+    "movement",
+    "bug",
+    "fix"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/EyeMovementFix.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/EyeMovementFix",
+  "changelog": "- Fixed for 2023r171p3",
+  "embedcolor": "16C60C"
+}

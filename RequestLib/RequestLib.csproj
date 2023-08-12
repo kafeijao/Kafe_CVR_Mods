@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DocumentationMarkdown>$(MSBuildProjectDirectory)\API.md</DocumentationMarkdown>
+        <VsxmdAutoDeleteXml>True</VsxmdAutoDeleteXml>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Vsxmd" Version="1.4.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="BTKUILib">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="BTKSAImmersiveHud">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKSAImmersiveHud.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\CVRTestPatches.js">
+            <LogicalName>cohtml.cvrtest.patches.js</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\CVRUIPatches.js">
+            <LogicalName>cohtml.cvrui.patches.js</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_AutoAccept.png">
+            <LogicalName>resources.Quadro_Toggle_AutoAccept.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_AutoDecline.png">
+            <LogicalName>resources.Quadro_Toggle_AutoDecline.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_Default.png">
+            <LogicalName>resources.Quadro_Toggle_Default.png</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Quadro_Toggle_LetMeDecide.png">
+            <LogicalName>resources.Quadro_Toggle_LetMeDecide.png</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

@@ -1,7 +1,30 @@
 # OSC
 
-This **Melon Loader** mod allows you to use OSC to interact with **ChilloutVR**. It tries to be compatible with other
-social VR games that also use OSC. This way allows the usage of tools made for other games with relative ease.
+[![Download Latest OSC.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest OSC.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/OSC.dll)
+
+This mod enables interactions with ChilloutVR using OSC. It's very similar to other social VR games OSC Implementation,
+so most external applications should work without many (if any) changes.
+
+#### Main Features
+
+- Change avatar parameters
+- Control the game inputs (like Gestures, movement, etc)
+- Trigger special game features (like flight, mute, etc)
+- Configurable endpoints (parameters address & type conversion)
+- Change avatar by providing avatar id
+- Spawn and delete props
+- Interact with props (settings/reading their location and synced parameters)
+- Retrieving the tracking data and battery info from `trackers`, `hmd`, `controllers`, `base stations`, and `play space`
+- Resend all cached events (like all the current parameters) triggered via an endpoint
+
+More features can be added, exploring CVR possibilities to the max. Feel free to submit Feature Requests in the github.
+
+#### Official Python Library
+There is also a [python library](https://github.com/kafeijao/cvr_osc_lib_py) that abstracts all the api provided by this
+mod. This is a great starting point if you plan developing something in python.
+
+
+## Table of Contents
 
 - [OSC Avatar](#OSC-Avatar)
 - [OSC Inputs](#OSC-Inputs)
@@ -9,6 +32,7 @@ social VR games that also use OSC. This way allows the usage of tools made for o
 - [OSC Tracking](#OSC-Tracking)
 - [Avatar Json Configurations](#Avatar-Json-Configurations)
 - [OSC Config](#OSC-Config)
+- [OSC ChatBox](#OSC-ChatBox)
 - [Debugging](#Debugging)
 - [Configuration](#General-Configuration)
 
@@ -19,6 +43,7 @@ For now there are 6 categories of endpoints you can use:
 - [OSC Props](#OSC-Props) for interacting with props.
 - [OSC Tracking](#OSC-Tracking) to fetch tracking information (headset, controllers, trackers, play space).
 - [OSC Config](#OSC-Config) configuration/utilities via OSC.
+- [OSC ChatBox](#OSC-ChatBox) to send ChatBox messages/isTyping via OSC.
 
 ## Intro
 
@@ -83,7 +108,7 @@ the configurations and disable it.
 You can listen and trigger parameter changes on your avatar via OSC messages, by default the endpoint to change and
 listen to parameter changes as follow.
 
-#### Address [`deprecated`]
+#### Address
 
 ```/avatar/parameters/<parameter_name>```
 
@@ -98,45 +123,65 @@ These are certain limitations using the endpoint above, because according to the
 last member of the OSC address. So some OSC clients will have issues setting local parameters (because in cvr they
 require a `#`). I had to hack my way to force my client to allow `#` on the address ;_;
 
-I marked it as deprecated but will still support it for compatibility reasons. Use the alternative ones bellow if you're
-implementing something new (please).
+[//]: # (I marked it as deprecated but will still support it for compatibility reasons. Use the alternative ones bellow if you're)
 
-As for sending I'll be sending on both endpoints so just pick one to listen to.
+[//]: # (implementing something new &#40;please&#41;.)
+
+[//]: # ()
+[//]: # (As for sending I'll be sending on both endpoints so just pick one to listen to.)
 
 #### Address [`preferred`]
 
 ```/avatar/parameter```
 
-#### Arguments [`preferred`]
+[//]: # (#### Arguments [`preferred`])
 
-- `arg#1` - Parameter value [ *float *|* int *|* bool | null* ], for triggers you can ignore sending a parameter, the
-value will be ignored either way.
-- `arg#2` - Parameter name [ *string* ], *The parameter name is case sensitive!*
+[//]: # ()
+[//]: # (- `arg#1` - Parameter value [ *float *|* int *|* bool | null* ], for triggers you can ignore sending a parameter, the)
 
-The Parameter value argument should be sent as the same type as the parameter is defined in the animator. But you can
-also send as a `string` or some other type that has a conversion implied.
+[//]: # (value will be ignored either way.)
 
-**Note:** Sending the correct type will require less code to run, making it more performant.
+[//]: # (- `arg#2` - Parameter name [ *string* ], *The parameter name is case sensitive!*)
 
-We support all animator parameter types, `Float`, `Int`, `Bool`, and `Trigger`([*](#Triggers))
+[//]: # ()
+[//]: # (The Parameter value argument should be sent as the same type as the parameter is defined in the animator. But you can)
 
-You can listen for **All** the parameters changes present in the animator!
+[//]: # (also send as a `string` or some other type that has a conversion implied.)
 
-As for sending parameter you can send parameter changes for all present in the animator **Except** for the **core
-parameters**. Those are the default parameters CVR modifies for you, Like `GestureRight`, `MovementX`, `Emote`, etc),
-and since they are set every frame we can't change them in this endpoint.
+[//]: # ()
+[//]: # (**Note:** Sending the correct type will require less code to run, making it more performant.)
 
-If you wish to change those, check the [OSC Inputs](#OSC-Inputs) section, as
-it allows you to control the input that drives those parameters, for example setting the Input `GestureRight`
-(using [OSC Inputs](#OSC-Inputs)) to Open Hand will make the game then change the parameter `Gesture Right` to `-1`.
+[//]: # ()
+[//]: # (We support all animator parameter types, `Float`, `Int`, `Bool`, and `Trigger`&#40;[*]&#40;#Triggers&#41;&#41;)
 
-### Triggers
+[//]: # ()
+[//]: # (You can listen for **All** the parameters changes present in the animator!)
 
-We support the parameter type `Trigger`, but it needs to be enabled in the configuration as it may break some existing
-apps. It uses the same parameter change address, but it sends just the address without any value.
+[//]: # ()
+[//]: # (As for sending parameter you can send parameter changes for all present in the animator **Except** for the **core)
 
-And when listening
-the same thing, you will receive an OSC message to the parameter address, but there won't be a value.
+[//]: # (parameters**. Those are the default parameters CVR modifies for you, Like `GestureRight`, `MovementX`, `Emote`, etc&#41;,)
+
+[//]: # (and since they are set every frame we can't change them in this endpoint.)
+
+[//]: # ()
+[//]: # (If you wish to change those, check the [OSC Inputs]&#40;#OSC-Inputs&#41; section, as)
+
+[//]: # (it allows you to control the input that drives those parameters, for example setting the Input `GestureRight`)
+
+[//]: # (&#40;using [OSC Inputs]&#40;#OSC-Inputs&#41;&#41; to Open Hand will make the game then change the parameter `Gesture Right` to `-1`.)
+[//]: # ()
+[//]: # (### Triggers)
+
+[//]: # ()
+[//]: # (We support the parameter type `Trigger`, but it needs to be enabled in the configuration as it may break some existing)
+
+[//]: # (apps. It uses the same parameter change address, but it sends just the address without any value.)
+
+[//]: # ()
+[//]: # (And when listening)
+
+[//]: # (the same thing, you will receive an OSC message to the parameter address, but there won't be a value.)
 
 ---
 
@@ -559,6 +604,49 @@ keep spamming updates this is very useful sync the state with your app (if you n
 #### Arguments
 
 `N/A`
+
+
+---
+
+## OSC ChatBox
+
+Here is where you can send Chat Box messages or is typing notifications, this requires the
+mod [ChatBox](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox) to work.
+
+---
+
+### ChatBox Message
+
+You can use this endpoint to send text messages via the Chat Box.
+
+#### Address
+
+```/chatbox/input```
+
+#### Arguments
+
+- `arg#1` - Message [*string*], the message content you want to send. The mod allows a maximum of 2000 Characters.
+- `arg#2` - Send Immediately [*bool*], whether the msg is directly sent, or opens the keyboard and pastes the msg.
+- `arg#3` - Sound Notification [*Optional*] [*bool*], whether the message will do a sound notification or not. Defaults
+  to `False` if not provided.
+- `arg#4` - Display in ChatBox [*Optional*] [*bool*], whether the message will be displayed in the ChatBox or not.
+  Defaults to `True` if not provided.
+- `arg#5` - Display in History Window [*Optional*] [*bool*], whether the message will be displayed in the History Window
+  or not. Defaults to `False` if not provided.
+
+---
+
+#### ChatBox IsTyping
+
+You can set the typing state for the ChatBox. Whether it's on or off, and whether it should send a sound notification.
+
+```/chatbox/typing```
+
+#### Arguments
+
+- `arg#2` - Is Typing [*bool*], whether Is Typing is active or not.
+- `arg#3` - Sound Notification [*Optional*] [*bool*], whether the start typing will do a sound notification or not. 
+Defaults to `False` if not provided.
 
 ---
 

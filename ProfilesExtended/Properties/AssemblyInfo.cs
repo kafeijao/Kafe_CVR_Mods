@@ -1,18 +1,18 @@
 ﻿using System.Reflection;
-using ProfilesExtended.Properties;
+using Kafe.ProfilesExtended.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(ProfilesExtended))]
+[assembly: AssemblyTitle(nameof(Kafe.ProfilesExtended))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(ProfilesExtended))]
+[assembly: AssemblyProduct(nameof(Kafe.ProfilesExtended))]
 
 [assembly: MelonInfo(
-    typeof(ProfilesExtended.ProfilesExtended),
-    nameof(ProfilesExtended),
+    typeof(Kafe.ProfilesExtended.ProfilesExtended),
+    nameof(Kafe.ProfilesExtended),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -20,11 +20,11 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
-[assembly: MelonColor(ConsoleColor.Green)]
-[assembly: MelonAuthorColor(ConsoleColor.DarkYellow)]
+[assembly: MelonColor(255, 0, 255, 0)]
+[assembly: MelonAuthorColor(255, 119, 77, 79)]
 
-namespace ProfilesExtended.Properties;
+namespace Kafe.ProfilesExtended.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.3";
+    public const string Version = "1.0.4";
     public const string Author = "kafeijao";
 }

@@ -1,11 +1,22 @@
 # CVR and Melon Loader Dependencies
-$0HarmonydllPath    = "\MelonLoader\0Harmony.dll"
-$melonLoaderdllPath = "\MelonLoader\MelonLoader.dll"
+$0HarmonydllPath    = "\MelonLoader\net35\0Harmony.dll"
+$melonLoaderdllPath = "\MelonLoader\net35\MelonLoader.dll"
+$CecilallPath       = "\MelonLoader\net35\Mono.Cecil.dll"
 $cvrManagedDataPath = "\ChilloutVR_Data\Managed"
 
 $cvrPath = $env:CVRPATH
 $cvrExecutable = "ChilloutVR.exe"
 $cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"
+# $cvrDefaultPath = "E:\temp\CVR_Experimental"
+
+# Array with the dlls to strip
+$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll', 'MagicaCloth.dll')
+
+# Array with the mods to grab
+$modNames = @("BTKUILib", "BTKSAImmersiveHud", "PortableMirrorMod", "VRBinding")
+
+# Array with dlls to ignore from ManagedLibs
+$cvrManagedLibNamesToIgnore = @("netstandard")
 
 if ($cvrPath -and (Test-Path "$cvrPath\$cvrExecutable")) {
     # Found ChilloutVR.exe in the existing CVRPATH
@@ -29,20 +40,38 @@ else {
 }
 
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
-$managedLibsFolder = $scriptDir + "\ManagedLibs"
+$managedLibsFolder = $scriptDir + "\.ManagedLibs"
+
+if (!(Test-Path $managedLibsFolder)) {
+    New-Item -ItemType Directory -Path $managedLibsFolder
+    Write-Host ".ManagedLibs folder created successfully."
+}
 
 Write-Host ""
-Write-Host "Copying the DLLs from the CVR, MelonLoader, and Mods folder to the ManagedLibs"
+Write-Host "Copying the DLLs from the CVR, MelonLoader, and Mods folder to the .ManagedLibs"
 
 
 Copy-Item $cvrPath$0HarmonydllPath -Destination $managedLibsFolder
 Copy-Item $cvrPath$melonLoaderdllPath -Destination $managedLibsFolder
+Copy-Item $cvrPath$CecilallPath -Destination $managedLibsFolder
 Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $managedLibsFolder
+
+
+# Saving XML ready libs for the Build.props file
+$lib_names_xml = "<Project><ItemGroup>"
+$lib_names_xml += '<Reference Include="0Harmony"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\0Harmony.dll</HintPath><Private>False</Private></Reference>'
+$lib_names_xml += '<Reference Include="MelonLoader"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MelonLoader.dll</HintPath><Private>False</Private></Reference>'
+foreach ($file in Get-ChildItem $cvrPath$cvrManagedDataPath"\*") {
+    if($cvrManagedLibNamesToIgnore -notcontains $file.BaseName) {
+        $lib_names_xml += "<Reference Include=`"$($file.BaseName)`"><HintPath>`$(MsBuildThisFileDirectory)\.ManagedLibs\$($file.BaseName).dll</HintPath><Private>False</Private></Reference>"
+    }
+}
+$lib_names_xml += "</ItemGroup></Project>"
+$lib_names_xml | Out-File -Encoding UTF8 -FilePath lib_names.xml
 
 
 # Third Party Dependencies
 $melonModsPath="\Mods\"
-$modNames = @("BTKUILib")
 $missingMods = New-Object System.Collections.Generic.List[string]
 
 
@@ -53,12 +82,12 @@ foreach ($modName in $modNames) {
 
     # Attempt to grab from the mods folder
     if (Test-Path $modPath -PathType Leaf) {
-        Write-Host "    Copying $modDll from $melonModsPath to \ManagedLibs!"
+        Write-Host "    Copying $modDll from $melonModsPath to \.ManagedLibs!"
         Copy-Item $modPath -Destination $managedLibsFolder
     }
-    # Check if they already exist in the ManagedLibs
+    # Check if they already exist in the .ManagedLibs
     elseif (Test-Path $managedLibsModPath -PathType Leaf) {
-        Write-Host "    Ignoring $modDll since already exists in \ManagedLibs!"
+        Write-Host "    Ignoring $modDll since already exists in \.ManagedLibs!"
     }
     # If we fail, lets add to the missing mods list
     else {
@@ -99,9 +128,6 @@ $HOST.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | OUT-NULL
 $HOST.UI.RawUI.Flushinputbuffer()
 
 Write-Host "NStrip Convert all private/protected stuff to public. Requires <AllowUnsafeBlocks>true></AllowUnsafeBlocks>"
-
-# Create an array to hold the file names to strip
-$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll')
 
 # Check if NStrip.exe exists in the current directory
 if(Test-Path -Path ".\NStrip.exe") {

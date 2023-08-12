@@ -1,10 +1,10 @@
 ﻿using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using MelonLoader;
-using Rug.Osc;
+using Rug.Osc.Core;
 using UnityEngine;
 
-namespace OSC.Handlers.OscModules;
+namespace Kafe.OSC.Handlers.OscModules;
 
 enum SpawnableOperation {
     create,
@@ -92,14 +92,14 @@ public class Spawnable : OscHandler {
 
         // Enable according to the config and setup the config listeners
         if (OSC.Instance.meOSCSpawnableModule.Value) Enable();
-        OSC.Instance.meOSCSpawnableModule.OnValueChanged += (oldValue, newValue) => {
+        OSC.Instance.meOSCSpawnableModule.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue && !oldValue) Enable();
             else if (!newValue && oldValue) Disable();
-        };
+        });
 
         // Handle the warning when blocked osc command by config
         _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
-        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
+        OSC.Instance.meOSCDebugConfigWarnings.OnEntryValueChanged.Subscribe((_, enabled) => _debugConfigWarnings = enabled);
     }
 
     internal sealed override void Enable() {

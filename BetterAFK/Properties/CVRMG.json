@@ -1,0 +1,20 @@
+{
+  "_id": 148,
+  "name": "BetterAFK",
+  "modversion": "0.0.4",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Enhance your AFK experience in CVR with Better AFK, a mod that improves the AFK detection and provides a more accurate and customizable AFK state.\n\n**__Features:__**\n- Fixes the Parameter Stream `Headset On Head` and `Time Since Headset Removed` to work correctly.\n- Sets the `AFK` **bool** parameter, and the `AFKTimer` **float** or **int** parameter (**float** will have decimal cases) representing the time in seconds since you've been AFK.\n- Allows manual triggering of the AFK state by pressing the `End` key on your keyboard.\n- Configure whether to enter AFK state when Opening the Steam Overlay (enabled by default).\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterAFK) for more in-depth info.\n\n",
+  "searchtags": [
+    "afk",
+    "fix",
+    "better"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/BetterAFK.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterAFK",
+  "changelog": "- Fixed for 2023r171 EX9",
+  "embedcolor": "16C60C"
+}

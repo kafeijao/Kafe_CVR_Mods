@@ -5,32 +5,29 @@ using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
-namespace FirstPersonHider;
+namespace Kafe.FirstPersonHider;
 
 public class FirstPersonHider : MelonMod {
 
-    private static MelonPreferences_Category melonCategoryFirstPersonHider;
-    private static MelonPreferences_Entry<List<string>> melonEntryTagsToHide;
-    private static MelonPreferences_Entry<bool> melonEntryDebug;
-
-    public override void OnApplicationStart() {
+    private static MelonPreferences_Category _melonCategoryFirstPersonHider;
+    private static MelonPreferences_Entry<List<string>> _melonEntryTagsToHide;
+    private static MelonPreferences_Entry<bool> _melonEntryDebug;
+    public override void OnInitializeMelon() {
 
         // Melon Config
-        melonCategoryFirstPersonHider = MelonPreferences.CreateCategory(nameof(FirstPersonHider));
-        melonEntryTagsToHide = melonCategoryFirstPersonHider.CreateEntry("TagsToHide", new List<string> {"FPH"},
+        _melonCategoryFirstPersonHider = MelonPreferences.CreateCategory(nameof(FirstPersonHider));
+        _melonEntryTagsToHide = _melonCategoryFirstPersonHider.CreateEntry("TagsToHide", new List<string> {"FPH"},
             description: "Tags that when contained in a gameobject name, will force them to be hidden locally " +
                          "(like it happens with the player head), also affects the gameobject children.");
 
-        melonEntryDebug = melonCategoryFirstPersonHider.CreateEntry("Debug", false,
+        _melonEntryDebug = _melonCategoryFirstPersonHider.CreateEntry("Debug", false,
             description: "Whether to enable debug mode or not.");
 
-        melonCategoryFirstPersonHider.SaveToFile(false);
-
         // React to live changes of the config
-        melonEntryTagsToHide.OnValueChangedUntyped += () => {
+        _melonEntryTagsToHide.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (PlayerSetup.Instance._avatar == null) return;
             TransformHiderForMainCamera.ProcessHierarchy(PlayerSetup.Instance._avatar);
-        };
+        });
     }
 
     [HarmonyPatch]
@@ -39,18 +36,18 @@ public class FirstPersonHider : MelonMod {
         private static readonly MethodInfo ManageTransforms = SymbolExtensions.GetMethodInfo((HashSet<Transform> transformsToHide) => AppendTransformsToHide(transformsToHide));
 
         private static void AppendTransformsToHide(HashSet<Transform> transformsToHide) {
-            if (melonEntryDebug.Value) {
+            if (_melonEntryDebug.Value) {
                 MelonLogger.Msg($"Initially the game was going to hide {transformsToHide.Count} transforms.");
             }
             var avatarBones = PlayerSetup.Instance._avatar.GetComponentsInChildren<Transform>(true);
             foreach (var avatarBone in avatarBones) {
-                if (melonEntryTagsToHide.Value.Any(avatarBone.name.Contains)) {
+                if (_melonEntryTagsToHide.Value.Any(avatarBone.name.Contains)) {
                     foreach( var boneToHide in avatarBone.GetComponentsInChildren<Transform>(true)) {
                         transformsToHide.Add(boneToHide);
                     }
                 }
             }
-            if (melonEntryDebug.Value) {
+            if (_melonEntryDebug.Value) {
                 MelonLogger.Msg($"\tAnd after our changes it's going to hide {transformsToHide.Count} transforms.");
             }
         }

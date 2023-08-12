@@ -1,10 +1,11 @@
-﻿using ABI_RC.Core.Savior;
+﻿using ABI_RC.Systems.InputManagement;
+using Kafe.OSC.Components;
+using Kafe.OSC.Handlers;
+using Kafe.OSC.Properties;
+using Kafe.OSC.Utils;
 using MelonLoader;
-using OSC.Components;
-using OSC.Handlers;
-using OSC.Utils;
 
-namespace OSC;
+namespace Kafe.OSC;
 
 public class OSC : MelonMod {
 
@@ -41,6 +42,9 @@ public class OSC : MelonMod {
     public MelonPreferences_Entry<bool> meOSCTrackingModule;
     public MelonPreferences_Entry<float> meOSCTrackingModuleUpdateInterval;
 
+    // Chat Box Module
+    public MelonPreferences_Entry<bool> meOSCChatBoxModule;
+
     // Misc
     public MelonPreferences_Entry<bool> meOSCDebug;
     public MelonPreferences_Entry<bool> meOSCDebugConfigWarnings;
@@ -49,7 +53,23 @@ public class OSC : MelonMod {
 
     private HandlerOsc _handlerOsc;
 
-    public override void OnApplicationStart() {
+    private const string RugOscCoreLogicalName = "Rug.Osc.Core.dll";
+
+    // public override void OnEarlyInitializeMelon() {
+    //     // Save the Rug.Osc.Core lib into UserLibs
+    //     try {
+    //         var path = Path.GetFullPath(Path.Combine("UserLibs", RugOscCoreLogicalName));
+    //         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(RugOscCoreLogicalName);
+    //         using var fileStream = new FileStream(path, FileMode.Create);
+    //         stream!.CopyTo(fileStream);
+    //     }
+    //     catch (Exception) {
+    //         MelonLogger.Error($"Failed exporting {RugOscCoreLogicalName} to /UserLibs/.");
+    //         throw;
+    //     }
+    // }
+
+    public override void OnInitializeMelon() {
 
         Instance = this;
 
@@ -137,6 +157,12 @@ public class OSC : MelonMod {
             description: "Minimum of seconds between each tracking data update. Default: 0 (will update every frame) " +
                          "Eg: 0.050 will update every 50 milliseconds.");
 
+
+        // Chat Box
+        meOSCChatBoxModule = _mcOsc.CreateEntry("ChatBoxModule", true,
+            description: "Whether the mod will listen on the /chatbox/ address or not.");
+
+
         // Misc
         meOSCDebug = _mcOsc.CreateEntry("Debug", false,
             description: "Whether should spam the console with debug messages or not.");
@@ -175,21 +201,26 @@ public class OSC : MelonMod {
             MelonLogger.Msg("[Config] \t- All props interactions");
             MelonLogger.Msg("[Config] \t- All tracking info endpoints");
         }
-        meOSCCompatibilityVRCFaceTracking.OnValueChangedUntyped += SetVrcFaceTrackingCompatibility;
+        meOSCCompatibilityVRCFaceTracking.OnEntryValueChanged.Subscribe((_, _) => SetVrcFaceTrackingCompatibility());
         SetVrcFaceTrackingCompatibility();
-
-        _mcOsc.SaveToFile(false);
 
         // Attach OSC Input Module and handle their disabling/enabling
         Events.Scene.InputManagerCreated += () => {
-            var inputModuleOsc = CVRInputManager.Instance.gameObject.AddComponent<InputModuleOSC>();
-            inputModuleOsc.enabled = meOSCInputModule.Value;
+            var inputModuleOsc = new InputModuleOSC();
+            CVRInputManager.Instance.AddInputModule(inputModuleOsc);
+            inputModuleOsc.InputEnabled = meOSCInputModule.Value;
             MelonLogger.Msg("[Input] OSC Input Module Initialized.");
-            meOSCInputModule.OnValueChanged += (_, newValue) => inputModuleOsc.enabled = newValue;
+            meOSCInputModule.OnEntryValueChanged.Subscribe((_, newValue) => inputModuleOsc.InputEnabled = newValue);
         };
 
         // Start OSC server
         _handlerOsc = new HandlerOsc();
+
+        // Check for ChatBox
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null) {
+            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration!");
+            Integrations.ChatBox.InitializeChatBox();
+        }
     }
 
     public override void OnApplicationQuit() {

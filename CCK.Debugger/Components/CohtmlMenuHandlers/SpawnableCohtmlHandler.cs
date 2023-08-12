@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using ABI_RC.Core.Util;
 using ABI.CCK.Components;
-using HarmonyLib;
 using Kafe.CCK.Debugger.Components.PointerVisualizers;
 using Kafe.CCK.Debugger.Components.TriggerVisualizers;
 using Kafe.CCK.Debugger.Entities;
@@ -43,15 +42,23 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         };
 
         SyncTypeDict = new Dictionary<int, string> {
-            { 1, "GrabbedByMe" },
-            { 3, "TeleGrabbed" },
+            { -1, "None" },
+            { 0, "Physics" },
+            { 1, "Grabbed" },
             { 2, "Attached" },
+            { 3, "Tele-Grabbed" },
+            { 4, "Seat" },
+            { 5, "Newton?" },
+            { 6, "Animator Driver" },
         };
 
         Events.DebuggerMenu.SpawnableLoaded += (spawnable, isLoaded) => {
             // If the inspected element is destroyed, lets reset
             if (!isLoaded && PropsData.CurrentObject != null && PropsData.CurrentObject.Spawnable == spawnable) {
                 ResetProp(false);
+            }
+            else {
+                ResetProp(true);
             }
         };
 
@@ -156,10 +163,11 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         attributesSection.AddSection("Is Loading").AddValueGetter(() => ToString(!isLoaded));
         attributesSection.AddSection("Spawned By").AddValueGetter(() => GetUsername(currentSpawnablePropData.SpawnedBy));
         attributesSection.AddSection("Synced By").AddValueGetter(() => GetUsername(currentSpawnablePropData.syncedBy));
-        attributesSection.AddSection("Sync By").AddValueGetter(() => {
+        attributesSection.AddSection("Sync Type").AddValueGetter(() => {
             var syncType = currentSpawnablePropData.syncType;
-            var syncTypeString = SyncTypeDict.ContainsKey(syncType) ? SyncTypeDict[syncType] : currentSpawnable.isPhysicsSynced ? "Physics" : "None";
-            return $"{syncType.ToString()} [{syncTypeString}?]";
+            if (syncType == 0 && !currentSpawnable.isPhysicsSynced) syncType = -1;
+            var syncTypeString = SyncTypeDict.TryGetValue(syncType, out var value) ? value : "Unknown";
+            return $"[{currentSpawnablePropData.syncType.ToString()}] {syncTypeString}";
         });
     }
 
@@ -192,6 +200,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         // Dynamic sections
         var categorySyncedParameters = _core.AddSection("Synced Parameters", true);
         var categoryMainAnimatorParameters = _core.AddSection("Main Animator Parameters", true);
+        var sectionAnimatorLayers = _core.AddSection("Animator Layers", true);
         var categoryPickups = _core.AddSection("Pickups", true);
         var categoryAttachments = _core.AddSection("Attachments", true);
         var categoryPointers = _core.AddSection("CVR Spawnable Pointers", true);
@@ -205,30 +214,51 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         // Restore Main Animator Parameters
         var mainAnimator = currentSpawnable.gameObject.GetComponent<Animator>();
         if (mainAnimator != null) {
+
+            // Setup parameters
             foreach (var parameter in mainAnimator.parameters) {
                 var parameterEntry = ParameterEntrySection.Get(mainAnimator, parameter);
                 string GetParamValue() => parameterEntry.GetValue();
                 categoryMainAnimatorParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             }
+
+            // Set up the animator layers
+            const string noClipsText = "Playing no Clips";
+            for (var i = 0; i < mainAnimator.layerCount; i++) {
+                var layerIndex = i;
+                var layerSection = sectionAnimatorLayers.AddSection(mainAnimator.GetLayerName(layerIndex), "", true);
+                layerSection.AddSection("Layer Weight").AddValueGetter(() => mainAnimator.GetLayerWeight(layerIndex).ToString("F"));
+                var playingClipsSection = layerSection.AddSection("Playing Clips [Weight:Name]", noClipsText, false, true);
+                playingClipsSection.AddValueGetter(() => {
+                    var clipInfos = mainAnimator.GetCurrentAnimatorClipInfo(layerIndex);
+                    var newSections = new List<Section>();
+                    if (clipInfos.Length <= 0) {
+                        playingClipsSection.QueueDynamicSectionsUpdate(newSections);
+                        return noClipsText;
+                    }
+                    foreach (var animatorClipInfo in clipInfos.OrderByDescending(info => info.weight)) {
+                        newSections.Add(new Section(_core) { Title = animatorClipInfo.weight.ToString("F"), Value = animatorClipInfo.clip.name, Collapsable = false, DynamicSubsections = false});
+                    }
+                    playingClipsSection.QueueDynamicSectionsUpdate(newSections);
+                    return $"Playing {clipInfos.Length} Clips";
+                });
+            }
         }
 
         // Restore Pickups
-        var pickups = Traverse.Create(currentSpawnable).Field("pickups").GetValue<CVRPickupObject[]>();
-        foreach (var pickup in pickups) {
+        foreach (var pickup in currentSpawnable.pickups) {
             var pickupSection = categoryPickups.AddSection(pickup.name);
             pickupSection.AddSection("GrabbedBy").AddValueGetter(() => GetUsername(pickup.grabbedBy));
         }
 
         // Restore Attachments
-        var attachments = Traverse.Create(currentSpawnable).Field("_attachments").GetValue<List<CVRAttachment>>();
-        foreach (var attachment in attachments) {
+        foreach (var attachment in currentSpawnable._attachments) {
             var attachmentSection = categoryAttachments.AddSection(attachment.name);
 
             attachmentSection.AddSection("Is Attached").AddValueGetter(() => ToString(attachment.IsAttached()));
 
-            var attachmentTransform = Traverse.Create(attachment).Field("_attachedTransform").GetValue<Transform>();
-            attachmentSection.AddSection("GameObject Name").AddValueGetter(() => attachment.IsAttached() && attachmentTransform != null
-                ? attachmentTransform.gameObject.name
+            attachmentSection.AddSection("GameObject Name").AddValueGetter(() => attachment.IsAttached() && attachment._attachedTransform != null
+                ? attachment._attachedTransform.gameObject.name
                 : Na);
         }
 

@@ -2,11 +2,11 @@
 using ABI_RC.Core;
 using ABI_RC.Core.EventSystem;
 using ABI_RC.Core.Savior;
+using Kafe.OSC.Utils;
 using MelonLoader;
-using OSC.Utils;
 using UnityEngine;
 
-namespace OSC.Events;
+namespace Kafe.OSC.Events;
 
 public static class Avatar {
 
@@ -45,15 +45,15 @@ public static class Avatar {
 
         // Handle the triggers enabled configuration
         _triggersEnabled = OSC.Instance.meOSCAvatarModuleTriggers.Value;
-        OSC.Instance.meOSCAvatarModuleTriggers.OnValueChanged += (_, enabled) => _triggersEnabled = enabled;
+        OSC.Instance.meOSCAvatarModuleTriggers.OnEntryValueChanged.Subscribe((_, enabled) => _triggersEnabled = enabled);
 
         // Handle the set avatar enabled configuration
         _setAvatarEnabled = OSC.Instance.meOSCAvatarModuleSetAvatar.Value;
-        OSC.Instance.meOSCAvatarModuleSetAvatar.OnValueChanged += (_, enabled) => _setAvatarEnabled = enabled;
+        OSC.Instance.meOSCAvatarModuleSetAvatar.OnEntryValueChanged.Subscribe((_, enabled) => _setAvatarEnabled = enabled);
 
         // Handle the warning when blocked osc command by config
         _debugConfigWarnings = OSC.Instance.meOSCDebugConfigWarnings.Value;
-        OSC.Instance.meOSCDebugConfigWarnings.OnValueChanged += (_, enabled) => _debugConfigWarnings = enabled;
+        OSC.Instance.meOSCDebugConfigWarnings.OnEntryValueChanged.Subscribe((_, enabled) => _debugConfigWarnings = enabled);
     }
 
     // Callers

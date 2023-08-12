@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Target Name="NotILRepack" AfterTargets="Build">
+        <PropertyGroup>
+            <DoILRepack>false</DoILRepack>
+        </PropertyGroup>
+        <ItemGroup>
+            <!-- Folder with the libraries used that are not supposed to be merged, but are used by our dll -->
+            <IlRepackLibs Include="$(SolutionDir).ManagedLibs\"/>
+            <!-- Our output dll without any dependency embedded -->
+            <InputAssemblies Include="$(OutputPath)$(AssemblyName).dll"/>
+            <!-- Our dll dependencies to be merged, you can add multiple lines, one per dll -->
+            <InputAssemblies Include="$(SolutionDir)QRCode\Resources\ZXing.Net.Bindings.0.16.8.0\Bindings\ZXing.Unity3D\netstandard2.0\ZXing.Unity.dll"/>
+            <InputAssemblies Include="$(SolutionDir).ManagedLibs\zxing.dll"/>
+            <InputAssemblies Include="$(SolutionDir).ManagedLibs\TextCopy.dll"/>
+            <InputAssemblies Include="$(SolutionDir).ManagedLibs\Microsoft.Extensions.DependencyInjection.Abstractions.dll"/>
+        </ItemGroup>
+        <Message Text="MERGING: @(InputAssemblies->'%(Filename)') into $(OutputAssembly)" Importance="High"/>
+        <ILRepack Internalize="false" LibraryPath="@(IlRepackLibs)" OutputFile="$(OutputPath)$(AssemblyName).dll" InputAssemblies="@(InputAssemblies)"/>
+    </Target>
+</Project>

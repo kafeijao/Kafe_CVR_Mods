@@ -1,0 +1,21 @@
+{
+  "_id": 119,
+  "name": "TheClapper",
+  "modversion": "1.0.2",
+  "gameversion": "2023r171p2",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Mod that allows you to **clap** other people... and props!\n\nThis adds the clapping the camera functionality for **avatars** and **props**.\n\nFor **avatars** you need to clap the head of the player you want to hide, effectively hiding that player avatar. If you clap the kyle's head (default robot avatar when player hidden), it will un-hide the player's avatar.\n\nFor **props** you need to clap their origin point, which most times is on the center or base of the prop. If you clap a **prop** you spawned it will delete it for everyone, otherwise it will delete it only for you locally.\n\n__**Configuration**__\n - Prevent clapping your friends (enabled by default).\n - Show visualizers of the clappable areas when doing the hand open gesture on both hands (enabled by default).\n - Set the delay that takes for visualizers to show.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper) for more info.\n\n",
+  "searchtags": [
+    "clap",
+    "clapper",
+    "avatar",
+    "prop"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/TheClapper.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper",
+  "changelog": "- Made the delay to display the visualizers configurable in melon prefs.",
+  "embedcolor": "16C60C"
+}
