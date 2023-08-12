@@ -2,7 +2,7 @@ Shader "Noachi/WireFrame" {
     Properties {
         [HDR]_Color("Color", color) = (0,0.7,0.9,1)
         [HDR]_ColorWireFrame("ColorWireFrame", color) = (0,0.7,0.9,1)
-        _Thickness("Wireframethiccccness", range(0,.333)) = .1
+        _Thickness("Wireframethiccccness", range(0,.5)) = .1
     }
 
     SubShader {
@@ -41,6 +41,7 @@ Shader "Noachi/WireFrame" {
             struct g2f {
                 float4 vertex : SV_POSITION;
                 float3 barycentric : TEXCOORD0;
+                float3 lengths : TEXCOORD1;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -63,6 +64,11 @@ Shader "Noachi/WireFrame" {
                 UNITY_SETUP_INSTANCE_ID(IN[2]);
 
                 g2f o;
+                o.lengths = float3(
+                length(IN[0].vertex-((IN[1].vertex+IN[2].vertex)/2)),
+                length(IN[1].vertex-((IN[0].vertex+IN[2].vertex)/2)),
+                length(IN[2].vertex-((IN[1].vertex+IN[0].vertex)/2))
+                );
                 o.vertex = IN[0].vertex;
                 o.barycentric = float3(1.0, 0.0, 0.0);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
@@ -79,9 +85,11 @@ Shader "Noachi/WireFrame" {
             
             float4 frag(g2f i) : SV_Target
             {
-                float closest = min(i.barycentric.x, min(i.barycentric.y, i.barycentric.z));
-                return lerp(_Color,_ColorWireFrame,step(closest,_Thickness));
+                float minBary = min(i.barycentric.x, min(i.barycentric.y, i.barycentric.z));
+                float distance = minBary * dot(i.barycentric, i.lengths);
+                return lerp(_Color, _ColorWireFrame, step(distance, _Thickness));
             }
+            
             ENDCG
         }
     }
