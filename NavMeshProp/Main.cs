@@ -1,13 +1,11 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using ABI_RC.Core.Util.AssetFiltering;
 using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using MelonLoader;
 using RootMotion.FinalIK;
 using UnityEngine;
 using UnityEngine.AI;
-using Random = UnityEngine.Random;
 
 namespace Kafe.NavMeshProp;
 
@@ -22,7 +20,7 @@ public class NavMeshProp : MelonMod {
             .25f,
             .5f,
             45f,
-            0.5f,
+            0.45f,
             2f,
             false,
             0.2f,
@@ -39,7 +37,7 @@ public class NavMeshProp : MelonMod {
             .25f,
             .5f,
             45f,
-            0.5f,
+            0.45f,
             2f,
             false,
             0.2f,
@@ -51,12 +49,46 @@ public class NavMeshProp : MelonMod {
         PetController.AddPetBlueprint("35d70641-6a8f-4830-a2d3-01ff83c331f3", new PetBlueprint(
             knucklesAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
 
+        // Create our yipee agent to be used in the bakes
+        var yipeeAgentSettings = new NavMeshTools.API.Agent(
+            .25f,
+            .5f,
+            45f,
+            0.45f,
+            2f,
+            false,
+            0.2f,
+            false,
+            256
+        );
+
+        // Register the yipee
+        PetController.AddPetBlueprint("78490cce-0281-402f-a1b6-1ee83e248473", new PetBlueprint(
+            yipeeAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
+
+        // Create our necoarc agent to be used in the bakes
+        var necoarcAgentSettings = new NavMeshTools.API.Agent(
+            .25f,
+            .5f,
+            45f,
+            0.45f,
+            2f,
+            false,
+            0.2f,
+            false,
+            256
+        );
+
+        // Register the necoarc
+        PetController.AddPetBlueprint("df35e685-0af4-42d3-8988-259b58f79d1b", new PetBlueprint(
+            necoarcAgentSettings, 0.25f, 0.5f, 3f, 240f, 8f, 1f));
+
         // Create our shiggy agent to be used in the bakes
         var shiggyAgentSettings = new NavMeshTools.API.Agent(
             .15f,
             .3f,
             45f,
-            0.3f,
+            0.29f,
             2f,
             false,
             0.2f,
@@ -67,6 +99,23 @@ public class NavMeshProp : MelonMod {
         // Register the shiggy
         PetController.AddPetBlueprint("2befc448-01c7-47fe-87e7-6ed72e9b090b", new PetBlueprint(
             shiggyAgentSettings, 0.15f, 0.3f, 3f, 240f, 10f, 1.5f));
+
+        // Create our kyle agent to be used in the bakes
+        var kyleAgentSettings = new NavMeshTools.API.Agent(
+            .5f,
+            2f,
+            45f,
+            0.75f,
+            2f,
+            false,
+            0.1667f,
+            false,
+            256
+        );
+
+        // Register the kyle
+        PetController.AddPetBlueprint("8bd1b614-a07f-4e06-9e70-3756abf5c685", new PetBlueprint(
+            kyleAgentSettings, 0.5f, 2f, 4f, 240f, 10f, 2f));
 
         // Stop pets from following a player when they leave
         CVRGameEventSystem.Player.OnLeave.AddListener(descriptor => {
@@ -176,7 +225,7 @@ public class NavMeshProp : MelonMod {
                     controller.SpawnableSpeedIndex = spawnable.syncValues.FindIndex(match => match.name == "Speed");
                     controller.SpawnableRandomFloatIndex = spawnable.syncValues.FindIndex(match => match.name == "RandomFloat");
                     controller.SpawnableOffMeshLinkIndex = spawnable.syncValues.FindIndex(match => match.name == "OffMeshLink");
-                }, false);
+                }, true);
             });
 
         }
@@ -222,7 +271,7 @@ public class NavMeshProp : MelonMod {
             if (SpawnableRandomFloatIndex != -1) {
                 timer += Time.deltaTime;
                 if(timer >= _delay) {
-                    Spawnable.SetValue(SpawnableRandomFloatIndex, Random.value);
+                    Spawnable.SetValue(SpawnableRandomFloatIndex, UnityEngine.Random.value);
                     timer = 0f;
                 }
             }

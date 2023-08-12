@@ -403,7 +403,7 @@ public class LinkVisualizer {
     internal GameObject Instantiate() {
 
         var vis = new GameObject("vis");
-        vis.transform.SetParent(NavMeshTools.NavMeshLinkGenerator.transform, false);
+        vis.transform.SetParent(NavMeshTools.NavMeshToolsGo.transform, false);
         var lineRenderer = vis.AddComponent<LineRenderer>();
 
         // Set line color

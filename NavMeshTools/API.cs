@@ -1,4 +1,6 @@
-﻿using Unity.Jobs.LowLevel.Unsafe;
+﻿using MelonLoader;
+using Unity.Jobs.LowLevel.Unsafe;
+using UnityEngine;
 using UnityEngine.AI;
 
 namespace Kafe.NavMeshTools;
@@ -48,6 +50,11 @@ public static class API {
         internal readonly NavMeshBuildSettings Settings;
 
         /// <summary>
+        /// Whether to generate nav mesh links or not.
+        /// </summary>
+        internal readonly bool GenerateNavMeshLinks;
+
+        /// <summary>
         /// Initializes a new instance of the Agent class.
         /// </summary>
         /// <param name="agentRadius">The radius of the agent for baking in world units.</param>
@@ -59,6 +66,7 @@ public static class API {
         /// <param name="voxelSize">Sets the voxel size in world length units.</param>
         /// <param name="overrideTileSize">Enables overriding the default tile size.</param>
         /// <param name="tileSize">Sets the tile size in voxel units.</param>
+        /// <param name="generateNavMeshLinks">Whether to generate nav mesh links or not.</param>
         public Agent(
             float agentRadius = 0.5f,
             float agentHeight = 2f,
@@ -68,7 +76,8 @@ public static class API {
             bool overrideVoxelSize = false,
             float voxelSize = 0.2f,
             bool overrideTileSize = false,
-            int tileSize = 256
+            int tileSize = 256,
+            bool generateNavMeshLinks = true
             ) {
             Settings = NavMesh.CreateSettings() with {
                 agentRadius = agentRadius,
@@ -82,7 +91,12 @@ public static class API {
                 tileSize = tileSize,
                 maxJobWorkers = JobWorkerCount,
             };
+            var violations = Settings.ValidationReport(new Bounds());
+            if (violations.Length > 0) {
+                MelonLogger.Error($"Navmesh settings violations: {string.Join(", ", violations)}");
+            }
             AgentTypeID = Settings.agentTypeID;
+            GenerateNavMeshLinks = generateNavMeshLinks;
         }
     }
 }

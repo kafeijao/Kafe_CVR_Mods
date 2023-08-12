@@ -7,7 +7,6 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering;
-using Object = UnityEngine.Object;
 
 namespace Kafe.NavMeshTools;
 
@@ -25,9 +24,13 @@ internal class NavMeshTools : MelonMod {
 
     private readonly List<Tuple<API.Agent, Action<int, bool>>> _queuedBakesForCurrentWorld = new();
 
+    internal static GameObject NavMeshToolsGo;
     internal static NavMeshLinksGenerator NavMeshLinkGenerator;
 
     public override void OnInitializeMelon() {
+
+        // Load the asset bundle
+        ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
         _navMeshBuilderQueue = new NavMeshBuilderQueue();
 
@@ -42,14 +45,29 @@ internal class NavMeshTools : MelonMod {
             }
             _queuedBakesForCurrentWorld.Clear();
 
+            #if DEBUG
+            // Clear all existing nav meshes (so we can see the new one easier)
+            NavMesh.RemoveAllNavMeshData();
+            MelonLogger.Warning("Removing all Nav Mesh Data that was bundled in the world. So our visualizers don't have overlaps.");
+            #endif
+
         });
 
         CVRGameEventSystem.World.OnUnload.AddListener(_ => {
+
             // Clear all instances of nav mesh upon leaving the world
             foreach (var instance in _currentWorldNavMeshDataInstances) {
                 NavMesh.RemoveNavMeshData(instance);
             }
             _currentWorldNavMeshDataInstances.Clear();
+
+            // Clear NavMeshVisualizer (if present)
+            if (NavMeshToolsGo.TryGetComponent<MeshFilter>(out var meshFilter)) {
+                UnityEngine.Object.Destroy(meshFilter);
+            }
+            if (NavMeshToolsGo.TryGetComponent<MeshRenderer>(out var meshRenderer)) {
+                UnityEngine.Object.Destroy(meshRenderer);
+            }
 
             // Clear all instances of nav mesh links upon leaving the world
             foreach (var (_, instances) in _currentWorldNavMeshLinkInstances) {
@@ -63,7 +81,7 @@ internal class NavMeshTools : MelonMod {
             // Clear all instances of link visualizers upon leaving the world
             foreach (var (_, linkVisualizers) in _currentWorldNavMeshLinkVisualizers) {
                 foreach (var linkVisualizer in linkVisualizers) {
-                    Object.Destroy(linkVisualizer);
+                    UnityEngine.Object.Destroy(linkVisualizer);
                 }
             }
             _currentWorldNavMeshLinkVisualizers.Clear();
@@ -95,18 +113,24 @@ internal class NavMeshTools : MelonMod {
         _currentWorldNavMeshAgentsBaking.Add(agent);
 
         var allSources = new List<NavMeshBuildSource>();
-        var bounds = new Bounds(Vector3.zero, new Vector3(20000f, 20000f, 20000f));
 
         // Get the colliders we want to bake
         var allowedColliders = FixAndGetColliders();
 
+        // Check for violations for this specific agent for this bake
+        var agentSettings = agent.Settings;
+        var violations = agentSettings.ValidationReport(allowedColliders.bounds);
+        if (violations.Length > 0) {
+            MelonLogger.Warning($"Navmesh settings violations:\n\t{string.Join("\n\t", violations)}");
+        }
+
         // This will collect all the sources in the bounds, including ones you may not want.
-        NavMeshBuilder.CollectSources(bounds, ~0, NavMeshCollectGeometry.PhysicsColliders, 0, new List<NavMeshBuildMarkup>(), allSources);
+        NavMeshBuilder.CollectSources(allowedColliders.bounds, ~0, NavMeshCollectGeometry.PhysicsColliders, 0, new List<NavMeshBuildMarkup>(), allSources);
 
         // Filter sources based on specific game objects or conditions.
-        var filteredSources = allSources.Where(source => allowedColliders.Contains(source.component.gameObject)).ToList();
+        var filteredSources = allSources.Where(source => allowedColliders.gameObjectsToUse.Contains(source.component.gameObject)).ToList();
 
-        _navMeshBuilderQueue.EnqueueNavMeshTask(MetaPort.Instance.CurrentWorldId, agent, filteredSources, bounds, onBakeFinish);
+        _navMeshBuilderQueue.EnqueueNavMeshTask(MetaPort.Instance.CurrentWorldId, agent, filteredSources, allowedColliders.bounds, onBakeFinish);
     }
 
     public override void OnApplicationQuit() {
@@ -166,30 +190,71 @@ internal class NavMeshTools : MelonMod {
             triangles = triangulatedNavMesh.indices
         };
 
+        // Create the nav mesh visualizer if in DEBUG mode
         #if DEBUG
-        // Create navmesh visualization
-        if (!NavMeshLinkGenerator.TryGetComponent<MeshFilter>(out var meshFilter)) {
-            meshFilter = NavMeshLinkGenerator.gameObject.AddComponent<MeshFilter>();
-        }
-
-        if (!NavMeshLinkGenerator.TryGetComponent<MeshRenderer>(out var meshRenderer)) {
-            meshRenderer = NavMeshLinkGenerator.gameObject.AddComponent<MeshRenderer>();
-        }
-
-        meshFilter.mesh = currentNavMesh;
-        var transparentMat = new Material(Shader.Find("Standard"));
-        transparentMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        transparentMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        transparentMat.SetInt("_ZWrite", 0);
-        transparentMat.DisableKeyword("_ALPHATEST_ON");
-        transparentMat.DisableKeyword("_ALPHABLEND_ON");
-        transparentMat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-        transparentMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-        transparentMat.color = new Color(0.2f, 0.5f, 1f, 0.5f);
-        meshRenderer.material = transparentMat;
+        ShowNavMeshVisualizer(currentNavMesh);
         #endif
 
-        _navMeshBuilderQueue.EnqueueNavMeshLinkTask(MetaPort.Instance.CurrentWorldId, results.Item2, currentNavMesh);
+        // Queue the task to generate the nav mesh links (if requested to do so)
+        if (results.Item2.GenerateNavMeshLinks) {
+            _navMeshBuilderQueue.EnqueueNavMeshLinkTask(MetaPort.Instance.CurrentWorldId, results.Item2, currentNavMesh);
+        }
+    }
+
+    public static void ShowNavMeshVisualizer(Mesh meshToVisualize = null) {
+
+        // Get the current mesh if not provided
+        if (meshToVisualize == null) {
+            var triangulatedNavMesh = NavMesh.CalculateTriangulation();
+            meshToVisualize = new Mesh() {
+                vertices = triangulatedNavMesh.vertices,
+                triangles = triangulatedNavMesh.indices
+            };
+        }
+
+        // Create navmesh visualization
+        if (!NavMeshToolsGo.TryGetComponent<MeshFilter>(out var meshFilter)) {
+            meshFilter = NavMeshToolsGo.AddComponent<MeshFilter>();
+        }
+
+        if (!NavMeshToolsGo.TryGetComponent<MeshRenderer>(out var meshRenderer)) {
+            meshRenderer = NavMeshToolsGo.AddComponent<MeshRenderer>();
+        }
+
+        meshFilter.mesh = meshToVisualize;
+
+        // var unlitShader = Shader.Find("Unlit/Color");
+        // var unlitMat = new Material(unlitShader) {
+        //     color = new Color(0.2f, 0.5f, 1f)
+        // };
+        //
+        // var neitriMat = new Material(ModConfig.NeitriDistanceFadeOutlineShader);
+        // neitriMat.SetFloat(ModConfig.MatOutlineWidth, 0.8f);
+        // neitriMat.SetFloat(ModConfig.MatOutlineSmoothness, 0.1f);
+        // neitriMat.SetFloat(ModConfig.MatFadeInBehindObjectsDistance, 2f);
+        // neitriMat.SetFloat(ModConfig.MatFadeOutBehindObjectsDistance, 10f);
+        // neitriMat.SetFloat(ModConfig.MatFadeInCameraDistance, 10f);
+        // neitriMat.SetFloat(ModConfig.MatFadeOutCameraDistance, 15f);
+        // neitriMat.SetFloat(ModConfig.MatShowOutlineInFrontOfObjects, 0f);
+        // neitriMat.SetColor(ModConfig.MatOutlineColor, ModConfig.ColorBlue);
+
+        // var transparentMat = new Material(Shader.Find("Standard"));
+        // transparentMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        // transparentMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        // transparentMat.SetInt("_ZWrite", 0);
+        // transparentMat.DisableKeyword("_ALPHATEST_ON");
+        // transparentMat.DisableKeyword("_ALPHABLEND_ON");
+        // transparentMat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+        // transparentMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        // transparentMat.color = new Color(0.2f, 0.5f, 1f, 0.5f);
+        // meshRenderer.materials = new []{ unlitMat, neitriMat };
+
+
+        var noachiWireFrameMat = new Material(ModConfig.NoachiWireframeShader);
+        noachiWireFrameMat.SetColor(ModConfig.MatWireColor, ModConfig.ColorBlue);
+        noachiWireFrameMat.SetColor(ModConfig.MatFaceColor, ModConfig.ColorPinkTransparent);
+        noachiWireFrameMat.SetFloat(ModConfig.MatWireThickness, 0.03f);
+        meshRenderer.materials = new []{ noachiWireFrameMat };
     }
 
     private void HandleNavMeshLinkGen(Tuple<string, API.Agent, HashSet<NavMeshLinkData>, HashSet<LinkVisualizer>> results) {
@@ -225,7 +290,7 @@ internal class NavMeshTools : MelonMod {
         // Clear odl and setup new line visualizers
         if (_currentWorldNavMeshLinkVisualizers.TryGetValue(agent, out var linkVisualizers)) {
             foreach (var linkVisualizer in linkVisualizers) {
-                Object.Destroy(linkVisualizer);
+                UnityEngine.Object.Destroy(linkVisualizer);
             }
             linkVisualizers.Clear();
         }
@@ -248,13 +313,15 @@ internal class NavMeshTools : MelonMod {
         }
     }
 
-    private static HashSet<GameObject> FixAndGetColliders() {
+    private static (HashSet<GameObject> gameObjectsToUse, Bounds bounds) FixAndGetColliders() {
 
         var colliders = new HashSet<GameObject>();
+        var totalBounds = new Bounds();
 
         var replacedColliderMeshes = new HashSet<string>();
-
         var runtimeSharedMeshes = new Dictionary<Mesh, Mesh>();
+
+        var boundsInitialized = false;
 
         foreach (var col in UnityEngine.Object.FindObjectsOfType<Collider>(true)) {
 
@@ -277,6 +344,15 @@ internal class NavMeshTools : MelonMod {
             if (!IsGoodCollider(col)) continue;
 
             colliders.Add(col.gameObject);
+
+            // Calculate total bounds
+            if (!boundsInitialized) {
+                totalBounds = col.bounds;
+                boundsInitialized = true;
+            }
+            else {
+                totalBounds.Encapsulate(col.bounds);
+            }
         }
 
         MelonLogger.Msg($"Found {colliders.Count} good colliders to bake!");
@@ -285,7 +361,7 @@ internal class NavMeshTools : MelonMod {
                                 $"This might result in weird collision in certain worlds. " +
                                 $"GameObject names: {string.Join(", ", replacedColliderMeshes)}");
         }
-        return colliders;
+        return (colliders, totalBounds);
     }
 
     internal static readonly int DefaultLayer = LayerMask.NameToLayer("Default");
@@ -363,9 +439,9 @@ internal class NavMeshTools : MelonMod {
         [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.Start))]
         public static void After_PlayerSetup_Start() {
             try {
-                var navMeshLinkAutoPlacerGo = new GameObject($"[{nameof(NavMeshTools)} Mod] NavMeshLinkAutoPlacer");
-                UnityEngine.Object.DontDestroyOnLoad(navMeshLinkAutoPlacerGo);
-                NavMeshLinkGenerator = navMeshLinkAutoPlacerGo.AddComponent<NavMeshLinksGenerator>();
+                NavMeshToolsGo = new GameObject($"[{nameof(NavMeshTools)} Mod] NavMeshLinkAutoPlacer");
+                UnityEngine.Object.DontDestroyOnLoad(NavMeshToolsGo);
+                NavMeshLinkGenerator = NavMeshToolsGo.AddComponent<NavMeshLinksGenerator>();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}.");
