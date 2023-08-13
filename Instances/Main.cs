@@ -256,7 +256,7 @@ public class Instances : MelonMod {
 
         // Ignore if the token to be update is the same
         var newToken = token?.Token ?? CVRInstances.InstanceJoinJWT;
-        var isSameToken = newToken == configLastInstance.JoinToken.Token;
+        var isSameToken = newToken == configLastInstance.JoinToken?.Token;
 
         if (configLastInstance.InstanceId != GetJWTInstanceId(newToken)) {
             MelonLogger.Warning($"[UpdateInstanceToken] The provided token doesn't match the current instances... Ignoring... " +
