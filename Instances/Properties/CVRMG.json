@@ -1,7 +1,7 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.12",
+  "modversion": "1.0.14",
   "gameversion": "2023r171p2",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -16,6 +16,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Prevent saving previous teleport location if the position is NaN.",
+  "changelog": "- Prevent using the rejoin token if we changed accounts.\n- Melon Preferences will be saved on a diff file per accounts (this enables having different settings for each account, but the current settings will reset when updating).\n- Fixed an issue that would result in connecting to an instance before loading a world (and then reconnecting) when using the token to connect.\n- Fixed player count not updating (which preventing rejoining instances even when there were players when you left)..",
   "embedcolor": "16C60C"
 }

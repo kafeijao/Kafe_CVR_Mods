@@ -5,6 +5,7 @@ using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Savior;
 using BTKUILib.UIObjects.Objects;
 using MelonLoader;
+using MelonLoader.Utils;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -73,6 +74,9 @@ public static class ModConfig {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(Instances));
+
+        // Use a diff file path so we can have per-user melon prefs. Requires to be ran after MetaPort.Instance.ownerId was set
+        _melonCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, $"MelonPreferences-{MetaPort.Instance.ownerId}.cfg"));
 
         MeRejoinLastInstanceOnGameRestart = _melonCategory.CreateEntry("RejoinLastInstanceOnRestart", true,
             description: "Whether to join the last instance (if still available) when restarting the game or not.");
@@ -206,7 +210,7 @@ public static class ModConfig {
         // Handle the recent instances
         var categoryInstances = page.AddCategory("Recent Instances");
         SetupInstancesButtons(categoryInstances);
-        Instances.InstancesConfigChanged += () => SetupInstancesButtons(categoryInstances);
+        Instances.RecentInstancesChanged += () => SetupInstancesButtons(categoryInstances);
     }
 
     private static bool _isRestarting;
@@ -221,10 +225,10 @@ public static class ModConfig {
 
         // If our token has less than 5 mins, grab a new instance token
         if (MeAttemptToSaveAndLoadToken.Value
-            && Instances.Config.LastInstance.JoinToken != null
-            && Instances.Config.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow < TimeSpan.FromMinutes(5)) {
+            && Instances.PlayerConfig?.LastInstance?.JoinToken != null
+            && Instances.PlayerConfig.LastInstance.JoinToken.ExpirationDate - DateTime.UtcNow < TimeSpan.FromMinutes(5)) {
             MelonLogger.Msg($"Fetching a new instance token, since ours is pretty old or expired," +
-                            $" Expire Date: {Instances.Config.LastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
+                            $" Expire Date: {Instances.PlayerConfig.LastInstance.JoinToken.ExpirationDate.ToLocalTime()}");
             var saveTokenTask = Instances.SaveCurrentInstanceToken();
             yield return new WaitUntil(() => saveTokenTask.IsCompleted);
         }
@@ -341,8 +345,8 @@ public static class ModConfig {
         yield return new WaitForSeconds(1);
 
         categoryInstances.ClearChildren();
-        for (var index = 0; index < Instances.Config.RecentInstances.Count; index++) {
-            var instanceInfo = Instances.Config.RecentInstances[index];
+        for (var index = 0; index < Instances.PlayerConfig.RecentInstances.Count; index++) {
+            var instanceInfo = Instances.PlayerConfig.RecentInstances[index];
             // Only use the icons, if the image was loaded (it spams the CVR Logs if we load a non-existing image)
             var buttonIcon = LoadedWorldImages.Contains(instanceInfo.WorldId) ? instanceInfo.WorldId : "";
             var button = categoryInstances.AddButton($"{index}. {instanceInfo.InstanceName}",
@@ -363,7 +367,7 @@ public static class ModConfig {
 
 
     private static void SetupInstancesButtons(BTKUILib.UIObjects.Category categoryInstances) {
-        foreach (var instanceInfo in Instances.Config.RecentInstances) {
+        foreach (var instanceInfo in Instances.PlayerConfig.RecentInstances) {
             if (instanceInfo.WorldImageUrl != null
                 && !LoadingWorldImages.Contains(instanceInfo.WorldId)
                 && !LoadedWorldImages.Contains(instanceInfo.WorldId)) {
