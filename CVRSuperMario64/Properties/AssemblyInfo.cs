@@ -23,7 +23,7 @@ using MelonLoader;
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
-[assembly: MelonOptionalDependencies(AssemblyInfoParams.BTKUILibName)]
+[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 
 namespace Kafe.CVRSuperMario64.Properties;
 internal static class AssemblyInfoParams {

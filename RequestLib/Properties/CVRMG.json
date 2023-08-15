@@ -1,7 +1,7 @@
 {
   "_id": 169,
   "name": "RequestLib",
-  "modversion": "0.0.7",
+  "modversion": "0.0.8",
   "gameversion": "2023r171p2",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -14,6 +14,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
-  "changelog": "- Fixed optional requirements.",
+  "changelog": "- Added a mod network rate limiter.",
   "embedcolor": "16C60C"
 }

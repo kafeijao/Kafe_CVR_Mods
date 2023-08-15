@@ -6,7 +6,7 @@
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Allows to start CVR with different **credentials profiles** via steam Launch Options, or straight from the commandline.\n\n```--profile=profile_id```\n\nI normally use this to test sync stuff (where I need 2 clients). For this, you'd need to copy CVR files to another folder, and lunch together with `-skipsteam` launch option. In my case would be: `ChilloutVR.exe --profile=kafeijao -skipsteam`",
+  "description": "Allows to start CVR with different **credentials profiles** via steam Launch Options, or straight from the commandline.\n\n```--profile=profile_id```\n\nI normally use this to test sync stuff (where I need 2 clients). For this, you'd need to copy CVR files to another folder, and lunch together with `--no-steam` launch option. In my case would be: `ChilloutVR.exe --profile=kafeijao -skipsteam`",
   "searchtags": [
     "login",
     "profile",
