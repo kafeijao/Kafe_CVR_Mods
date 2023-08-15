@@ -21,7 +21,7 @@
     "layer"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
   "changelog": "- Added animator layers to props.",
   "embedcolor": "16C60C"

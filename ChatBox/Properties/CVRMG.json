@@ -15,7 +15,7 @@
     "network"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/ChatBox.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
   "changelog": "- Added SteamVR binding to open ChatBox keyboard.\n- Added a rate limiter to prevent malicious users from crashing you.",
   "embedcolor": "16C60C"

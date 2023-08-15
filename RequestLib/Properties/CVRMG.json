@@ -12,7 +12,7 @@
     "lib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/RequestLib.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
   "changelog": "- Added a mod network rate limiter.",
   "embedcolor": "16C60C"

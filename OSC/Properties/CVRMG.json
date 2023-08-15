@@ -15,7 +15,7 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r56/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
   "changelog": "- Fixed Tracking endpoints\n- Cached entities for performance.\n- Fixed tracking endpoints (again)",
   "embedcolor": "16C60C"
