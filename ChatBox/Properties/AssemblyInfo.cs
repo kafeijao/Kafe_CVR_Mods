@@ -24,12 +24,14 @@ using MelonLoader;
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
+[assembly: MelonOptionalDependencies(AssemblyInfoParams.VRBindingName)]
 [assembly: MelonAdditionalCredits(AssemblyInfoParams.AstroDoge)]
 
 namespace Kafe.ChatBox.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.10";
+    public const string Version = "1.0.11";
     public const string Author = "kafeijao";
     public const string AstroDoge = "AstroDoge";
     public const string BTKUILibName = "BTKUILib";
+    public const string VRBindingName = "VRBinding";
 }

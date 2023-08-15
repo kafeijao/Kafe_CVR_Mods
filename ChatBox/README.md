@@ -19,7 +19,8 @@ be able to see your ChatBoxes.
   VR.
 - Press `TAB` (keyboard) or `Auto` in VR to attempt to auto-complete usernames. 
 - Use `@username` to mention people in messages.
-
+- Bind a SteamVR controller button to opening the ChatBox keyboard.
+  Requires [VRBinding Mod](https://github.com/dakyneko/DakyModsCVR/tree/master/VRBinding)
 
 ---
 

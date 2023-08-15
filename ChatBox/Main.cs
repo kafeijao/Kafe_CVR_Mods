@@ -5,9 +5,8 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.InputManagement;
-using ABI_RC.VideoPlayer.Scripts;
-using ABI.CCK.Components;
 using HarmonyLib;
+using Kafe.ChatBox.Properties;
 using MelonLoader;
 using TMPro;
 using UnityEngine;
@@ -34,6 +33,15 @@ public class ChatBox : MelonMod {
         ConfigJson.LoadConfigJson();
         ModConfig.InitializeBTKUI();
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
+
+        // Check for VRBinding
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.VRBindingName) != null) {
+            MelonLogger.Msg($"Detected {AssemblyInfoParams.VRBindingName} mod, we're adding the integration! You can now bind the Action to open the ChatBox keyboard in SteamVR.");
+            Integrations.VRBindingsIntegration.Initialize();
+        }
+        else {
+            MelonLogger.Msg($"You can optionally install {AssemblyInfoParams.VRBindingName} mod to be able to bind a SteamVR controller button to opening the ChatBox keyboard.");
+        }
 
         // Disable warnings for broken Characters, as it may cause lag.
         TMP_Settings.instance.m_warningsDisabled = true;
@@ -133,12 +141,16 @@ public class ChatBox : MelonMod {
     }
 
     private static void ActuallyOpenKeyboard(string initialMessage) {
+        if (!MetaPort.Instance.isUsingVr) {
+            CVRInputManager.Instance.inputEnabled = false;
+            CVRInputManager.Instance.textInputFocused = true;
+        }
+        else {
+            ViewManager.Instance._inputField = null;
+            ViewManager.Instance._tmp_inputField = null;
+        }
         ViewManager.Instance.openMenuKeyboard(KeyboardId + initialMessage);
         ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
-        // Hack! to blur the focus when writing on chat box in vr (otherwise you need to press twice the first letter)
-        if (MetaPort.Instance.isUsingVr) {
-            CohtmlPatches.SendKeyboardBlur();
-        }
         _openKeyboardCoroutineToken = null;
     }
 
@@ -169,6 +181,13 @@ public class ChatBox : MelonMod {
     }
 
     private static void DisableKeyboard() {
+
+        // Clear stuff (seems seems that is needed when clicking the Enter on the virtual keyboard?
+        if (!MetaPort.Instance.isUsingVr) {
+            CVRInputManager.Instance.inputEnabled = true;
+            CVRInputManager.Instance.textInputFocused = false;
+        }
+
         _isChatBoxKeyboardOpened = false;
         SetIsTyping(API.MessageSource.Internal, false, true);
         if (_openKeyboardCoroutineToken != null) {

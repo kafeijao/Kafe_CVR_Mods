@@ -6,6 +6,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="VRBinding">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\VRBinding.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>

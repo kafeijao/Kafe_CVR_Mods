@@ -83,12 +83,6 @@ public static class ModNetwork {
 
     private static void OnMessage(object sender, MessageReceivedEventArgs e) {
 
-        #if DEBUG
-        if (e.Tag is (ushort) Tag.Message or (ushort) Tag.Unsubscribe or (ushort) Tag.Subscribe) {
-            MelonLogger.Msg($"Received Message on {e.Tag}!");
-        }
-        #endif
-
         // Ignore Messages that are not Mod Network Messages
         if (e.Tag != (ushort) Tag.Message) return;
 
@@ -100,6 +94,9 @@ public static class ModNetwork {
         if (modId != ModId) return;
 
         var senderGuid = reader.ReadString();
+
+        // Process rate limits
+        if (RateLimiter.IsRateLimited(senderGuid)) return;
 
         try {
 
@@ -268,6 +265,43 @@ public static class ModNetwork {
         NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
     }
 
+    private class RateLimiter {
+        private const int MaxMessages = 5;
+        private const int TimeWindowSeconds = 10;
+        public static readonly Dictionary<string, RateLimiter> UserRateLimits = new();
+        private DateTime LastMessageTime { get; set; } = DateTime.UtcNow;
+        private int MessageCount { get; set; } = 1;
+        private bool Notified { get; set; }
+
+        public static bool IsRateLimited(string senderGuid) {
+            if (UserRateLimits.TryGetValue(senderGuid, out var userState)) {
+                if ((DateTime.UtcNow - userState.LastMessageTime).TotalSeconds <= TimeWindowSeconds) {
+                    // The user is above the rate limit
+                    if (userState.MessageCount >= MaxMessages) {
+                        if (userState.Notified) return true;
+                        userState.Notified = true;
+                        MelonLogger.Warning($"The player {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)} " +
+                                            $"send over {MaxMessages} messages within {TimeWindowSeconds} seconds. To " +
+                                            $"prevent crashing/lag it's going to be rate limited.");
+                        return true;
+                    }
+                    userState.MessageCount++;
+                }
+                else {
+                    // Reset their count if it's been more than the time window.
+                    userState.MessageCount = 1;
+                    userState.LastMessageTime = DateTime.UtcNow;
+                    userState.Notified = false;
+                }
+            }
+            else {
+                // If the sender is not in the dictionary, add them.
+                UserRateLimits[senderGuid] = new RateLimiter();
+            }
+            return false;
+        }
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
@@ -275,8 +309,13 @@ public static class ModNetwork {
         [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.ReceiveReconnectToken))]
         public static void After_NetworkManager_ReceiveReconnectToken() {
             try {
+                #if DEBUG
                 MelonLogger.Msg($"Reclaim Token Assigned... Subscribing to {ModId} on the Mod Network...");
+                #endif
                 Subscribe();
+
+                // Clear the rate limiters
+                RateLimiter.UserRateLimits.Clear();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_ReceiveReconnectToken)}");
@@ -288,7 +327,9 @@ public static class ModNetwork {
         [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.Awake))]
         public static void After_NetworkManager_Awake(NetworkManager __instance) {
             try {
+                #if DEBUG
                 MelonLogger.Msg($"Started the Game Server Messages Listener...");
+                #endif
                 __instance.GameNetwork.MessageReceived += OnMessage;
             }
             catch (Exception e) {
