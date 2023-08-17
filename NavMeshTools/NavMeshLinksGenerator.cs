@@ -12,24 +12,9 @@ public class NavMeshLinksGenerator : MonoBehaviour {
     private int ignoredHadColliderBetween = 0;
     #endif
 
-    #region Variables
-
-    [Header("OffMeshLinks")]
     public float maxJumpHeight = 2f;
     public float maxJumpDist = 2f;
-    // private readonly LayerMask raycastLayerMask = -1;
     private readonly LayerMask _raycastLayerMask = GetLayerMask();
-    public float sphereCastRadius = 2f;
-
-    //how far over to move spherecast away from navmesh edge to prevent detecting the same edge
-    private const float CheatOffset = 0.25f;
-
-    [Header("EdgeNormal")]
-    public bool invertFacingNormal = false;
-    public bool dontAlignYAxis = false;
-
-    #endregion
-
 
     private static int GetLayerMask() {
 
@@ -51,9 +36,7 @@ public class NavMeshLinksGenerator : MonoBehaviour {
     }
 
 
-    #region GridGen
-
-    public (HashSet<NavMeshLinkData> navMeshLinkResults, HashSet<LinkVisualizer> navMeshLinkVisualizers) Generate(API.Agent agent, Mesh navMeshTriangulation) {
+    public (HashSet<NavMeshLinkData> navMeshLinkResults, HashSet<LinkVisualizer> navMeshLinkVisualizers) Generate(API.Agent agent, (Vector3[] vertices, int[] triangles) weldedNavMesh) {
 
         #if DEBUG
             ignoredNotAgentNavMesh = 0;
@@ -63,59 +46,79 @@ public class NavMeshLinksGenerator : MonoBehaviour {
         var navMeshLinksData = new HashSet<NavMeshLinkData>();
         var linkVisualizers = new HashSet<LinkVisualizer>();
 
+        #if DEBUG
         MelonLogger.Msg("[Thread] Generating Mesh Links...");
         MelonLogger.Msg("\tCalculating Edges...");
-        var edges = CalcEdges(navMeshTriangulation);
+        #endif
 
+        // var edges = CalcEdges(navMeshTriangulation);
+        var edges = MeshBoundaryFinder.FindBoundaryEdges(weldedNavMesh);
+        #if DEBUG
+        MelonLogger.Msg($"Found: {edges.Count} Edges!");
+        #endif
+        // foreach (var edge in edges) {
+        //     var centerPosition = (edge.EndPos + edge.StartPos) * 0.5f;
+        //     linkVisualizers.Add(new LinkVisualizer(Color.yellow, false, centerPosition, centerPosition + edge.Normal * 0.1f, 0.03f));
+        //     linkVisualizers.Add(new LinkVisualizer(Color.green, true, centerPosition, centerPosition + Vector3.up, 0.015f));
+        // }
+
+        #if DEBUG
         MelonLogger.Msg("\tPlacing Tiles");
+        #endif
 
         var edgeDivisionWidth = agent.Settings.agentRadius * 2;
 
         PlaceTiles(navMeshLinksData, linkVisualizers, agent, edgeDivisionWidth, edges);
 
         #if DEBUG
-            MelonLogger.Msg($"\tDone! ignoredNotAgentNavMesh: {ignoredNotAgentNavMesh}, ignoredHadColliderBetween: {ignoredHadColliderBetween}");
+        MelonLogger.Msg($"\tDone! ignoredNotAgentNavMesh: {ignoredNotAgentNavMesh}, ignoredHadColliderBetween: {ignoredHadColliderBetween}");
         #endif
 
         return (navMeshLinksData, linkVisualizers);
     }
 
-    private void PlaceTiles(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, API.Agent agent, float edgeDivisionWidth, List<Edge> edges) {
+    private void PlaceTiles(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, API.Agent agent, float edgeDivisionWidth, List<MeshBoundaryFinder.Edge> edges) {
+
+        var raycastBuffer = new RaycastHit[20];
 
         foreach (var edge in edges) {
-            // var tilesCountWidth = (int)Mathf.Clamp(edge.Length / edgeDivisionWidth, 0, 10000);
             var tilesCountWidth = (int)Mathf.Clamp(edge.Length / edgeDivisionWidth, 1, 10000);
-            float heightShift = 0;
 
+            // Iterate over the segments of the edge
             for (var columnN = 0; columnN < tilesCountWidth; columnN++) {
                 //every edge length segment
                 var placePos = Vector3.Lerp(
-                    edge.Start,
-                    edge.End,
-                    columnN / (float)tilesCountWidth //position on edge
-                    + 0.5f / tilesCountWidth //shift for half tile width
-                ) + edge.FacingNormal * Vector3.up * heightShift;
+                    edge.StartPos,
+                    edge.EndPos,
+                    columnN / (float)tilesCountWidth
+                    + 0.5f / tilesCountWidth
+                );
+
+                #if DEBUG
+                linkVisualizers.Add(new LinkVisualizer(Color.yellow, false, placePos, placePos + edge.Normal * 0.15f, 0.03f));
+                linkVisualizers.Add(new LinkVisualizer(Color.yellow, true, placePos, placePos + Vector3.up, 0.005f));
+                #endif
 
                 // Spawn up/down links
-                CheckPlacePos(results, linkVisualizers, placePos, edge.FacingNormal, agent);
+                CheckPlacePos(results, linkVisualizers, placePos, edge.Normal, agent);
                 // Spawn horizontal links Todo: Fix the algo
-                // CheckPlacePosHorizontal(results, linkVisualizers, placePos, edge.FacingNormal, agent);
+                CheckPlacePosHorizontal(results, linkVisualizers, placePos, edge.Normal, agent, raycastBuffer);
             }
         }
     }
 
 
-    private void CheckPlacePos(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, Vector3 pos, Quaternion normal, API.Agent agent) {
+    private void CheckPlacePos(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, Vector3 pos, Vector3 normalDirection, API.Agent agent) {
 
         // Check if we're on the navmesh of our agent
-        if (!NavMesh.SamplePosition(pos, out _, 0.0000001f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
+        if (!NavMesh.SamplePosition(pos, out _, 0.0001f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
             #if DEBUG
             ignoredNotAgentNavMesh++;
             #endif
             return;
         }
 
-        var startPos = pos + normal * Vector3.forward * agent.Settings.agentRadius * 2;
+        var startPos = pos + normalDirection * agent.Settings.agentRadius * 2;
 
         // The end pos is just down for slightly more than the max Jump Height
         var endPos = startPos - Vector3.up * maxJumpHeight * 1.1f;
@@ -133,7 +136,7 @@ public class NavMeshLinksGenerator : MonoBehaviour {
         //Debug.DrawLine( pos, navMeshHit.position, Color.black, 15 );
 
         //added these 2 line to check to make sure there aren't flat horizontal links going through walls
-        var calcV3 = (pos - normal * Vector3.forward * 0.02f);
+        var calcV3 = (pos - normalDirection * 0.02f);
 
         // Ignore if our agent can climb this, as it should be taken care
         if (Mathf.Abs(calcV3.y - navMeshHit.position.y) < agent.Settings.agentClimb) return;
@@ -162,227 +165,342 @@ public class NavMeshLinksGenerator : MonoBehaviour {
         });
 
         #if DEBUG
-        linkVisualizers.Add(new LinkVisualizer(Color.green, true, calcV3, navMeshHit.position));
+        linkVisualizers.Add(new LinkVisualizer(Color.green, true, calcV3, navMeshHit.position, 0.01f));
         #endif
     }
 
-    private void CheckPlacePosHorizontal(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, Vector3 pos, Quaternion normal, API.Agent agent) {
+    private void CheckPlacePosHorizontal(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, Vector3 pos, Vector3 normalDirection, API.Agent agent, RaycastHit[] rayBuffer) {
 
         // Check if we're on the navmesh of our agent
-        if (!NavMesh.SamplePosition(pos, out _, 0.0000001f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
+        if (!NavMesh.SamplePosition(pos, out _, 0.1f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
             #if DEBUG
             ignoredNotAgentNavMesh++;
+            linkVisualizers.Add(new LinkVisualizer(Color.red, true, pos, pos + Vector3.up * 0.5f, 0.02f));
             #endif
             return;
         }
 
-        var startPos = pos + normal * Vector3.forward * agent.Settings.agentRadius * 2;
-        var endPos = startPos - normal * Vector3.back * maxJumpDist * 1.1f;
+        // var startPos = pos + normal * Vector3.forward * agent.Settings.agentRadius * 2;
 
-        // Cheat forward a little bit so the sphereCast doesn't touch this ledge.
-        // var cheatStartPos = LerpByDistance(startPos, endPos, cheatOffset);
-        //Debug.DrawRay(endPos, Vector3.up, Color.blue, 2);
-        //Debug.DrawLine ( cheatStartPos , endPos, Color.white, 2 );
-        //Debug.DrawLine(startPos, endPos, Color.white, 2);
-
-        // Get the highest Y and add our agent's height to it, so see if it would be able to jump it
-        var highestY = (startPos.y > endPos.y ? startPos : endPos).y + agent.Settings.agentHeight;
-        var startToEndHorizontalDir = startPos with { y = highestY } - endPos with { y = highestY };
-
-        // // Raise up pos Y value slightly up to check for wall/obstacle
-        // var offSetPosY = pos with { y = pos.y + wallCheckYOffset };
-        //
-        // // Ray cast to check for walls
-        // // if (Physics.Raycast(offSetPosY, sphereCastDirection, (maxJumpDist / 2), raycastLayerMask.value)) return;
-        // if (Physics.Raycast(offSetPosY, castDirection, (maxJumpDist / 2), raycastLayerMask.value)) return;
-        //
-        // var reverseRayCastSpot = offSetPosY + castDirection;
-        //
-        // //now raycast back the other way to make sure we're not raycasting through the inside of a mesh the first time.
-        // if (Physics.Raycast(reverseRayCastSpot, -castDirection, (maxJumpDist + 1), raycastLayerMask.value)) return;
-        // //Debug.DrawRay(ReverseRayCastSpot, -ReUsableV3, Color.red, 15);
-        // //Debug.DrawRay(ReverseRayCastSpot, -ReUsableV3, Color.red, 15);
+        // Start a bit back across normals
+        // var startPos = pos + normal * Vector3.back * agent.Settings.agentRadius;
+        // And higher
+        // startPos += Vector3.up * agent.Settings.agentHeight / 2;
 
 
-        // Calculate direction for Physics cast
+        var sphereRadius = agent.Settings.agentHeight;
+
+        // Start a bit in front of the normals, using the capsule radius
+        // var startPos = pos + normal * Vector3.forward * capsuleRadius * 1.1f;
+        var startPos = pos;
+        // Start a bit ahead from the radius of the sphere cast, to avoid the initial edge
+        var startPosSphereOffset = pos + normalDirection * sphereRadius * 1.1f;
+
+        // Get a point a bit behind of the starting point and at half height of the agent
+        var startPosWithOffset = startPos + Vector3.up * agent.Settings.agentHeight / 2f;
+
+        // var endPos = startPos - normal * Vector3.back * maxJumpDist *
+        // End at start across normals for the jumping distance
+        var jumpDistance = maxJumpDist * 1.1f;
+        var endPos = startPos + normalDirection * jumpDistance;
+
         var castDirection = endPos - startPos;
-        var capsuleRadius = agent.Settings.agentRadius * 2 - 0.01f;
 
-        // // Look for a collider to jump to
-        // if (!Physics.CapsuleCast(startPos, endPos, capsuleRadius, castDirection, out var raycastHit, castDirection.magnitude, _raycastLayerMask, QueryTriggerInteraction.Ignore)) {
+        // Do a sphere cast and grab all hits
+        var rayCount = Physics.SphereCastNonAlloc(startPosSphereOffset, sphereRadius, castDirection, rayBuffer, jumpDistance, _raycastLayerMask.value, QueryTriggerInteraction.Ignore);
+
+        // Ignore if there are no hits other than itself
+        if (rayCount == 0 || rayCount == 1 && rayBuffer[0].distance == 0) {
+            linkVisualizers.Add(new LinkVisualizer(Color.red, false, startPos, endPos, 0.01f));
+            return;
+        }
+
+        for (var i = 0; i < rayCount; i++) {
+            var raycastHit = rayBuffer[i];
+            if (raycastHit.distance == 0) {
+                linkVisualizers.Add(new LinkVisualizer(new Color(1, 0.3f, 0), false, startPos, startPos + Vector3.up, 0.035f));
+                continue;
+            }
+
+            // Check if the hit is behind the starting point
+            if (Vector3.Dot(castDirection.normalized, (raycastHit.point - startPos).normalized) < 0) {
+                // linkVisualizers.Add(new LinkVisualizer(Color.red, false, startPos, endPos, 0.35f));
+                linkVisualizers.Add(new LinkVisualizer(new Color(1, 0.5f, 0), false, startPos, startPos + Vector3.up, 0.35f));
+                continue;
+            }
+
+            if (!NavMesh.SamplePosition(raycastHit.point, out var navMeshHit, agent.Settings.agentHeight, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
+                linkVisualizers.Add(new LinkVisualizer(Color.magenta, true, startPos, endPos, 0.02f));
+                continue;
+            }
+
+            // Get a point a bit ahead of the ending point and at half height of the agent
+            var endPosWithOffset = navMeshHit.position + Vector3.up * agent.Settings.agentHeight / 2f;
+
+            // MelonLogger.Msg("[" + rayCount +"] " + raycastHit.point.ToString("F2") + " -> " + raycastHit.distance);
+            // linkVisualizers.Add(new LinkVisualizer(Color.Lerp(Color.green, Color.magenta, i/(float)rayCount), false, startPos, raycastHit.point, capsuleRadius));
+
+
+            // Check if there's a collider between the points at the highest height (from start to end)
+            var startToEndHorizontalDir = endPosWithOffset - startPosWithOffset;
+            var distanceStartToEnd = Vector3.Distance(startPosWithOffset, endPosWithOffset);
+            var sphereCastRadiusHeight = agent.Settings.agentHeight / 2f * 0.9f;
+            if (Physics.SphereCast(startPosWithOffset, sphereCastRadiusHeight, startToEndHorizontalDir, out _, distanceStartToEnd, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+                #if DEBUG
+                linkVisualizers.Add(new LinkVisualizer(Color.blue, false, startPosWithOffset, endPosWithOffset, 0.02f));
+                ignoredHadColliderBetween++;
+                #endif
+                continue;
+            }
+
+            // Check if there's a collider between the points at the highest height (from end to start)
+            if (Physics.SphereCast(endPosWithOffset, sphereCastRadiusHeight, -startToEndHorizontalDir, out _, distanceStartToEnd, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+                #if DEBUG
+                linkVisualizers.Add(new LinkVisualizer(Color.blue, false, endPosWithOffset, startPosWithOffset, 0.02f));
+                ignoredHadColliderBetween++;
+                #endif
+                continue;
+            }
+
+            #if DEBUG
+            linkVisualizers.Add(new LinkVisualizer(Color.yellow, true, startPosWithOffset, endPosWithOffset, 0.01f));
+            linkVisualizers.Add(new LinkVisualizer(Color.green, false, startPos, navMeshHit.position, 0.01f));
+            #endif
+
+            // Send the nav mesh link to the bake
+            results.Add(new NavMeshLinkData() {
+                startPosition = pos,
+                endPosition = navMeshHit.position,
+                width = agent.Settings.agentRadius,
+                costModifier = 10f,
+                bidirectional = true,
+                area = 2,
+                agentTypeID = agent.AgentTypeID,
+            });
+        }
+
+        return;
+
+        // // Cheat forward a little bit so the sphereCast doesn't touch this ledge.
+        // // var cheatStartPos = LerpByDistance(startPos, endPos, cheatOffset);
+        // //Debug.DrawRay(endPos, Vector3.up, Color.blue, 2);
+        // //Debug.DrawLine ( cheatStartPos , endPos, Color.white, 2 );
+        // //Debug.DrawLine(startPos, endPos, Color.white, 2);
+        //
+        // // Get the highest Y and add our agent's height to it, so see if it would be able to jump it
+        // var highestY = (startPos.y > endPos.y ? startPos : endPos).y + agent.Settings.agentHeight;
+        // var startToEndHorizontalDir = startPos with { y = highestY } - endPos with { y = highestY };
+        //
+        // // // Raise up pos Y value slightly up to check for wall/obstacle
+        // // var offSetPosY = pos with { y = pos.y + wallCheckYOffset };
+        // //
+        // // // Ray cast to check for walls
+        // // // if (Physics.Raycast(offSetPosY, sphereCastDirection, (maxJumpDist / 2), raycastLayerMask.value)) return;
+        // // if (Physics.Raycast(offSetPosY, castDirection, (maxJumpDist / 2), raycastLayerMask.value)) return;
+        // //
+        // // var reverseRayCastSpot = offSetPosY + castDirection;
+        // //
+        // // //now raycast back the other way to make sure we're not raycasting through the inside of a mesh the first time.
+        // // if (Physics.Raycast(reverseRayCastSpot, -castDirection, (maxJumpDist + 1), raycastLayerMask.value)) return;
+        // // //Debug.DrawRay(ReverseRayCastSpot, -ReUsableV3, Color.red, 15);
+        // // //Debug.DrawRay(ReverseRayCastSpot, -ReUsableV3, Color.red, 15);
+        //
+        //
+        // // Calculate direction for Physics cast
+        // // var castDirection = endPos - startPos;
+        // // var capsuleRadius = agent.Settings.agentRadius * 2 - 0.01f;
+        //
+        // // // Look for a collider to jump to
+        // // if (!Physics.CapsuleCast(startPos, endPos, capsuleRadius, castDirection, out var raycastHit, castDirection.magnitude, _raycastLayerMask, QueryTriggerInteraction.Ignore)) {
+        // //     #if DEBUG
+        // //     linkVisualizers.Add(new LinkVisualizer(Color.magenta, true, startPos, endPos with { y = highestY }, 0.02f));
+        // //     #endif
+        // //     // Todo: If this fails try a sphere cast?
+        // //     return;
+        // // }
+        //
+        // // if no walls 1 unit out then check for other colliders using the Cheat offset so as to not detect the edge we are spherecasting from.
+        // var cheatStartPos = LerpByDistance(startPos, endPos, CheatOffset);
+        // if (!Physics.SphereCast(cheatStartPos, sphereCastRadius, castDirection, out var raycastHit, maxJumpDist, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
         //     #if DEBUG
-        //     linkVisualizers.Add(new LinkVisualizer(Color.magenta, true, startPos, endPos with { y = highestY }, 0.02f));
+        //     linkVisualizers.Add(new LinkVisualizer(Color.magenta, true, startPos, endPos, 0.02f));
         //     #endif
-        //     // Todo: If this fails try a sphere cast?
         //     return;
         // }
-
-        // if no walls 1 unit out then check for other colliders using the Cheat offset so as to not detect the edge we are spherecasting from.
-        var cheatStartPos = LerpByDistance(startPos, endPos, CheatOffset);
-        if (!Physics.SphereCast(cheatStartPos, sphereCastRadius, castDirection, out var raycastHit, maxJumpDist, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
-            #if DEBUG
-            linkVisualizers.Add(new LinkVisualizer(Color.magenta, true, startPos, endPos, 0.02f));
-            #endif
-            return;
-        }
-        // if (Physics.Linecast(startPos, endPos, out raycastHit, raycastLayerMask.value, QueryTriggerInteraction.Ignore))
-
-
-
-        // Check if there's a collider between the points at the highest height (from start to end)
-        if (Physics.Raycast(startPos with { y = highestY }, startToEndHorizontalDir.normalized, startToEndHorizontalDir.magnitude, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
-            #if DEBUG
-            linkVisualizers.Add(new LinkVisualizer(Color.red, false, startPos with { y = highestY }, endPos with { y = highestY }, 0.025f));
-            ignoredHadColliderBetween++;
-            #endif
-            return;
-        }
-        // Check if there's a collider between the points at the highest height (from end to start)
-        if (Physics.Raycast(endPos with { y = highestY }, -startToEndHorizontalDir.normalized, startToEndHorizontalDir.magnitude, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
-            #if DEBUG
-            linkVisualizers.Add(new LinkVisualizer(Color.red, false, endPos with { y = highestY }, startPos with { y = highestY }, 0.025f));
-            ignoredHadColliderBetween++;
-            #endif
-            return;
-        }
-
-        // // if no walls 1 unit out then check for other colliders using the Cheat offset so as to not detect the edge we are spherecasting from.
-        // var cheatStartPos = LerpByDistance(startPos, endPos, cheatOffset);
-        // if (!Physics.SphereCast(cheatStartPos, sphereCastRadius, castDirection, out var raycastHit, maxJumpDist, raycastLayerMask.value, QueryTriggerInteraction.Ignore)) return;
         // // if (Physics.Linecast(startPos, endPos, out raycastHit, raycastLayerMask.value, QueryTriggerInteraction.Ignore))
         //
-        // var cheatRaycastHit = LerpByDistance(raycastHit.point, endPos, .2f);
         //
-        // if (!NavMesh.SamplePosition(cheatRaycastHit, out var navMeshHit, 1f,
-        //         new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) return;
-        // // Debug.DrawLine( pos, navMeshHit.position, Color.black, 15 );
-
-        // Look for a navmesh
-        if (!NavMesh.SamplePosition(raycastHit.point, out var navMeshHit, 1f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) return;
-
-        // Todo: Figure out what this is
-        // if ((Vector3.Distance(pos, navMeshHit.position) < 1.1f)) return;
-        // if (Mathf.Abs(Vector3.Distance(pos, navMeshHit.position)) <= agent.Settings.agentClimb) return;
-
-        // var startingPos = pos - normal * Vector3.forward * 0.02f;
-
-        // Send the nav mesh link to the bake
-        results.Add(new NavMeshLinkData() {
-            startPosition = pos,
-            endPosition = navMeshHit.position,
-            width = agent.Settings.agentRadius,
-            costModifier = 10f,
-            bidirectional = true,
-            area = 2,
-            agentTypeID = agent.AgentTypeID,
-        });
-
-
-        #if DEBUG
-        linkVisualizers.Add(new LinkVisualizer(Color.cyan, true, pos, navMeshHit.position));
-        #endif
+        // // Check if there's a collider between the points at the highest height (from start to end)
+        // if (!Physics.Raycast(startPos with { y = highestY }, startToEndHorizontalDir.normalized, startToEndHorizontalDir.magnitude, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+        //     #if DEBUG
+        //     linkVisualizers.Add(new LinkVisualizer(Color.red, false, startPos with { y = highestY }, endPos with { y = highestY }, 0.025f));
+        //     ignoredHadColliderBetween++;
+        //     #endif
+        //     return;
+        // }
+        // // Check if there's a collider between the points at the highest height (from end to start)
+        // if (!Physics.Raycast(endPos with { y = highestY }, -startToEndHorizontalDir.normalized, startToEndHorizontalDir.magnitude, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+        //     #if DEBUG
+        //     linkVisualizers.Add(new LinkVisualizer(Color.red, false, endPos with { y = highestY }, startPos with { y = highestY }, 0.025f));
+        //     ignoredHadColliderBetween++;
+        //     #endif
+        //     return;
+        // }
+        //
+        // // // if no walls 1 unit out then check for other colliders using the Cheat offset so as to not detect the edge we are spherecasting from.
+        // // var cheatStartPos = LerpByDistance(startPos, endPos, cheatOffset);
+        // // if (!Physics.SphereCast(cheatStartPos, sphereCastRadius, castDirection, out var raycastHit, maxJumpDist, raycastLayerMask.value, QueryTriggerInteraction.Ignore)) return;
+        // // // if (Physics.Linecast(startPos, endPos, out raycastHit, raycastLayerMask.value, QueryTriggerInteraction.Ignore))
+        // //
+        // // var cheatRaycastHit = LerpByDistance(raycastHit.point, endPos, .2f);
+        // //
+        // // if (!NavMesh.SamplePosition(cheatRaycastHit, out var navMeshHit, 1f,
+        // //         new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) return;
+        // // // Debug.DrawLine( pos, navMeshHit.position, Color.black, 15 );
+        //
+        // // Look for a navmesh
+        // if (!NavMesh.SamplePosition(raycastHit.point, out var navMeshHit, 1f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) return;
+        //
+        // // Todo: Figure out what this is
+        // // if ((Vector3.Distance(pos, navMeshHit.position) < 1.1f)) return;
+        // // if (Mathf.Abs(Vector3.Distance(pos, navMeshHit.position)) <= agent.Settings.agentClimb) return;
+        //
+        // // var startingPos = pos - normal * Vector3.forward * 0.02f;
+        //
+        // // Send the nav mesh link to the bake
+        // results.Add(new NavMeshLinkData() {
+        //     startPosition = pos,
+        //     endPosition = navMeshHit.position,
+        //     width = agent.Settings.agentRadius,
+        //     costModifier = 10f,
+        //     bidirectional = true,
+        //     area = 2,
+        //     agentTypeID = agent.AgentTypeID,
+        // });
+        //
+        //
+        // #if DEBUG
+        // linkVisualizers.Add(new LinkVisualizer(Color.cyan, true, pos, navMeshHit.position, 0.025f));
+        // #endif
     }
+}
 
-    #endregion
+public static class MeshBoundaryFinder {
 
-    //Just a helper function I added to calculate a point between normalized distance of two V3s
-    private static Vector3 LerpByDistance(Vector3 a, Vector3 b, float x) {
-        return x * Vector3.Normalize(b - a) + a;
-    }
+    public readonly struct Edge {
 
+        private readonly int _v1;
+        private readonly int _v2;
+        public readonly float Length;
+        public readonly Vector3 Normal;
+        public readonly Vector3 StartPos;
+        public readonly Vector3 EndPos;
 
-    #region EdgeGen
-
-    private const float TriggerAngle = 0.999f;
-
-    private List<Edge> CalcEdges(Mesh currentMesh) {
-        var edges = new List<Edge>();
-
-        for (var i = 0; i < currentMesh.triangles.Length - 1; i += 3) {
-            //CALC FROM MESH OPEN EDGES vertices
-
-            TrisToEdge(edges, currentMesh, i, i + 1);
-            TrisToEdge(edges, currentMesh, i + 1, i + 2);
-            TrisToEdge(edges, currentMesh, i + 2, i);
+        public Edge(int a, int b, float length, Vector3 normal, Vector3 startPos, Vector3 endPos) {
+            _v1 = Mathf.Min(a, b);
+            _v2 = Mathf.Max(a, b);
+            Length = length;
+            Normal = normal;
+            StartPos = startPos;
+            EndPos = endPos;
         }
 
-        foreach (var edge in edges) {
-            //EDGE LENGTH
-            edge.Length = Vector3.Distance(
-                edge.Start,
-                edge.End
+        public override bool Equals(object obj) {
+            if (obj == null) return false;
+            var other = (Edge) obj;
+            return _v1 == other._v1 && _v2 == other._v2;
+        }
+
+        public override int GetHashCode() => _v1.GetHashCode() ^ _v2.GetHashCode();
+    }
+
+    public static List<Edge> FindBoundaryEdges((Vector3[] vertices, int[] triangles) weldedNavMesh) {
+
+        var triangles = weldedNavMesh.triangles;
+        var vertices = weldedNavMesh.vertices;
+
+        var edges = new Dictionary<Edge, int>();
+
+        for (var i = 0; i < triangles.Length; i += 3) {
+            var p0 = vertices[triangles[i]];
+            var p1 = vertices[triangles[i + 1]];
+            var p2 = vertices[triangles[i + 2]];
+
+            // Calculate the face normal
+            var faceNormal = Vector3.Cross(p1 - p0, p2 - p0).normalized;
+
+            for (var j = 0; j < 3; j++) {
+                var vertexIndex1 = triangles[i + j];
+                var vertexIndex2 = triangles[i + (j + 1) % 3];
+                var edgeStartPos = vertices[vertexIndex1];
+                var edgeEndPos = vertices[vertexIndex2];
+                var length = Vector3.Distance(edgeStartPos, edgeEndPos);
+
+                // Calculate the normal of the edge from it's midpoint
+                var midpoint = (edgeStartPos + edgeEndPos) * 0.5f;
+                var outwardDirection = (midpoint - edgeStartPos).normalized;
+                var edgeNormal = Vector3.Cross(outwardDirection, faceNormal).normalized;
+
+                var edge = new Edge(vertexIndex1, vertexIndex2, length, edgeNormal, edgeStartPos, edgeEndPos);
+
+                if (edges.ContainsKey(edge)) {
+                    edges[edge]++;
+                }
+                else {
+                    edges[edge] = 1;
+                }
+            }
+        }
+
+        // Get all edges that are shared by only one triangle (Means it's a boundary edge)
+        return (from kvp in edges where kvp.Value == 1 select kvp.Key).ToList();
+    }
+
+    public static (Vector3[] vertices, int[] triangles) WeldVertices(Vector3[] originalVerts, int[] originalTriangles) {
+
+        var vertexMap = new Dictionary<Vector3, int>();
+        const int precisionDecimals = 3;
+
+        var uniqueVertices = new List<Vector3>();
+        // Create a dictionary of unique vertices
+        for (var i = 0; i < originalVerts.Length; i++) {
+            var vertex = originalVerts[i];
+            var roundedVertex = new Vector3(
+                Mathf.Round(vertex.x * precisionDecimals) / precisionDecimals,
+                Mathf.Round(vertex.y * precisionDecimals) / precisionDecimals,
+                Mathf.Round(vertex.z * precisionDecimals) / precisionDecimals
             );
 
-            //FACING NORMAL
-            if (!edge.FacingNormalCalculated) {
-                edge.FacingNormal = Quaternion.LookRotation(Vector3.Cross(edge.End - edge.Start, Vector3.up));
-
-                if (edge.StartUp.sqrMagnitude > 0) {
-                    var vect = Vector3.Lerp(edge.EndUp, edge.StartUp, 0.5f) - Vector3.Lerp(edge.End, edge.Start, 0.5f);
-                    edge.FacingNormal = Quaternion.LookRotation(Vector3.Cross(edge.End - edge.Start, vect));
-
-                    //FIX FOR NORMALs POINTING DIRECT TO UP/DOWN
-                    if (Mathf.Abs(Vector3.Dot(Vector3.up, (edge.FacingNormal * Vector3.forward).normalized)) > TriggerAngle) {
-                        edge.StartUp += new Vector3(0, 0.1f, 0);
-                        vect = Vector3.Lerp(edge.EndUp, edge.StartUp, 0.5f) - Vector3.Lerp(edge.End, edge.Start, 0.5f);
-                        edge.FacingNormal = Quaternion.LookRotation(Vector3.Cross(edge.End - edge.Start, vect));
-                    }
-                }
-
-                if (dontAlignYAxis) {
-                    edge.FacingNormal = Quaternion.LookRotation(
-                        edge.FacingNormal * Vector3.forward,
-                        Quaternion.LookRotation(edge.End - edge.Start) * Vector3.up
-                    );
-                }
-
-                edge.FacingNormalCalculated = true;
-            }
-
-            if (invertFacingNormal) edge.FacingNormal = Quaternion.Euler(Vector3.up * 180) * edge.FacingNormal;
-        }
-
-        return edges;
-    }
-
-    private static void TrisToEdge(List<Edge> edges, Mesh currMesh, int n1, int n2) {
-        var val1 = currMesh.vertices[currMesh.triangles[n1]];
-        var val2 = currMesh.vertices[currMesh.triangles[n2]];
-
-        var newEdge = new Edge(val1, val2);
-
-        //remove duplicate edges
-        foreach (var edge in edges) {
-            if ((edge.Start == val1 & edge.End == val2) || (edge.Start == val2 & edge.End == val1)) {
-                //print("Edges duplicate " + newEdge.start + " " + newEdge.end);
-                edges.Remove(edge);
-                return;
+            if (!vertexMap.ContainsKey(roundedVertex)) {
+                vertexMap[roundedVertex] = uniqueVertices.Count;
+                uniqueVertices.Add(vertex);
             }
         }
 
-        edges.Add(newEdge);
-    }
+        // Replace the indices in the triangles list
+        var triangles = new int[originalTriangles.Length];
+        for (var i = 0; i < originalTriangles.Length; i++) {
+            var vertex = originalVerts[originalTriangles[i]];
+            var roundedVertex = new Vector3(
+                Mathf.Round(vertex.x * precisionDecimals) / precisionDecimals,
+                Mathf.Round(vertex.y * precisionDecimals) / precisionDecimals,
+                Mathf.Round(vertex.z * precisionDecimals) / precisionDecimals
+            );
 
-    #endregion
-}
+            triangles[i] = vertexMap[roundedVertex];
+        }
+        #if DEBUG
+        MelonLogger.Msg($"Finished mesh welding process with {precisionDecimals} decimals precision. Vertex Count: {originalVerts.Length} -> {uniqueVertices.Count}");
+        #endif
 
-public class Edge {
-    public Vector3 Start;
-    public Vector3 End;
-
-    public Vector3 StartUp;
-    public Vector3 EndUp;
-
-    public float Length;
-    public Quaternion FacingNormal;
-    public bool FacingNormalCalculated = false;
-
-
-    public Edge(Vector3 startPoint, Vector3 endPoint) {
-        Start = startPoint;
-        End = endPoint;
+        // Return the welded vertices and triangles
+        return (uniqueVertices.ToArray(), triangles);
     }
 }
+
+
+
+
 
 public class LinkVisualizer {
 

@@ -95,6 +95,37 @@ internal class NavMeshTools : MelonMod {
         Instance = this;
     }
 
+    private const float MaxBoundsSize = 1000f;
+
+    private static bool ClampBounds(ref Bounds bounds) {
+
+        var adjusted = false;
+        var center = bounds.center;
+        var adjustedSize = bounds.size;
+
+        if (bounds.size.x > MaxBoundsSize) {
+            adjustedSize.x = MaxBoundsSize;
+            adjusted = true;
+        }
+        if (bounds.size.y > MaxBoundsSize) {
+            adjustedSize.y = MaxBoundsSize;
+            adjusted = true;
+        }
+        if (bounds.size.z > MaxBoundsSize) {
+            adjustedSize.z = MaxBoundsSize;
+            adjusted = true;
+        }
+
+        if (adjusted) {
+            // Update the bounds with the new size and move the center to the player.
+            bounds.size = adjustedSize;
+            var playerCameraTransform = PlayerSetup.Instance.GetActiveCamera().transform;
+            bounds.center = playerCameraTransform.position;
+        }
+
+        return adjusted;
+    }
+
     internal void RequestWorldBake(API.Agent agent, Action<int, bool> onBakeFinish, bool force) {
 
         // If this world was already baked and we're not forcing, tell the bake is done
@@ -130,6 +161,13 @@ internal class NavMeshTools : MelonMod {
         // Filter sources based on specific game objects or conditions.
         var filteredSources = allSources.Where(source => allowedColliders.gameObjectsToUse.Contains(source.component.gameObject)).ToList();
 
+        var previousBoundsSize = allowedColliders.bounds.size;
+        if (ClampBounds(ref allowedColliders.bounds)) {
+            MelonLogger.Warning($"The bounds for this world are too big clamping the nav mesh size... " +
+                                $"Size: {previousBoundsSize.ToString("F2")} -> {allowedColliders.bounds.size.ToString("F2")}");
+        }
+
+        MelonLogger.Msg($"Queuing Nav Mesh Bake for Agent id {agent.AgentTypeID}...");
         _navMeshBuilderQueue.EnqueueNavMeshTask(MetaPort.Instance.CurrentWorldId, agent, filteredSources, allowedColliders.bounds, onBakeFinish);
     }
 
@@ -158,7 +196,7 @@ internal class NavMeshTools : MelonMod {
             return;
         }
 
-        MelonLogger.Msg("Task done! Applying Nav Mesh data...");
+        MelonLogger.Msg($"Finished Nav Mesh Bake for Agent id {results.Item2.AgentTypeID}.");
 
         // Apply the bake results
         var navMeshDataInstance = NavMesh.AddNavMeshData(results.Item3);
@@ -171,46 +209,42 @@ internal class NavMeshTools : MelonMod {
         // Clear the currently baking flag
         _currentWorldNavMeshAgentsBaking.Remove(results.Item2);
 
-        // Call other pending bakes for the current world and agent
+        // Call other pending bakes for the current world and agent and remove them from the queue
         foreach (var queuedBake in _queuedBakesForCurrentWorld) {
             if (queuedBake.Item1 != results.Item2) continue;
             CallResultsAction(queuedBake.Item2, queuedBake.Item1.AgentTypeID, true);
         }
+        _queuedBakesForCurrentWorld.RemoveAll(qb => qb.Item1 == results.Item2);
 
-        // Clear queue from those pending
-        _queuedBakesForCurrentWorld.RemoveAll(qb => qb.Item1 != results.Item2);
-
-        // Queue Nav Mesh Link Generation
-        MelonLogger.Msg("Queuing NavMeshLinks Generation...");
-
+        // Create a mesh of the current nav mesh (either for debugging or meshlink generation
         var triangulatedNavMesh = NavMesh.CalculateTriangulation();
-
-        var currentNavMesh = new Mesh() {
-            vertices = triangulatedNavMesh.vertices,
-            triangles = triangulatedNavMesh.indices
-        };
+        var (vertices ,triangles) = MeshBoundaryFinder.WeldVertices(triangulatedNavMesh.vertices, triangulatedNavMesh.indices);
+        // var weldedNavMesh = new Mesh() {
+        //     vertices = vertices,
+        //     triangles = triangles,
+        // };
 
         // Create the nav mesh visualizer if in DEBUG mode
         #if DEBUG
-        ShowNavMeshVisualizer(currentNavMesh);
+        ShowNavMeshVisualizer(triangulatedNavMesh);
         #endif
 
         // Queue the task to generate the nav mesh links (if requested to do so)
         if (results.Item2.GenerateNavMeshLinks) {
-            _navMeshBuilderQueue.EnqueueNavMeshLinkTask(MetaPort.Instance.CurrentWorldId, results.Item2, currentNavMesh);
+            MelonLogger.Msg($"Queuing NavMeshLinks Generation Agent id {results.Item2.AgentTypeID}...");
+            _navMeshBuilderQueue.EnqueueNavMeshLinkTask(MetaPort.Instance.CurrentWorldId, results.Item2, (vertices ,triangles));
         }
     }
 
-    public static void ShowNavMeshVisualizer(Mesh meshToVisualize = null) {
+    private static void ShowNavMeshVisualizer(NavMeshTriangulation? navMeshTriangulation = null) {
 
         // Get the current mesh if not provided
-        if (meshToVisualize == null) {
-            var triangulatedNavMesh = NavMesh.CalculateTriangulation();
-            meshToVisualize = new Mesh() {
-                vertices = triangulatedNavMesh.vertices,
-                triangles = triangulatedNavMesh.indices
-            };
-        }
+        navMeshTriangulation ??= NavMesh.CalculateTriangulation();
+
+        var meshToVisualize = new Mesh() {
+            vertices = navMeshTriangulation.Value.vertices,
+            triangles = navMeshTriangulation.Value.indices,
+        };
 
         // Create navmesh visualization
         if (!NavMeshToolsGo.TryGetComponent<MeshFilter>(out var meshFilter)) {
@@ -223,33 +257,7 @@ internal class NavMeshTools : MelonMod {
 
         meshFilter.mesh = meshToVisualize;
 
-        // var unlitShader = Shader.Find("Unlit/Color");
-        // var unlitMat = new Material(unlitShader) {
-        //     color = new Color(0.2f, 0.5f, 1f)
-        // };
-        //
-        // var neitriMat = new Material(ModConfig.NeitriDistanceFadeOutlineShader);
-        // neitriMat.SetFloat(ModConfig.MatOutlineWidth, 0.8f);
-        // neitriMat.SetFloat(ModConfig.MatOutlineSmoothness, 0.1f);
-        // neitriMat.SetFloat(ModConfig.MatFadeInBehindObjectsDistance, 2f);
-        // neitriMat.SetFloat(ModConfig.MatFadeOutBehindObjectsDistance, 10f);
-        // neitriMat.SetFloat(ModConfig.MatFadeInCameraDistance, 10f);
-        // neitriMat.SetFloat(ModConfig.MatFadeOutCameraDistance, 15f);
-        // neitriMat.SetFloat(ModConfig.MatShowOutlineInFrontOfObjects, 0f);
-        // neitriMat.SetColor(ModConfig.MatOutlineColor, ModConfig.ColorBlue);
-
-        // var transparentMat = new Material(Shader.Find("Standard"));
-        // transparentMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        // transparentMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        // transparentMat.SetInt("_ZWrite", 0);
-        // transparentMat.DisableKeyword("_ALPHATEST_ON");
-        // transparentMat.DisableKeyword("_ALPHABLEND_ON");
-        // transparentMat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-        // transparentMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-        // transparentMat.color = new Color(0.2f, 0.5f, 1f, 0.5f);
-        // meshRenderer.materials = new []{ unlitMat, neitriMat };
-
-
+        // Setup the material
         var noachiWireFrameMat = new Material(ModConfig.NoachiWireframeShader);
         noachiWireFrameMat.SetColor(ModConfig.MatWireColor, ModConfig.ColorBlue);
         noachiWireFrameMat.SetColor(ModConfig.MatFaceColor, ModConfig.ColorPinkTransparent);
@@ -269,7 +277,7 @@ internal class NavMeshTools : MelonMod {
         }
 
         // Auto-Generate NavMeshLinks
-        MelonLogger.Msg("Clearing previous NavMeshLinks...");
+        MelonLogger.Msg($"Finished generating NavMeshLinks Generation Agent id {results.Item2.AgentTypeID}!");
         // Clear all previous instances of nav mesh links if existent otherwise initialize the list
         if (_currentWorldNavMeshLinkInstances.TryGetValue(agent, out var instances)) {
             foreach (var instance in instances) {
@@ -355,7 +363,6 @@ internal class NavMeshTools : MelonMod {
             }
         }
 
-        MelonLogger.Msg($"Found {colliders.Count} good colliders to bake!");
         if (replacedColliderMeshes.Count > 0) {
             MelonLogger.Warning($"Replaced {replacedColliderMeshes.Count} mesh collider shared meshes that had their read/write disabled. " +
                                 $"This might result in weird collision in certain worlds. " +

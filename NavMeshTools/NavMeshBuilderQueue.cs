@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using MelonLoader;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -12,7 +13,7 @@ internal class NavMeshBuilderQueue {
 
     private readonly Thread _navMeshLinksWorkerThread;
     internal volatile API.Agent CurrentNavMeshGeneratingAgent;
-    private readonly BlockingCollection<Tuple<string, API.Agent, Mesh>> _queueToGenerateLinks = new();
+    private readonly BlockingCollection<Tuple<string, API.Agent, (Vector3[] vertices, int[] triangles)>> _queueToGenerateLinks = new();
     internal readonly ConcurrentQueue<Tuple<string, API.Agent, HashSet<NavMeshLinkData>, HashSet<LinkVisualizer>>> GeneratedLinksResults = new();
 
     internal NavMeshBuilderQueue() {
@@ -29,21 +30,33 @@ internal class NavMeshBuilderQueue {
 
     private void NavMeshBuilderWork() {
         foreach (var toBake in _queueToBake.GetConsumingEnumerable()) {
-            var bakeResults = toBake.Item3.Invoke();
-            BakeResults.Enqueue(new(toBake.Item1, toBake.Item2, bakeResults, toBake.Item4));
+            try {
+                var bakeResults = toBake.Item3.Invoke();
+                BakeResults.Enqueue(new(toBake.Item1, toBake.Item2, bakeResults, toBake.Item4));
+            }
+            catch (Exception e) {
+                MelonLogger.Error("[NavMeshBuilderWork] Error on the thread :c");
+                MelonLogger.Error(e);
+            }
         }
     }
 
-    public void EnqueueNavMeshLinkTask(string worldGuid, API.Agent agent, Mesh triangulatedNavMesh) {
-        _queueToGenerateLinks.Add(new(worldGuid, agent, triangulatedNavMesh));
+    public void EnqueueNavMeshLinkTask(string worldGuid, API.Agent agent, (Vector3[] vertices, int[] triangles) weldedNavMesh) {
+        _queueToGenerateLinks.Add(new(worldGuid, agent, weldedNavMesh));
     }
 
     private void NavMeshLinkBuilderWork() {
-        foreach (var (worldGuid, agent, mesh) in _queueToGenerateLinks.GetConsumingEnumerable()) {
-            CurrentNavMeshGeneratingAgent = agent;
-            var (linkResults, linkVisualizers) = NavMeshTools.NavMeshLinkGenerator.Generate(agent, mesh);
-            GeneratedLinksResults.Enqueue(new(worldGuid, agent, linkResults, linkVisualizers));
-            CurrentNavMeshGeneratingAgent = null;
+        foreach (var (worldGuid, agent, weldedNavMesh) in _queueToGenerateLinks.GetConsumingEnumerable()) {
+            try {
+                CurrentNavMeshGeneratingAgent = agent;
+                var (linkResults, linkVisualizers) = NavMeshTools.NavMeshLinkGenerator.Generate(agent, weldedNavMesh);
+                GeneratedLinksResults.Enqueue(new(worldGuid, agent, linkResults, linkVisualizers));
+                CurrentNavMeshGeneratingAgent = null;
+            }
+            catch (Exception e) {
+                MelonLogger.Error("[NavMeshLinkBuilderWork] Error on the thread :c");
+                MelonLogger.Error(e);
+            }
         }
     }
 
