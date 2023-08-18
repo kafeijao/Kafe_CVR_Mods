@@ -1,7 +1,7 @@
 {
   "_id": 168,
   "name": "ChatBox",
-  "modversion": "1.0.11",
+  "modversion": "1.0.12",
   "gameversion": "2023r171p2",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
-  "changelog": "- Added SteamVR binding to open ChatBox keyboard.\n- Added a rate limiter to prevent malicious users from crashing you.",
+  "changelog": "- Added SteamVR binding to open ChatBox keyboard.\n- Added a rate limiter to prevent malicious users from crashing you.\n- Made the limits per message type.",
   "embedcolor": "16C60C"
 }
