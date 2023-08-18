@@ -6,9 +6,15 @@
         <DocumentationMarkdown>$(MSBuildProjectDirectory)\API.md</DocumentationMarkdown>
         <VsxmdAutoDeleteXml>True</VsxmdAutoDeleteXml>
     </PropertyGroup>
-
+    
+    <!-- Hack! Vsxmd has some tempo files not flushed, and results in failing to build. So let's clean the temp folder first -->
+    <!-- Check https://github.com/lijunle/Vsxmd/issues/74 for updates -->
+    <Target Name="DeleteVsxmdTempFolderIfExists" BeforeTargets="BeforeBuild">
+        <Exec Command="if exist &quot;%temp%\.net\Vsxmd&quot; rd /S /Q &quot;%temp%\.net\Vsxmd&quot;" />
+    </Target>
+    
     <ItemGroup>
-        <PackageReference Include="Vsxmd" Version="1.4.4">
+        <PackageReference Include="Vsxmd" Version="1.4.5">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

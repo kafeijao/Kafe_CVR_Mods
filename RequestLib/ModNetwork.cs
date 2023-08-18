@@ -17,6 +17,7 @@ namespace Kafe.RequestLib;
 internal static class ModNetwork {
 
     private const uint Version = 1;
+    private static readonly HashSet<string> PlayerOldVersionWarned = new();
 
     private enum Tag : ushort {
         Subscribe = 13997,
@@ -306,18 +307,17 @@ internal static class ModNetwork {
         // Ignore messages from non-friends
         if (ModConfig.MeOnlyReceiveFromFriends.Value && !Friends.FriendsWith(senderGuid)) return;
 
-        // Process the rate limiter
-        if (RateLimiter.IsRateLimited(senderGuid)) return;
-
         try {
 
             // Read the version of the message
             var msgVersion = reader.ReadUInt32();
             if (msgVersion != Version) {
+                if (PlayerOldVersionWarned.Contains(senderGuid)) return;
                 var isNewer = msgVersion > Version;
                 var playerName = CVRPlayerManager.Instance.TryGetPlayerName(senderGuid);
                 MelonLogger.Warning($"Received a msg from {playerName} with a {(isNewer ? "newer" : "older")} version of the {nameof(RequestLib)} mod." +
                                     $"Please {(isNewer ? "update your mod" : "ask them to update their mod")} if you want to see their requests.");
+                PlayerOldVersionWarned.Add(senderGuid);
                 return;
             }
 
@@ -326,7 +326,12 @@ internal static class ModNetwork {
             // Ignore wrong msg types
             if (!Enum.IsDefined(typeof(MessageType), msgTypeRaw)) return;
 
-            switch ((MessageType) msgTypeRaw) {
+            var msgType = (MessageType) msgTypeRaw;
+
+            // Process the rate limiter
+            if (RateLimiter.IsRateLimited(msgType, senderGuid)) return;
+
+            switch (msgType) {
 
                 case MessageType.SyncRequest:
                     SendSyncUpdate(senderGuid);
@@ -439,7 +444,7 @@ internal static class ModNetwork {
             }
         }
         catch (Exception e) {
-            MelonLogger.Error($"Error during HandleTimeouts()");
+            MelonLogger.Error("Error during HandleTimeouts()");
             MelonLogger.Error(e);
         }
     }
@@ -481,23 +486,41 @@ internal static class ModNetwork {
     }
 
     private class RateLimiter {
-        private const int MaxMessages = 3;
-        private const int TimeWindowSeconds = 10;
-        public static readonly Dictionary<string, RateLimiter> UserRateLimits = new();
+
+        private const int MaxMessagesFallback = 5;
+        private const int TimeWindowSecondsFallback = 10;
+        private const bool WarnUserFallback = true;
+
+        public static readonly Dictionary<(MessageType, string), RateLimiter> UserRateLimits = new();
+        private static readonly Dictionary<MessageType, (int maxMessages, int timeWindowSeconds, bool warnUser)> UserRateMessageLimits = new();
+
+        static RateLimiter() {
+            SetupMessageType(MessageType.Request, 3, 10, true);
+        }
+
         private DateTime LastMessageTime { get; set; } = DateTime.UtcNow;
         private int MessageCount { get; set; } = 1;
         private bool Notified { get; set; }
 
-        public static bool IsRateLimited(string senderGuid) {
-            if (UserRateLimits.TryGetValue(senderGuid, out var userState)) {
-                if ((DateTime.UtcNow - userState.LastMessageTime).TotalSeconds <= TimeWindowSeconds) {
+        private static void SetupMessageType(MessageType msgType, int maxMessages, int timeWindowSeconds, bool warnUser) {
+            UserRateMessageLimits.Add(msgType, (maxMessages, timeWindowSeconds, warnUser));
+        }
+
+        public static bool IsRateLimited(MessageType msgType, string senderGuid) {
+            if (!UserRateMessageLimits.TryGetValue(msgType, out var msgInfo)) {
+                msgInfo.maxMessages = MaxMessagesFallback;
+                msgInfo.timeWindowSeconds = TimeWindowSecondsFallback;
+                msgInfo.warnUser = WarnUserFallback;
+            }
+            if (UserRateLimits.TryGetValue((msgType, senderGuid), out var userState)) {
+                if ((DateTime.UtcNow - userState.LastMessageTime).TotalSeconds <= msgInfo.timeWindowSeconds) {
                     // The user is above the rate limit
-                    if (userState.MessageCount >= MaxMessages) {
-                        if (userState.Notified) return true;
+                    if (userState.MessageCount >= msgInfo.maxMessages) {
+                        if (!msgInfo.warnUser || userState.Notified) return true;
                         userState.Notified = true;
                         MelonLogger.Warning($"The player {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)} " +
-                                            $"send over {MaxMessages} messages within {TimeWindowSeconds} seconds. To " +
-                                            $"prevent crashing/lag it's going to be rate limited.");
+                                            $"send over {msgInfo.maxMessages} messages within {msgInfo.timeWindowSeconds} " +
+                                            $"seconds. To prevent crashing/lag it's going to be rate limited.");
                         return true;
                     }
                     userState.MessageCount++;
@@ -511,7 +534,7 @@ internal static class ModNetwork {
             }
             else {
                 // If the sender is not in the dictionary, add them.
-                UserRateLimits[senderGuid] = new RateLimiter();
+                UserRateLimits[(msgType, senderGuid)] = new RateLimiter();
             }
             return false;
         }
