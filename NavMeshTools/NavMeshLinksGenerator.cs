@@ -12,8 +12,8 @@ public class NavMeshLinksGenerator : MonoBehaviour {
     private int ignoredHadColliderBetween = 0;
     #endif
 
-    public float maxJumpHeight = 2f;
-    public float maxJumpDist = 2f;
+    public float maxJumpHeight = 2.1f;
+    public float maxJumpDist = 3f;
     private readonly LayerMask _raycastLayerMask = GetLayerMask();
 
     private static int GetLayerMask() {
@@ -80,13 +80,17 @@ public class NavMeshLinksGenerator : MonoBehaviour {
     private void PlaceTiles(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, API.Agent agent, float edgeDivisionWidth, List<MeshBoundaryFinder.Edge> edges) {
 
         var raycastBuffer = new RaycastHit[20];
+        var samplePoints = new List<(Vector3 placePos, Vector3 edgeNormal)>();
 
         foreach (var edge in edges) {
+
+            // Always place at least 1 point on each edge
             var tilesCountWidth = (int)Mathf.Clamp(edge.Length / edgeDivisionWidth, 1, 10000);
 
             // Iterate over the segments of the edge
             for (var columnN = 0; columnN < tilesCountWidth; columnN++) {
-                //every edge length segment
+
+                // Every edge length segment
                 var placePos = Vector3.Lerp(
                     edge.StartPos,
                     edge.EndPos,
@@ -94,29 +98,37 @@ public class NavMeshLinksGenerator : MonoBehaviour {
                     + 0.5f / tilesCountWidth
                 );
 
-                #if DEBUG
-                linkVisualizers.Add(new LinkVisualizer(Color.yellow, false, placePos, placePos + edge.Normal * 0.15f, 0.03f));
-                linkVisualizers.Add(new LinkVisualizer(Color.yellow, true, placePos, placePos + Vector3.up, 0.005f));
-                #endif
+                // Check if we're on the navmesh of our agent
+                if (!NavMesh.SamplePosition(placePos, out _, 0.1f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
+                    #if DEBUG
+                    ignoredNotAgentNavMesh++;
+                    linkVisualizers.Add(new LinkVisualizer(Color.red, true, placePos, placePos + Vector3.up * 0.5f, 0.02f));
+                    #endif
+                    continue;
+                }
 
-                // Spawn up/down links
-                CheckPlacePos(results, linkVisualizers, placePos, edge.Normal, agent);
-                // Spawn horizontal links Todo: Fix the algo
-                CheckPlacePosHorizontal(results, linkVisualizers, placePos, edge.Normal, agent, raycastBuffer);
+                samplePoints.Add((placePos, edge.Normal));
             }
+        }
+
+        foreach (var samplePoint in samplePoints) {
+
+            #if DEBUG
+            linkVisualizers.Add(new LinkVisualizer(Color.yellow, false, samplePoint.placePos, samplePoint.placePos + samplePoint.edgeNormal * 0.15f, 0.03f));
+            linkVisualizers.Add(new LinkVisualizer(Color.yellow, true, samplePoint.placePos, samplePoint.placePos + Vector3.up, 0.005f));
+            #endif
+
+            // Spawn up/down links
+            CheckPlacePos(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent);
+            // // Spawn horizontal links Todo: Fix the algo
+            // CheckPlacePosHorizontal(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent, raycastBuffer);
+            // Check the sampled points against each other
+            // CheckPlaceSampledPoints(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent, raycastBuffer, samplePoints);
         }
     }
 
 
     private void CheckPlacePos(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, Vector3 pos, Vector3 normalDirection, API.Agent agent) {
-
-        // Check if we're on the navmesh of our agent
-        if (!NavMesh.SamplePosition(pos, out _, 0.0001f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
-            #if DEBUG
-            ignoredNotAgentNavMesh++;
-            #endif
-            return;
-        }
 
         var startPos = pos + normalDirection * agent.Settings.agentRadius * 2;
 
@@ -170,15 +182,6 @@ public class NavMeshLinksGenerator : MonoBehaviour {
     }
 
     private void CheckPlacePosHorizontal(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers, Vector3 pos, Vector3 normalDirection, API.Agent agent, RaycastHit[] rayBuffer) {
-
-        // Check if we're on the navmesh of our agent
-        if (!NavMesh.SamplePosition(pos, out _, 0.1f, new NavMeshQueryFilter { areaMask = NavMesh.AllAreas, agentTypeID = agent.AgentTypeID })) {
-            #if DEBUG
-            ignoredNotAgentNavMesh++;
-            linkVisualizers.Add(new LinkVisualizer(Color.red, true, pos, pos + Vector3.up * 0.5f, 0.02f));
-            #endif
-            return;
-        }
 
         // var startPos = pos + normal * Vector3.forward * agent.Settings.agentRadius * 2;
 
@@ -382,6 +385,118 @@ public class NavMeshLinksGenerator : MonoBehaviour {
         // #if DEBUG
         // linkVisualizers.Add(new LinkVisualizer(Color.cyan, true, pos, navMeshHit.position, 0.025f));
         // #endif
+    }
+
+    private void CheckPlaceSampledPoints(HashSet<NavMeshLinkData> results, HashSet<LinkVisualizer> linkVisualizers,
+        Vector3 pos, Vector3 normalDirection, API.Agent agent, RaycastHit[] rayBuffer,
+        List<(Vector3 placePos, Vector3 edgeNormal)> samplePoints) {
+
+        var sphereCastRadiusHeight = agent.Settings.agentHeight / 2f * 0.75f;
+
+        var startHeightOffset = pos + Vector3.up * agent.Settings.agentHeight / 2f;
+        var startHeightAndNormalOffset = startHeightOffset - normalDirection * agent.Settings.agentHeight / 2f;
+
+        var targets = new Dictionary<NavMeshLinkData, float>();
+
+        // Check all other points within the max distances
+        foreach (var possibleTarget in samplePoints) {
+
+            // Remove targets by distance
+            var difference = possibleTarget.placePos - pos;
+            var verticalDistance = Mathf.Abs(difference.y);
+            if (verticalDistance > maxJumpHeight) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(new Color (1, 0, 0.5f), true, pos, possibleTarget.placePos, 0.01f));
+                #endif
+                continue;
+            }
+            var horizontalDistance = Mathf.Sqrt(difference.x * difference.x + difference.z * difference.z);
+            if (horizontalDistance > maxJumpDist) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(new Color (.5f, 0, 1f), true, pos, possibleTarget.placePos, 0.01f));
+                #endif
+                continue;
+            }
+
+            // Get the direction from pos to possible target
+            var directionToTarget = difference.normalized;
+
+            // If the target is not withing 45 degrees, lets skip!
+            if (Vector3.Angle(directionToTarget, normalDirection) > 45f) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(new Color (1f, .5f, 0f), true, pos, possibleTarget.placePos, 0.01f));
+                #endif
+                continue;
+            }
+
+            var endHeightOffset = possibleTarget.placePos + Vector3.up * agent.Settings.agentHeight / 2f;
+            var endHeightAndNormalOffset = endHeightOffset - possibleTarget.edgeNormal * agent.Settings.agentHeight / 2f;
+
+            // Linecast a bit back across normals to ensure we're not in a collider (start -> end)
+            if (Physics.Linecast(startHeightAndNormalOffset, endHeightAndNormalOffset, out _, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(Color.blue, false, pos, possibleTarget.placePos, 0.02f));
+                ignoredHadColliderBetween++;
+                #endif
+                continue;
+            }
+
+            // Linecast a bit back across normals to ensure we're not in a collider (start -> end)
+            if (Physics.Linecast(endHeightAndNormalOffset, startHeightAndNormalOffset, out _, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(Color.blue, false, possibleTarget.placePos, pos, 0.02f));
+                ignoredHadColliderBetween++;
+                #endif
+                continue;
+            }
+
+            var startToEndHorizontalDir = endHeightOffset - startHeightOffset;
+            var distanceStartToEnd = Vector3.Distance(endHeightOffset, startHeightOffset);
+
+            // Sphere cast at half height of the agent with a sphere with radius half of the agent (start -> end)
+            if (Physics.SphereCast(startHeightOffset, sphereCastRadiusHeight, startToEndHorizontalDir, out _, distanceStartToEnd, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(Color.blue, false, pos, possibleTarget.placePos, 0.02f));
+                ignoredHadColliderBetween++;
+                #endif
+                continue;
+            }
+
+            // Sphere cast at half height of the agent with a sphere with radius half of the agent (end -> start)
+            if (Physics.SphereCast(endHeightOffset, sphereCastRadiusHeight, -startToEndHorizontalDir, out _, distanceStartToEnd, _raycastLayerMask.value, QueryTriggerInteraction.Ignore)) {
+                #if DEBUG
+                // linkVisualizers.Add(new LinkVisualizer(Color.blue, false, possibleTarget.placePos, pos, 0.02f));
+                ignoredHadColliderBetween++;
+                #endif
+                continue;
+            }
+
+            // #if DEBUG
+            // linkVisualizers.Add(new LinkVisualizer(Color.green, false, pos, possibleTarget.placePos, 0.01f));
+            // #endif
+
+            // Add the possible targets into a dictionary along their distances so we can use the closest ones
+            targets.Add(new NavMeshLinkData() {
+                startPosition = pos,
+                endPosition = possibleTarget.placePos,
+                width = agent.Settings.agentRadius,
+                costModifier = 10f,
+                bidirectional = true,
+                area = 2,
+                agentTypeID = agent.AgentTypeID,
+            }, verticalDistance + horizontalDistance);
+        }
+
+
+        // Pick 3 targets with the lowest distances
+        var topThree = targets.OrderBy(kv => kv.Value).Take(3).ToDictionary(kv => kv.Key, kv => kv.Value);
+        foreach (var target in topThree) {
+            #if DEBUG
+            linkVisualizers.Add(new LinkVisualizer(Color.green, false, target.Key.startPosition, target.Key.endPosition, 0.01f));
+            #endif
+            // Send the nav mesh link to the bake
+            results.Add(target.Key);
+        }
     }
 }
 

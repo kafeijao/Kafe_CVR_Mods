@@ -95,7 +95,7 @@ internal class NavMeshTools : MelonMod {
         Instance = this;
     }
 
-    private const float MaxBoundsSize = 1000f;
+    private const float MaxBoundsSize = 300f;
 
     private static bool ClampBounds(ref Bounds bounds) {
 
@@ -107,8 +107,8 @@ internal class NavMeshTools : MelonMod {
             adjustedSize.x = MaxBoundsSize;
             adjusted = true;
         }
-        if (bounds.size.y > MaxBoundsSize) {
-            adjustedSize.y = MaxBoundsSize;
+        if (bounds.size.y > MaxBoundsSize / 5f) {
+            adjustedSize.y = MaxBoundsSize / 5f;
             adjusted = true;
         }
         if (bounds.size.z > MaxBoundsSize) {
