@@ -6,6 +6,24 @@ namespace Kafe.NavMeshTools;
 
 public static class ModConfig {
 
+    // Melon Prefs
+    private static MelonPreferences_Category _melonCategory;
+    internal static MelonPreferences_Entry<int> MeMaxBakeBounds;
+    internal static MelonPreferences_Entry<int> MeSamplesToProcessPerFrame;
+
+    public static void InitializeMelonPrefs() {
+
+        // Melon Config
+        _melonCategory = MelonPreferences.CreateCategory(nameof(NavMeshTools));
+
+        MeMaxBakeBounds = _melonCategory.CreateEntry("MaxBakeBounds", 300,
+            description: "The size of the bounds to calculate the nav mesh to, the smaller the fastest it is. Defaults to 300");
+
+        MeSamplesToProcessPerFrame = _melonCategory.CreateEntry("SamplesToProcessPerFrame", 10,
+            description: "How many nav mesh links should be processed per frame (reduce if you're noticing while calculating mesh links). Defaults to 10");
+    }
+
+
     // Asset Resources
     public static Shader NoachiWireframeShader;
     private const string AssetBundleName = "navmeshtools.assetbundle";

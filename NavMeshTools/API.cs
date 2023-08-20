@@ -27,7 +27,7 @@ public static class API {
 
         // Fail the requests if we haven't initialized yet
         if (NavMeshTools.Instance == null) {
-            NavMeshTools.CallResultsAction(onBakeFinish, agent.AgentTypeID, false);
+            Utils.CallResultsAction(onBakeFinish, agent.AgentTypeID, false);
             return;
         }
 
