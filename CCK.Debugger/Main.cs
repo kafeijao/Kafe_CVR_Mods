@@ -8,7 +8,6 @@ using ABI_RC.Systems.MovementSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.CCK.Debugger.Components;
-using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 using Kafe.CCK.Debugger.Properties;
 using MelonLoader;
 using UnityEngine;
@@ -19,13 +18,13 @@ public class CCKDebugger : MelonMod {
 
     internal static bool TestMode;
 
-    private const string CouiPath = @"ChilloutVR_Data\StreamingAssets\Cohtml\UIResources\CCKDebugger";
-    private const string CouiManifestResourcePrefix = @"CCK.Debugger.Resources.UIResources.";
-
     public override void OnInitializeMelon() {
 
         // Melon Config
-        Config.InitializeMelonPrefs();
+        ModConfig.InitializeMelonPrefs();
+
+        // Load assembly resources
+        ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
         // Check if it is in debug mode (to test functionalities that are waiting for bios to be enabled)
         // Keeping it hard-ish to enable so people don't abuse it
@@ -39,40 +38,6 @@ public class CCKDebugger : MelonMod {
             foreach (var t in hashBytes) sb.Append(t.ToString("X2"));
             TestMode = sb.ToString().Equals("738A9A4AD5E2F8AB10E702D44C189FA8");
             if (TestMode) MelonLogger.Msg("Test Mode is ENABLED!");
-        }
-
-        if (Config.MeOverwriteUIResources.Value) {
-            // Copy the UI Resources from the assembly to the CVR Cohtml UI folder
-            // Warning: The file and folder names inside of UIResources cannot contain dot characters "." nor "-" (except on
-            // the extensions that must include a dot ".", and always require an extension, example "index.js"
-            var fileNames = new List<string>();
-            foreach (var manifestResourceName in MelonAssembly.Assembly.GetManifestResourceNames()) {
-                if (!manifestResourceName.StartsWith(CouiManifestResourcePrefix)) continue;
-
-                // Convert assembly resource namespace into a path
-                var resourceName = manifestResourceName.Remove(0, CouiManifestResourcePrefix.Length);
-                var resourceExtension = Path.GetExtension(manifestResourceName);
-                var resourcePath = Path.GetFileNameWithoutExtension(resourceName).Replace('.', Path.DirectorySeparatorChar) + resourceExtension;
-                fileNames.Add(resourcePath);
-                var resourceFullPath = Path.Combine(CouiPath, resourcePath);
-
-                // Create folder if doesn't exist and save into a file
-                var directoryPath = Path.GetDirectoryName(resourceFullPath);
-                Directory.CreateDirectory(directoryPath!);
-                var resourceStream = MelonAssembly.Assembly.GetManifestResourceStream(manifestResourceName);
-                if (resourceStream == null) {
-                    var ex = $"Failed to find the Resource {manifestResourceName} in the Assembly.";
-                    MelonLogger.Error($"Failed to find the Resource {manifestResourceName} in the Assembly.");
-                    throw new Exception(ex);
-                }
-                using var resourceOutputFile = new FileStream(resourceFullPath, FileMode.Create);
-                resourceStream.CopyTo(resourceOutputFile);
-            }
-            MelonLogger.Msg($"Loaded and saved all UI Resource files: {string.Join(", ", fileNames.ToArray())}");
-        }
-        else {
-            MelonLogger.Msg("Skipping copying the Cohtml resources as define in the configuration... You should " +
-                            "only see this message if you are manually editing the Cohtml UI Resources!");
         }
 
         // Check for BTKUILib

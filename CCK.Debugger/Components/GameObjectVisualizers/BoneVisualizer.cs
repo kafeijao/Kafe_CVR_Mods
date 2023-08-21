@@ -24,7 +24,7 @@ public class BoneVisualizer : GameObjectVisualizer {
         wrapper.SetActive(false);
 
         visualizer = wrapper.AddComponent<BoneVisualizer>();
-        visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), wrapper);
+        visualizer.InitializeVisualizer(ModConfig.BoneVisualizerPrefab, wrapper);
         visualizer.SetupVisualizer(scale);
 
         visualizer.enabled = false;

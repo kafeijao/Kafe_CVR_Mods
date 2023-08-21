@@ -1,5 +1,4 @@
 ﻿using ABI.CCK.Components;
-using Kafe.CCK.Debugger.Resources;
 using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
@@ -112,7 +111,7 @@ public abstract class PointerVisualizer : MonoBehaviour {
         _materialStandard.SetColor(Misc.MatMainColor, Misc.ColorBlueFade);
 
         // Create neitri fade outline shader material
-        _materialNeitri = new Material(AssetBundleLoader.GetShader(ShaderType.NeitriDistanceFadeOutline));
+        _materialNeitri = new Material(ModConfig.ShaderCache[ModConfig.ShaderType.NeitriDistanceFadeOutline]);
         _materialNeitri.SetFloat(Misc.MatOutlineWidth, 0.8f);
         _materialNeitri.SetFloat(Misc.MatOutlineSmoothness, 0.1f);
         _materialNeitri.SetFloat(Misc.MatFadeInBehindObjectsDistance, 2f);

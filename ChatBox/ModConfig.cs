@@ -141,7 +141,8 @@ public static class ModConfig {
             ChatBoxHistoryPrefab.hideFlags |= HideFlags.DontUnloadUnusedAsset;
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
+            MelonLogger.Error("Failed to Load resources from the asset bundle");
+            MelonLogger.Error(ex);
         }
 
         // Load/Create the sound files
@@ -177,7 +178,8 @@ public static class ModConfig {
                 }
             }
             catch (Exception ex) {
-                MelonLogger.Error($"Failed to Load the Audio Clips\n" + ex.Message);
+                MelonLogger.Error($"Failed to Load the Audio Clips assembly resources");
+                MelonLogger.Error(ex);
             }
         }
 
@@ -192,7 +194,8 @@ public static class ModConfig {
             JavascriptPatchesContent = streamReader.ReadToEnd();
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to load the resource: " + ex.Message);
+            MelonLogger.Error("Failed to load the assembly resource");
+            MelonLogger.Error(ex);
         }
 
     }

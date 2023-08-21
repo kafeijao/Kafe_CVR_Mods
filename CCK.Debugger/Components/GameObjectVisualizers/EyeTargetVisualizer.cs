@@ -29,7 +29,7 @@ public class EyeTargetVisualizer : GameObjectVisualizer {
         // If the component still doesn't exist, create it!
         if (!target.TryGetComponent(out EyeTargetVisualizer visualizer)) {
             visualizer = target.AddComponent<EyeTargetVisualizer>();
-            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetBoneVisualizerObject(), target);
+            visualizer.InitializeVisualizer(ModConfig.BoneVisualizerPrefab, target);
         }
 
         visualizer._candidate = candidate;

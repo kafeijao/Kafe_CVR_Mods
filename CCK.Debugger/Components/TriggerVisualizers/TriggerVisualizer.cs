@@ -1,5 +1,4 @@
 ﻿using ABI.CCK.Components;
-using Kafe.CCK.Debugger.Resources;
 using Kafe.CCK.Debugger.Utils;
 using MelonLoader;
 using UnityEngine;
@@ -89,7 +88,7 @@ public abstract class TriggerVisualizer : MonoBehaviour {
         MaterialStandard.SetColor(Misc.MatMainColor, Misc.ColorWhiteFade);
 
         // Create neitri fade outline shader material
-        MaterialNeitri = new Material(AssetBundleLoader.GetShader(ShaderType.NeitriDistanceFadeOutline));
+        MaterialNeitri = new Material(ModConfig.ShaderCache[ModConfig.ShaderType.NeitriDistanceFadeOutline]);
         MaterialNeitri.SetFloat(Misc.MatOutlineWidth, 0.8f);
         MaterialNeitri.SetFloat(Misc.MatOutlineSmoothness, 0.1f);
         MaterialNeitri.SetFloat(Misc.MatFadeInBehindObjectsDistance, 2f);

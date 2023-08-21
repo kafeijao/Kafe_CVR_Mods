@@ -63,7 +63,8 @@ public static class ModConfig {
             }
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
+            MelonLogger.Error("Failed to Load resources from the asset bundle");
+            MelonLogger.Error(ex);
         }
     }
 }

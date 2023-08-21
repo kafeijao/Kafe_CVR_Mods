@@ -179,7 +179,8 @@ internal static class ModConfig {
             CVRTestJSPatchesContent = streamReader.ReadToEnd();
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to load the resource: " + ex.Message);
+            MelonLogger.Error("Failed to load the assembly resource");
+            MelonLogger.Error(ex);
         }
 
         try {
@@ -193,7 +194,8 @@ internal static class ModConfig {
             CVRUIJSPatchesContent = streamReader.ReadToEnd();
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to load the resource: " + ex.Message);
+            MelonLogger.Error("Failed to load the assembly resource");
+            MelonLogger.Error(ex);
         }
 
     }

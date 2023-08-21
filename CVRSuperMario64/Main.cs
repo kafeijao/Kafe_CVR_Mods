@@ -45,7 +45,8 @@ public class CVRSuperMario64 : MelonMod {
             resourceStream!.CopyTo(fileStream);
         }
         catch (IOException ex) {
-            MelonLogger.Error("Failed to copy native library: " + ex.Message);
+            MelonLogger.Error("Failed to copy native library.");
+            MelonLogger.Error(ex);
             return;
         }
 
@@ -78,7 +79,8 @@ public class CVRSuperMario64 : MelonMod {
             _marioArrowsSpriteCached = marioHeadArrowsSprite;
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
+            MelonLogger.Error("Failed to Load resources from the asset bundle");
+            MelonLogger.Error(ex);
             return;
         }
 
@@ -107,7 +109,8 @@ public class CVRSuperMario64 : MelonMod {
             SuperMario64UsZ64RomBytes = File.ReadAllBytes(smRomPath);
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to Load the Super Mario 64 [US] z64 ROM: " + ex.Message);
+            MelonLogger.Error("Failed to Load the Super Mario 64 [US] z64 ROM");
+            MelonLogger.Error(ex);
             return;
         }
 

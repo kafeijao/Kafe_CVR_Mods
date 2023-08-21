@@ -61,7 +61,8 @@ public static class ModConfig {
             TextPrefab.hideFlags |= HideFlags.DontUnloadUnusedAsset;
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to Load the asset bundle: " + ex.Message);
+            MelonLogger.Error("Failed to Load resources from the asset bundle");
+            MelonLogger.Error(ex);
         }
 
         try {
@@ -75,7 +76,8 @@ public static class ModConfig {
             JavascriptPatchesContent = streamReader.ReadToEnd();
         }
         catch (Exception ex) {
-            MelonLogger.Error("Failed to load the resource: " + ex.Message);
+            MelonLogger.Error("Failed to load the assembly resource");
+            MelonLogger.Error(ex);
         }
     }
 }

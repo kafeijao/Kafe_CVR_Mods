@@ -24,13 +24,13 @@ public static class BTKUILibIntegration {
 
         var hideMenuToggle = miscCategory.AddToggle("Hide the Menu",
             "Whether to completely hide the CCK Debugger Menu or not.",
-            Config.MeIsHidden.Value);
+            ModConfig.MeIsHidden.Value);
 
         hideMenuToggle.OnValueUpdated += b => {
-            if (b != Config.MeIsHidden.Value) Config.MeIsHidden.Value = b;
+            if (b != ModConfig.MeIsHidden.Value) ModConfig.MeIsHidden.Value = b;
         };
 
-        Config.MeIsHidden.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+        ModConfig.MeIsHidden.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
             if (newValue != hideMenuToggle.ToggleValue) hideMenuToggle.ToggleValue = newValue;
         });
     }

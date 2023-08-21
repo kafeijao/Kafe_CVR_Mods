@@ -47,7 +47,7 @@ public class TrackerVisualizer : GameObjectVisualizer {
                 // Create the component if doesn't exist
                 if (!wrapper.TryGetComponent(out TrackerVisualizer visualizer)) {
                     visualizer = wrapper.AddComponent<TrackerVisualizer>();
-                    visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetTrackerVisualizerObject(), wrapper);
+                    visualizer.InitializeVisualizer(ModConfig.TrackerVisualizerPrefab, wrapper);
                 }
 
                 // Since we're enabling remove from the list to disable

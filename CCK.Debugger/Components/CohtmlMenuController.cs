@@ -183,7 +183,7 @@ public class CohtmlMenuController : MonoBehaviour {
         if (!Initialized) return;
 
         // Menu should not be running if set to the quick menu and the menu is not opened
-        var isMenuEnabled = (_currentMenuParent != MenuTarget.QuickMenu || Events.QuickMenu.IsQuickMenuOpened) && !Config.MeIsHidden.Value;
+        var isMenuEnabled = (_currentMenuParent != MenuTarget.QuickMenu || Events.QuickMenu.IsQuickMenuOpened) && !ModConfig.MeIsHidden.Value;
 
         if (!isMenuEnabled) {
             // Clear the highlight when the menu is not enabled

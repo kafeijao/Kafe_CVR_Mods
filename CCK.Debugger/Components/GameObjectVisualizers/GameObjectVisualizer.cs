@@ -1,5 +1,4 @@
-﻿using Kafe.CCK.Debugger.Resources;
-using Kafe.CCK.Debugger.Utils;
+﻿using Kafe.CCK.Debugger.Utils;
 using UnityEngine;
 
 namespace Kafe.CCK.Debugger.Components.GameObjectVisualizers;
@@ -29,7 +28,7 @@ public abstract class GameObjectVisualizer : MonoBehaviour {
         var renderer = VisualizerGo.GetComponent<MeshRenderer>();
 
         // Create neitri fade outline texture shader material
-        Material = new Material(AssetBundleLoader.GetShader(ShaderType.NeitriDistanceFadeOutline));
+        Material = new Material(ModConfig.ShaderCache[ModConfig.ShaderType.NeitriDistanceFadeOutline]);
         Material.SetFloat(Misc.MatOutlineWidth, 1f);
         Material.SetFloat(Misc.MatOutlineSmoothness, 0f);
         Material.SetFloat(Misc.MatFadeInBehindObjectsDistance, 0f);

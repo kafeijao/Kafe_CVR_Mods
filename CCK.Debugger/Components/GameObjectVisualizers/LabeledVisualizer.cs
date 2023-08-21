@@ -27,7 +27,7 @@ public class LabeledVisualizer : GameObjectVisualizer {
 
         if (!wrapper.TryGetComponent(out LabeledVisualizer visualizer)) {
             visualizer = wrapper.AddComponent<LabeledVisualizer>();
-            visualizer.InitializeVisualizer(Resources.AssetBundleLoader.GetLabelVisualizerObject(), wrapper);
+            visualizer.InitializeVisualizer(ModConfig.LabelVisualizerPrefab, wrapper);
         }
 
         visualizer._label = label;
