@@ -1,6 +1,7 @@
 ﻿// by Neitri, free of charge, free to redistribute
 // downloaded from https://github.com/netri/Neitri-Unity-Shaders
 // Edited by kafeijao (to support usage of a texture)
+// Single Pass Instanced UnSkillissued by Noachi
 
 // Fades outline based on how far it is behind objects and how far it is from camera
 // Add it to bottom of material list in Renderer component, so whole object is rendered again with this material
@@ -99,6 +100,7 @@ Shader "Neitri/Distance Fade Outline Texture"
 
 			fixed4 frag (v2f i) : SV_Target
 			{
+				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i); //Insert
 				float3 cameraPos = getCameraPosition();
 				float3 viewDir = normalize(cameraPos - i.worldPos.xyz);
 
