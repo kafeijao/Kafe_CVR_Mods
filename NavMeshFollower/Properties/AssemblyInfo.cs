@@ -1,19 +1,19 @@
 ﻿using System.Reflection;
-using Kafe.NavMeshProp;
-using Kafe.NavMeshProp.Properties;
+using Kafe.NavMeshFollower;
+using Kafe.NavMeshFollower.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(Kafe.NavMeshProp))]
+[assembly: AssemblyTitle(nameof(Kafe.NavMeshFollower))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(Kafe.NavMeshProp))]
+[assembly: AssemblyProduct(nameof(Kafe.NavMeshFollower))]
 
 [assembly: MelonInfo(
-    typeof(NavMeshProp),
-    nameof(Kafe.NavMeshProp),
+    typeof(NavMeshFollower),
+    nameof(Kafe.NavMeshFollower),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -21,11 +21,12 @@ using MelonLoader;
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
+[assembly: VerifyLoaderVersion(0, 6, 1, true)]
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName, AssemblyInfoParams.NavMeshToolsName)]
 
-namespace Kafe.NavMeshProp.Properties;
+namespace Kafe.NavMeshFollower.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "0.0.1";
     public const string Author = "kafeijao";

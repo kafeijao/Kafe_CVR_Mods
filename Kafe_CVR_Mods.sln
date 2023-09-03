@@ -54,7 +54,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRCode", "QRCode\QRCode.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavMeshTools", "NavMeshTools\NavMeshTools.csproj", "{B0A6CF12-1CBD-40C4-9D23-3AC35C4967AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavMeshProp", "NavMeshProp\NavMeshProp.csproj", "{AA8C8980-18E8-4A98-A882-73BC639F69E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavMeshFollower", "NavMeshFollower\NavMeshFollower.csproj", "{AA8C8980-18E8-4A98-A882-73BC639F69E7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

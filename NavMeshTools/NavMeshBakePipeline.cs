@@ -94,9 +94,9 @@ public static class NavMeshBakePipeline {
         #endif
 
         // If we changed worlds, the bake is irrelevant...
-        if (payload.WorldGuid != MetaPort.Instance.CurrentWorldId) {
+        if (payload.WorldGuid != MetaPort.Instance.CurrentWorldId || payload.NavMeshData == null) {
             MelonLogger.Warning($"[Thread {Thread.CurrentThread.ManagedThreadId}] [{nameof(ApplyNavMesh)}] [{payload.Agent.AgentTypeID}] Done! (Changed world)");
-            throw new Exception("Changed worlds while baking the Nav Mesh, interrupting and discarding current task!");
+            throw new Exception("Changed worlds while baking the Nav Mesh or payload.NavMeshData == null, interrupting and discarding current task!");
         }
 
         // Apply the bake results

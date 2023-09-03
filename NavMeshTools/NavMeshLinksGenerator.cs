@@ -83,10 +83,12 @@ public class NavMeshLinksGenerator : MonoBehaviour {
             try {
                 // Spawn up/down links
                 CheckPlacePos(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent);
+
                 // // Spawn horizontal links Todo: Fix the algo
                 // CheckPlacePosHorizontal(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent, raycastBuffer);
-                // Check the sampled points against each other
-                CheckPlaceSampledPoints(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent, samplePoints);
+
+                // Check the sampled points against each other Todo: Fix the algo (too slow)
+                // CheckPlaceSampledPoints(results, linkVisualizers, samplePoint.placePos, samplePoint.edgeNormal, agent, samplePoints);
 
             }
             catch (Exception e) {
@@ -362,7 +364,7 @@ public class NavMeshLinksGenerator : MonoBehaviour {
                 startPosition = pos,
                 endPosition = possibleTarget.placePos,
                 width = agent.Settings.agentRadius,
-                costModifier = 2.5f,
+                costModifier = 5f,
                 bidirectional = true,
                 area = 2,
                 agentTypeID = agent.AgentTypeID,

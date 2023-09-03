@@ -1,6 +1,6 @@
-# NavMeshProp
+# NavMeshFollower
 
-[![Download Latest NavMeshProp.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest NavMeshProp.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/NavMeshProp.dll)
+[![Download Latest NavMeshFollower.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest NavMeshFollower.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/NavMeshFollower.dll)
 
 Simple example on how to use [NavMeshTools](../NavMeshTools/README.md).
 
