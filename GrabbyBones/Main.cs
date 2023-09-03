@@ -462,12 +462,20 @@ public class GrabbyBones : MelonMod {
             return result;
         }
 
+        private static readonly HashSet<DynamicBone> InitializedGrabbyBones = new();
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.Start))]
-        public static void After_DynamicBone_Start(DynamicBone __instance) {
+        [HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.DoSetup))]
+        public static void After_DynamicBone_DoSetup(DynamicBone __instance) {
             // Initialize FABRIK for dynamic bone roots
             try {
+
+                // Wait for dynamic bone actual initialization
+                if (!__instance.initDone) return;
+
+                // If we already initialized GrabbyBones for this dynamic bone ignore
+                if (InitializedGrabbyBones.Contains(__instance)) return;
+                InitializedGrabbyBones.Add(__instance);
 
                 // We only want to mess with the dynamic bones from avatars, for now
                 if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
@@ -503,7 +511,7 @@ public class GrabbyBones : MelonMod {
                 GrabbyBonesCache.Add(grabbyBoneInfo);
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_DynamicBone_Start)}.");
+                MelonLogger.Error($"Error during the patched function {nameof(After_DynamicBone_DoSetup)}.");
                 MelonLogger.Error(e);
             }
         }
@@ -516,6 +524,7 @@ public class GrabbyBones : MelonMod {
 
                 AvatarHandInfo.ReleaseAllWithBehavior(__instance);
                 GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
+                InitializedGrabbyBones.Remove(__instance);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_DynamicBone_OnDestroy)}.");
