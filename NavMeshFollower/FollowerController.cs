@@ -183,22 +183,22 @@ public class FollowerController : MonoBehaviour {
             #endif
 
             // Spawnable synced params
-            controller.SpawnableIndexes[SyncedAnimatorParams.MovementY] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.MovementY);
-            controller.SpawnableIndexes[SyncedAnimatorParams.MovementX] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.MovementX);
-            controller.SpawnableIndexes[SyncedAnimatorParams.Grounded] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.Grounded);
-            controller.SpawnableIndexes[SyncedAnimatorParams.Idle] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.Idle);
+            controller._spawnableIndexes[SyncedAnimatorParams.MovementY] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.MovementY);
+            controller._spawnableIndexes[SyncedAnimatorParams.MovementX] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.MovementX);
+            controller._spawnableIndexes[SyncedAnimatorParams.Grounded] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.Grounded);
+            controller._spawnableIndexes[SyncedAnimatorParams.Idle] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.Idle);
 
-            controller.SpawnableIndexes[SyncedAnimatorParams.HasMod] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.HasMod);
-            controller.SpawnableIndexes[SyncedAnimatorParams.IsBakingNavMesh] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.IsBakingNavMesh);
+            controller._spawnableIndexes[SyncedAnimatorParams.HasMod] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.HasMod);
+            controller._spawnableIndexes[SyncedAnimatorParams.IsBakingNavMesh] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.IsBakingNavMesh);
 
-            controller.SpawnableIndexes[SyncedAnimatorParams.VRIKLeftArm] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.VRIKLeftArm);
-            controller.SpawnableIndexes[SyncedAnimatorParams.VRIKRightArm] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.VRIKRightArm);
+            controller._spawnableIndexes[SyncedAnimatorParams.VRIKLeftArm] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.VRIKLeftArm);
+            controller._spawnableIndexes[SyncedAnimatorParams.VRIKRightArm] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.VRIKRightArm);
 
             // Grab the animator
             controller._humanoidAnimator = followerInfo.humanoidAnimator;
 
             // VRIK Left Arm
-            if (followerInfo.hasLeftArmIK && controller.SpawnableIndexes[SyncedAnimatorParams.VRIKLeftArm].spawnableIndexes.Length > 0) {
+            if (followerInfo.hasLeftArmIK && controller._spawnableIndexes[SyncedAnimatorParams.VRIKLeftArm].spawnableIndexes.Length > 0) {
                 controller._vrikLeftArmTargetTransform = followerInfo.vrikLeftArmTargetTransform;
                 controller.LeftHandAttachmentPoint = followerInfo.leftHandAttachmentPoint != null ? followerInfo.leftHandAttachmentPoint : controller._humanoidAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
                 controller.LeftArmControllerRay = Utils.GetFakeControllerRay(controller.LeftHandAttachmentPoint, controller.LeftHandAttachmentPoint.position, out controller._leftArmControllerRayOffsetPos, out controller._leftArmControllerRayOffsetRot);
@@ -206,7 +206,7 @@ public class FollowerController : MonoBehaviour {
             }
 
             // VRIK Right Arm
-            if (followerInfo.hasRightArmIK && controller.SpawnableIndexes[SyncedAnimatorParams.VRIKRightArm].spawnableIndexes.Length > 0) {
+            if (followerInfo.hasRightArmIK && controller._spawnableIndexes[SyncedAnimatorParams.VRIKRightArm].spawnableIndexes.Length > 0) {
                 controller._vrikRightArmTargetTransform = followerInfo.vrikRightArmTargetTransform;
                 controller._rightHandAttachmentPoint = followerInfo.rightHandAttachmentPoint != null ? followerInfo.rightHandAttachmentPoint : controller._humanoidAnimator.GetBoneTransform(HumanBodyBones.RightHand);
                 controller.RightArmControllerRay = Utils.GetFakeControllerRay(controller._rightHandAttachmentPoint, controller._rightHandAttachmentPoint.position, out controller._rightArmControllerRayOffsetPos, out controller._rightArmControllerRayOffsetRot);
@@ -284,7 +284,7 @@ public class FollowerController : MonoBehaviour {
     private Transform _lookAtTargetTransform;
     private Transform _lookAtHeadTransform;
 
-    private readonly Dictionary<string, (int[] spawnableIndexes, Dictionary<Animator, AnimatorControllerParameterType> localParamTypes, int localParamHash)> SpawnableIndexes = new();
+    private readonly Dictionary<string, (int[] spawnableIndexes, Dictionary<Animator, AnimatorControllerParameterType> localParamTypes, int localParamHash)> _spawnableIndexes = new();
 
     // VRIK Left Arm
     internal bool HasLeftArmIK;
@@ -486,7 +486,7 @@ public class FollowerController : MonoBehaviour {
 
     private void SetSpawnableParameter(string paramName, float value) {
 
-        var paramInfo = SpawnableIndexes[paramName];
+        var paramInfo = _spawnableIndexes[paramName];
 
         foreach (var spawnableIndex in paramInfo.spawnableIndexes) {
             Spawnable.SetValue(spawnableIndex, value);
