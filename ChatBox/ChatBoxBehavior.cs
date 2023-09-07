@@ -68,6 +68,7 @@ public class ChatBoxBehavior : MonoBehaviour {
     private const float NameplateOffsetYTypingMultiplier = 25f;
 
     private static Coroutine _resetTextAfterDelayCoroutine;
+    private static Coroutine _resetTypingAfterDelayCoroutine;
 
     // Config updates
     private static float _volume;
@@ -265,9 +266,7 @@ public class ChatBoxBehavior : MonoBehaviour {
     }
 
     private void StopTyping() {
-        if (_typingGo.activeSelf) {
-            StopCoroutine(nameof(ResetIsTypingAfterDelay));
-        }
+        if (_resetTypingAfterDelayCoroutine != null) StopCoroutine(_resetTypingAfterDelayCoroutine);
         _typingGo.SetActive(false);
         _lastTypingIndex = 0;
     }
@@ -282,14 +281,10 @@ public class ChatBoxBehavior : MonoBehaviour {
         // Ignore typing if we got a message staying
         // if (_textBubbleGo.activeSelf) return;
 
-        var wasOn = false;
+        var wasOn = _typingGo.activeSelf;
 
-        if (_typingGo.activeSelf) {
-            StopCoroutine(nameof(ResetIsTypingAfterDelay));
-            wasOn = true;
-        }
-
-        StartCoroutine(nameof(ResetIsTypingAfterDelay));
+        if (_resetTypingAfterDelayCoroutine != null) StopCoroutine(_resetTypingAfterDelayCoroutine);
+        _resetTypingAfterDelayCoroutine = StartCoroutine(ResetIsTypingAfterDelay());
         _typingGo.SetActive(true);
         if (!wasOn && notify && ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
     }
@@ -305,6 +300,8 @@ public class ChatBoxBehavior : MonoBehaviour {
         }
 
         StopTyping();
+
+        _resetTypingAfterDelayCoroutine = null;
     }
 
     private void SetColor(API.MessageSource source) {
@@ -332,7 +329,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         // Ignore non-internal msg if currently displaying an internal one, and Cancel the bubble reset
         if (_textBubbleGo.activeSelf) {
             if (_previousSource == API.MessageSource.Internal && source != API.MessageSource.Internal) return;
-            StopCoroutine(_resetTextAfterDelayCoroutine);
+            if (_resetTextAfterDelayCoroutine != null) StopCoroutine(_resetTextAfterDelayCoroutine);
         }
         _previousSource = source;
 
@@ -360,5 +357,6 @@ public class ChatBoxBehavior : MonoBehaviour {
             : ModConfig.MeMessageTimeoutSeconds.Value;
         yield return new WaitForSeconds(timeout);
         _textBubbleGo.SetActive(false);
+        _resetTextAfterDelayCoroutine = null;
     }
 }
