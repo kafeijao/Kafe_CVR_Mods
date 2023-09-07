@@ -164,10 +164,11 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         attributesSection.AddSection("Spawned By").AddValueGetter(() => GetUsername(currentSpawnablePropData.SpawnedBy));
         attributesSection.AddSection("Synced By").AddValueGetter(() => GetUsername(currentSpawnablePropData.syncedBy));
         attributesSection.AddSection("Sync Type").AddValueGetter(() => {
-            var syncType = currentSpawnablePropData.syncType;
+            // Todo: Update the prop data!!!
+            var syncType = currentSpawnable.SyncType;
             if (syncType == 0 && !currentSpawnable.isPhysicsSynced) syncType = -1;
             var syncTypeString = SyncTypeDict.TryGetValue(syncType, out var value) ? value : "Unknown";
-            return $"[{currentSpawnablePropData.syncType.ToString()}] {syncTypeString}";
+            return $"[{currentSpawnable.SyncType.ToString()}] {syncTypeString}";
         });
     }
 
@@ -198,39 +199,54 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         };
 
         // Dynamic sections
-        var categorySyncedParameters = _core.AddSection("Synced Parameters", true);
-        var categoryMainAnimatorParameters = _core.AddSection("Main Animator Parameters", true);
-        var sectionAnimatorLayers = _core.AddSection("Animator Layers", true);
+        var categorySyncedParameters = _core.AddSection("Animator Synced Parameters", true);
+        var categoryAnimatorsParameters = _core.AddSection("Animators Parameters", true);
+        var categoryAnimatorsLayers = _core.AddSection("Animators Layers", true);
         var categoryPickups = _core.AddSection("Pickups", true);
         var categoryAttachments = _core.AddSection("Attachments", true);
         var categoryPointers = _core.AddSection("CVR Spawnable Pointers", true);
         var categoryTriggers = _core.AddSection("CVR Spawnable Triggers", true);
 
-        // Restore parameters
+        // Restore synced parameters
+        var syncedParametersPerAnimator = new Dictionary<Animator, Section>();
+        Section nullAnimatorSection = null;
         foreach (var syncValue in currentSpawnable.syncValues) {
-            categorySyncedParameters.AddSection(syncValue.name).AddValueGetter(() => syncValue.currentValue.ToString(CultureInfo.InvariantCulture));
+            if (syncValue.animator == null) {
+                nullAnimatorSection ??= categorySyncedParameters.AddSection("N/A - Animator not selected", "", true);
+                nullAnimatorSection.AddSection(syncValue.name).AddValueGetter(() => syncValue.currentValue.ToString(CultureInfo.InvariantCulture));
+            }
+            else {
+                if (!syncedParametersPerAnimator.TryGetValue(syncValue.animator, out var section)) {
+                    section = categorySyncedParameters.AddSection(syncValue.animator.name, "", true);
+                    syncedParametersPerAnimator[syncValue.animator] = section;
+                }
+                section.AddSection(syncValue.name).AddValueGetter(() => syncValue.currentValue.ToString(CultureInfo.InvariantCulture));
+            }
         }
 
-        // Restore Main Animator Parameters
-        var mainAnimator = currentSpawnable.gameObject.GetComponent<Animator>();
-        if (mainAnimator != null) {
+        // Restore Animator's Parameters/Layers
+        foreach (var animator in currentSpawnable.gameObject.GetComponentsInChildren<Animator>(true)) {
+            if (animator == null) continue;
+
+            var categoryAnimatorParameters = categoryAnimatorsParameters.AddSection(animator.name, "", true);
+            var sectionAnimatorLayers = categoryAnimatorsLayers.AddSection(animator.name, "", true);
 
             // Setup parameters
-            foreach (var parameter in mainAnimator.parameters) {
-                var parameterEntry = ParameterEntrySection.Get(mainAnimator, parameter);
+            foreach (var parameter in animator.parameters) {
+                var parameterEntry = ParameterEntrySection.Get(animator, parameter);
                 string GetParamValue() => parameterEntry.GetValue();
-                categoryMainAnimatorParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
+                categoryAnimatorParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             }
 
             // Set up the animator layers
             const string noClipsText = "Playing no Clips";
-            for (var i = 0; i < mainAnimator.layerCount; i++) {
+            for (var i = 0; i < animator.layerCount; i++) {
                 var layerIndex = i;
-                var layerSection = sectionAnimatorLayers.AddSection(mainAnimator.GetLayerName(layerIndex), "", true);
-                layerSection.AddSection("Layer Weight").AddValueGetter(() => mainAnimator.GetLayerWeight(layerIndex).ToString("F"));
+                var layerSection = sectionAnimatorLayers.AddSection(animator.GetLayerName(layerIndex), "", true);
+                layerSection.AddSection("Layer Weight").AddValueGetter(() => animator.GetLayerWeight(layerIndex).ToString("F"));
                 var playingClipsSection = layerSection.AddSection("Playing Clips [Weight:Name]", noClipsText, false, true);
                 playingClipsSection.AddValueGetter(() => {
-                    var clipInfos = mainAnimator.GetCurrentAnimatorClipInfo(layerIndex);
+                    var clipInfos = animator.GetCurrentAnimatorClipInfo(layerIndex);
                     var newSections = new List<Section>();
                     if (clipInfos.Length <= 0) {
                         playingClipsSection.QueueDynamicSectionsUpdate(newSections);
@@ -318,11 +334,11 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                         ? task.spawnable.syncValues[task.settingIndex].name
                         : Na;
                 }
-                string LastTriggered() => TriggerSpawnableTaskLastTriggered.ContainsKey(task)
-                    ? GetTimeDifference(TriggerSpawnableTaskLastTriggered[task])
+                string LastTriggered() => TriggerSpawnableTaskLastTriggered.TryGetValue(task, out var triggerSpawnableTaskLastTriggered)
+                    ? GetTimeDifference(triggerSpawnableTaskLastTriggered)
                     : "?" + " secs ago";
-                string LastExecuted() => TriggerSpawnableTasksLastExecuted.ContainsKey(task)
-                    ? GetTimeDifference(TriggerSpawnableTasksLastExecuted[task])
+                string LastExecuted() => TriggerSpawnableTasksLastExecuted.TryGetValue(task, out var triggerSpawnableTaskLastExecuted)
+                    ? GetTimeDifference(triggerSpawnableTaskLastExecuted)
                     : "?" + " secs ago";
 
                 var specificTaskSection = parentSection.AddSection($"#{idx}");
@@ -355,11 +371,11 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
                         ? stayTask.spawnable.syncValues[stayTask.settingIndex].name
                         : Na;
                 }
-                string LastTriggered() => TriggerSpawnableStayTasksLastTriggered.ContainsKey(stayTask)
-                    ? GetTimeDifference(TriggerSpawnableStayTasksLastTriggered[stayTask])
+                string LastTriggered() => TriggerSpawnableStayTasksLastTriggered.TryGetValue(stayTask, out var value)
+                    ? GetTimeDifference(value)
                     : "?" + " secs ago";
-                string LastTriggeredValue() => TriggerSpawnableStayTasksLastTriggeredValue.ContainsKey(stayTask)
-                    ? TriggerSpawnableStayTasksLastTriggeredValue[stayTask].ToString(CultureInfo.InvariantCulture)
+                string LastTriggeredValue() => TriggerSpawnableStayTasksLastTriggeredValue.TryGetValue(stayTask, out var value1)
+                    ? value1.ToString(CultureInfo.InvariantCulture)
                     : "?";
 
                 var specificTaskSection = tasksOnStaySection.AddSection($"#{index}");
