@@ -33,6 +33,7 @@ public static class LogParser {
         "Result from API Request InstanceDetail returned NotFound",
         "Kinematic body only supports Speculative Continuous collision detection",
         "RenderTexture.Create: Depth|ShadowMap RenderTexture requested without a depth buffer. Changing to a 16 bit depth buffer.",
+        "Bundle in old format attempting legacy loading!",
     };
     private static readonly HashSet<string> MiscSpamPrefixMessages = new() {
         "IK chain has no Bones.",
