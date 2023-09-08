@@ -77,10 +77,6 @@ internal static class ModNetwork {
         }
     }
 
-    internal static void Initialize() {
-        SchedulerSystem.AddJob(HandleTimeouts, 1f, 1f, -1);
-    }
-
     private static void SendSyncUpdate(string requesterGuid) {
         SendMsgToSpecificPlayers(new[] { requesterGuid }, MessageType.SyncUpdate, writer => {
             writer.Write(API.RegisteredMods.Keys.ToArray());
@@ -549,6 +545,7 @@ internal static class ModNetwork {
             try {
                 MelonLogger.Msg($"Started the Game Server Messages Listener...");
                 __instance.GameNetwork.MessageReceived += OnMessage;
+                SchedulerSystem.AddJob(HandleTimeouts, 1f, 1f, -1);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_Awake)}");
