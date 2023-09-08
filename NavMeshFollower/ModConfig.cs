@@ -1,8 +1,9 @@
 ﻿using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Core.Networking;
+using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using Kafe.NavMeshFollower.Behaviors;
+using Kafe.NavMeshFollower.Integrations;
 using Kafe.NavMeshFollower.InteractableWrappers;
 using MelonLoader;
 using UnityEngine;
@@ -81,12 +82,14 @@ public static class ModConfig {
         }
     }
 
-    private static void UpdatePlayerPage() {
+    internal static void UpdatePlayerPage() {
         if (CVRPlayerManager.Instance == null ||
             !CVRPlayerManager.Instance.NetworkPlayers.Exists(p => p.Uuid == BTKUILib.QuickMenuAPI.SelectedPlayerID))
             return;
         UpdatePlayerPage(BTKUILib.QuickMenuAPI.SelectedPlayerName, BTKUILib.QuickMenuAPI.SelectedPlayerID);
     }
+
+    private static BTKUILib.UIObjects.Components.Button _requestLibButton;
 
     private static void UpdatePlayerPage(string playerName, string playerID) {
         if (_playersNavMeshCat == null) return;
@@ -94,16 +97,55 @@ public static class ModConfig {
         // Update the all follow target button
         _startFollowingTargetButton.ButtonText = $"All Follow {playerName}";
         _startFollowingTargetButton.ButtonTooltip = $"Make all followers follow {playerName}.";
-        _startFollowingTargetButton.OnPress += () => {
-            foreach (var followPlayerInstance in FollowPlayer.FollowPlayerInstances) {
-                followPlayerInstance.SetTarget(playerID);
+
+        // Delete RequestLib button
+        _requestLibButton?.Delete();
+
+        var hasPermission = true;
+        if (!NavMeshFollower.TestMode && !Friends.FriendsWith(playerID) && !RequestLibIntegration.HasPermission(playerID)) {
+            hasPermission = false;
+
+            if (RequestLibIntegration.HasRequestLib(playerID)) {
+                if (RequestLibIntegration.IsRequestPending(playerID)) {
+                    _requestLibButton = _playersNavMeshCat.AddButton("Waiting...", "", "Waiting for the Reply....");
+                    _requestLibButton.Disabled = true;
+                }
+                else {
+                    _requestLibButton = _playersNavMeshCat.AddButton("Request Permission", "",
+                        $"Requests {playerName} permission to interact using RequestLib. It will last until the {playerName} leaves the instance.");
+                    _requestLibButton.OnPress += () => {
+                        RequestLibIntegration.RequestToInteract(playerName, playerID);
+                        UpdatePlayerPage();
+                    };
+                }
             }
-            UpdateMainPage();
-            UpdatePlayerPage();
-        };
+        }
+
+        _startFollowingTargetButton.Disabled = !hasPermission;
+        if (hasPermission) {
+            _startFollowingTargetButton.OnPress += () => {
+                foreach (var followPlayerInstance in FollowPlayer.FollowPlayerInstances) {
+                    followPlayerInstance.SetTarget(playerID);
+                }
+                UpdateMainPage();
+                UpdatePlayerPage();
+            };
+        }
+        else {
+            _startFollowingTargetButton.ButtonText = $"No Permission";
+            _startFollowingTargetButton.ButtonTooltip = $"You can't send the props to interact with {playerName} " +
+                                                        $"because they're not your friends and they haven't given " +
+                                                        $"you permission via RequestLib.";
+            _startFollowingTargetButton.OnPress += () => {
+                MelonLogger.Warning($"You don't have permission from {playerName} to let the props interact with them...");
+            };
+        }
 
         // Restore the advanced page
         _playersNavMeshAdvancedPageCat.ClearChildren();
+        _playersNavMeshAdvancedPageCat.CategoryName = hasPermission ? "No Permission" : "Advanced";
+
+        if (!hasPermission) return;
 
         foreach (var controller in FollowerController.FollowerControllers) {
             var button = _playersNavMeshAdvancedPageCat.AddButton(controller.LastHandledBehavior.GetStatus(), GetPropImageUrl(controller.Spawnable.guid), "Control this follower.");

@@ -18,6 +18,8 @@ public class NavMeshFollower : MelonMod {
 
     internal static readonly Dictionary<string, Vector3> PlayerViewpoints = new();
 
+    internal static bool TestMode;
+
     public override void OnInitializeMelon() {
 
         ModConfig.InitializeMelonPrefs();
@@ -29,17 +31,31 @@ public class NavMeshFollower : MelonMod {
         // Add our CCK script because duh
         SharedFilter._spawnableWhitelist.Add(typeof(FollowerInfo));
 
-        #if DEBUG
-        CVRGameEventSystem.Instance.OnConnected.AddListener(instanceID => {
-            if (!CVRWorld.Instance.allowSpawnables || AuthManager.username != "Kafeijao") return;
-            MelonLogger.Msg($"Connected to instance: {instanceID} Spawning in one seconds...");
-            IEnumerator DelaySpawnProp() {
-                yield return new WaitForSeconds(3f);
-                PlayerSetup.Instance.DropProp("13cbe183-1fd5-4c7e-ad5d-04c102a79f74");
-            }
-            MelonCoroutines.Start(DelaySpawnProp());
-        });
-        #endif
+        // Check if it is in debug mode
+        // Keeping it hard-ish to enable so people don't abuse it
+        foreach (var commandLineArg in Environment.GetCommandLineArgs()) {
+            if (!commandLineArg.StartsWith("--cck-debugger-test=")) continue;
+            var input = commandLineArg.Split(new[] { "=" }, StringSplitOptions.None)[1];
+            using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+            var inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            var hashBytes = md5.ComputeHash(inputBytes);
+            var sb = new System.Text.StringBuilder();
+            foreach (var t in hashBytes) sb.Append(t.ToString("X2"));
+            TestMode = sb.ToString().Equals("738A9A4AD5E2F8AB10E702D44C189FA8");
+            if (TestMode) MelonLogger.Msg("Test Mode is ENABLED!");
+        }
+
+        // #if DEBUG
+        // CVRGameEventSystem.Instance.OnConnected.AddListener(instanceID => {
+        //     if (!CVRWorld.Instance.allowSpawnables || AuthManager.username != "Kafeijao") return;
+        //     MelonLogger.Msg($"Connected to instance: {instanceID} Spawning in one seconds...");
+        //     IEnumerator DelaySpawnProp() {
+        //         yield return new WaitForSeconds(3f);
+        //         PlayerSetup.Instance.DropProp("13cbe183-1fd5-4c7e-ad5d-04c102a79f74");
+        //     }
+        //     MelonCoroutines.Start(DelaySpawnProp());
+        // });
+        // #endif
     }
 
     [HarmonyPatch]
