@@ -1,8 +1,8 @@
 ﻿using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
+using HarmonyLib;
 using Kafe.NavMeshFollower.Behaviors;
 using Kafe.NavMeshFollower.CCK;
 using Kafe.NavMeshFollower.InteractableWrappers;
@@ -14,6 +14,8 @@ namespace Kafe.NavMeshFollower;
 
 [DefaultExecutionOrder(999999)]
 public class FollowerController : MonoBehaviour {
+
+    private static Action<string, CVRSpawnable> _onSpawnableStart;
 
     public static class SyncedAnimatorParams {
 
@@ -40,7 +42,7 @@ public class FollowerController : MonoBehaviour {
 
     internal static void Initialize() {
 
-        CVRGameEventSystem.Spawnable.OnInstantiate.AddListener((spawnerUserId, spawnable) => {
+        _onSpawnableStart += (spawnerUserId, spawnable) => {
             try {
 
                 // Handle FollowerInfo
@@ -71,7 +73,7 @@ public class FollowerController : MonoBehaviour {
                 MelonLogger.Warning("Attempted to load a Follower but it has thrown an error. There might be something broken it its setup.");
                 MelonLogger.Warning(e);
             }
-        });
+        };
     }
 
     private static void HandleFollowerInfo(CVRSpawnable spawnable, FollowerInfo followerInfo) {
@@ -527,5 +529,22 @@ public class FollowerController : MonoBehaviour {
             behavior.OnDestroyed();
         }
         ModConfig.UpdateMainPage();
+    }
+
+    [HarmonyPatch]
+    private class HarmonyPatches {
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.Start))]
+        public static void After_CVRSpawnable_Start(CVRSpawnable __instance) {
+            // After the spawnable actually started
+            try {
+                _onSpawnableStart?.Invoke(__instance.ownerId, __instance);
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVRSpawnable_Start)}.");
+                MelonLogger.Error(e);
+            }
+        }
     }
 }
