@@ -197,8 +197,9 @@ public class InputModuleOSC : CVRInputModule {
         }
 
         _thisInputManager.quickMenuButton |= GetKeyDown(ButtonNames.QuickMenuToggleLeft);
-        _thisInputManager.voice |= InputButtons[ButtonNames.Voice];
-        _thisInputManager.voiceDown |= GetKeyDown(ButtonNames.Voice);
+
+        _thisInputManager.voice |= GetKeyDown(ButtonNames.Voice);
+        _thisInputManager.voiceDown |= InputButtons[ButtonNames.Voice];
 
         _thisInputManager.interactRightDown |= GetKeyDown(ButtonNames.UseRight);
         _thisInputManager.interactRightUp |= GetKeyUp(ButtonNames.UseRight);
