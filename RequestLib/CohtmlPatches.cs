@@ -27,7 +27,7 @@ internal static class CohtmlPatches {
                 $"[DisplayRequest][CVRTest] Attempted to display a request, but the view was not initialized.");
         }
         else {
-            ViewManager.Instance.gameMenuView.View.TriggerEvent("RequestLibModRequestsUpdate", Request.GetRequests());
+            ViewManager.Instance.gameMenuView.View._view.TriggerEvent("RequestLibModRequestsUpdate", Request.GetRequests());
         }
     }
 
@@ -125,7 +125,7 @@ internal static class CohtmlPatches {
                 var hasNotification = ViewManager.Instance.Invites.Count > 0
                                       || ViewManager.Instance.InviteRequests.Count > 0
                                       || Request.Count() > 0;
-                __instance.hudView.View.TriggerEvent("ChangeHudStatus", "notifications", hasNotification);
+                __instance.hudView.View._view.TriggerEvent("ChangeHudStatus", "notifications", hasNotification);
                 if (hasNotification) HasNotifications?.Invoke();
             }
             catch (Exception e) {
@@ -141,12 +141,12 @@ internal static class CohtmlPatches {
             try {
                 // Load the bindings
                 __instance.gameMenuView.Listener.ReadyForBindings += () => {
-                    __instance.gameMenuView.View.BindCall("RequestLibModResponse", Request.OnResponse);
+                    __instance.gameMenuView.View._view.BindCall("RequestLibModResponse", Request.OnResponse);
                 };
 
                 // Inject our Cohtml
                 __instance.gameMenuView.Listener.FinishLoad += _ => {
-                    __instance.gameMenuView.View.ExecuteScript(ModConfig.CVRTestJSPatchesContent);
+                    __instance.gameMenuView.View._view.ExecuteScript(ModConfig.CVRTestJSPatchesContent);
 
                     // Mark as initialized
                     _cvrTestPatched = true;
@@ -169,12 +169,12 @@ internal static class CohtmlPatches {
             try {
                 // Load the bindings
                 __instance.quickMenu.Listener.ReadyForBindings += () => {
-                    __instance.quickMenu.View.BindCall("RequestLibModResponse", Request.OnResponse);
+                    __instance.quickMenu.View._view.BindCall("RequestLibModResponse", Request.OnResponse);
                 };
 
                 // Inject our Cohtml
                 __instance.quickMenu.Listener.FinishLoad += _ => {
-                    __instance.quickMenu.View.ExecuteScript(ModConfig.CVRUIJSPatchesContent);
+                    __instance.quickMenu.View._view.ExecuteScript(ModConfig.CVRUIJSPatchesContent);
 
                     // Mark as initialized
                     _cvrUIPatched = true;
@@ -201,7 +201,7 @@ internal static class CohtmlPatches {
                         $"[DisplayRequest][CVRUI] Attempted to display a request, but the view was not initialized.");
                 }
                 else {
-                    CVR_MenuManager.Instance.quickMenu.View.TriggerEvent("RequestLibModRequestsUpdate", Request.GetRequests());
+                    CVR_MenuManager.Instance.quickMenu.View._view.TriggerEvent("RequestLibModRequestsUpdate", Request.GetRequests());
                 }
             }
             catch (Exception e) {

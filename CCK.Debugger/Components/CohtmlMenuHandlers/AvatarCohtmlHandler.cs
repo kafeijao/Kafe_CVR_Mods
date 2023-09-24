@@ -324,7 +324,6 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             pointerSubSection.AddSection("Class", pointer.GetType().Name);
             pointerSubSection.AddSection("Is Internal", ToString(pointer.isInternalPointer));
             pointerSubSection.AddSection("Is Local", ToString(pointer.isLocalPointer));
-            pointerSubSection.AddSection("Limit To Filtered Triggers", ToString(pointer.limitToFilteredTriggers));
             pointerSubSection.AddSection("Layer", pointerGo.layer.ToString());
             pointerSubSection.AddSection("Type", pointer.type);
 
@@ -354,11 +353,17 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             spawnableSection.AddSection("Class", trigger.GetType().Name);
             spawnableSection.AddSection("Advanced Trigger", ToString(trigger.useAdvancedTrigger));
             spawnableSection.AddSection("Particle Interactions", ToString(trigger.allowParticleInteraction));
+            spawnableSection.AddSection("Is Local Interactable", ToString(trigger.isLocalInteractable));
             spawnableSection.AddSection("Layer", triggerGo.layer.ToString());
 
             var allowedTypesSection = spawnableSection.AddSection("Allowed Types", trigger.allowedTypes.Length == 0 ? Na : "");
             foreach (var triggerAllowedType in trigger.allowedTypes) {
                 allowedTypesSection.AddSection(triggerAllowedType);
+            }
+
+            var allowedPointersSection = spawnableSection.AddSection("Allowed Pointers", trigger.allowedPointer.Count == 0 ? Na : "");
+            foreach (var triggerAllowedPointer in trigger.allowedPointer) {
+                allowedPointersSection.AddSection(triggerAllowedPointer.name);
             }
 
             void GetTriggerTaskTemplate(Section parentSection, CVRAdvancedAvatarSettingsTriggerTask task, int idx) {

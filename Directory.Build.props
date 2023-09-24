@@ -173,6 +173,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MTJobSystem.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="NewBlood.EngineInternals">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\NewBlood.EngineInternals.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Newtonsoft.Json">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Newtonsoft.Json.dll</HintPath>
             <Private>False</Private>

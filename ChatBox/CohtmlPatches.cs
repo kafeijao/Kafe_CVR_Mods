@@ -24,7 +24,7 @@ internal static class CohtmlPatches {
             MelonLogger.Warning($"[SetKeyboardContent] Attempted to set the keyboard content, but the view was not initialized.");
             return;
         }
-        ViewManager.Instance.gameMenuView.View.TriggerEvent("ChatBoxUpdateContent", content);
+        ViewManager.Instance.gameMenuView.View._view.TriggerEvent("ChatBoxUpdateContent", content);
     }
 
     internal static void SendAutoCompleteEvent() {
@@ -32,7 +32,7 @@ internal static class CohtmlPatches {
             MelonLogger.Warning($"[SendAutoCompleteEvent] Attempted send the auto-complete event, but the view was not initialized.");
             return;
         }
-        ViewManager.Instance.gameMenuView.View.TriggerEvent("ChatBoxAutoComplete");
+        ViewManager.Instance.gameMenuView.View._view.TriggerEvent("ChatBoxAutoComplete");
     }
 
     internal static void SendKeyboardBlur() {
@@ -40,7 +40,7 @@ internal static class CohtmlPatches {
             MelonLogger.Warning($"[SendKeyboardBlur] Attempted to send the blur keyboard event, but the view was not initialized.");
             return;
         }
-        ViewManager.Instance.gameMenuView.View.TriggerEvent("ChatBoxBlurKeyboardInput");
+        ViewManager.Instance.gameMenuView.View._view.TriggerEvent("ChatBoxBlurKeyboardInput");
     }
 
     [HarmonyPatch]
@@ -53,20 +53,20 @@ internal static class CohtmlPatches {
 
                 // Load the bindings
                 __instance.gameMenuView.Listener.ReadyForBindings += () => {
-                    __instance.gameMenuView.View.RegisterForEvent("ChatBoxIsTyping", KeyboardKeyPressed);
-                    __instance.gameMenuView.View.RegisterForEvent("ChatBoxClosedKeyboard", KeyboardCancelButtonPressed);
+                    __instance.gameMenuView.View._view.RegisterForEvent("ChatBoxIsTyping", KeyboardKeyPressed);
+                    __instance.gameMenuView.View._view.RegisterForEvent("ChatBoxClosedKeyboard", KeyboardCancelButtonPressed);
 
-                    __instance.gameMenuView.View.RegisterForEvent("ChatBoxArrowUp", KeyboardArrowUpPressed);
-                    __instance.gameMenuView.View.RegisterForEvent("ChatBoxArrowDown", KeyboardArrowDownPressed);
+                    __instance.gameMenuView.View._view.RegisterForEvent("ChatBoxArrowUp", KeyboardArrowUpPressed);
+                    __instance.gameMenuView.View._view.RegisterForEvent("ChatBoxArrowDown", KeyboardArrowDownPressed);
 
-                    __instance.gameMenuView.View.BindCall("ChatBoxAutoComplete", AutoCompleteRequested);
+                    __instance.gameMenuView.View._view.BindCall("ChatBoxAutoComplete", AutoCompleteRequested);
 
-                    __instance.gameMenuView.View.BindCall("ChatBoxPrevious", KeyboardPreviousPressed);
+                    __instance.gameMenuView.View._view.BindCall("ChatBoxPrevious", KeyboardPreviousPressed);
                 };
 
                 // Inject our Cohtml
                 __instance.gameMenuView.Listener.FinishLoad += _ => {
-                    __instance.gameMenuView.View.ExecuteScript(ModConfig.JavascriptPatchesContent);
+                    __instance.gameMenuView.View._view.ExecuteScript(ModConfig.JavascriptPatchesContent);
                     _initialized = true;
                 };
 

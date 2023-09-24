@@ -2,7 +2,6 @@
 using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
-using ABI.CCK.Components;
 using ABI.CCK.Scripts;
 using HarmonyLib;
 using MelonLoader;
@@ -148,7 +147,7 @@ public class ProfilesExtended : MelonMod {
         private static void BeforeViewManagerRegisterEvents(ViewManager __instance) {
             // We're detecting the Main Menu change parameter events here
             // Lets bind this before the game binds it, otherwise we can't overwrite it later
-            __instance.gameMenuView.View.BindCall("CVRAppCallChangeAnimatorParam", (string name, float value) => {
+            __instance.gameMenuView.View._view.BindCall("CVRAppCallChangeAnimatorParam", (string name, float value) => {
                 // Call the original function
                 PlayerSetup.Instance.changeAnimatorParam(name, value);
                 QueueSaveAvatarSettingsProfile();

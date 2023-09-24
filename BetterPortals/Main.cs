@@ -253,7 +253,7 @@ public class BetterPortals : MelonMod {
             try {
                 // Inject our Cohtml
                 __instance.gameMenuView.Listener.FinishLoad += _ => {
-                    __instance.gameMenuView.View.ExecuteScript(ModConfig.JavascriptPatchesContent);
+                    __instance.gameMenuView.View._view.ExecuteScript(ModConfig.JavascriptPatchesContent);
                 };
             }
             catch (Exception e) {

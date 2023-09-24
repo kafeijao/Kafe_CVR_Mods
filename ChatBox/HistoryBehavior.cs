@@ -284,7 +284,7 @@ public class HistoryBehavior : MonoBehaviour {
             _messageButton = _rootRectTransform.Find("TogglesView/Message").GetComponent<Button>();
             _messageButton.onClick.AddListener(() => {
                 if (CVR_MenuManager.Instance._quickMenuOpen) CVR_MenuManager.Instance.ToggleQuickMenu(false);
-                ChatBox.OpenKeyboard(true, "");
+                ChatBox.OpenKeyboard("", true);
             });
 
             // Pin Toggle

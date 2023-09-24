@@ -93,17 +93,13 @@ public class BetterAFK : MelonMod {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRParameterStreamEntry), nameof(CVRParameterStreamEntry.CheckUpdate))]
-        public static void After_CVRParameterStreamEntry_CheckUpdate(
-            CVRParameterStreamEntry __instance,
-            CVRAvatar avatar,
-            CVRSpawnable spawnable,
-            CVRParameterStream.ReferenceType referenceType) {
+        public static void After_CVRParameterStreamEntry_CheckUpdate(CVRParameterStreamEntry __instance, CVRParameterStream stream) {
 
             try {
                 var num1 = 0.0f;
 
-                if ((referenceType == CVRParameterStream.ReferenceType.Avatar && avatar == null) ||
-                    referenceType == CVRParameterStream.ReferenceType.Spawnable && spawnable == null) return;
+                if ((stream.referenceType == CVRParameterStream.ReferenceType.Avatar && stream.avatar == null) ||
+                    stream.referenceType == CVRParameterStream.ReferenceType.Spawnable && stream.spawnable == null) return;
 
                 switch (__instance.type) {
                     case CVRParameterStreamEntry.Type.HeadsetOnHead:
@@ -198,15 +194,15 @@ public class BetterAFK : MelonMod {
                         component2.SetValue(num13);
                         break;
                     case CVRParameterStreamEntry.TargetType.AvatarAnimator:
-                        if (avatar == null || avatar != PlayerSetup.Instance._avatarDescriptor)
+                        if (stream.avatar == null || stream.avatar != PlayerSetup.Instance._avatarDescriptor)
                             break;
                         PlayerSetup.Instance.changeAnimatorParam(__instance.parameterName, num13);
                         break;
                     case CVRParameterStreamEntry.TargetType.CustomFloat:
-                        if (spawnable == null) break;
-                        var index = spawnable.syncValues.FindIndex(match => match.name == __instance.parameterName);
+                        if (stream.spawnable == null) break;
+                        var index = stream.spawnable.syncValues.FindIndex(match => match.name == __instance.parameterName);
                         if (index < 0) break;
-                        spawnable.SetValue(index, num13);
+                        stream.spawnable.SetValue(index, num13);
                         break;
                 }
             }

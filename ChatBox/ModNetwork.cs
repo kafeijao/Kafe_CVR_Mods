@@ -280,7 +280,7 @@ public static class ModNetwork {
         private static readonly Dictionary<MessageType, (int maxMessages, int timeWindowSeconds, bool warnUser)> UserRateMessageLimits = new();
 
         static RateLimiter() {
-            SetupMessageType(MessageType.SendMessage, 5, 10, true);
+            SetupMessageType(MessageType.SendMessage, 10, 5, true);
             SetupMessageType(MessageType.Typing, 1, 3, false);
         }
 

@@ -270,7 +270,7 @@ public static class ModConfig {
 
         miscCategory.AddButton("Send Message", iconMsg, "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
             manager.ToggleQuickMenu(false);
-            ChatBox.OpenKeyboard(false, "");
+            ChatBox.OpenKeyboard("", false);
         };
 
         var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", iconMsgSettings, $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));

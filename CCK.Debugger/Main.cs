@@ -26,7 +26,7 @@ public class CCKDebugger : MelonMod {
         // Load assembly resources
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
-        // Check if it is in debug mode (to test functionalities that are waiting for bios to be enabled)
+        // Check if it is in debug mode
         // Keeping it hard-ish to enable so people don't abuse it
         foreach (var commandLineArg in Environment.GetCommandLineArgs()) {
             if (!commandLineArg.StartsWith("--cck-debugger-test=")) continue;
@@ -181,6 +181,20 @@ public class CCKDebugger : MelonMod {
         [HarmonyPatch(typeof(CVRAdvancedAvatarSettingsTriggerTaskStay), nameof(CVRAdvancedAvatarSettingsTriggerTaskStay.trigger))]
         static void AfterAasStayTriggerTriggered(CVRAdvancedAvatarSettingsTriggerTaskStay __instance) {
             Events.Avatar.OnAasStayTriggerTriggered(__instance);
+        }
+
+        // Worlds
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(World_t), nameof(World_t.Recycle))]
+        static void Before_World_t_Recycle(World_t __instance) {
+            Events.World.OnWorldDetailsRecycled(__instance);
+        }
+
+        // Worlds
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.SetupWorldRules))]
+        static void Before_CVRWorld_SetupWorldRules() {
+            Events.World.OnWorldFinishedConfiguration();
         }
 
         // Player

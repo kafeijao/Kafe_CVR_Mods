@@ -61,6 +61,7 @@ public class CohtmlMenuController : MonoBehaviour {
         // Add handlers
         ICohtmlHandler.Handlers.Add(new AvatarCohtmlHandler());
         ICohtmlHandler.Handlers.Add(new SpawnableCohtmlHandler());
+        ICohtmlHandler.Handlers.Add(new WorldCohtmlHandler());
         ICohtmlHandler.Handlers.Add(new MiscCohtmlHandler());
 
         Events.DebuggerMenu.MainNextPage += () => ICohtmlHandler.SwitchMenu(true);
@@ -246,7 +247,13 @@ public class CohtmlMenuController : MonoBehaviour {
             yield return null;
         }
         var cohtmlWorldViewAnimator = cwv.GetComponent<Animator>().runtimeAnimatorController;
-        while ((cohtmlUISystem = GameObject.Find("/Cohtml/CohtmlUISystem").GetComponent<CohtmlUISystem>()) == null) {
+        const string cohtmlUiSystemGoPath = "/Cohtml/CohtmlDefaultUISystem";
+        var cohtmlUiSystemGo = GameObject.Find(cohtmlUiSystemGoPath);
+        if (cohtmlUiSystemGo == null) {
+            MelonLogger.Error($"Failed to find an object on {cohtmlUiSystemGoPath}");
+            yield break;
+        }
+        while ((cohtmlUISystem = cohtmlUiSystemGo.GetComponent<CohtmlUISystem>()) == null) {
             yield return null;
         }
 

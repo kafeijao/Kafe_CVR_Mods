@@ -291,7 +291,6 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
             pointerSubSection.AddSection("Class", pointer.GetType().Name);
             pointerSubSection.AddSection("Is Internal", ToString(pointer.isInternalPointer));
             pointerSubSection.AddSection("Is Local", ToString(pointer.isLocalPointer));
-            pointerSubSection.AddSection("Limit To Filtered Triggers", ToString(pointer.limitToFilteredTriggers));
             pointerSubSection.AddSection("Layer", pointerGo.layer.ToString());
             pointerSubSection.AddSection("Type", pointer.type);
 

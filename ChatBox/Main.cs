@@ -15,8 +15,6 @@ namespace Kafe.ChatBox;
 
 public class ChatBox : MelonMod {
 
-    private const string KeyboardId = $"[MelonMod.kafe.{nameof(ChatBox)}Mod]";
-
     private const string AnimatorParameterTyping = "ChatBox/Typing";
     private static readonly int AnimatorParameterTypingLocal = Animator.StringToHash("#" + AnimatorParameterTyping);
 
@@ -58,7 +56,7 @@ public class ChatBox : MelonMod {
         };
 
         // Setup the Cohtml Events
-        CohtmlPatches.KeyboardCancelButtonPressed += DisableKeyboard;
+        CohtmlPatches.KeyboardCancelButtonPressed += () => DisableKeyboard(true);
         CohtmlPatches.KeyboardKeyPressed += () => {
             if (!_isChatBoxKeyboardOpened) return;
             SetIsTyping(API.MessageSource.Internal, true, true);
@@ -110,24 +108,19 @@ public class ChatBox : MelonMod {
 
         CVRGameEventSystem.MainMenu.OnClose.AddListener(() => {
             // When closing the Game Menu (also closes the keyboard) mark keyboard as disabled
-            if ( _isChatBoxKeyboardOpened) {
+            if (_isChatBoxKeyboardOpened) {
                 MelonCoroutines.Start(DisableKeyboardWithDelay());
             }
         });
     }
 
-    internal static void OpenKeyboard(bool delayed, string initialMessage) {
+    internal static void OpenKeyboard(string initialMessage, bool delayed) {
         if (ViewManager.Instance == null) return;
         _isChatBoxKeyboardOpened = true;
         if (_openKeyboardCoroutineToken != null) {
             MelonCoroutines.Stop(_openKeyboardCoroutineToken);
         }
-        if (delayed) {
-            _openKeyboardCoroutineToken = MelonCoroutines.Start(OpenKeyboardWithDelay(initialMessage));
-        }
-        else {
-            ActuallyOpenKeyboard(initialMessage);
-        }
+        _openKeyboardCoroutineToken = MelonCoroutines.Start(OpenKeyboardCoroutine(initialMessage, delayed));
     }
 
     internal static void SetIsTyping(API.MessageSource msgSource, bool isTyping, bool notification) {
@@ -140,20 +133,6 @@ public class ChatBox : MelonMod {
         }
     }
 
-    private static void ActuallyOpenKeyboard(string initialMessage) {
-        if (!MetaPort.Instance.isUsingVr) {
-            CVRInputManager.Instance.inputEnabled = false;
-            CVRInputManager.Instance.textInputFocused = true;
-        }
-        else {
-            ViewManager.Instance._inputField = null;
-            ViewManager.Instance._tmp_inputField = null;
-        }
-        ViewManager.Instance.openMenuKeyboard(KeyboardId + initialMessage);
-        ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
-        _openKeyboardCoroutineToken = null;
-    }
-
     public override void OnUpdate() {
 
         if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
@@ -161,7 +140,7 @@ public class ChatBox : MelonMod {
             && CVRInputManager.Instance != null && !CVRInputManager.Instance.textInputFocused
             && CVR_MenuManager.Instance != null && !CVR_MenuManager.Instance.textInputFocused
             && ViewManager.Instance != null && !ViewManager.Instance.textInputFocused) {
-            OpenKeyboard(true, "");
+            OpenKeyboard("", true);
         }
 
         if (Input.GetKeyDown(KeyCode.Tab) && _isChatBoxKeyboardOpened) {
@@ -171,20 +150,42 @@ public class ChatBox : MelonMod {
 
     private static float _timer;
 
-    private static IEnumerator OpenKeyboardWithDelay(string initialMsg) {
+    private static IEnumerator OpenKeyboardCoroutine(string initialMsg, bool delay) {
+
+        // If delayed wait 0.2 secs and make sure we're not holding Y
         _timer = 0f;
-        while (_timer < 0.2f && Input.GetKey(KeyCode.Y)) {
+        while (delay && _timer < 0.2f && Input.GetKey(KeyCode.Y)) {
             _timer += Time.deltaTime;
             yield return null;
         }
-        ActuallyOpenKeyboard(initialMsg);
+
+        if (!MetaPort.Instance.isUsingVr) {
+            CVRInputManager.Instance.inputEnabled = false;
+            CVRInputManager.Instance.textInputFocused = true;
+        }
+        else {
+            ViewManager.Instance._inputField = null;
+            ViewManager.Instance._tmp_inputField = null;
+        }
+
+        // Open main menu and wait for it to be opened (otherwise it won't receive the OpenInWorldKeyboard event)
+        ViewManager.Instance.ForceUiStatus(true);
+        yield return new WaitForSeconds(0.2f);
+
+        // Send the OpenInWorldKeyboard Event
+        ViewManager.Instance.gameMenuView.View.TriggerEvent("OpenInWorldKeyboard", initialMsg);
+
+        ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
+        _openKeyboardCoroutineToken = null;
     }
 
-    private static void DisableKeyboard() {
+    private static void DisableKeyboard(bool resetInputAndFocus) {
 
-        // Clear stuff (seems seems that is needed when clicking the Enter on the virtual keyboard?
-        if (!MetaPort.Instance.isUsingVr) {
-            CVRInputManager.Instance.inputEnabled = true;
+        if (resetInputAndFocus) {
+            // Clear stuff (seems seems that is needed when clicking the Enter on the virtual keyboard?
+            if (!MetaPort.Instance.isUsingVr) {
+                CVRInputManager.Instance.inputEnabled = true;
+            }
             CVRInputManager.Instance.textInputFocused = false;
         }
 
@@ -199,7 +200,7 @@ public class ChatBox : MelonMod {
         // This delay is here because the menu close menu event happens before the SendToWorldUi
         // Which would disable _openedKeyboard before we could send the message
         yield return new WaitForSeconds(0.1f);
-        DisableKeyboard();
+        DisableKeyboard(true);
     }
 
     [HarmonyPatch]
@@ -224,17 +225,10 @@ public class ChatBox : MelonMod {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.openMenuKeyboard), typeof(string))]
         public static void Before_ViewManager_openMenuKeyboard(ViewManager __instance, ref string previousValue) {
-            // When opening the ChatBox keyboard, send the typing event
+            // When another keyboard is opened while the ChatBox one is already opened -> Disable ChatBox input
             try {
                 if (_isChatBoxKeyboardOpened) {
-                    if (!previousValue.StartsWith(KeyboardId)) {
-                        _isChatBoxKeyboardOpened = false;
-                        SetIsTyping(API.MessageSource.Internal, false, true);
-                    }
-                    else {
-                        // Remove the tag
-                        previousValue = previousValue.Remove(0, KeyboardId.Length);
-                    }
+                    DisableKeyboard(false);
                 }
             }
             catch (Exception e) {
@@ -250,7 +244,7 @@ public class ChatBox : MelonMod {
             try {
                 if (_isChatBoxKeyboardOpened) {
                     ModNetwork.SendMessage(API.MessageSource.Internal, "", value, true, true, true);
-                    DisableKeyboard();
+                    DisableKeyboard(true);
                 }
             }
             catch (Exception e) {
