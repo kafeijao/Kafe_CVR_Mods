@@ -2,7 +2,7 @@
   "_id": 160,
   "name": "GrabbyBones",
   "modversion": "1.0.4",
-  "gameversion": "2023r171p2",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,7 +15,7 @@
     "bone"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/GrabbyBones.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
   "changelog": "- Fixed a bug some dynamic bones wouldn't load because their init was delayed (Thanks SDraw)",
   "embedcolor": "16C60C"

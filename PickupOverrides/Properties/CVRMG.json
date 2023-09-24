@@ -2,7 +2,7 @@
   "_id": 66,
   "name": "PickupOverrides",
   "modversion": "1.0.3",
-  "gameversion": "2023r171p2",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -18,7 +18,7 @@
     "settings"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/PickupOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/PickupOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides",
   "changelog": "- Fixed for 2023r171p1",
   "embedcolor": "16C60C"

@@ -1,8 +1,8 @@
 {
   "_id": -1,
   "name": "NavMeshFollower",
-  "modversion": "0.0.1",
-  "gameversion": "2023r171p2",
+  "modversion": "0.0.2",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "ai",
     "prop"
   ],
-  "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/NavMeshFollower.dll",
+  "requirements": ["[NavMeshTools](https://api.cvrmg.com/v1/mods/download/Todo)", "[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/NavMeshFollower.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshFollower",
   "changelog": "- Initial Release.",
   "embedcolor": "16C60C"

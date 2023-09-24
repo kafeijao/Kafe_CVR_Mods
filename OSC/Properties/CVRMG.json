@@ -1,8 +1,8 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "1.1.6",
-  "gameversion": "2023r171p2",
+  "modversion": "1.1.7",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed Tracking endpoints\n- Cached entities for performance.\n- Fixed tracking endpoints (again)",
+  "changelog": "- Fixed `/input/Voice` not working properly.",
   "embedcolor": "16C60C"
 }

@@ -1,8 +1,8 @@
 {
   "_id": 159,
   "name": "Logger++",
-  "modversion": "0.0.5",
-  "gameversion": "2023r171p2",
+  "modversion": "0.0.6",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Plugin",
   "author": "kafeijao",
@@ -13,8 +13,8 @@
     "debug"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/Logger++.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/Logger++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++",
-  "changelog": "- Fixed for 2023r171p1.",
+  "changelog": "- Added more filtered messages.",
   "embedcolor": "16C60C"
 }

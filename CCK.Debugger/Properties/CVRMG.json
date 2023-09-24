@@ -1,8 +1,8 @@
 {
   "_id": 74,
   "name": "CCK.Debugger",
-  "modversion": "2.0.6",
-  "gameversion": "2023r171p2",
+  "modversion": "2.0.7",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -21,8 +21,8 @@
     "layer"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
-  "changelog": "- Added animator layers to props.",
+  "changelog": "- Fixed visualizer shader for SPI (thanks Noachi).\n- Cleaned Asset Bundle loading.\n- Added local animators inspection for Props.\n- Added World tab with the collision matrix (wip).",
   "embedcolor": "16C60C"
 }

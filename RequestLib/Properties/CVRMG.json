@@ -1,8 +1,8 @@
 {
   "_id": 169,
   "name": "RequestLib",
-  "modversion": "0.0.9",
-  "gameversion": "2023r171p2",
+  "modversion": "0.0.10",
+  "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -12,8 +12,8 @@
     "lib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r57/RequestLib.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
-  "changelog": "- Added a mod network rate limiter.\n- Made the limits per message type.",
+  "changelog": "- Fixed timeouts from not being triggered.\n - Fixed for 2023r172",
   "embedcolor": "16C60C"
 }
