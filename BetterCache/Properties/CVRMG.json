@@ -1,0 +1,19 @@
+{
+  "_id": -1,
+  "name": "BetterCache",
+  "modversion": "0.0.1",
+  "gameversion": "2023r172",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Simple mod that improves the Cache.\n\n**__Features__**\n- Set a custom Cache Folder location (default: `ChilloutVR/Cache/`).\n- Set a Max limit for the Cache (default: `20GB`).\n- Forces and uses file Access Date to keep files.\n- Deletes original Cache Folders to prevent cluttering.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache) for more in-depth info.\n\n",
+  "searchtags": [
+    "better",
+    "cache"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/BetterCache.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache",
+  "changelog": "- Initial Release.",
+  "embedcolor": "16C60C"
+}
