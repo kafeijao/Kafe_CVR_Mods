@@ -11,7 +11,7 @@
     "better",
     "cache"
   ],
-  "requirements": [],
+  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/BetterCache.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache",
   "changelog": "- Initial Release.",

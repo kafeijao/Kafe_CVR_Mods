@@ -24,9 +24,11 @@ using MelonLoader;
 [assembly: VerifyLoaderVersion(0, 6, 1, true)]
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
+[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 
 namespace Kafe.BetterCache.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "0.0.1";
     public const string Author = "kafeijao";
+    public const string BTKUILibName = "BTKUILib";
 }
