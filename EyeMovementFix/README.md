@@ -32,14 +32,3 @@ eye movement but only for the local client. Over time I also implemented some ne
 - Allow to enforce the camera to be the only look at target when held (and the camera setting to allow it be a look at
   target is enabled).
 - Prevent the portable mirror mod's mirrors from creating look at targets of the players reflected on said mirrors
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

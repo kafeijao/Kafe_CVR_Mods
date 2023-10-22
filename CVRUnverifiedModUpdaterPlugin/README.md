@@ -71,15 +71,3 @@ the `/Mods` folder.
   ]
 }
 ```
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This plugin's developer(s) and the plugin itself, along with the respective plugin loaders, have no affiliation with
-> ABI!
->
-> ---

@@ -17,14 +17,3 @@ Requires [BTKUILib](https://github.com/BTK-Development/BTKUILib)
 * Make the quick menu freeze where it spawned, this allows 1 hand control. (toggleable, *off* by default).
 * Swap hands where the Quick Menu sticks to (toggleable, **on** by default).
 * Swap the buttons to open the Quick Menu and the Big Menu (toggleable, **on** by default).
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

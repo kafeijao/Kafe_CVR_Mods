@@ -26,14 +26,3 @@ The mod comes with a set of Melon Preferences that can be customized to your lik
 - **SetAnimatorParameterAFK:** Whether to attempt to set the bool parameter AFK when AFK or not. (default: `true`)
 - **SetAnimatorParameterAFKTimer:** Whether to attempt to set the int or float parameter `AFKTimer` with the time you've
   been AFK for in **seconds** or not. (default: `true`)
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

@@ -15,14 +15,3 @@ Requires [BTKUILib](https://github.com/BTK-Development/BTKUILib)
 
 **Note:** The rejoining the last instance takes priority over the joining an online instance. In case both are activated
 at the same time and the last instance is gone, it will then load into an online instance instead.
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

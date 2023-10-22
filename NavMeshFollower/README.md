@@ -18,14 +18,3 @@ prop. If you search for `NMF` or `NavMeshFollower` in CVR you might find some pu
 
 You can make your own custom followers, but it requires a decent amount of unity knowledge! You can head to
 the [NavMeshFollower CCK Readme](https://github.com/kafeijao/Kafe_CVR_CCKs/tree/master/NavMeshFollower)
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

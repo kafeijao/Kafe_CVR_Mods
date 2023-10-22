@@ -63,12 +63,3 @@ root up to the grabbed bone.
 It is janky, and will probably break some bone setups since it bypasses the limits imposed by dynamic bones/magica
 cloth. It shouldn't cause too much performance drops since the FABRIK script is only active when a bone is being
 grabbed.
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

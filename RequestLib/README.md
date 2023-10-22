@@ -73,12 +73,3 @@ reference.
 
 Also I implemented a [TeleportRequest](../TeleportRequest) Mod that takes advantage of this library if you want an
 implementation example.
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

@@ -17,14 +17,3 @@ need to put on all game objects you want to prevent getting hidden.
 
 You are able to change the the tag `[FPH]` or add multiple other ones since it is a list. Although you will need to edit
 the `MelonPreferences.cfg`, because it is a list of strings and seems `UI Expansion Kit` doesn't support this yet.
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

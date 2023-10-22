@@ -767,14 +767,3 @@ configuration. Note that the `Launch Options` will override your Melon Loader co
 ```
 
 *Note:* If you want to replicate the default settings you would use: `--osc=9000:127.0.0.1:9001`
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

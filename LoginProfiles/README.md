@@ -34,14 +34,3 @@ ChilloutVR.exe --profile=kafeijao
 ```
 
 Then all you need is double click that file and should open ChilloutVR with the respective profile.
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

@@ -11,14 +11,3 @@ that you spawned, it will delete for everyone.
 - **PreventClappingFriendAvatars**: Whether or not to ignore friend's avatars when clapping.
 - **ShowVisualizersAfterOpenHands**: Whether or not to show visualizers of where to clap. The visualizers appear 1 second
 after having both hands with the open hand gesture.
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

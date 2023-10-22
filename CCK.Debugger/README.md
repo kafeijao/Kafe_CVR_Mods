@@ -56,14 +56,3 @@ prevent disappearing when you close the menu).
 ## Credits
 
 - Thanks [AstroDoge](https://github.com/AstroDogeDX) for helping me delving into the depths of hell (cohtml).
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

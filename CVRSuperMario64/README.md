@@ -91,14 +91,3 @@ If you want to build the `libsm64/Plugins/sm64.dll` follow the instructions at:
 
 The `libsm64/Plugins/sm64.dll.info` file should have information of which commit I used to build the current supported
 version of the dll.
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---

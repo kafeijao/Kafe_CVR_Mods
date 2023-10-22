@@ -24,15 +24,3 @@ C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\UserData\MelonPreferenc
 
 You can then edit and look for `[ProfilesExtended]` line, bellow it there should be all configurations with a little 
 description. You **can** edit whether the game is running or not, they should take effect as soon as you save the file.
-
-
----
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---
