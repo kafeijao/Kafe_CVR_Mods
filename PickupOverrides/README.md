@@ -36,12 +36,3 @@ configs in-game without any issues as it updates for all existing props in the s
 You can use the `UI Expansion Kit` (very recommended), or by editing the the config config file located at
 `<game_folder>\UserData\MelonPreferences.cfg`. You can change the configs while the game and it will take effect as soon
 as you save the config file.
-
-## Disclosure
-
-> ---
-> ⚠️ **Notice!**  
->
-> This mod's developer(s) and the mod itself, along with the respective mod loaders, have no affiliation with ABI!
->
-> ---
