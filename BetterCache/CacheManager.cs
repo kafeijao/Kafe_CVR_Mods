@@ -66,26 +66,30 @@ public static class CacheManager {
 
     private static void ScheduleCacheCleaning() {
 
-        if (!IsCleaningAllowed()) {
-            MelonLogger.Msg("Cache cleaning is already in progress, skipping scheduling....");
-            return;
-        }
-
         _cleaningTaskCancellationToken?.Cancel();
         _cleaningTaskCancellationToken = new CancellationTokenSource();
 
         Task.Delay(TimeSpan.FromSeconds(30), _cleaningTaskCancellationToken.Token).ContinueWith(t => {
-            if (!t.IsCanceled) {
-                Task.Run(CleanCache);
+
+            if (t.IsCanceled) return;
+
+            if (!IsCleaningAllowed()) {
+                MelonLogger.Msg("Cache cleaning is already in progress, skipping scheduling....");
+                return;
             }
+
+            Task.Run(CleanCache);
+
         }, _cleaningTaskCancellationToken.Token);
     }
 
-    private static void CancelCacheCleaning() {
+    internal static void CancelCacheCleaning() {
         _cleaningTaskCancellationToken?.Cancel();
     }
 
     private static void CleanCache() {
+
+        CancelCacheCleaning();
 
         var directories = new[] {
             Path.Combine(ModConfig.MeCacheDirectory.Value, "Avatars"),
@@ -111,6 +115,7 @@ public static class CacheManager {
         }
 
         var allFiles = directories.SelectMany(Directory.GetFiles)
+            .Where(filePath => BetterCache.FileExtensions.Contains(Path.GetExtension(filePath)))
             .Select(filePath => new FileInfo(filePath))
             .ToList();
 
@@ -121,19 +126,19 @@ public static class CacheManager {
         while (currentSize > targetSizeBytes && allFiles.Count > 0) {
             var fileToDelete = allFiles.OrderBy(file => file.LastAccessTimeUtc).FirstOrDefault();
 
-            if (fileToDelete != null) {
-                currentSize -= fileToDelete.Length;
-                deletedBytes += fileToDelete.Length;
-                deletedFilesCount++;
+            if (fileToDelete == null) continue;
 
-                try {
-                    fileToDelete.Delete();
-                    allFiles.Remove(fileToDelete);
-                }
-                catch (Exception ex) {
-                    MelonLogger.Warning($"Failed to delete file: {fileToDelete.FullName} due to {ex.Message}. Skipping current cleanup...");
-                    break;
-                }
+            currentSize -= fileToDelete.Length;
+            deletedBytes += fileToDelete.Length;
+            deletedFilesCount++;
+
+            try {
+                fileToDelete.Delete();
+                allFiles.Remove(fileToDelete);
+            }
+            catch (Exception ex) {
+                MelonLogger.Warning($"Failed to delete file: {fileToDelete.FullName} due to {ex.Message}. Skipping current cleanup...");
+                break;
             }
         }
 
@@ -154,6 +159,7 @@ public static class CacheManager {
 
     private static long CalculateTotalSize(string[] directories) {
         return directories.Sum(dir => Directory.GetFiles(dir)
+            .Where(filePath => BetterCache.FileExtensions.Contains(Path.GetExtension(filePath)))
             .Select(filePath => new FileInfo(filePath))
             .Sum(fileInfo => fileInfo.Length));
     }

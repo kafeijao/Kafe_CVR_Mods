@@ -1,12 +1,12 @@
 {
   "_id": 177,
   "name": "BetterCache",
-  "modversion": "0.0.1",
+  "modversion": "0.0.2",
   "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Simple mod that improves the Cache management and cleaning.\n\n**__Features__**\n- Deletes the files with older accessed date when above the limit\n- Set a custom Cache Folder location (default: `ChilloutVR/Cache/`)\n- Set a Max limit for the Cache (default: `20GB`)\n- Forces and uses file Access Date to keep files\n- Deletes original Cache Folders to prevent cluttering\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache) for more in-depth info.\n\n",
+  "description": "Simple mod that improves the Cache management and cleaning.\n\n**__Features__**\n- Deletes the files with older accessed date when above the limit\n- Set a custom Cache Folder location (default: `ChilloutVR/Cache/`)\n- Set a Max limit for the Cache (default: `20GB`)\n- Buttons to clear cache\n- Deletes original Cache Folders to prevent cluttering\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache) for more in-depth info.\n\n",
   "searchtags": [
     "better",
     "cache"
@@ -14,6 +14,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/BetterCache.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache",
-  "changelog": "- Initial Release.",
+  "changelog": "- Initial Release.\n- Never delete folders, only files with `.cvravatar`, `.cvrprop`, and `.cvrworld` extension.",
   "embedcolor": "16C60C"
 }

@@ -51,7 +51,8 @@ public static class ModConfig {
         // Clear all cache button
         var clearAllCache = miscCategory.AddButton("Clear All Cache", "", "Clears ALL Cache files.");
         clearAllCache.OnPress += () => {
-            BetterCache.DeleteCacheFolders(MeCacheDirectory.Value);
+            CacheManager.CancelCacheCleaning();
+            BetterCache.DeleteCacheFoldersContent(MeCacheDirectory.Value);
             CacheManager.LastCacheSize = 0;
         };
 

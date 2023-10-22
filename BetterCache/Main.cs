@@ -7,6 +7,12 @@ namespace Kafe.BetterCache;
 
 public class BetterCache : MelonMod {
 
+    private const string AvatarFileExtension = ".cvravatar";
+    private const string PropFileExtension = ".cvrprop";
+    private const string WorldFileExtension = ".cvrworld";
+
+    internal static readonly HashSet<string> FileExtensions = new() { AvatarFileExtension, PropFileExtension, WorldFileExtension };
+
     internal static Action OnDownloadsStart;
     internal static Action OnDownloadsFinish;
 
@@ -48,17 +54,25 @@ public class BetterCache : MelonMod {
     private static void DeleteOriginalCacheFolders() {
         // Ignore deleting if our cache folder is the original cvr folder >.>
         if (Application.dataPath == ModConfig.MeCacheDirectory.Value) return;
-        DeleteCacheFolders(Application.dataPath);
+        DeleteCacheFoldersContent(Application.dataPath);
     }
 
-    internal static void DeleteCacheFolders(string cachePath) {
-        void DeleteFolderIfExists(string path) {
-            if (Directory.Exists(path)) Directory.Delete(path, true);
+    internal static void DeleteCacheFoldersContent(string cachePath) {
+
+        void DeleteSpecifiedFiles(string path) {
+            if (!Directory.Exists(path)) return;
+            foreach (var file in Directory.GetFiles(path)) {
+                var extension = Path.GetExtension(file);
+                if (FileExtensions.Contains(extension)) {
+                    File.Delete(file);
+                }
+            }
         }
+
         Task.Run(() => {
-            DeleteFolderIfExists(Path.Combine(cachePath, "Avatars"));
-            DeleteFolderIfExists(Path.Combine(cachePath, "Worlds"));
-            DeleteFolderIfExists(Path.Combine(cachePath, "Spawnables"));
+            DeleteSpecifiedFiles(Path.Combine(cachePath, "Avatars"));
+            DeleteSpecifiedFiles(Path.Combine(cachePath, "Worlds"));
+            DeleteSpecifiedFiles(Path.Combine(cachePath, "Spawnables"));
         });
     }
 
