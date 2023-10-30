@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.IO;
+﻿using System.Collections.Concurrent;
+using ABI_RC.Core.IO;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -6,6 +7,8 @@ using UnityEngine;
 namespace Kafe.BetterCache;
 
 public class BetterCache : MelonMod {
+
+    internal static readonly ConcurrentQueue<Action> MainThreadActionsQueue = new();
 
     private const string AvatarFileExtension = ".cvravatar";
     private const string PropFileExtension = ".cvrprop";
@@ -41,7 +44,7 @@ public class BetterCache : MelonMod {
             if (!Directory.Exists(ModConfig.MeCacheDirectory.Value)) {
                 Directory.CreateDirectory(ModConfig.MeCacheDirectory.Value);
             }
-            DeleteOriginalCacheFolders();
+            DeleteOriginalCacheFoldersContent();
         }
         catch (Exception e) {
             ModConfig.MeCacheDirectory.Value = ModConfig.DefaultDirectory;
@@ -51,7 +54,7 @@ public class BetterCache : MelonMod {
         }
     }
 
-    private static void DeleteOriginalCacheFolders() {
+    private static void DeleteOriginalCacheFoldersContent() {
         // Ignore deleting if our cache folder is the original cvr folder >.>
         if (Application.dataPath == ModConfig.MeCacheDirectory.Value) return;
         DeleteCacheFoldersContent(Application.dataPath);
@@ -78,6 +81,12 @@ public class BetterCache : MelonMod {
 
     public static string CacheSizeToReadable(long size) {
         return $"{size / 1024.0 / 1024.0 / 1024.0:F2} GB";
+    }
+
+    public override void OnUpdate() {
+        while (MainThreadActionsQueue.TryDequeue(out var action)) {
+            action?.Invoke();
+        }
     }
 
     [HarmonyPatch]

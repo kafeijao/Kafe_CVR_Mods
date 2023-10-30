@@ -24,7 +24,7 @@ public static class CacheManager {
             lock (CacheSizeLock) {
                 _lastCacheSize = value;
             }
-            ModConfig.TotalCacheUsedUpdated?.Invoke(value);
+            BetterCache.MainThreadActionsQueue.Enqueue(() => ModConfig.TotalCacheUsedUpdated?.Invoke(value));
         }
     }
 
@@ -44,23 +44,15 @@ public static class CacheManager {
     }
 
     public static void StartManualCleaning() {
-        if (IsCleaningAllowed()) {
-            Task.Run(CleanCache);
-        }
-        else {
-            MelonLogger.Msg("Cache cleaning is already in progress...");
-        }
-    }
-
-    private static bool IsCleaningAllowed() {
         lock (CleaningProgressLock) {
-            if (_isCleaningInProgress) {
-                return false;
+            if (!_isCleaningInProgress) {
+                _isCleaningInProgress = true;
+                BetterCache.MainThreadActionsQueue.Enqueue(() => ModConfig.IsCleaningCache?.Invoke(true));
+                Task.Run(CleanCache);
             }
-
-            _isCleaningInProgress = true;
-            ModConfig.IsCleaningCache?.Invoke(true);
-            return true;
+            else {
+                MelonLogger.Msg("Cache cleaning is already in progress...");
+            }
         }
     }
 
@@ -73,12 +65,17 @@ public static class CacheManager {
 
             if (t.IsCanceled) return;
 
-            if (!IsCleaningAllowed()) {
-                MelonLogger.Msg("Cache cleaning is already in progress, skipping scheduling....");
-                return;
-            }
+            lock (CleaningProgressLock) {
 
-            Task.Run(CleanCache);
+                if (_isCleaningInProgress) {
+                    MelonLogger.Msg("Cache cleaning is already in progress, skipping scheduling....");
+                    return;
+                }
+
+                _isCleaningInProgress = true;
+                BetterCache.MainThreadActionsQueue.Enqueue(() => ModConfig.IsCleaningCache?.Invoke(true));
+                Task.Run(CleanCache);
+            }
 
         }, _cleaningTaskCancellationToken.Token);
     }
@@ -153,7 +150,7 @@ public static class CacheManager {
 
         lock (CleaningProgressLock) {
             _isCleaningInProgress = false;
-            ModConfig.IsCleaningCache?.Invoke(false);
+            BetterCache.MainThreadActionsQueue.Enqueue(() => ModConfig.IsCleaningCache?.Invoke(false));
         }
     }
 

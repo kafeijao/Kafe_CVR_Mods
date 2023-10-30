@@ -1,7 +1,7 @@
 {
   "_id": 177,
   "name": "BetterCache",
-  "modversion": "0.0.2",
+  "modversion": "0.0.3",
   "gameversion": "2023r172",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -14,6 +14,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/BetterCache.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache",
-  "changelog": "- Initial Release.\n- Never delete folders, only files with `.cvravatar`, `.cvrprop`, and `.cvrworld` extension.",
+  "changelog": "- Stop poking cohtml outside of main thread.",
   "embedcolor": "16C60C"
 }
