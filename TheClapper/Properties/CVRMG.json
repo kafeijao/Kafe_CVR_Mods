@@ -14,7 +14,7 @@
     "prop"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/TheClapper.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/TheClapper.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper",
   "changelog": "- Made the delay to display the visualizers configurable in melon prefs.",
   "embedcolor": "16C60C"

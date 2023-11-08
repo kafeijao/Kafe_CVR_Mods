@@ -15,7 +15,7 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
   "changelog": "- Fixed for 2023r173\n- Removed annoying spam message when misusing some endpoints (Thanks @Natsumi for the PR)\n- Fixed breaking the ToggleHUD and ToggleNameplates via keys.",
   "embedcolor": "16C60C"

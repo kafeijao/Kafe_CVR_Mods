@@ -14,7 +14,7 @@
     "bloom"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/PostProcessingOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/PostProcessingOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PostProcessingOverrides",
   "changelog": "- Fixed for 2023r173",
   "embedcolor": "16C60C"

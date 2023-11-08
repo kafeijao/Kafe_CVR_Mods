@@ -15,7 +15,7 @@
     "network"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/ChatBox.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
   "changelog": "- Fixed sometimes the ChatBox not disappearing.\n- Fixed for 2023r172",
   "embedcolor": "16C60C"

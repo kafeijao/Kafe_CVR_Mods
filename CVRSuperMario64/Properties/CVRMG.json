@@ -15,7 +15,7 @@
     "engine"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/CVRSuperMario64.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/CVRSuperMario64.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64",
   "changelog": "- Fixed for 2023r173",
   "embedcolor": "16C60C"

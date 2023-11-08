@@ -21,7 +21,7 @@
     "layer"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
   "changelog": "- Fixed bug when displaying an avatar with a null `allowed pointers`. (thanks @Nirvash)\n- Fixed for 2023r173",
   "embedcolor": "16C60C"
