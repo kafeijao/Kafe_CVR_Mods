@@ -421,10 +421,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Build.SlimPlayerRuntime.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Unity.Burst.Cecil">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Burst.Cecil.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Unity.Burst.Cecil.Mdb">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Burst.Cecil.Mdb.dll</HintPath>
             <Private>False</Private>
