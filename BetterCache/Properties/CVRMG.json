@@ -2,7 +2,7 @@
   "_id": 177,
   "name": "BetterCache",
   "modversion": "0.0.3",
-  "gameversion": "2023r172",
+  "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -12,8 +12,8 @@
     "cache"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/BetterCache.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/BetterCache.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterCache",
-  "changelog": "- Stop poking cohtml outside of main thread.",
+  "changelog": "- Stop poking cohtml outside of main thread (fixes a crash).",
   "embedcolor": "16C60C"
 }

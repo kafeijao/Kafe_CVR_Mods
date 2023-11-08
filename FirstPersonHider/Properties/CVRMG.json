@@ -1,8 +1,8 @@
 {
   "_id": 98,
   "name": "FirstPersonHider",
-  "modversion": "1.0.0",
-  "gameversion": "2023r172",
+  "modversion": "1.0.1",
+  "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -16,8 +16,8 @@
     "local"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/FirstPersonHider.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/FirstPersonHider.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FirstPersonHider",
-  "changelog": "- Initial Release.",
+  "changelog": "- Fixed for 2023r173",
   "embedcolor": "16C60C"
 }

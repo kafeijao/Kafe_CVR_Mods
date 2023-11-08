@@ -2,12 +2,13 @@
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using ABI_RC.Core.Vivox;
 using ABI_RC.Systems.Camera;
+using ABI_RC.Systems.Communications;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using NicoKuroKusagi.MemoryManagement;
+using Unity.Services.Vivox;
 using UnityEngine;
 
 namespace Kafe.EyeMovementFix;
@@ -241,7 +242,7 @@ public sealed class TargetCandidate : IReusable {
                     targetCandidate._username = AuthManager.username;
                     // Todo: If we can get the amplitude for remotes, get the local one as well
                     // return Mathf.InverseLerp(0f, 0.1f, VivoxDeviceHandler.InputAmplitude);
-                    return VivoxDeviceHandler.InputActive ? 0.1f : 0f;
+                    return VivoxService.Instance != null && !VivoxService.Instance.IsInputDeviceMuted ? 0.1f : 0f;
                 }
 
                 // See if it's any other player, check if their avatar holder instances match

@@ -226,10 +226,10 @@ public class InputModuleOSC : CVRInputModule {
         if (GetKeyDown(ValueNames.GestureLeft, out floatValue)) _thisInputManager.gestureLeft = floatValue;
         if (GetKeyDown(ValueNames.GestureRight, out floatValue)) _thisInputManager.gestureRight = floatValue;
 
-        _thisInputManager.reload = GetKeyDown(ButtonNames.Reload);
-        _thisInputManager.switchMode = GetKeyDown(ButtonNames.SwitchMode);
-        _thisInputManager.toggleHud = GetKeyDown(ButtonNames.ToggleHUD);
-        _thisInputManager.toggleNameplates = GetKeyDown(ButtonNames.ToggleNameplates);
+        _thisInputManager.reload |= GetKeyDown(ButtonNames.Reload);
+        _thisInputManager.switchMode |= GetKeyDown(ButtonNames.SwitchMode);
+        _thisInputManager.toggleHud |= GetKeyDown(ButtonNames.ToggleHUD);
+        _thisInputManager.toggleNameplates |= GetKeyDown(ButtonNames.ToggleNameplates);
 
         // Extras
 
@@ -242,8 +242,7 @@ public class InputModuleOSC : CVRInputModule {
 
         // Drop left controller
         if (GetKeyDown(ButtonNames.DropLeft)) {
-            var pickups = Traverse.Create(CVR_InteractableManager.Instance).Field("pickupList").GetValue<List<CVRPickupObject>>();
-            foreach (var pickup in pickups) {
+            foreach (var pickup in CVR_InteractableManager.Instance.pickupList) {
                 // pickup._controllerRay.hand == true -> Left hand
                 if (!pickup.IsGrabbedByMe() || !pickup._controllerRay.hand) return;
                 MelonLogger.Msg("[Command] Dropping pickup held by left hand...");
@@ -253,8 +252,7 @@ public class InputModuleOSC : CVRInputModule {
 
         // Drop right controller
         if (GetKeyDown(ButtonNames.DropRight)) {
-            var pickups = Traverse.Create(CVR_InteractableManager.Instance).Field("pickupList").GetValue<List<CVRPickupObject>>();
-            foreach (var pickup in pickups) {
+            foreach (var pickup in CVR_InteractableManager.Instance.pickupList) {
                 // pickup._controllerRay.hand == false -> Right hand
                 if (!pickup.IsGrabbedByMe() || pickup._controllerRay.hand) return;
                 MelonLogger.Msg("[Command] Dropping pickup held by right hand...");

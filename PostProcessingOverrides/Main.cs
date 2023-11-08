@@ -33,7 +33,7 @@ public class PostProcessingOverrides : MelonMod {
     private const int CurrentConfigVersion = 1;
 
     // Layer Indices and Masks
-    private const int PPLayer = 16;
+    private const int PPLayer = 4;
     private const int PPLayerMask = 1 << PPLayer;
 
     public static event Action ConfigChanged;
@@ -195,14 +195,14 @@ public class PostProcessingOverrides : MelonMod {
             case OverrideType.Original:
                 _currentWorldModVolume.enabled = false;
                 _currentWorldLayer.enabled = _originalEnabled;
-                PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera, _originalEnabled ? _currentWorldLayer : null);
+                PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
                 // We're done here, the original behavior was loaded by CVR before this was called
                 return;
 
             case OverrideType.Off:
                 _currentWorldModVolume.enabled = false;
                 _currentWorldLayer.enabled = false;
-                PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera, null);
+                PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
                 // We're done here, we disabled everything
                 return;
 
@@ -218,7 +218,7 @@ public class PostProcessingOverrides : MelonMod {
         // Set the PP overrides state
         _currentWorldModVolume.enabled = true;
         _currentWorldLayer.enabled = true;
-        PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera, _currentWorldLayer);
+        PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
 
         // Configure our global override profile
         if (!ModProfile.TryGetSettings(out Bloom bloom)) {

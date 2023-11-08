@@ -12,26 +12,6 @@ public static class Utils {
         return Regex.Replace(className, "(?<!^)([A-Z])", " $1");
     }
 
-    public static (int[], Dictionary<Animator, AnimatorControllerParameterType>, int) GetSpawnableAndAnimatorIndexes(CVRSpawnable spawnable, Animator[] animators, string syncedValueName) {
-        var spawnableIndexes = spawnable.syncValues
-            .Select((value, index) => new { value, index })
-            .Where(pair => pair.value.name == syncedValueName)
-            .Select(pair => pair.index)
-            .ToArray();
-
-        var animatorHash = Animator.StringToHash("#" + syncedValueName);
-
-        var animatorParameterTypes = new Dictionary<Animator, AnimatorControllerParameterType>();
-        foreach (var animator in animators) {
-            if (animator == null) continue;
-            var foundParam = animator.parameters.FirstOrDefault(p => p.nameHash == animatorHash);
-            if (foundParam == null) continue;
-            animatorParameterTypes[animator] = foundParam.type;
-        }
-
-        return (spawnableIndexes, animatorParameterTypes, animatorHash);
-    }
-
     public static ControllerRay GetFakeControllerRay(Transform target, Vector3 worldSpaceOffset, out Vector3 posOffset, out Quaternion rotOffset) {
         // Create a fake controller ray so our follower can grab stuff
         var controllerRayGo = new GameObject("ControllerRayHolder");
@@ -42,7 +22,8 @@ public static class Utils {
         var attachPoint = new GameObject("AttachmentPoint");
         attachPoint.transform.SetParent(controllerRayGo.transform, false);
         attachPoint.transform.position = worldSpaceOffset;
-        controllerRay.attachmentPoint = attachPoint;
+        controllerRay.attachmentPoint = attachPoint.transform;
+        controllerRay.pivotPoint = attachPoint.transform;
         posOffset = attachPoint.transform.localPosition;
         rotOffset = attachPoint.transform.localRotation;
         // #if DEBUG

@@ -25,4 +25,19 @@ public abstract class Behavior {
 
     public abstract bool IsEnabled();
     public abstract string GetStatus();
+    public abstract void Disable();
+
+    public void DisableAllBehaviorsExcept(Behavior behaviorToIgnore) {
+        foreach (var controllerBehavior in Controller.Behaviors) {
+            if (behaviorToIgnore == controllerBehavior) continue;
+            controllerBehavior.Disable();
+        }
+    }
+
+    // Behavior Parameters
+    public abstract int GetId();
+    public abstract int GetState();
+    public abstract bool IsHoldingPickup();
+    public abstract bool IsTargetPlayer();
+    public abstract bool IsTargetPlayerSpawner();
 }

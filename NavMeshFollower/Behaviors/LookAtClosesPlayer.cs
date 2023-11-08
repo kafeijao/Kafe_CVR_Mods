@@ -28,4 +28,18 @@ public class LookAtClosesPlayer : Behavior {
     public override string GetStatus() {
         return "Looking at Closest Players";
     }
+
+    public override void Disable() {
+        // This one is the base behavior, and should never be disabled
+    }
+
+    #region Parameters
+
+    public override int GetId() => 0;
+    public override int GetState() => 0;
+    public override bool IsHoldingPickup() => false;
+    public override bool IsTargetPlayer() => false;
+    public override bool IsTargetPlayerSpawner() => false;
+
+    #endregion
 }

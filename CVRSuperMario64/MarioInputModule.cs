@@ -89,8 +89,8 @@ public class MarioInputModule : CVRInputModule {
 
                     // No fun for the vive controllers
                     if (CVRInputManager._moduleXR == null ||
-                        CVRInputManager._moduleXR._leftModule?.Type == EXRControllerType.Vive ||
-                        CVRInputManager._moduleXR._rightModule?.Type == EXRControllerType.Vive) {
+                        CVRInputManager._moduleXR._leftModule?.Type == eXRControllerType.Vive ||
+                        CVRInputManager._moduleXR._rightModule?.Type == eXRControllerType.Vive) {
                         return;
                     }
 

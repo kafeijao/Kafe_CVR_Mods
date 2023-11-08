@@ -1,8 +1,8 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "1.1.7",
-  "gameversion": "2023r172",
+  "modversion": "1.1.9",
+  "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed `/input/Voice` not working properly.",
+  "changelog": "- Fixed for 2023r173\n- Removed annoying spam message when misusing some endpoints (Thanks @Natsumi for the PR)\n- Fixed breaking the ToggleHUD and ToggleNameplates via keys.",
   "embedcolor": "16C60C"
 }

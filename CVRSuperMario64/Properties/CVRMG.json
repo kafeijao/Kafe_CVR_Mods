@@ -1,8 +1,8 @@
 {
   "_id": 134,
   "name": "CVRSuperMario64",
-  "modversion": "1.0.3",
-  "gameversion": "2023r172",
+  "modversion": "1.0.4",
+  "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "engine"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/CVRSuperMario64.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/CVRSuperMario64.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64",
-  "changelog": "- Made BTKUILib mandatory to prevent issues.",
+  "changelog": "- Fixed for 2023r173",
   "embedcolor": "16C60C"
 }

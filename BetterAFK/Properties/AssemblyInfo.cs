@@ -27,6 +27,6 @@ using MelonLoader;
 
 namespace Kafe.BetterAFK.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.5";
+    public const string Version = "0.0.6";
     public const string Author = "kafeijao";
 }

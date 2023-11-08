@@ -188,6 +188,9 @@ public static class ModConfig {
             var behaviorToggle = _followerControllerBehaviorsCategory.AddToggle(behavior.GetStatus(), behavior.Description, behavior.IsEnabled());
             behaviorToggle.OnValueUpdated += isOn => {
 
+                // Disable all other behaviors
+                behavior.DisableAllBehaviorsExcept(behavior);
+
                 switch (behavior) {
                     case FetchPickup fetchPickup:
                         if (isOn) {

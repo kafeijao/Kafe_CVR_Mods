@@ -9,8 +9,8 @@ namespace Kafe.NavMeshFollower.Behaviors;
 public class FetchPickup : Behavior {
 
     private enum State {
-        Fetching,
-        Returning,
+        Fetching = 0,
+        Returning = 1,
     }
 
     private bool _isFetching;
@@ -18,6 +18,8 @@ public class FetchPickup : Behavior {
     private Pickups.PickupWrapper _targetPickup;
 
     private State _currentState;
+
+    public FetchPickup(FollowerController controller, bool isToggleable, string description) : base(controller, isToggleable, description) { }
 
     public void FetchPickupTo(Pickups.PickupWrapper pickup, string playerGuid) {
         _targetPlayer = playerGuid;
@@ -152,10 +154,20 @@ public class FetchPickup : Behavior {
 
     public override bool IsEnabled() => _isFetching;
 
-    public FetchPickup(FollowerController controller, bool isToggleable, string description) : base(controller, isToggleable, description) {}
-
 
     public override string GetStatus() {
         return IsEnabled() ? "Fetching a Pickup" : "Fetch a Pickup";
     }
+
+    public override void Disable() => FinishFetch();
+
+    #region Parameters
+
+    public override int GetId() => 1;
+    public override int GetState() => (int) _currentState;
+    public override bool IsHoldingPickup() => Controller.IsGrabbedByMyRightHand(_targetPickup);
+    public override bool IsTargetPlayer() => _currentState is State.Returning;
+    public override bool IsTargetPlayerSpawner() => IsTargetPlayer() && _targetPlayer == MetaPort.Instance.ownerId;
+
+    #endregion
 }

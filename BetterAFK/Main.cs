@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -25,7 +26,13 @@ public class BetterAFK : MelonMod {
 
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
+
+        CVRGameEventSystem.VRModeSwitch.OnPreSwitch.AddListener((_, _) => _isSwitchingMode = true);
+        CVRGameEventSystem.VRModeSwitch.OnPostSwitch.AddListener((_, _) => _isSwitchingMode = false);
+        CVRGameEventSystem.VRModeSwitch.OnFailedSwitch.AddListener((_, _) => _isSwitchingMode = false);
     }
+
+    private bool _isSwitchingMode;
 
     private static bool IsUsingOpenVR() {
         return MetaPort.Instance.isUsingVr && SteamVR.enabled;
@@ -35,6 +42,8 @@ public class BetterAFK : MelonMod {
         try {
 
             if (PlayerSetup.Instance == null) return;
+
+            if (_isSwitchingMode) return;
 
             // Handle the pressing END to toggle the AFK
             if (ModConfig.MeUseEndKeyToToggleAFK.Value && Input.GetKeyDown(KeyCode.End)) {

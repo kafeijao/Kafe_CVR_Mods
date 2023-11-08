@@ -145,7 +145,8 @@ public class FlightController : MonoBehaviour {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.FixedUpdate))]
         public static void Before_MovementSystem_FixedUpdater(MovementSystem __instance) {
-            __instance.proxyPhysics.velocity *= ModConfig.MePreClampVelocityMultiplier.Value;
+            // Todo: Fix
+            // __instance.proxyPhysics.velocity *= ModConfig.MePreClampVelocityMultiplier.Value;
         }
 
         [HarmonyPostfix]

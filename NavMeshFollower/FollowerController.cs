@@ -17,23 +17,6 @@ public class FollowerController : MonoBehaviour {
 
     private static Action<string, CVRSpawnable> _onSpawnableStart;
 
-    public static class SyncedAnimatorParams {
-
-        // Agent info
-        public const string MovementX = "MovementX";
-        public const string MovementY = "MovementY";
-        public const string Grounded = "Grounded";
-        public const string Idle = "Idle";
-
-        // Mod info
-        public const string HasMod = "HasNavMeshFollowerMod";
-        public const string IsBakingNavMesh = "IsBakingNavMesh";
-
-        // VRIK info
-        public const string VRIKLeftArm = "VRIK/LeftArm/Weight";
-        public const string VRIKRightArm = "VRIK/RightArm/Weight";
-    }
-
     internal static readonly HashSet<FollowerController> FollowerControllers = new();
 
     private static readonly Dictionary<string, NavMeshTools.API.Agent> AgentCache = new();
@@ -163,12 +146,21 @@ public class FollowerController : MonoBehaviour {
             controller.Agent = navMeshAgent;
             controller.BakeAgent = agent;
             controller._stoppingDistance = navMeshAgent.stoppingDistance;
+            controller._humanoidAnimator = followerInfo.humanoidAnimator;
+            controller._allAnimators = allAnimators;
             var navMeshTransform = navMeshAgent.transform;
             controller.RootControllerRay = Utils.GetFakeControllerRay(
                 navMeshTransform,
                 navMeshTransform.position + Vector3.up * navMeshAgent.height * 0.8f + navMeshTransform.forward * navMeshAgent.radius,
                 out controller.RootControllerRayOffsetPos,
                 out controller.RootControllerRayOffsetRot);
+
+            // Initialize state machine behaviors for the animators
+            foreach (var animator in allAnimators) {
+                foreach (var followerStateMachine in animator.GetBehaviours<FollowerStateMachine>()) {
+                    followerStateMachine.Initialize(controller);
+                }
+            }
 
             // Look at stuff
             controller.HasLookAt = followerInfo.hasLookAt;
@@ -185,22 +177,20 @@ public class FollowerController : MonoBehaviour {
             #endif
 
             // Spawnable synced params
-            controller._spawnableIndexes[SyncedAnimatorParams.MovementY] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.MovementY);
-            controller._spawnableIndexes[SyncedAnimatorParams.MovementX] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.MovementX);
-            controller._spawnableIndexes[SyncedAnimatorParams.Grounded] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.Grounded);
-            controller._spawnableIndexes[SyncedAnimatorParams.Idle] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.Idle);
+            controller.InitializeParameter(SyncedParamNames.MovementY);
+            controller.InitializeParameter(SyncedParamNames.MovementX);
+            controller.InitializeParameter(SyncedParamNames.Grounded);
+            controller.InitializeParameter(SyncedParamNames.Idle);
 
-            controller._spawnableIndexes[SyncedAnimatorParams.HasMod] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.HasMod);
-            controller._spawnableIndexes[SyncedAnimatorParams.IsBakingNavMesh] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.IsBakingNavMesh);
+            controller.InitializeParameter(SyncedParamNames.HasMod);
+            controller.InitializeParameter(SyncedParamNames.IsBakingNavMesh);
+            controller.InitializeParameter(SyncedParamNames.IsInitialized);
 
-            controller._spawnableIndexes[SyncedAnimatorParams.VRIKLeftArm] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.VRIKLeftArm);
-            controller._spawnableIndexes[SyncedAnimatorParams.VRIKRightArm] = Utils.GetSpawnableAndAnimatorIndexes(spawnable, allAnimators, SyncedAnimatorParams.VRIKRightArm);
-
-            // Grab the animator
-            controller._humanoidAnimator = followerInfo.humanoidAnimator;
+            controller.InitializeParameter(SyncedParamNames.VRIKLeftArm);
+            controller.InitializeParameter(SyncedParamNames.VRIKRightArm);
 
             // VRIK Left Arm
-            if (followerInfo.hasLeftArmIK && controller._spawnableIndexes[SyncedAnimatorParams.VRIKLeftArm].spawnableIndexes.Length > 0) {
+            if (followerInfo.hasLeftArmIK && controller.HasSyncedParameter(SyncedParamNames.VRIKLeftArm)) {
                 controller._vrikLeftArmTargetTransform = followerInfo.vrikLeftArmTargetTransform;
                 controller.LeftHandAttachmentPoint = followerInfo.leftHandAttachmentPoint != null ? followerInfo.leftHandAttachmentPoint : controller._humanoidAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
                 controller.LeftArmControllerRay = Utils.GetFakeControllerRay(controller.LeftHandAttachmentPoint, controller.LeftHandAttachmentPoint.position, out controller._leftArmControllerRayOffsetPos, out controller._leftArmControllerRayOffsetRot);
@@ -208,7 +198,7 @@ public class FollowerController : MonoBehaviour {
             }
 
             // VRIK Right Arm
-            if (followerInfo.hasRightArmIK && controller._spawnableIndexes[SyncedAnimatorParams.VRIKRightArm].spawnableIndexes.Length > 0) {
+            if (followerInfo.hasRightArmIK && controller.HasSyncedParameter(SyncedParamNames.VRIKRightArm)) {
                 controller._vrikRightArmTargetTransform = followerInfo.vrikRightArmTargetTransform;
                 controller._rightHandAttachmentPoint = followerInfo.rightHandAttachmentPoint != null ? followerInfo.rightHandAttachmentPoint : controller._humanoidAnimator.GetBoneTransform(HumanBodyBones.RightHand);
                 controller.RightArmControllerRay = Utils.GetFakeControllerRay(controller._rightHandAttachmentPoint, controller._rightHandAttachmentPoint.position, out controller._rightArmControllerRayOffsetPos, out controller._rightArmControllerRayOffsetRot);
@@ -216,8 +206,8 @@ public class FollowerController : MonoBehaviour {
             }
 
             // Set animator mod details
-            controller.SetSpawnableParameter(SyncedAnimatorParams.HasMod, 1f);
-            controller.SetSpawnableParameter(SyncedAnimatorParams.IsBakingNavMesh, 1f);
+            controller.SetParameter(SyncedParamNames.HasMod, 1f);
+            controller.SetParameter(SyncedParamNames.IsBakingNavMesh, 1f);
 
             var calculateMeshLinks = ModConfig.MeBakeNavMeshEverytimeFollowerSpawned.Value;
 
@@ -236,7 +226,6 @@ public class FollowerController : MonoBehaviour {
                 }
 
                 controller.enabled = true;
-                controller.SetSpawnableParameter(SyncedAnimatorParams.IsBakingNavMesh, 0f);
 
                 // Add the behaviors
                 controller.Behaviors.Add(new FetchPickup(controller, true, "Fetches a pickup for a player."));
@@ -252,6 +241,18 @@ public class FollowerController : MonoBehaviour {
                 // Last
                 controller.Behaviors.Add(new LookAtClosesPlayer(controller, false, "Just idles looking at the closest player."));
 
+                // Initialize behavior Parameters
+                controller.InitializeParameter(SyncedParamNames.BehaviorCurrent);
+                controller.InitializeParameter(SyncedParamNames.BehaviorState);
+                controller.InitializeParameter(SyncedParamNames.BehaviorHasTarget);
+                controller.InitializeParameter(SyncedParamNames.BehaviorIsTargetPlayer);
+                controller.InitializeParameter(SyncedParamNames.BehaviorIsTargetPlayerSpawner);
+                controller.InitializeParameter(SyncedParamNames.BehaviorTargetDistance);
+                controller.InitializeParameter(SyncedParamNames.BehaviorDestinationDistance);
+                controller.InitializeParameter(SyncedParamNames.BehaviorIsHoldingPickup);
+
+                controller.SetParameter(SyncedParamNames.IsBakingNavMesh, 0f);
+
             }, calculateMeshLinks);
     }
 
@@ -259,8 +260,20 @@ public class FollowerController : MonoBehaviour {
     internal CVRSpawnable Spawnable;
     internal NavMeshAgent Agent;
 
+    private bool _initialized;
+    public bool Initialized {
+        get => _initialized;
+        private set {
+            _initialized = value;
+            SetParameter(SyncedParamNames.IsInitialized, _initialized ? 1f : 0f);
+        }
+    }
+
+    internal readonly Dictionary<string, FollowerParamInfo> Parameters = new();
+
     private float _stoppingDistance;
     private Animator _humanoidAnimator;
+    private Animator[] _allAnimators;
     internal ControllerRay RootControllerRay;
     internal Vector3 RootControllerRayOffsetPos;
     internal Quaternion RootControllerRayOffsetRot;
@@ -269,14 +282,14 @@ public class FollowerController : MonoBehaviour {
     internal Behavior LastHandledBehavior;
 
     internal readonly Dictionary<CVRSpawnableValue.UpdatedBy, float> UpdatedByValues = new() {
-        { CVRSpawnableValue.UpdatedBy.OwnerCurrentGrip, 0f     },
-        { CVRSpawnableValue.UpdatedBy.OwnerCurrentTrigger, 0f  },
-        { CVRSpawnableValue.UpdatedBy.OwnerLeftGrip, 0f        },
-        { CVRSpawnableValue.UpdatedBy.OwnerLeftTrigger, 0f     },
-        { CVRSpawnableValue.UpdatedBy.OwnerOppositeGrip, 0f    },
+        { CVRSpawnableValue.UpdatedBy.OwnerCurrentGrip,     0f },
+        { CVRSpawnableValue.UpdatedBy.OwnerCurrentTrigger,  0f },
+        { CVRSpawnableValue.UpdatedBy.OwnerLeftGrip,        0f },
+        { CVRSpawnableValue.UpdatedBy.OwnerLeftTrigger,     0f },
+        { CVRSpawnableValue.UpdatedBy.OwnerOppositeGrip,    0f },
         { CVRSpawnableValue.UpdatedBy.OwnerOppositeTrigger, 0f },
-        { CVRSpawnableValue.UpdatedBy.OwnerRightGrip, 0f       },
-        { CVRSpawnableValue.UpdatedBy.OwnerRightTrigger, 0f    },
+        { CVRSpawnableValue.UpdatedBy.OwnerRightGrip,       0f },
+        { CVRSpawnableValue.UpdatedBy.OwnerRightTrigger,    0f },
     };
 
     internal bool HasLookAt;
@@ -285,8 +298,6 @@ public class FollowerController : MonoBehaviour {
     private Quaternion _headControllerRayOffsetRot;
     private Transform _lookAtTargetTransform;
     private Transform _lookAtHeadTransform;
-
-    private readonly Dictionary<string, (int[] spawnableIndexes, Dictionary<Animator, AnimatorControllerParameterType> localParamTypes, int localParamHash)> _spawnableIndexes = new();
 
     // VRIK Left Arm
     internal bool HasLeftArmIK;
@@ -345,13 +356,13 @@ public class FollowerController : MonoBehaviour {
 
     private void HandleLeftArm(Vector3? targetPos) {
         if (!HasLeftArmIK) return;
-        SetSpawnableParameter(SyncedAnimatorParams.VRIKLeftArm, targetPos.HasValue ? 1f : 0f);
+        SetParameter(SyncedParamNames.VRIKLeftArm, targetPos.HasValue ? 1f : 0f);
         if (targetPos.HasValue) _vrikLeftArmTargetTransform.position = targetPos.Value;
     }
 
     private void HandleRightArm(Vector3? targetPos) {
         if (!_hasRightArmIK) return;
-        SetSpawnableParameter(SyncedAnimatorParams.VRIKRightArm, targetPos.HasValue ? 1f : 0f);
+        SetParameter(SyncedParamNames.VRIKRightArm, targetPos.HasValue ? 1f : 0f);
         if (targetPos.HasValue) _vrikRightArmTargetTransform.position = targetPos.Value;
     }
 
@@ -367,7 +378,7 @@ public class FollowerController : MonoBehaviour {
             offsetRot = _rightArmControllerRayOffsetRot;
             return RightArmControllerRay;
         }
-        if (isRightHand && HasLeftArmIK) {
+        if (!isRightHand && HasLeftArmIK) {
             offsetPos = _leftArmControllerRayOffsetPos;
             offsetRot = _leftArmControllerRayOffsetRot;
             return LeftArmControllerRay;
@@ -422,6 +433,14 @@ public class FollowerController : MonoBehaviour {
     public bool IsGrabbedByMyLeftHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(false, out _, out _) == pickup.pickupObject._controllerRay;
     public bool IsGrabbedByMyRightHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(true, out _, out _) == pickup.pickupObject._controllerRay;
 
+
+    internal void InitializeParameter(string syncedValueName) =>
+        FollowerParamInfo.InitializeParameter(this, _allAnimators, syncedValueName);
+    internal bool HasSyncedParameter(string syncedValueName) =>
+        FollowerParamInfo.HasSyncedParameter(this, syncedValueName);
+    internal void SetParameter(string syncedValueName, float value) =>
+        FollowerParamInfo.SetParameter(this, syncedValueName, value);
+
     private void Update() {
 
         Vector3? destinationPos = null;
@@ -471,45 +490,34 @@ public class FollowerController : MonoBehaviour {
             HandleLeftArm(leftArmTargetPos);
             HandleRightArm(rightArmTargetPos);
 
+            // Handle Parameters
+            SetParameter(SyncedParamNames.BehaviorCurrent, behavior.GetId());
+            SetParameter(SyncedParamNames.BehaviorState, behavior.GetState());
+            SetParameter(SyncedParamNames.BehaviorHasTarget, destinationPos.HasValue ? 1 : 0);
+            SetParameter(SyncedParamNames.BehaviorIsTargetPlayer, behavior.IsTargetPlayer() ? 1 : 0);
+            SetParameter(SyncedParamNames.BehaviorIsTargetPlayerSpawner, behavior.IsTargetPlayerSpawner() ? 1 : 0);
+            var targetDistance = destinationPos.HasValue ? Vector3.Distance(Agent.transform.position, destinationPos.Value) : 0;
+            SetParameter(SyncedParamNames.BehaviorTargetDistance, targetDistance);
+            var destinationDistance = Math.Max(Agent.remainingDistance - Agent.stoppingDistance, 0);
+            SetParameter(SyncedParamNames.BehaviorDestinationDistance, destinationDistance);
+            SetParameter(SyncedParamNames.BehaviorIsHoldingPickup, behavior.IsHoldingPickup() ? 1 : 0);
+
             break;
         }
 
         var localVelocity = Agent.transform.InverseTransformDirection(Agent.velocity);
 
         // Set the spawnable parameters
-        SetSpawnableParameter(SyncedAnimatorParams.MovementY, localVelocity.z / Agent.speed);
-        SetSpawnableParameter(SyncedAnimatorParams.MovementX, localVelocity.x / Agent.speed);
-        SetSpawnableParameter(SyncedAnimatorParams.Grounded, !Agent.isOnOffMeshLink && Agent.isOnNavMesh ? 1f : 0f);
-        SetSpawnableParameter(SyncedAnimatorParams.Idle, Mathf.Approximately(localVelocity.magnitude, 0f) && (!isIdle.HasValue || isIdle.Value) ? 1f : 0f);
+        SetParameter(SyncedParamNames.MovementY, localVelocity.z / Agent.speed);
+        SetParameter(SyncedParamNames.MovementX, localVelocity.x / Agent.speed);
+        SetParameter(SyncedParamNames.Grounded, !Agent.isOnOffMeshLink && Agent.isOnNavMesh ? 1f : 0f);
+        SetParameter(SyncedParamNames.Idle, Mathf.Approximately(localVelocity.magnitude, 0f) && (!isIdle.HasValue || isIdle.Value) ? 1f : 0f);
 
         // Keep the prop synced by us
         Spawnable.needsUpdate = true;
     }
 
-    private void SetSpawnableParameter(string paramName, float value) {
 
-        var paramInfo = _spawnableIndexes[paramName];
-
-        foreach (var spawnableIndex in paramInfo.spawnableIndexes) {
-            Spawnable.SetValue(spawnableIndex, value);
-        }
-        foreach (var controllerParameterType in paramInfo.localParamTypes) {
-            switch (controllerParameterType.Value) {
-                case AnimatorControllerParameterType.Float:
-                    controllerParameterType.Key.SetFloat(paramInfo.localParamHash, value);
-                    break;
-                case AnimatorControllerParameterType.Int:
-                    controllerParameterType.Key.SetInteger(paramInfo.localParamHash, (int) value);
-                    break;
-                case AnimatorControllerParameterType.Bool:
-                    controllerParameterType.Key.SetBool(paramInfo.localParamHash, value >= 0.5);
-                    break;
-                case AnimatorControllerParameterType.Trigger:
-                    if (value >= 0.5) controllerParameterType.Key.SetTrigger(paramInfo.localParamHash);
-                    break;
-            }
-        }
-    }
 
     internal T GetBehavior<T>() {
         foreach (var behavior in Behaviors) {
@@ -521,6 +529,7 @@ public class FollowerController : MonoBehaviour {
     private void Start() {
         FollowerControllers.Add(this);
         ModConfig.UpdateMainPage();
+        Initialized = true;
     }
 
     private void OnDestroy() {

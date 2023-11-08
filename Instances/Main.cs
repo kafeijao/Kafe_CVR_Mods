@@ -429,6 +429,11 @@ public class Instances : MelonMod {
 
     private static IEnumerator LoadIntoLastInstance(string instanceId, bool isInitial) {
 
+        if (isInitial) {
+            // I don't know why, but on r173 vivox won't connect when joining using the token... prob race condition
+            yield return new WaitForSeconds(2f);
+        }
+
         _isChangingInstance = true;
 
         var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceId });
@@ -497,8 +502,13 @@ public class Instances : MelonMod {
     }
 
     private static IEnumerator LoadWorldUsingToken(JsonConfigInstance instanceInfo) {
+
+        // I don't know why, but on r173 vivox won't connect when joining using the token... prob race condition
+        yield return new WaitForSeconds(2f);
+
         CVRInstances.RequestedInstance = instanceInfo.InstanceId;
         Content.LoadIntoWorld(instanceInfo.WorldId);
+        // This fixes more bs race conditions
         yield return new WaitForSeconds(0.2f);
         CVRInstances.RequestedInstance = instanceInfo.InstanceId;
         CVRInstances.InstanceJoinJWT = instanceInfo.JoinToken.Token;
@@ -508,6 +518,9 @@ public class Instances : MelonMod {
 
 
     private static IEnumerator CreateAndJoinOnlineInstance() {
+
+        // I don't know why, but on r173 vivox won't connect when joining using the token... prob race condition
+        yield return new WaitForSeconds(2f);
 
         var createInstanceTask = ApiConnection.MakeRequest<InstanceCreateResponse>(ApiConnection.ApiOperation.InstanceCreate, new {
             worldId = MetaPort.Instance.homeWorldGuid,

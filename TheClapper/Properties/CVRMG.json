@@ -2,7 +2,7 @@
   "_id": 119,
   "name": "TheClapper",
   "modversion": "1.0.2",
-  "gameversion": "2023r172",
+  "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,7 +14,7 @@
     "prop"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/TheClapper.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/TheClapper.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper",
   "changelog": "- Made the delay to display the visualizers configurable in melon prefs.",
   "embedcolor": "16C60C"

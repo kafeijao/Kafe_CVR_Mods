@@ -92,4 +92,16 @@ public class FollowPlayer : Behavior {
             : CVRPlayerManager.Instance.TryGetPlayerName(_playerGuidToFollow);
         return $"Following {targetName}";
     }
+
+    public override void Disable() => ClearTarget();
+
+    #region Parameters
+
+    public override int GetId() => 2;
+    public override int GetState() => 0;
+    public override bool IsHoldingPickup() => false;
+    public override bool IsTargetPlayer() => true;
+    public override bool IsTargetPlayerSpawner() => IsTargetPlayer() && _playerGuidToFollow == MetaPort.Instance.ownerId;
+
+    #endregion
 }

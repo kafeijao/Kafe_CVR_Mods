@@ -35,7 +35,7 @@ public class FreedomFingers : MelonMod {
 	    private static void After_CVRInputModule_XR_Update_Emotes(CVRInputModule_XR __instance) {
 
 		    // Undo the default clicking of the button. We have our own detection (so you can change the keybind in steamvr)
-		    if (__instance._leftModule.Type == EXRControllerType.Index && (!__instance.firstFindIndex ||
+		    if (__instance._leftModule.Type == eXRControllerType.Index && (!__instance.firstFindIndex ||
 		                                                                   !__instance._inputManager.oneHanded &&
 		                                                                   __instance._leftModule.PrimaryButton)) {
 			    // Revert the toggling
@@ -45,7 +45,7 @@ public class FreedomFingers : MelonMod {
 		    }
 
 		    // if (controllerModule.Type == EXRControllerType.Index && (!__instance.firstFindIndex || !__instance._inputManager.oneHanded && __instance._leftModule.PrimaryButton)) {
-		    if ((__instance._leftModule.Type == EXRControllerType.Index || __instance._rightModule.Type == EXRControllerType.Index) && GestureToggleAction.lastStateDown) {
+		    if ((__instance._leftModule.Type == eXRControllerType.Index || __instance._rightModule.Type == eXRControllerType.Index) && GestureToggleAction.lastStateDown) {
 
 			    // Since we prevented the toggling, we now need to do it
 				Traverse.Create(__instance).Property<bool>(nameof(__instance.GestureToggleValue)).Value = !__instance.GestureToggleValue;

@@ -1,13 +1,16 @@
 // #define DEBUG_ROOT_GEN
 
+using System.Reflection;
 using ABI_RC.Core.Player;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MagicaCloth;
+using MagicaCloth2;
 using MelonLoader;
 using RootMotion.FinalIK;
 using UnityEngine;
 using static Kafe.GrabbyBones.Data;
+using SelectionData = MagicaCloth.SelectionData;
 
 namespace Kafe.GrabbyBones;
 
@@ -236,6 +239,8 @@ public class GrabbyBones : MelonMod {
             }
         }
 
+        #region Magica
+
         private static void CreateMagicaRoot(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
             var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
             results.Add(new Tuple<Transform, HashSet<Transform>>(root, actualChildren.ToHashSet()));
@@ -400,6 +405,9 @@ public class GrabbyBones : MelonMod {
             }
         }
 
+        #endregion
+
+        #region DynamicBone
 
         private static Dictionary<Transform, HashSet<Transform>> GetDynBoneRoots(Animator animator, DynamicBone dynamicBone, Transform root, IEnumerable<Transform> childNodes, int it = 0) {
 
@@ -531,5 +539,203 @@ public class GrabbyBones : MelonMod {
                 MelonLogger.Error(e);
             }
         }
+
+        #endregion
+
+        #region Magica2
+
+
+
+        private static void CreateMagica2Root(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
+            var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
+            results.Add(new Tuple<Transform, HashSet<Transform>>(root, actualChildren.ToHashSet()));
+        }
+
+        private static void PopulateMagica2Roots(
+            ref HashSet<Tuple<Transform, HashSet<Transform>>> results,
+            Transform root,
+            List<Transform> useTransformList,
+            ExSimpleNativeArray<VertexAttribute> attributesMapping,
+            bool canFixedRotate,
+            bool hasFixedParent,
+            int it) {
+
+            var rootTransformIdx = useTransformList.IndexOf(root);
+            if (rootTransformIdx == -1) {
+                MelonLogger.Warning($"[GetMagica2Roots] Root {root.name} not found in childNodes...");
+                return;
+            }
+            var rootType = attributesMapping[rootTransformIdx];
+
+            // Found a green dot with a fixed parent
+            if (rootType == VertexAttribute.Move && hasFixedParent) {
+                #if DEBUG_ROOT_GEN
+                MelonLogger.Msg($"[PopulateMagica2Roots]{new string('\t', it)} Creating Root {root.name} pivoting on itself");
+                #endif
+                CreateMagica2Root(results, root, useTransformList, root);
+                return;
+            }
+
+            // Found a red that can rotate -> look for green children
+            if (rootType == VertexAttribute.Fixed && canFixedRotate) {
+                foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
+                    var directChildIdx = useTransformList.IndexOf(directChild);
+                    if (directChildIdx == -1) {
+                        MelonLogger.Warning($"[GetMagica2Roots] DirectChild {directChild.name} not found in childNodes...");
+                        return;
+                    }
+                    var directChildType = attributesMapping[directChildIdx];
+
+                    // Found a green children! Let's create a root on this red pointing pivoting on the green child
+                    // We're pivoting because other direct children can't be included in the chain
+                    if (directChildType == VertexAttribute.Move) {
+                        #if DEBUG_ROOT_GEN
+                        MelonLogger.Msg($"[PopulateMagica2Roots]{new string('\t', it)} Creating Root {root.name} pivoting on {directChild.name}");
+                        #endif
+                        CreateMagica2Root(results, root, useTransformList, directChild);
+                    }
+                    // Otherwise let's go down the chain
+                    else {
+                        #if DEBUG_ROOT_GEN
+                        MelonLogger.Msg($"[PopulateMagica2Roots]{new string('\t', it)} Can't use {root.name} as root... " +
+                                        $"[type=Fixed] [canFixedRotate=true] [hasFixedParent={hasFixedParent}]");
+                        #endif
+                        PopulateMagica2Roots(ref results, directChild, useTransformList, attributesMapping, true, true, it+1);
+                    }
+                }
+                return;
+            }
+
+            // Everything else, let's just go down the chain... If already had a fixed parent let's keep it, otherwise just check if it's fixed
+            foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
+                #if DEBUG_ROOT_GEN
+                var typeName = rootType switch {
+                    SelectionData.Fixed => nameof(SelectionData.Fixed),
+                    SelectionData.Move => nameof(SelectionData.Move),
+                    SelectionData.Extend => nameof(SelectionData.Extend),
+                    _ => nameof(SelectionData.Invalid),
+                };
+                MelonLogger.Msg($"[PopulateMagica2Roots]{new string('\t', it)} Can't use {root.name} as root... " +
+                                $"[type={typeName}] [canFixedRotate={canFixedRotate}] [hasFixedParent={hasFixedParent}]");
+                #endif
+                PopulateMagica2Roots(ref results, directChild, useTransformList, attributesMapping, canFixedRotate, hasFixedParent || rootType == VertexAttribute.Fixed, it+1);
+            }
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MagicaCloth2.MagicaCloth), nameof(MagicaCloth2.MagicaCloth.Start))]
+        public static void After_MagicaCloth2MagicaCloth_Start(MagicaCloth2.MagicaCloth __instance) {
+            // Initialize FABRIK for magica bone 2 cloth roots
+            try {
+
+                // Only allow bone cloth
+                if (__instance.serializeData.clothType != ClothProcess.ClothType.BoneCloth) return;
+
+                // We only want to mess with the avatar's magica cloth 2 bones, for now
+                if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
+
+                if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
+
+                var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
+                // var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
+
+                // __instance.process.boneClothSetupData.transformList
+                // __instance.process.ProxyMesh.attributes[0] == VertexAttribute.Fixed;
+                // __instance.process.ProxyMesh.vertexDepths[0] == ;
+                // __instance.process.ProxyMesh.transformData.transformList
+                // __instance.process.ProxyMesh.transformData.rootIdList
+                // __instance.process.ProxyMesh.isBoneCloth
+                // __instance.process.ProxyMesh.mac
+                // __instance.serializeData2.selectionData.attributes
+                // __instance.serializeData.rootBones
+                // __instance.serializeData.radius
+                // __instance.serializeData.clothType
+                // __instance.serializeData.blendWeight
+                // __instance.process.ProxyMesh.
+
+                __instance.OnBuildComplete += success => {
+
+                    if (!success) {
+                        MelonLogger.Warning($"Error during the patched function {nameof(After_MagicaCloth2MagicaCloth_Start)} -> OnBuildComplete. The bone build didn't succeed.");
+                        return;
+                    }
+
+                    try {
+
+                        GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagica2BoneInfo(puppetMaster, __instance);
+
+                        foreach (var root in __instance.serializeData.rootBones) {
+
+                            const bool canFixedRotate = true;
+                            if (root == null) continue;
+
+                            var innerRoots = new HashSet<Tuple<Transform, HashSet<Transform>>>();
+
+                            // Create our own roots, because magica is funny and roots are not really roots ;_;
+                            PopulateMagica2Roots(
+                                ref innerRoots,
+                                root,
+                                __instance.process.boneClothSetupData.transformList,
+                                __instance.process.ProxyMesh.attributes,
+                                canFixedRotate,
+                                false,
+                                0);
+
+                            // Iterate our generated roots
+                            foreach (var innerRoot in innerRoots) {
+                                if (innerRoot.Item2.Count == 0) continue;
+
+                                var fabrik = innerRoot.Item1.gameObject.AddComponent<FABRIK>();
+                                fabrik.solver.useRotationLimits = true;
+                                fabrik.fixTransforms = true;
+                                fabrik.enabled = false;
+
+                                grabbyBoneInfo.AddRoot(fabrik, innerRoot.Item1, innerRoot.Item2,
+                                    new HashSet<RotationLimitAngle>());
+                            }
+                        }
+
+                        GrabbyBonesCache.Add(grabbyBoneInfo);
+
+
+                    }
+                    catch (Exception e) {
+                        MelonLogger.Error($"Error during the patched function {nameof(After_MagicaCloth2MagicaCloth_Start)} -> OnBuildComplete. Probably some funny magica 2 setup...");
+                        MelonLogger.Error(e);
+                    }
+                };
+
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_MagicaCloth2MagicaCloth_Start)}. Probably some funny magica 2 setup...");
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MagicaCloth2.MagicaCloth), nameof(MagicaCloth2.MagicaCloth.OnDestroy))]
+        public static void After_MagicaCloth2MagicaCloth_Destroy(MagicaCloth2.MagicaCloth __instance) {
+            // Clean cached info and currently grabbed info related to this magica bone cloth
+            try {
+
+                foreach (var grabbyBoneInfo in GrabbyBonesCache) {
+                    if (grabbyBoneInfo.HasInstance(__instance)) {
+                        foreach (var root in grabbyBoneInfo.Roots.Where(root => root.IK != null)) {
+                            UnityEngine.Object.Destroy(root.IK);
+                        }
+                    }
+                }
+                AvatarHandInfo.ReleaseAllWithBehavior(__instance);
+                GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_MagicaCloth2MagicaCloth_Destroy)}.");
+                MelonLogger.Error(e);
+            }
+        }
+
+        #endregion
+
     }
 }

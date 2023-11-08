@@ -1,9 +1,11 @@
 ﻿using System.Globalization;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.FaceTracking;
 using ABI_RC.Systems.IK;
 using ABI_RC.Systems.InputManagement;
 using ABI_RC.Systems.InputManagement.InputModules;
+using ABI.CCK.Components;
 using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
 using Valve.VR;
 
@@ -16,6 +18,9 @@ public class MiscCohtmlHandler : ICohtmlHandler {
 
     // VR Inputs
     private static Section _vrInputsSection;
+
+    // VR Inputs
+    private static Section _faceTrackingSection;
 
     protected override void Load() {
 
@@ -81,12 +86,28 @@ public class MiscCohtmlHandler : ICohtmlHandler {
         if (CVRInputManager.Instance._inputModules.Find(module => module is CVRInputModule_XR) is CVRInputModule_XR xrInputModule) {
             _vrInputsSection = core.AddSection("VR Inputs", true);
             _vrInputsSection.AddSection("LeftTrigger").AddValueGetter(() => xrInputModule._leftModule.Trigger.ToString(CultureInfo.InvariantCulture));
-            _vrInputsSection.AddSection("LeftGrip").AddValueGetter(() => xrInputModule._rightModule.Trigger.ToString(CultureInfo.InvariantCulture));
+            _vrInputsSection.AddSection("LeftGrip").AddValueGetter(() => xrInputModule._leftModule.Grip.ToString(CultureInfo.InvariantCulture));
             _vrInputsSection.AddSection("RightTrigger").AddValueGetter(() => xrInputModule._rightModule.Trigger.ToString(CultureInfo.InvariantCulture));
             _vrInputsSection.AddSection("RightGrip").AddValueGetter(() => xrInputModule._rightModule.Grip.ToString(CultureInfo.InvariantCulture));
         }
         else {
             _vrInputsSection = null;
+        }
+
+        // Face tracking
+        _faceTrackingSection = core.AddSection("Face Tracking", true);
+
+        var hasFaceTracking = FaceTrackingManager.Instance.IsEyeDataAvailable;
+        var eyeSection = _faceTrackingSection.AddSection("Eye Tracking");
+        eyeSection.AddSection("Data Available").AddValueGetter(() => ToString(hasFaceTracking()));
+        eyeSection.AddSection("Gaze Direction").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().GazeDirection.ToString("F2") : "N/A");
+
+        var hasLipTracking = FaceTrackingManager.Instance.IsLipDataAvailable;
+        var lipSection = _faceTrackingSection.AddSection("Lip Tracking");
+        lipSection.AddSection("Data Available").AddValueGetter(() => ToString(hasLipTracking()));
+        for (var i = 0; i < 37; i++) {
+            var shapeKeyIdx = i;
+            lipSection.AddSection($"BlendShape {i}").AddValueGetter(() => hasLipTracking() ? FaceTrackingManager.Instance.GetFacialTrackingData().LipShapeData[shapeKeyIdx].ToString(CultureInfo.InvariantCulture) : "N/A");
         }
 
         Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
@@ -106,6 +127,9 @@ public class MiscCohtmlHandler : ICohtmlHandler {
 
         // Update vr inputs
         _vrInputsSection?.UpdateFromGetter(true);
+
+        // Update Face Tracking
+        _fingerCurlSection?.UpdateFromGetter(true);
     }
 
 }

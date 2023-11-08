@@ -204,13 +204,6 @@ public class CCKDebugger : MelonMod {
             Events.Avatar.OnAnimatorManagerUpdate(manager);
         }
 
-        //Quick Menu
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.ToggleQuickMenu))]
-        private static void AfterMenuToggle(bool show) {
-            Events.QuickMenu.OnQuickMenuIsShownChanged(show);
-        }
-
         // Players
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CVRPlayerManager), nameof(CVRPlayerManager.TryCreatePlayer))]
@@ -233,7 +226,7 @@ public class CCKDebugger : MelonMod {
 
             try {
                 // Initialize the CCK Debugger Cohtml menu
-                CohtmlMenuController.Create(__instance.quickMenu.gameObject);
+                CohtmlMenuController.Create(__instance);
             }
             catch (Exception e) {
                 MelonLogger.Error("Error executing After_CVR_MenuManager_InitializeQuickMenu Postfix...");

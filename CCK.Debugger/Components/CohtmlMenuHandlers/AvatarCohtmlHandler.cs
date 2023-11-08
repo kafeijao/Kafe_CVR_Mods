@@ -363,7 +363,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
             var allowedPointersSection = spawnableSection.AddSection("Allowed Pointers", trigger.allowedPointer.Count == 0 ? Na : "");
             foreach (var triggerAllowedPointer in trigger.allowedPointer) {
-                allowedPointersSection.AddSection(triggerAllowedPointer.name);
+                allowedPointersSection.AddSection(triggerAllowedPointer != null ? triggerAllowedPointer.name : "-none-");
             }
 
             void GetTriggerTaskTemplate(Section parentSection, CVRAdvancedAvatarSettingsTriggerTask task, int idx) {

@@ -1,4 +1,5 @@
-﻿using Kafe.NavMeshFollower.InteractableWrappers;
+﻿using ABI_RC.Core.Savior;
+using Kafe.NavMeshFollower.InteractableWrappers;
 using UnityEngine;
 
 namespace Kafe.NavMeshFollower.Behaviors;
@@ -6,22 +7,15 @@ namespace Kafe.NavMeshFollower.Behaviors;
 public class PlayFetch : Behavior {
 
     private enum State {
-        Idle,
-        WaitingThrow,
-        Fetching,
-        Returning,
+        Idle = 0,
+        WaitingThrow = 1,
+        Fetching = 2,
+        Returning = 3,
     }
 
     private Pickups.PickupWrapper _target;
 
-    public bool IsPlayingFetch {
-        get => _isPlayingFetch;
-        private set {
-            _isPlayingFetch = value;
-        }
-    }
-
-    private bool _isPlayingFetch;
+    public bool IsPlayingFetch { get; private set; }
 
     private string _lastGrabber;
 
@@ -209,4 +203,16 @@ public class PlayFetch : Behavior {
     public override string GetStatus() {
         return IsEnabled() ? "Playing Fetch" : "Play Fetch";
     }
+
+    public override void Disable() => StopPlayingFetch();
+
+    #region Parameters
+
+    public override int GetId() => 3;
+    public override int GetState() => (int) _currentState;
+    public override bool IsHoldingPickup() => Controller.IsGrabbedByMyRightHand(_target);
+    public override bool IsTargetPlayer() => _currentState is State.WaitingThrow or State.Returning;
+    public override bool IsTargetPlayerSpawner() => IsTargetPlayer() && _lastGrabber == MetaPort.Instance.ownerId;
+
+    #endregion
 }

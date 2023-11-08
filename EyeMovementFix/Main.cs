@@ -59,22 +59,28 @@ public class EyeMovementFix : MelonMod {
     private static void After_CVREyeControllerManager_addMirror(CVREyeControllerManager __instance, CVRMirror cvrMirror) {
         if (!_hasPortableMirror || !_meIgnorePortableMirrors.Value) return;
 
-        var mirrorParents = new[] {
-            PortableMirror.Main._mirrorBase,
-            PortableMirror.Main._mirror45,
-            PortableMirror.Main._mirrorCeiling,
-            PortableMirror.Main._mirrorMicro,
-            PortableMirror.Main._mirrorTrans,
-            PortableMirror.Main._mirrorCal,
-        };
-        var parentGo = cvrMirror.transform.parent;
-        // Ignore objects without a parent, since portable mirror objects must have a parent
-        if (parentGo == null) return;
-        var isPortableMirror = mirrorParents.Contains(parentGo.gameObject);
-
-        // If we added a portable mirror to the targets, remove it!
-        if (isPortableMirror && __instance.mirrorList.Contains(cvrMirror)) {
-            __instance.removeMirror(cvrMirror);
+        try {
+            // Todo: Fix it
+            // var mirrorParents = new[] {
+            //     PortableMirror.Main._mirrorBase,
+            //     PortableMirror.Main._mirror45,
+            //     PortableMirror.Main._mirrorCeiling,
+            //     PortableMirror.Main._mirrorMicro,
+            //     PortableMirror.Main._mirrorTrans,
+            //     PortableMirror.Main._mirrorCal,
+            // };
+            // var parentGo = cvrMirror.transform.parent;
+            // // Ignore objects without a parent, since portable mirror objects must have a parent
+            // if (parentGo == null) return;
+            // var isPortableMirror = mirrorParents.Contains(parentGo.gameObject);
+            //
+            // // If we added a portable mirror to the targets, remove it!
+            // if (isPortableMirror && __instance.mirrorList.Contains(cvrMirror)) {
+            //     __instance.removeMirror(cvrMirror);
+            // }
+        }
+        catch (Exception e) {
+            MelonLogger.Error(e);
         }
     }
 

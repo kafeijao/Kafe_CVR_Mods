@@ -56,6 +56,7 @@ public abstract class ICohtmlHandler {
             .AddSection("performance while the menu is opened")
             .AddSection("c:");
         CohtmlMenuController.Instance.Enabled = false;
+
         DisableEverything();
         Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
 

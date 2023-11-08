@@ -45,6 +45,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MelonLoader.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Mono.Cecil">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Cecil.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Accessibility">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Accessibility.dll</HintPath>
             <Private>False</Private>
@@ -139,6 +143,10 @@
         </Reference>
         <Reference Include="MagicaCloth">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MagicaCloth.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="MagicaClothV2">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MagicaClothV2.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="MeshBakerCore">
@@ -583,6 +591,10 @@
         </Reference>
         <Reference Include="Unity.Services.Analytics">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Analytics.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Services.Authentication">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Authentication.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.Services.Core.Analytics">

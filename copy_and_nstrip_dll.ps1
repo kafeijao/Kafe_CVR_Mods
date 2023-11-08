@@ -10,13 +10,13 @@ $cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"
 # $cvrDefaultPath = "E:\temp\CVR_Experimental"
 
 # Array with the dlls to strip
-$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll', 'MagicaCloth.dll')
+$dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll', 'MagicaCloth.dll', 'MagicaClothV2.dll')
 
 # Array with the mods to grab
 $modNames = @("BTKUILib", "BTKSAImmersiveHud", "PortableMirrorMod", "VRBinding")
 
 # Array with dlls to ignore from ManagedLibs
-$cvrManagedLibNamesToIgnore = @("netstandard")
+$cvrManagedLibNamesToIgnore = @("netstandard", "Mono.Cecil")
 
 if ($cvrPath -and (Test-Path "$cvrPath\$cvrExecutable")) {
     # Found ChilloutVR.exe in the existing CVRPATH
@@ -61,6 +61,7 @@ Copy-Item $cvrPath$cvrManagedDataPath"\*" -Destination $managedLibsFolder
 $lib_names_xml = "<Project><ItemGroup>"
 $lib_names_xml += '<Reference Include="0Harmony"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\0Harmony.dll</HintPath><Private>False</Private></Reference>'
 $lib_names_xml += '<Reference Include="MelonLoader"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MelonLoader.dll</HintPath><Private>False</Private></Reference>'
+$lib_names_xml += '<Reference Include="Mono.Cecil"><HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Cecil.dll</HintPath><Private>False</Private></Reference>'
 foreach ($file in Get-ChildItem $cvrPath$cvrManagedDataPath"\*") {
     if($cvrManagedLibNamesToIgnore -notcontains $file.BaseName) {
         $lib_names_xml += "<Reference Include=`"$($file.BaseName)`"><HintPath>`$(MsBuildThisFileDirectory)\.ManagedLibs\$($file.BaseName).dll</HintPath><Private>False</Private></Reference>"

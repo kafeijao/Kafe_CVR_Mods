@@ -2,7 +2,7 @@
   "_id": 107,
   "name": "ProfilesExtended",
   "modversion": "1.0.5",
-  "gameversion": "2023r172",
+  "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,7 +15,7 @@
     "blacklist"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r60/ProfilesExtended.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r61/ProfilesExtended.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ProfilesExtended",
   "changelog": "- Fixed for 2023r172.",
   "embedcolor": "16C60C"

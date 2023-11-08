@@ -3,6 +3,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using MagicaCloth;
+using MagicaCloth2;
 using MelonLoader;
 using RootMotion.FinalIK;
 using UnityEngine;
@@ -391,6 +392,60 @@ internal static class Data {
                 totalLength += Vector3.Distance(currentBone.position, nextBone.position);
                 currentBone = nextBone;
                 if (magicaBone.clothTarget.rootList.Contains(currentBone)) {
+                    return totalLength;
+                }
+            }
+            return 1f;
+        }
+
+        internal override bool HasInstance(MonoBehaviour script) => script == _magicaBoneCloth;
+    }
+
+    internal class GrabbyMagica2BoneInfo : GrabbyBoneInfo {
+
+        private readonly MagicaCloth2.MagicaCloth _magicaBoneCloth;
+        private readonly float _originalGravity;
+
+        public GrabbyMagica2BoneInfo(PuppetMaster puppetMaster, MagicaCloth2.MagicaCloth magicaBoneCloth) {
+            PuppetMaster = puppetMaster;
+            _magicaBoneCloth = magicaBoneCloth;
+            _originalGravity = _magicaBoneCloth.process.cloth.SerializeData.gravity;
+        }
+
+        internal override bool IsEnabled() => _magicaBoneCloth.isActiveAndEnabled && !Mathf.Approximately(_magicaBoneCloth.serializeData.blendWeight, 0);
+
+        internal override void DisablePhysics() {
+            _magicaBoneCloth.SerializeData.gravity = 0f;
+            _magicaBoneCloth.process.SyncParameters();
+        }
+
+        internal override void RestorePhysics() {
+            _magicaBoneCloth.SerializeData.gravity = _originalGravity;
+            _magicaBoneCloth.process.SyncParameters();
+        }
+
+        internal override string GetName() => _magicaBoneCloth.name;
+
+        internal override float GetRadius(Transform childNode) => GetRadius(_magicaBoneCloth, childNode);
+
+        internal override float GetLength(Transform childNode) => GetLength(_magicaBoneCloth, childNode);
+
+        internal static float GetRadius(MagicaCloth2.MagicaCloth magicaBone, Transform childNode) {
+            var idx = magicaBone.process.boneClothSetupData.GetTransformIndexFromId(childNode.GetInstanceID());
+            var depth = magicaBone.process.ProxyMesh.vertexDepths[idx];
+            var radius = magicaBone.SerializeData.radius.Evaluate(depth);
+            return radius;
+        }
+
+        internal static float GetLength(MagicaCloth2.MagicaCloth magicaBone, Transform childNode) {
+            // Unfortunately magica doesn't have a total length property (that I could find)
+            var totalLength = 0f;
+            var currentBone = childNode;
+            while (currentBone.parent != null) {
+                var nextBone = currentBone.parent;
+                totalLength += Vector3.Distance(currentBone.position, nextBone.position);
+                currentBone = nextBone;
+                if (magicaBone.SerializeData.rootBones.Contains(currentBone)) {
                     return totalLength;
                 }
             }
