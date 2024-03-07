@@ -10,8 +10,9 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.GameEventSystem;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
+using Assets.ABI_RC.Systems.Safety.AdvancedSafety;
 using HarmonyLib;
 using Kafe.Instances.Properties;
 using MelonLoader;
@@ -57,12 +58,15 @@ public class Instances : MelonMod {
     }
 
     public override void OnInitializeMelon() {
+
+        CVRGameEventSystem.Authentication.OnLogin.AddListener(InitializeAfterAuthentication);
+
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
     }
 
-    private static void InitializeAfterAuthentication() {
+    private static void InitializeAfterAuthentication(UserAuthResponse loginInfo) {
 
         ModConfig.InitializeMelonPrefs();
 
@@ -178,16 +182,13 @@ public class Instances : MelonMod {
             && MetaPort.Instance.CurrentInstanceId != ""
             && PlayerConfig?.LastInstance?.InstanceId != null
             && PlayerConfig.LastInstance.InstanceId == MetaPort.Instance.CurrentInstanceId
-            && MovementSystem.Instance.canFly) {
+            && BetterBetterCharacterController.Instance.CanFly()) {
 
-            var movementSystemTransform = MovementSystem.Instance.transform;
-            var pos = MovementSystem.Instance.rotationPivot.position;
-            pos.y = movementSystemTransform.position.y;
+            var pos = PlayerSetup.Instance.GetPlayerPosition();
             // Don't save the rejoining location if the location is invalid...
+            if (pos.IsBad()) return;
             if (Vector3.Distance(Vector3.zero, pos) > 200000.0 || Mathf.Abs(pos.x) > 200000.0 || Mathf.Abs(pos.y) > 200000.0 || Mathf.Abs(pos.z) > 200000.0) return;
-            var rot = MovementSystem.Instance.rotationPivot.eulerAngles;
-            rot.x = 0;
-            rot.z = 0;
+            var rot = PlayerSetup.Instance.GetPlayerRotation();
 
             PlayerConfig.RejoinLocation = new JsonRejoinLocation {
                 InstanceId = MetaPort.Instance.CurrentInstanceId,
@@ -440,7 +441,7 @@ public class Instances : MelonMod {
         yield return new WaitUntil(() => task.IsCompleted);
         var instanceDetails = task.Result;
 
-        var hasOtherUsers = instanceDetails?.Data?.Members?.Exists(u => u.Name != AuthManager.username);
+        var hasOtherUsers = instanceDetails?.Data?.Members?.Exists(u => u.Name != AuthManager.Username);
 
         if (instanceDetails?.Data == null || (hasOtherUsers.HasValue && !hasOtherUsers.Value)) {
 
@@ -742,7 +743,7 @@ public class Instances : MelonMod {
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Y) <= 200000.0
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Z) <= 200000.0
                     && PlayerConfig.RejoinLocation.InstanceId == MetaPort.Instance.CurrentInstanceId
-                    && MovementSystem.Instance.canFly) {
+                    && BetterBetterCharacterController.Instance.CanFly()) {
 
 
                     var timeSinceClosed = DateTime.UtcNow - PlayerConfig.RejoinLocation.ClosedDateTime;
@@ -751,7 +752,7 @@ public class Instances : MelonMod {
                     }
                     else {
                         MelonLogger.Msg("Attempting to Teleport to the previous location of this Instance...");
-                        MovementSystem.Instance.TeleportToPosRot(PlayerConfig.RejoinLocation.Position.GetPosition(), PlayerConfig.RejoinLocation.RotationEuler.GetRotation());
+                        BetterBetterCharacterController.Instance.TeleportPlayerTo(PlayerConfig.RejoinLocation.Position.GetPosition(), PlayerConfig.RejoinLocation.RotationEuler.GetRotation().eulerAngles, false, true);
                     }
                 }
 
@@ -773,19 +774,6 @@ public class Instances : MelonMod {
                 if (!commandLineArg.Contains(InstanceRestartConfigArg)) continue;
                 MetaPort.Instance.matureContentAllowed = true;
                 break;
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ApiConnection), nameof(ApiConnection.Initialize))]
-        public static void After_ApiConnection_Initialize() {
-            // This is the earliest we can grab the MetaPort.Instance.ownerId, we need it to know which configuration to load!
-            try {
-                InitializeAfterAuthentication();
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_ApiConnection_Initialize)}");
-                MelonLogger.Error(e);
             }
         }
     }

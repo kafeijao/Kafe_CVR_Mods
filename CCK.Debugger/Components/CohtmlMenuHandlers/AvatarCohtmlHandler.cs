@@ -206,7 +206,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         // Attributes section
         var attributesSection = _core.AddSection("Attributes");
-        attributesSection.AddSection("User Name").AddValueGetter(() => isLocal ? AuthManager.username : currentPlayer.Username);
+        attributesSection.AddSection("User Name").AddValueGetter(() => isLocal ? AuthManager.Username : currentPlayer.Username);
         attributesSection.AddSection("User ID").AddValueGetter(() => isLocal ? MetaPort.Instance.ownerId : currentPlayer.Uuid);
         attributesSection.AddSection("Avatar Name/ID").AddValueGetter(() => GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId));
         attributesSection.AddSection("Loading").Value = ToString(!isLoaded || !isInitialized);
@@ -251,7 +251,10 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                 vis.enabled = button.IsOn;
             });
         };
-        eyeButton.ClickHandler = button => button.IsOn = !button.IsOn;
+        eyeButton.ClickHandler = button => {
+            button.IsOn = !button.IsOn;
+            CCKDebugger.HarmonyPatches.EnabledEyeVisualizers = button.IsOn;
+        };
 
         var mainAnimator = avatarAnimator = isLocal
             ? Events.Avatar.LocalPlayerAnimatorManager?.animator
@@ -441,44 +444,44 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         boneButton.IsVisible = CurrentEntityBoneList.Count > 0;
 
 
-        // Eye movement target
-        EyeTargetVisualizer.UpdateActive(false, new List<CVREyeControllerCandidate>(), "");
-        var eyeMovementSection = _core.AddSection("Eye Movement", true);
-        var eyeManager = CVREyeControllerManager.Instance;
-        var localController = eyeManager.controllerList.FirstOrDefault(controller => controller.animator == mainAnimator);
-
-        var hasEyeController = localController != null;
-
-        // Update button visibility
-        eyeButton.IsVisible = hasEyeController;
-
-        // Prevent initializing if there is no Eye Movement controller
-        if (hasEyeController) {
-
-            var targetGuid = localController.targetGuid;
-
-            // Eye movement visualizers updater
-            eyeButton.StateUpdater = button => {
-
-                if (button.IsOn && eyeButton.IsVisible) {
-
-                    foreach (var candidate in eyeManager.targetCandidates) {
-                        // Create visualizer (if doesn't exist yet)
-                        EyeTargetVisualizer.Create(eyeManager.gameObject, candidate.Key, candidate.Value) ;
-                    }
-
-                    // Update the visualizer states
-                    EyeTargetVisualizer.UpdateActive(button.IsOn, eyeManager.targetCandidates.Values, targetGuid);
-                }
-            };
-
-            eyeMovementSection.AddSection("Target Guid").AddValueGetter(() => localController.targetGuid);
-            eyeMovementSection.AddSection("Eye Angle").AddValueGetter(() => localController.eyeAngle.ToString("F3"));
-            eyeMovementSection.AddSection("Left Eye Rotation").AddValueGetter(() => localController.EyeLeft == null ? Na : localController.EyeLeft.localRotation.ToString("F3"));
-            eyeMovementSection.AddSection("Left Eye Rotation Base").AddValueGetter(() => localController.EyeLeftBaseRot == null ? Na : localController.EyeLeftBaseRot.ToString("F3"));
-            eyeMovementSection.AddSection("Right Eye Rotation").AddValueGetter(() => localController.EyeRight == null ? Na : localController.EyeRight.localRotation.ToString("F3"));
-            eyeMovementSection.AddSection("Right Eye Rotation Base").AddValueGetter(() => localController.EyeRightBaseRot == null ? Na : localController.EyeRightBaseRot.ToString("F3"));
-            eyeMovementSection.AddSection("Candidates").AddValueGetter(() => eyeManager.targetCandidates.Values.Join(candidate => candidate.Guid));
-        }
+        // // Eye movement target
+        // EyeTargetVisualizer.UpdateActive(false, new List<CVREyeControllerCandidate>(), "");
+        // var eyeMovementSection = _core.AddSection("Eye Movement", true);
+        // var eyeManager = CVREyeControllerManager.Instance;
+        // var localController = eyeManager.controllerList.FirstOrDefault(controller => controller.animator == mainAnimator);
+        //
+        // var hasEyeController = localController != null;
+        //
+        // // Update button visibility
+        // eyeButton.IsVisible = hasEyeController;
+        //
+        // // Prevent initializing if there is no Eye Movement controller
+        // if (hasEyeController) {
+        //
+        //     var targetGuid = localController.targetGuid;
+        //
+        //     // Eye movement visualizers updater
+        //     eyeButton.StateUpdater = button => {
+        //
+        //         if (button.IsOn && eyeButton.IsVisible) {
+        //
+        //             foreach (var candidate in eyeManager.targetCandidates) {
+        //                 // Create visualizer (if doesn't exist yet)
+        //                 EyeTargetVisualizer.Create(eyeManager.gameObject, candidate.Key, candidate.Value) ;
+        //             }
+        //
+        //             // Update the visualizer states
+        //             EyeTargetVisualizer.UpdateActive(button.IsOn, eyeManager.targetCandidates.Values, targetGuid);
+        //         }
+        //     };
+        //
+        //     eyeMovementSection.AddSection("Target Guid").AddValueGetter(() => localController.targetGuid);
+        //     eyeMovementSection.AddSection("Eye Angle").AddValueGetter(() => localController.eyeAngle.ToString("F3"));
+        //     eyeMovementSection.AddSection("Left Eye Rotation").AddValueGetter(() => localController.EyeLeft == null ? Na : localController.EyeLeft.localRotation.ToString("F3"));
+        //     eyeMovementSection.AddSection("Left Eye Rotation Base").AddValueGetter(() => localController.EyeLeftBaseRot == null ? Na : localController.EyeLeftBaseRot.ToString("F3"));
+        //     eyeMovementSection.AddSection("Right Eye Rotation").AddValueGetter(() => localController.EyeRight == null ? Na : localController.EyeRight.localRotation.ToString("F3"));
+        //     eyeMovementSection.AddSection("Right Eye Rotation Base").AddValueGetter(() => localController.EyeRightBaseRot == null ? Na : localController.EyeRightBaseRot.ToString("F3"));
+        //     eyeMovementSection.AddSection("Candidates").AddValueGetter(() => eyeManager.targetCandidates.Values.Join(candidate => candidate.Guid));
+        // }
     }
 }

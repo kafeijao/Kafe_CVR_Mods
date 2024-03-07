@@ -12,8 +12,8 @@ public class TrackerVisualizer : GameObjectVisualizer {
     public static void ToggleTrackers(bool isOn) {
 
         // Toggle controller visualizers
-        IKSystem.Instance.leftHandModel.SetActive(isOn);
-        IKSystem.Instance.rightHandModel.SetActive(isOn);
+        IKSystem.Instance.leftControllerModel.SetActive(isOn);
+        IKSystem.Instance.rightControllerModel.SetActive(isOn);
 
         var activeTrackers = new HashSet<TrackerVisualizer>();
         foreach (var visualizer in VisualizersActive) {
@@ -26,7 +26,7 @@ public class TrackerVisualizer : GameObjectVisualizer {
         if (isOn) {
 
             var avatarHeight = PlayerSetup.Instance._avatarHeight;
-            var trackers = IKSystem.Instance.AllTrackingPoints.FindAll(t => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
+            var trackers = IKSystem.Instance.TrackingSystem.AllTrackingPoints.FindAll(t => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
 
             // Iterate the visualizers for the trackers, creating if needed
             foreach (var tracker in trackers) {
@@ -68,7 +68,7 @@ public class TrackerVisualizer : GameObjectVisualizer {
     }
 
     internal static bool HasTrackersActive() {
-        if (IKSystem.Instance.leftHandModel.activeSelf || IKSystem.Instance.rightHandModel.activeSelf) return true;
+        if (IKSystem.Instance.leftControllerModel.activeSelf || IKSystem.Instance.rightControllerModel.activeSelf) return true;
         return VisualizersActive.Any(visualizer => visualizer.Value is TrackerVisualizer { enabled: true });
     }
 

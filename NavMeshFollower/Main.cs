@@ -47,7 +47,7 @@ public class NavMeshFollower : MelonMod {
 
         // #if DEBUG
         // CVRGameEventSystem.Instance.OnConnected.AddListener(instanceID => {
-        //     if (!CVRWorld.Instance.allowSpawnables || AuthManager.username != "Kafeijao") return;
+        //     if (!CVRWorld.Instance.allowSpawnables || AuthManager.Username != "Kafeijao") return;
         //     MelonLogger.Msg($"Connected to instance: {instanceID} Spawning in one seconds...");
         //     IEnumerator DelaySpawnProp() {
         //         yield return new WaitForSeconds(3f);

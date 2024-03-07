@@ -1,12 +1,12 @@
 {
   "_id": 65,
   "name": "LoginProfiles",
-  "modversion": "1.0.4",
-  "gameversion": "2023r173",
+  "modversion": "1.0.5",
+  "gameversion": "2024r174",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Allows to start CVR with different **credentials profiles** via steam Launch Options, or straight from the commandline.\n\n```--profile=profile_id```\n\nI normally use this to test sync stuff (where I need 2 clients). For this, you'd need to copy CVR files to another folder, and lunch together with `--no-steam` launch option. In my case would be: `ChilloutVR.exe --profile=kafeijao -skipsteam`",
+  "description": "Allows to start CVR with different **credentials profiles** via steam Launch Options, or straight from the commandline.\n\n```--profile=profile_id```\n\nI normally use this to test sync stuff (where I need 2 clients). For this, you'd need to copy CVR files to another folder, and launch together with `--no-steam` launch option. In my case would be: `ChilloutVR.exe --profile=kafeijao --no-steam`",
   "searchtags": [
     "login",
     "profile",
@@ -14,8 +14,8 @@
     "credentials"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/LoginProfiles.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/LoginProfiles.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/LoginProfiles",
-  "changelog": "- Fixed for 2023r171",
+  "changelog": "- Fixed for 2024r174",
   "embedcolor": "16C60C"
 }

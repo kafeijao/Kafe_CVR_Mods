@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Player;
+﻿using ABI_RC.Core;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
@@ -123,6 +124,7 @@ internal class NavMeshTools : MelonMod {
         var totalBounds = new Bounds();
 
         var replacedColliderMeshes = new HashSet<string>();
+        var replacedColliderMeshesFailedNoBuffer = new HashSet<string>();
         var runtimeSharedMeshes = new Dictionary<Mesh, Mesh>();
 
         var boundsInitialized = false;
@@ -138,9 +140,17 @@ internal class NavMeshTools : MelonMod {
 
                 // Replace the non-readable with a readable one
                 if (!runtimeSharedMeshes.TryGetValue(meshCollider.sharedMesh, out var readableMesh)) {
+
+                    // Prevent shared meshes without vertex buffers
+                    if (meshCollider.sharedMesh.vertexBufferCount <= 0) {
+                        replacedColliderMeshesFailedNoBuffer.Add(meshCollider.sharedMesh.name);
+                        continue;
+                    }
+
                     readableMesh = Utils.MakeReadableMeshCopy(meshCollider.sharedMesh);
                     runtimeSharedMeshes[meshCollider.sharedMesh] = readableMesh;
                 }
+
                 meshCollider.sharedMesh = readableMesh;
             }
 
@@ -160,24 +170,17 @@ internal class NavMeshTools : MelonMod {
         }
 
         if (replacedColliderMeshes.Count > 0) {
-            MelonLogger.Warning($"Replaced {replacedColliderMeshes.Count} mesh collider shared meshes that had their read/write disabled. " +
+            MelonLogger.Warning($"Replaced {replacedColliderMeshes.Count} mesh collider shared meshes that had their read/write disabled. \n" +
+                                $"Ignored {replacedColliderMeshesFailedNoBuffer.Count} mesh colliders because they had no vertex buffer #0. \n"+
                                 $"This might result in weird collision in certain worlds. " +
                                 $"GameObject names: {string.Join(", ", replacedColliderMeshes)}");
         }
         return (colliders, totalBounds);
     }
 
-    internal static readonly int DefaultLayer = LayerMask.NameToLayer("Default");
-    internal static readonly int UILayer = LayerMask.NameToLayer("UI");
-    internal static readonly int UIInternalLayer = LayerMask.NameToLayer("UI Internal");
-    internal static readonly int PlayerCloneLayer = LayerMask.NameToLayer("PlayerClone");
-    internal static readonly int PlayerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
-    internal static readonly int PlayerNetworkLayer = LayerMask.NameToLayer("PlayerNetwork");
-    internal static readonly int IgnoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
-    internal static readonly int MirrorReflectionLayer = LayerMask.NameToLayer("MirrorReflection");
-
     private static bool IsGoodCollider(Collider col) {
         var gameObject = col.gameObject;
+        var rb = col.attachedRigidbody;
         return
             // Ignore disabled
             col.enabled
@@ -185,15 +188,17 @@ internal class NavMeshTools : MelonMod {
             // Ignore colliders in pickup scripts
             && col.GetComponentInParent<CVRPickupObject>() == null
             // Ignore the some layers
-            && gameObject.layer != PlayerCloneLayer
-            && gameObject.layer != PlayerLocalLayer
-            && gameObject.layer != PlayerNetworkLayer
-            && gameObject.layer != IgnoreRaycastLayer
-            && gameObject.layer != MirrorReflectionLayer
-            && gameObject.layer != UILayer
-            && gameObject.layer != UIInternalLayer
+            && gameObject.layer != CVRLayers.PlayerClone
+            && gameObject.layer != CVRLayers.PlayerLocal
+            && gameObject.layer != CVRLayers.PlayerNetwork
+            && gameObject.layer != CVRLayers.IgnoreRaycast
+            && gameObject.layer != CVRLayers.CVRReserved3
+            && gameObject.layer != CVRLayers.UI
+            && gameObject.layer != CVRLayers.UIInternal
             // Ignore triggers
-            && !col.isTrigger;
+            && !col.isTrigger
+            // Ignore movable colliders
+            && rb == null;
     }
 
     [HarmonyPatch]

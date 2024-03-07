@@ -36,12 +36,6 @@ public class BetterPortals : MelonMod {
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
     }
 
-    private static Vector3 GetPlayerRootPosition() {
-        return PlayerSetup.Instance._movementSystem.rotationPivot.position with {
-            y = PlayerSetup.Instance._movementSystem.transform.position.y
-        };
-    }
-
     private static IEnumerator HandlePortalPlacementCooldown() {
         _portalPlacementCoolingDown = true;
         yield return new WaitForSeconds(5);
@@ -120,7 +114,7 @@ public class BetterPortals : MelonMod {
         CVRPortalManager currentMinDistancePortal = null;
 
         foreach (var cvrPortalManager in Portals.List.FindAll(x => x.IsVisible && x.IsInitialized && x.type == CVRPortalManager.PortalType.Instance)) {
-            var portalDistance = Vector3.Distance(GetPlayerRootPosition(), cvrPortalManager.transform.position);
+            var portalDistance = Vector3.Distance(PlayerSetup.Instance.GetPlayerPosition(), cvrPortalManager.transform.position);
             if (portalDistance < ModConfig.MeEnterPortalDistance.Value && portalDistance < currentMinDistance) {
                 currentMinDistance = portalDistance;
                 currentMinDistancePortal = cvrPortalManager;
@@ -171,14 +165,13 @@ public class BetterPortals : MelonMod {
         public static bool Before_PlayerSetup_DropPortal(PlayerSetup __instance, string instanceID) {
             try {
                 if (_portalPlacementCoolingDown) return false;
-                var rotationPivot = __instance._movementSystem.rotationPivot;
-                var origin = rotationPivot.position + Vector3.Scale(rotationPivot.forward, Offset).normalized;
+                var origin = PlayerSetup.Instance.GetPlayerPosition() + Vector3.Scale(PlayerSetup.Instance.GetPlayerForward(), Offset).normalized;
                 if (Physics.Raycast(origin, Vector3.down, out var hitInfo, 4f, -33 & -32769)) {
                     CVRSyncHelper.SpawnPortal(instanceID, hitInfo.point.x, hitInfo.point.y, hitInfo.point.z);
                     MelonCoroutines.Start(HandlePortalPlacementCooldown());
                 }
                 else if (ModConfig.MePlacePortalsMidAir.Value) {
-                    var target = GetPlayerRootPosition() + Vector3.Scale(rotationPivot.forward, Offset).normalized;
+                    var target = PlayerSetup.Instance.GetPlayerPosition() + Vector3.Scale(PlayerSetup.Instance.GetPlayerForward(), Offset).normalized;
                     CVRSyncHelper.SpawnPortal(instanceID, target.x, target.y, target.z);
                     MelonCoroutines.Start(HandlePortalPlacementCooldown());
                 }
@@ -218,7 +211,7 @@ public class BetterPortals : MelonMod {
 
                 // Warn user if dropped on top of them
                 if (ModConfig.MeNotifyOnInvisiblePortalDrop.Value) {
-                    var playerDistance = Vector3.Distance(PlayerSetup.Instance._movementSystem.rotationPivot.position, __instance.transform.position);
+                    var playerDistance = Vector3.Distance(PlayerSetup.Instance.GetActiveCamera().transform.position, __instance.transform.position);
                     var maxDistance = MetaPort.Instance.settings.GetSettingsFloat("GeneralPortalSafeDistance") / 100f;
                     if (!__instance.IsVisible && __instance.IsInitialized && playerDistance <= maxDistance && __instance.portalOwner != MetaPort.Instance.ownerId) {
                         CohtmlHud.Instance.ViewDropText("", "A portal was dropped on top of you, walk away to make it visible.");

@@ -96,11 +96,13 @@ public class PickupOverrides : MelonMod {
 
         private void Awake() {
             _pickup = GetComponent<CVRPickupObject>();
-            PickupSettings.Add(_pickup, new PickupSettings {
-                AutoHold = _pickup.autoHold,
-                MaxHoldDistance = _pickup.maxDistance,
-                MaxGrabDistance = _pickup.maximumGrabDistance,
-            });
+            if (!PickupSettings.ContainsKey(_pickup)) {
+                PickupSettings.Add(_pickup, new PickupSettings {
+                    AutoHold = _pickup.autoHold,
+                    MaxHoldDistance = _pickup.maxDistance,
+                    MaxGrabDistance = _pickup.maximumGrabDistance,
+                });
+            }
             UpdatePickup(_pickup);
         }
 
@@ -117,7 +119,8 @@ public class PickupOverrides : MelonMod {
         private static void After_CVR_InteractableManager_AddPickup(CVRPickupObject pickupObject) {
             try {
                 if (pickupObject == null) return;
-                pickupObject.gameObject.AddComponent<PickupDestroyDetector>();
+                if (pickupObject.gameObject.GetComponent<PickupDestroyDetector>() == null)
+                    pickupObject.gameObject.AddComponent<PickupDestroyDetector>();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_InteractableManager_AddPickup)}");

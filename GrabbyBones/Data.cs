@@ -167,11 +167,16 @@ internal static class Data {
         }
 
         internal static void Delete(CVRAvatar avatar) {
+            // Release all bones this avatar is grabbing
             Hands.RemoveWhere(h => {
                 if (h.Avatar != avatar) return false;
                 h.Release();
                 return true;
             });
+            // Release all bones that are being grabbed on this avatar
+            foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.BoneOwnerAvatar == avatar).ToList()) {
+                grabbingInfo.Value.Release();
+            }
         }
 
         private AvatarHandInfo(CVRAvatar avatar, PuppetMaster puppetMaster, bool isLeftHand, Transform handTransform, Transform indexTransform) {
@@ -199,17 +204,35 @@ internal static class Data {
             }
         }
 
+        private const float OpenCurl = 0.7f;
+        private const float CloseCurl = -1f;
+        private const float OpenCurlThumb = 0.85f;
+        private const float CloseCurlThumb = -0.85f;
+
         private GrabState GetGrabStateHand(int gesture, float thumb, float index, float middle, float ring, float pinky) {
-            if (Mathf.Approximately(gesture, 1) || thumb > 0.5f && index > 0.5f && middle > 0.5f && ring > 0.5f && pinky > 0.5f) return GrabState.Grab;
-            // if (Mathf.Approximately(gesture, 2) || thumb < 0.4f && middleFingerCurl > 0.5f) return GrabState.Pose;
+
+            // Check for the grabbing gesture
+            var isGrabbingWithGesture = ModConfig.MeUseFistGestureToGrab.Value && Mathf.Approximately(gesture, 1);
+            if (isGrabbingWithGesture) return GrabState.Grab;
+
+            // Check for the grabbing via finger curls
+            var isGrabbingWithCurls = ModConfig.MeUseFingerCurlsToGrab.Value
+                                      && Mathf.InverseLerp(OpenCurlThumb, CloseCurlThumb, thumb) >= ModConfig.MeThumbMinFingerCurl.Value
+                                      && Mathf.InverseLerp(OpenCurl, CloseCurl, index) >= ModConfig.MeIndexMinFingerCurl.Value
+                                      && Mathf.InverseLerp(OpenCurl, CloseCurl, middle) >= ModConfig.MeMiddleMinFingerCurl.Value
+                                      && Mathf.InverseLerp(OpenCurl, CloseCurl, ring) >= ModConfig.MeRingMinFingerCurl.Value
+                                      && Mathf.InverseLerp(OpenCurl, CloseCurl, pinky) >= ModConfig.MePinkyMinFingerCurl.Value;
+
+            if (isGrabbingWithCurls) return GrabState.Grab;
+
             return GrabState.None;
         }
 
         internal GrabState GetGrabState() {
             var data = GetMovementData();
             return _isLeftHand
-                ? GetGrabStateHand((int)data.AnimatorGestureLeft, data.LeftThumbCurl, data.LeftIndexCurl, data.LeftMiddleCurl, data.LeftRingCurl, data.LeftPinkyCurl)
-                : GetGrabStateHand((int)data.AnimatorGestureRight, data.RightThumbCurl, data.RightIndexCurl, data.RightMiddleCurl, data.RightRingCurl, data.RightPinkyCurl);
+                ? GetGrabStateHand((int)data.AnimatorGestureLeft, data.LeftThumb1Stretched, data.LeftIndex1Stretched, data.LeftMiddle1Stretched, data.LeftRing1Stretched, data.LeftPinky1Stretched)
+                : GetGrabStateHand((int)data.AnimatorGestureRight, data.RightThumb1Stretched, data.RightIndex1Stretched, data.RightMiddle1Stretched, data.RightRing1Stretched, data.RightPinky1Stretched);
         }
 
         internal bool IsAllowed() {
@@ -240,6 +263,7 @@ internal static class Data {
 
         internal readonly bool IsBoneFromLocalPlayer;
         internal readonly PuppetMaster BoneOwnerPuppetMaster;
+        internal readonly CVRAvatar BoneOwnerAvatar;
 
         internal readonly AvatarHandInfo HandInfo;
         internal readonly GrabbyBoneInfo Info;
@@ -251,6 +275,7 @@ internal static class Data {
             GrabberHandPuppetMaster = handInfo.PuppetMaster;
             IsBoneFromLocalPlayer = info.PuppetMaster == null;
             BoneOwnerPuppetMaster = info.PuppetMaster;
+            BoneOwnerAvatar = info.Avatar;
             HandInfo = handInfo;
             Info = info;
             Root = root;
@@ -350,8 +375,7 @@ internal static class Data {
         private readonly MagicaBoneCloth _magicaBoneCloth;
         private readonly Vector3 _gravityDirection;
 
-        public GrabbyMagicaBoneInfo(PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) {
-            PuppetMaster = puppetMaster;
+        public GrabbyMagicaBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) : base(puppetMaster, avatar) {
             _magicaBoneCloth = magicaBoneCloth;
             _gravityDirection = gravityDirection;
         }
@@ -406,8 +430,7 @@ internal static class Data {
         private readonly MagicaCloth2.MagicaCloth _magicaBoneCloth;
         private readonly float _originalGravity;
 
-        public GrabbyMagica2BoneInfo(PuppetMaster puppetMaster, MagicaCloth2.MagicaCloth magicaBoneCloth) {
-            PuppetMaster = puppetMaster;
+        public GrabbyMagica2BoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaCloth2.MagicaCloth magicaBoneCloth) : base(puppetMaster, avatar) {
             _magicaBoneCloth = magicaBoneCloth;
             _originalGravity = _magicaBoneCloth.process.cloth.SerializeData.gravity;
         }
@@ -432,7 +455,9 @@ internal static class Data {
 
         internal static float GetRadius(MagicaCloth2.MagicaCloth magicaBone, Transform childNode) {
             var idx = magicaBone.process.boneClothSetupData.GetTransformIndexFromId(childNode.GetInstanceID());
-            var depth = magicaBone.process.ProxyMesh.vertexDepths[idx];
+            // var depth = magicaBone.process.HasProxyMesh.vertexDepths[idx];
+            // var depth = magicaBone.process.ProxyMesh.vertexDepths[idx];
+            var depth = magicaBone.process.ProxyMeshContainer.shareVirtualMesh.vertexDepths[idx];
             var radius = magicaBone.SerializeData.radius.Evaluate(depth);
             return radius;
         }
@@ -461,8 +486,7 @@ internal static class Data {
         private readonly Vector3 _gravityDirection;
         private readonly Vector3 _forceDirection;
 
-        public GrabbyDynamicBoneInfo(PuppetMaster puppetMaster, DynamicBone dynamicBone, Vector3 gravityDirection, Vector3 forceDirection) {
-            PuppetMaster = puppetMaster;
+        public GrabbyDynamicBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, DynamicBone dynamicBone, Vector3 gravityDirection, Vector3 forceDirection) : base(puppetMaster, avatar) {
             _dynamicBone = dynamicBone;
             _gravityDirection = gravityDirection;
             _forceDirection = forceDirection;
@@ -558,7 +582,17 @@ internal static class Data {
 
         internal readonly HashSet<Root> Roots = new();
 
-        internal PuppetMaster PuppetMaster;
+        internal GrabbyBoneInfo(PuppetMaster puppetMaster, CVRAvatar avatar) {
+            PlayerGuid = puppetMaster == null ? MetaPort.Instance.ownerId : puppetMaster._playerDescriptor.ownerId;
+            PuppetMaster = puppetMaster;
+            AvatarGuid = avatar.GetComponent<CVRAssetInfo>()?.objectId;
+            Avatar = avatar;
+        }
+
+        internal readonly PuppetMaster PuppetMaster;
+        internal readonly CVRAvatar Avatar;
+        internal readonly string PlayerGuid;
+        internal readonly string AvatarGuid;
 
         internal abstract bool IsEnabled();
         internal abstract void DisablePhysics();

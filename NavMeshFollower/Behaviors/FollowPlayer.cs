@@ -88,7 +88,7 @@ public class FollowPlayer : Behavior {
     public override string GetStatus() {
         if (!IsEnabled()) return "Follow Player";
         var targetName = MetaPort.Instance.ownerId == _playerGuidToFollow
-            ? AuthManager.username
+            ? AuthManager.Username
             : CVRPlayerManager.Instance.TryGetPlayerName(_playerGuidToFollow);
         return $"Following {targetName}";
     }

@@ -4,7 +4,9 @@ using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
+using Unity.XR.OpenVR;
 using UnityEngine;
+using UnityEngine.XR.Management;
 using Valve.VR;
 
 namespace Kafe.BetterAFK;
@@ -27,9 +29,9 @@ public class BetterAFK : MelonMod {
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
 
-        CVRGameEventSystem.VRModeSwitch.OnPreSwitch.AddListener((_, _) => _isSwitchingMode = true);
-        CVRGameEventSystem.VRModeSwitch.OnPostSwitch.AddListener((_, _) => _isSwitchingMode = false);
-        CVRGameEventSystem.VRModeSwitch.OnFailedSwitch.AddListener((_, _) => _isSwitchingMode = false);
+        CVRGameEventSystem.VRModeSwitch.OnPreSwitch.AddListener(_ => _isSwitchingMode = true);
+        CVRGameEventSystem.VRModeSwitch.OnPostSwitch.AddListener(_ => _isSwitchingMode = false);
+        CVRGameEventSystem.VRModeSwitch.OnFailedSwitch.AddListener(_ => _isSwitchingMode = false);
     }
 
     private bool _isSwitchingMode;
@@ -55,17 +57,25 @@ public class BetterAFK : MelonMod {
 
             _isAFK = IsEndKeyOverridingAFK;
 
-            // Handle being in the Steam Overlay to toggle the AFK
-            if (!_isAFK && MetaPort.Instance.isUsingVr && ModConfig.MeAfkWhileSteamOverlay.Value &&
-                OpenVR.Overlay.IsDashboardVisible()) {
-                _isAFK = true;
-            }
+            if (MetaPort.Instance.isUsingVr) {
 
-            // handle setting AFK is we detect the proximity sensor to be off
-            if (!_isAFK && MetaPort.Instance.isUsingVr && OpenVR.System != null &&
-                OpenVR.System.GetTrackedDeviceActivityLevel(OpenVR.k_unTrackedDeviceIndex_Hmd) !=
-                EDeviceActivityLevel.k_EDeviceActivityLevel_UserInteraction) {
-                _isAFK = true;
+                // Handle OpenVR AFK
+                if (XRGeneralSettings.Instance.Manager.activeLoader is OpenVRLoader) {
+
+                    // Handle being in the Steam Overlay to toggle the AFK
+                    if (!_isAFK && ModConfig.MeAfkWhileSteamOverlay.Value &&
+                        OpenVR.Overlay.IsDashboardVisible()) {
+                        _isAFK = true;
+                    }
+
+                    // handle setting AFK is we detect the proximity sensor to be off
+                    if (!_isAFK && MetaPort.Instance.isUsingVr && OpenVR.System != null &&
+                        OpenVR.System.GetTrackedDeviceActivityLevel(OpenVR.k_unTrackedDeviceIndex_Hmd) !=
+                        EDeviceActivityLevel.k_EDeviceActivityLevel_UserInteraction) {
+                        _isAFK = true;
+                    }
+                }
+
             }
 
             // Handle AFK State changes

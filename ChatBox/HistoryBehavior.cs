@@ -391,7 +391,7 @@ public class HistoryBehavior : MonoBehaviour {
         usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
         if (isSelf) {
-            usernameTmp.text = AuthManager.username;
+            usernameTmp.text = AuthManager.Username;
             usernameTmp.color = ColorBlue;
         }
         else {
@@ -407,8 +407,8 @@ public class HistoryBehavior : MonoBehaviour {
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
 
         // // Color our own username in messages (I disabled formatting so this won't work ;_;
-        // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{AuthManager.username}</color>";
-        // message = Regex.Replace(message, Regex.Escape("@" + AuthManager.username), coloredUsername, RegexOptions.IgnoreCase);
+        // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{AuthManager.Username}</color>";
+        // message = Regex.Replace(message, Regex.Escape("@" + AuthManager.Username), coloredUsername, RegexOptions.IgnoreCase);
         messageTmp.text = msg;
 
         var entry = new ChatBoxEntry(chatBoxMessage.SenderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);

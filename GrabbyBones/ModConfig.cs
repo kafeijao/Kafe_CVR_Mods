@@ -12,6 +12,15 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeOnlyFriends;
     internal static MelonPreferences_Entry<int> MeMaxPlayerDistance;
     internal static MelonPreferences_Entry<bool> MePreventGrabIKBones;
+    internal static MelonPreferences_Entry<bool> MeUseFistGestureToGrab;
+    internal static MelonPreferences_Entry<bool> MeUseFingerCurlsToGrab;
+
+    // Finger curls min values
+    internal static MelonPreferences_Entry<float> MeThumbMinFingerCurl;
+    internal static MelonPreferences_Entry<float> MeIndexMinFingerCurl;
+    internal static MelonPreferences_Entry<float> MeMiddleMinFingerCurl;
+    internal static MelonPreferences_Entry<float> MeRingMinFingerCurl;
+    internal static MelonPreferences_Entry<float> MePinkyMinFingerCurl;
 
     public static void InitializeMelonPrefs() {
 
@@ -29,6 +38,32 @@ public static class ModConfig {
 
         MePreventGrabIKBones = _melonCategory.CreateEntry("PreventGrabIKBones", false,
             description: "Whether to prevent grabbing IK bones (part of the animator) or not.");
+
+        MeUseFistGestureToGrab = _melonCategory.CreateEntry("UseFistGestureToGrab", true,
+            description: "Whether to use the fist gesture (gesture == 1) to detect grabbing or not. Defaults to true.");
+
+        MeUseFingerCurlsToGrab = _melonCategory.CreateEntry("UseFingerCurlsToGrab", true,
+            description: "Whether to use the hand finger curls to detect grabbing or not. Defaults to true.");
+
+        MeThumbMinFingerCurl = _melonCategory.CreateEntry("ThumbMinFingerCurl", 0.5f,
+            description: "The minimum thumb finger curl value to consider to be grabbing [0, 1]. " +
+                         "Defaults to 0.5. Use 0 to not require this finger curl.");
+
+        MeIndexMinFingerCurl = _melonCategory.CreateEntry("IndexMinFingerCurl", 0.5f,
+            description: "The minimum index finger curl value to consider to be grabbing [0, 1]. " +
+                         "Defaults to 0.5. Use 0 to not require this finger curl.");
+
+        MeMiddleMinFingerCurl = _melonCategory.CreateEntry("MiddleMinFingerCurl", 0.5f,
+            description: "The minimum middle finger curl value to consider to be grabbing [0, 1]. " +
+                         "Defaults to 0.5. Use 0 to not require this finger curl.");
+
+        MeRingMinFingerCurl = _melonCategory.CreateEntry("RingMinFingerCurl", 0.5f,
+            description: "The minimum ring finger curl value to consider to be grabbing [0, 1]. " +
+                         "Defaults to 0.5. Use 0 to not require this finger curl.");
+
+        MePinkyMinFingerCurl = _melonCategory.CreateEntry("PinkyMinFingerCurl", 0.5f,
+            description: "The minimum pinky finger curl value to consider to be grabbing [0, 1]. " +
+                         "Defaults to 0.5. Use 0 to not require this finger curl.");
     }
 
     public static void InitializeBTKUI() {

@@ -1,8 +1,8 @@
 ﻿{
   "_id": 146,
   "name": "MinimizeWindows",
-  "modversion": "0.0.4",
-  "gameversion": "2023r173",
+  "modversion": "0.0.5",
+  "gameversion": "2024r174",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "game"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/MinimizeWindows.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/MinimizeWindows.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MinimizeWindows",
-  "changelog": "- Fixed for 2023r171",
+  "changelog": "- Fixed for 2024r174",
   "embedcolor": "16C60C"
 }

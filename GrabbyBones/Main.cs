@@ -1,7 +1,9 @@
 // #define DEBUG_ROOT_GEN
 
 using System.Reflection;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MagicaCloth;
@@ -77,11 +79,26 @@ public class GrabbyBones : MelonMod {
         Transform closestChildTransform = null;
         var closestDistance = float.PositiveInfinity;
 
+        GrabbyBoneInfo erroredGrabbyBoneInfo = null;
+        var errored = false;
+
         // Find the closest child transform
         foreach (var grabbyBone in GrabbyBonesCache) {
 
             // Make sure the magica/dynamic bone bone is active
-            if (!grabbyBone.IsEnabled()) continue;
+            try {
+                if (!grabbyBone.IsEnabled()) continue;
+            }
+            catch (Exception e) {
+                var playerName = grabbyBone.PlayerGuid == MetaPort.Instance.ownerId
+                    ? AuthManager.Username
+                    : CVRPlayerManager.Instance.TryGetPlayerName(grabbyBone.PlayerGuid);
+                MelonLogger.Error($"Attempted to grab an invalid bone from the avatar {grabbyBone} used by the player {playerName}. We're going to disable this GrabbyBone...");
+                MelonLogger.Error(e);
+                errored = true;
+                erroredGrabbyBoneInfo = grabbyBone;
+                break;
+            }
 
             foreach (var root in grabbyBone.Roots) {
 
@@ -117,6 +134,12 @@ public class GrabbyBones : MelonMod {
                     }
                 }
             }
+        }
+
+        // Remove the errored bone outside of the loop
+        if (errored) {
+            GrabbyBonesCache.Remove(erroredGrabbyBoneInfo);
+            return;
         }
 
         // #if DEBUG
@@ -239,6 +262,20 @@ public class GrabbyBones : MelonMod {
             }
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.AvatarDestroyed))]
+        public static void Before_PuppetMaster_AvatarDestroyed(PuppetMaster __instance) {
+            // Cleanup the avatar's hand info, this happens before CVRAvatar OnDestroy and sets some fields to null ;_;
+            try {
+
+                AvatarHandInfo.Delete(__instance._avatar);
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(Before_PuppetMaster_AvatarDestroyed)}.");
+                MelonLogger.Error(e);
+            }
+        }
+
         #region Magica
 
         private static void CreateMagicaRoot(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
@@ -324,7 +361,8 @@ public class GrabbyBones : MelonMod {
             try {
 
                 // We only want to mess with the avatar's magica cloth bones, for now
-                if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
+                var avatar = __instance.GetComponentInParent<CVRAvatar>();
+                if (avatar == null) return;
 
                 if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
 
@@ -348,7 +386,7 @@ public class GrabbyBones : MelonMod {
                     return;
                 }
 
-                GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagicaBoneInfo(puppetMaster, __instance, __instance.Params.GravityDirection);
+                GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagicaBoneInfo(avatar, puppetMaster, __instance, __instance.Params.GravityDirection);
 
                 for (var i = 0; i < __instance.ClothTarget.RootCount; i++) {
 
@@ -470,7 +508,7 @@ public class GrabbyBones : MelonMod {
             return result;
         }
 
-        private static readonly HashSet<DynamicBone> InitializedGrabbyBones = new();
+        private static readonly HashSet<DynamicBone> InitializedDynamicBones = new();
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.DoSetup))]
@@ -482,18 +520,19 @@ public class GrabbyBones : MelonMod {
                 if (!__instance.initDone) return;
 
                 // If we already initialized GrabbyBones for this dynamic bone ignore
-                if (InitializedGrabbyBones.Contains(__instance)) return;
-                InitializedGrabbyBones.Add(__instance);
+                if (InitializedDynamicBones.Contains(__instance)) return;
+                InitializedDynamicBones.Add(__instance);
 
                 // We only want to mess with the dynamic bones from avatars, for now
-                if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
+                var avatar = __instance.GetComponentInParent<CVRAvatar>();
+                if (avatar == null) return;
 
                 if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
 
                 var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
                 var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
 
-                GrabbyBoneInfo grabbyBoneInfo = new GrabbyDynamicBoneInfo(puppetMaster, __instance, __instance.m_Gravity, __instance.m_Force);
+                GrabbyBoneInfo grabbyBoneInfo = new GrabbyDynamicBoneInfo(avatar, puppetMaster, __instance, __instance.m_Gravity, __instance.m_Force);
 
                 // Ignore null or excluded roots
                 var root = __instance.m_Root;
@@ -532,7 +571,7 @@ public class GrabbyBones : MelonMod {
 
                 AvatarHandInfo.ReleaseAllWithBehavior(__instance);
                 GrabbyBonesCache.RemoveWhere(gb => gb.HasInstance(__instance));
-                InitializedGrabbyBones.Remove(__instance);
+                InitializedDynamicBones.Remove(__instance);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_DynamicBone_OnDestroy)}.");
@@ -633,7 +672,8 @@ public class GrabbyBones : MelonMod {
                 if (__instance.serializeData.clothType != ClothProcess.ClothType.BoneCloth) return;
 
                 // We only want to mess with the avatar's magica cloth 2 bones, for now
-                if (__instance.GetComponentInParent<CVRAvatar>() == null) return;
+                var avatar = __instance.GetComponentInParent<CVRAvatar>();
+                if (avatar == null) return;
 
                 if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
 
@@ -663,7 +703,7 @@ public class GrabbyBones : MelonMod {
 
                     try {
 
-                        GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagica2BoneInfo(puppetMaster, __instance);
+                        GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagica2BoneInfo(avatar, puppetMaster, __instance);
 
                         foreach (var root in __instance.serializeData.rootBones) {
 
@@ -677,7 +717,8 @@ public class GrabbyBones : MelonMod {
                                 ref innerRoots,
                                 root,
                                 __instance.process.boneClothSetupData.transformList,
-                                __instance.process.ProxyMesh.attributes,
+                                __instance.process.ProxyMeshContainer.shareVirtualMesh.attributes,
+                                // __instance.process.ProxyMesh.attributes,
                                 canFixedRotate,
                                 false,
                                 0);

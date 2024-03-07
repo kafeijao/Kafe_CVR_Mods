@@ -4,8 +4,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util;
 using ABI_RC.Systems.InputManagement;
-using ABI.CCK.Components;
-using HarmonyLib;
+using ABI_RC.Systems.Movement;
 using MelonLoader;
 using UnityEngine;
 
@@ -262,7 +261,7 @@ public class InputModuleOSC : CVRInputModule {
 
         // Toggle Flight mode
         if (GetKeyDown(ButtonNames.ToggleFlightMode)) {
-            PlayerSetup.Instance._movementSystem.ToggleFlight();
+            BetterBetterCharacterController.Instance.ToggleFlight();
         }
 
         // Respawn

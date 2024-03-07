@@ -18,6 +18,8 @@ public enum TrackingDataSource {
 public static class Tracking {
 
     private static bool _enabled;
+    // private static bool _sendTrackingData;
+    // private static bool _receiveTrackingData;
     private static float _updateRate;
     private static float _nextUpdate;
 
@@ -34,7 +36,11 @@ public static class Tracking {
 
         // Set whether the module is enabled and handle the config changes
         _enabled = OSC.Instance.meOSCTrackingModule.Value;
+        // _sendTrackingData = OSC.Instance.meOSCTrackingModuleSendData.Value;
+        // _receiveTrackingData = OSC.Instance.meOSCTrackingModuleReceiveData.Value;
         OSC.Instance.meOSCTrackingModule.OnEntryValueChanged.Subscribe((_, newValue) => _enabled = newValue);
+        // OSC.Instance.meOSCTrackingModuleSendData.OnEntryValueChanged.Subscribe((_, newValue) => _sendTrackingData = newValue);
+        // OSC.Instance.meOSCTrackingModuleReceiveData.OnEntryValueChanged.Subscribe((_, newValue) => _receiveTrackingData = newValue);
 
         // Set the update rate and handle the config changes
         _updateRate = OSC.Instance.meOSCTrackingModuleUpdateInterval.Value;
@@ -52,13 +58,13 @@ public static class Tracking {
     public static void OnTrackingDataDeviceUpdated(SteamVRTrackingModule steamVRTrackingModule) {
 
         // Ignore if the module is disabled
-        if (!_enabled) return;
+        if (!_enabled /*|| !_sendTrackingData*/) return;
 
         if (Time.time >= _nextUpdate) {
             _nextUpdate = Time.time + _updateRate;
 
             // Handle Play Space
-            var playSpace = IKSystem.Instance.vrPlaySpace;
+            var playSpace = IKSystem.Instance._vrPlaySpace;
             TrackingDataPlaySpaceUpdated?.Invoke(playSpace.position, playSpace.rotation.eulerAngles);
 
             // var print = Input.GetKeyDown(KeyCode.P);

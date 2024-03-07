@@ -26,6 +26,6 @@ using MelonLoader;
 
 namespace Kafe.LoginProfiles.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.4";
+    public const string Version = "1.0.5";
     public const string Author = "kafeijao";
 }

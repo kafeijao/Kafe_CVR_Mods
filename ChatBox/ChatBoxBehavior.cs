@@ -345,7 +345,7 @@ public class ChatBoxBehavior : MonoBehaviour {
         SetColor(source);
         if (notify && ModConfig.MeSoundOnMessage.Value) {
             _textBubbleAudioSource.Play();
-            if (msg.IndexOf($"@{AuthManager.username}", StringComparison.OrdinalIgnoreCase) >= 0) {
+            if (msg.IndexOf($"@{AuthManager.Username}", StringComparison.OrdinalIgnoreCase) >= 0) {
                 _textBubbleMentionAudioSource.PlayDelayed(0.5f);
             }
         }

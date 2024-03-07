@@ -40,6 +40,8 @@ public class OSC : MelonMod {
 
     // Tracking Module
     public MelonPreferences_Entry<bool> meOSCTrackingModule;
+    // public MelonPreferences_Entry<bool> meOSCTrackingModuleSendData;
+    // public MelonPreferences_Entry<bool> meOSCTrackingModuleReceiveData;
     public MelonPreferences_Entry<float> meOSCTrackingModuleUpdateInterval;
 
     // Chat Box Module
@@ -151,10 +153,16 @@ public class OSC : MelonMod {
 
         // Tracking
         meOSCTrackingModule = _mcOsc.CreateEntry("TrackingModule", true,
-            description: "Whether the mod will send tracking data updates on the /tracking/ address or not.");
+            description: "Whether the mod will send/receive tracking data updates on the /tracking/ address or not.");
+
+        // meOSCTrackingModuleSendData = _mcOsc.CreateEntry("TrackingModuleSendData", true,
+        //     description: "Whether the mod will send tracking data updates on the /tracking/ address or not.");
+        //
+        // meOSCTrackingModuleReceiveData = _mcOsc.CreateEntry("TrackingModuleReceiveData", true,
+        //     description: "Whether the mod will receive tracking data updates on the /tracking/ address or not.");
 
         meOSCTrackingModuleUpdateInterval = _mcOsc.CreateEntry("TrackingModuleUpdateInterval", 0f,
-            description: "Minimum of seconds between each tracking data update. Default: 0 (will update every frame) " +
+            description: "Minimum of seconds between sending each tracking data update. Default: 0 (will update every frame) " +
                          "Eg: 0.050 will update every 50 milliseconds.");
 
 

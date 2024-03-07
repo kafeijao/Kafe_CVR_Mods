@@ -1,5 +1,5 @@
 ﻿using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
 using MelonLoader;
 using UnityEngine;
 
@@ -100,7 +100,7 @@ public static class ModConfig {
         BTKUILib.QuickMenuAPI.OnPlayerSelected += (playerName, playerID) => {
             playerCat.ClearChildren();
             if (RequestLib.API.HasRequestLib(playerID)) {
-                if (MovementSystem.Instance.canFly) {
+                if (BetterBetterCharacterController.Instance.CanFly()) {
                     var teleportButton = playerCat.AddButton("Request to Teleport", "", $"Send a request to teleport to the {playerName}");
                     teleportButton.OnPress += () => TeleportRequest.RequestToTeleport(playerName, playerID);
                 }

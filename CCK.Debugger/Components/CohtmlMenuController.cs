@@ -182,9 +182,9 @@ public class CohtmlMenuController : MonoBehaviour {
         // Menu should not be running if set to the quick menu and the menu is not opened
         var isMenuEnabled = !ModConfig.MeIsHidden.Value
                             // If attached to the quick menu, it needs to be opened
-                            && (_currentMenuParent != MenuTarget.QuickMenu || CVR_MenuManager.Instance.IsMenuOpen())
+                            && (_currentMenuParent != MenuTarget.QuickMenu || CVR_MenuManager.Instance.IsQuickMenuOpen)
                             // In desktop the if the big menu is opened, we need to close our menu
-                            && (MetaPort.Instance.isUsingVr || !ViewManager.Instance.IsMenuOpen());
+                            && (MetaPort.Instance.isUsingVr || !ViewManager.Instance.IsMainMenuOpen);
 
         if (!isMenuEnabled) {
             // Clear the highlight when the menu is not enabled

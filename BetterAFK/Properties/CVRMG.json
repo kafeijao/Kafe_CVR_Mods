@@ -1,8 +1,8 @@
 {
   "_id": 148,
   "name": "BetterAFK",
-  "modversion": "0.0.6",
-  "gameversion": "2023r173",
+  "modversion": "0.0.7",
+  "gameversion": "2024r174",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -13,8 +13,8 @@
     "better"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/BetterAFK.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/BetterAFK.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterAFK",
-  "changelog": "- Fixed for 2023r173",
+  "changelog": "- Fixed for 2024r174\n- Prevent errors when using with OpenXR",
   "embedcolor": "16C60C"
 }

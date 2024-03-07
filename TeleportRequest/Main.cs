@@ -1,7 +1,7 @@
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.UI;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -52,19 +52,19 @@ public class TeleportRequest : MelonMod {
                     MelonLogger.Warning($"The player {playerName} is not in the Instance anymore...");
                     return;
                 }
-                if (!MovementSystem.Instance.canFly) {
+                if (!BetterBetterCharacterController.Instance.CanFly()) {
                     MelonLogger.Warning($"This world doesn't allow flight, so we won't be able to teleport.");
                     return;
                 }
 
                 // Save position and rotation before teleporting
                 PreviousTeleportLocations.Enqueue(new Tuple<Vector3, Vector3>(
-                    MovementSystem.Instance.transform.position with { y = 0 },
-                    MovementSystem.Instance.rotationPivot.eulerAngles with { x = 0, z = 0 })
+                    PlayerSetup.Instance.GetPlayerPosition(),
+                    PlayerSetup.Instance.GetPlayerRotation().eulerAngles)
                 );
                 PreviousTeleportLocationsChanged?.Invoke();
 
-                MovementSystem.Instance.TeleportTo(target.PlayerObject.transform.position, target.PlayerObject.transform.eulerAngles);
+                BetterBetterCharacterController.Instance.TeleportPlayerTo(target.PlayerObject.transform.position, target.PlayerObject.transform.eulerAngles, false, true);
                 break;
 
             case RequestLib.API.RequestResult.Declined:
@@ -108,14 +108,14 @@ public class TeleportRequest : MelonMod {
         if (ModConfig.MeShowHudMessages.Value) {
             CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>Sending <span style=\"color:green; display:inline\">{playerName}</span> a teleport request...</span>");
         }
-        RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{AuthManager.username} is requesting to teleport to you.", OnResponse));
+        RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{AuthManager.Username} is requesting to teleport to you.", OnResponse));
     }
 
     internal static void TeleportBack() {
         if (PreviousTeleportLocations.Count != 0) {
             var lastLocation = PreviousTeleportLocations.Dequeue();
             MelonLogger.Msg("Teleporting back to the location before teleporting...");
-            MovementSystem.Instance.TeleportToPosRot(lastLocation.Item1, Quaternion.Euler(lastLocation.Item2));
+            BetterBetterCharacterController.Instance.TeleportPlayerTo(lastLocation.Item1, lastLocation.Item2, false, true);
         }
         else {
             MelonLogger.Msg("There are no previous destinations to teleport to...");

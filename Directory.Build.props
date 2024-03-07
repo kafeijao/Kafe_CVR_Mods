@@ -49,10 +49,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Cecil.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Accessibility">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Accessibility.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Assembly-CSharp-firstpass.dll</HintPath>
             <Private>False</Private>
@@ -129,6 +125,18 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DarkRift.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="ECM2">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ECM2.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ECM2.Examples">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ECM2.Examples.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ECM2.Walkthrough">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ECM2.Walkthrough.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="endel.nativewebsocket">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\endel.nativewebsocket.dll</HintPath>
             <Private>False</Private>
@@ -153,20 +161,8 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MeshBakerCore.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Mono.Data.Sqlite">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Data.Sqlite.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Mono.Posix">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Posix.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Mono.Security">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Security.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Mono.WebBrowser">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.WebBrowser.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="MPUIKit">
@@ -193,12 +189,28 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\NicoKuroKusagi.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Novell.Directory.Ldap">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Novell.Directory.Ldap.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Oculus.LipSync">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Oculus.LipSync.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Photon3Unity3D">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Photon3Unity3D.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PhotonRealtime">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PhotonRealtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PhotonVoice.API">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PhotonVoice.API.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PhotonVoice">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PhotonVoice.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PICO.Platform">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PICO.Platform.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="PWCommon3DLL">
@@ -237,10 +249,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.ComponentModel.Composition.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="System.ComponentModel.DataAnnotations">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.ComponentModel.DataAnnotations.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="System.Configuration">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Configuration.dll</HintPath>
             <Private>False</Private>
@@ -257,24 +265,8 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Data.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="System.Design">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Design.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Diagnostics.StackTrace">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Diagnostics.StackTrace.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.DirectoryServices">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.DirectoryServices.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="System">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Drawing.Design">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Drawing.Design.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="System.Drawing">
@@ -283,10 +275,6 @@
         </Reference>
         <Reference Include="System.EnterpriseServices">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.EnterpriseServices.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Globalization.Extensions">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Globalization.Extensions.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="System.IO.Compression">
@@ -321,14 +309,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.Serialization.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="System.Runtime.Serialization.Formatters.Soap">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.Serialization.Formatters.Soap.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Runtime.Serialization.Xml">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.Serialization.Xml.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="System.Security">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Security.dll</HintPath>
             <Private>False</Private>
@@ -341,32 +321,12 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Transactions.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="System.Web.ApplicationServices">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Web.ApplicationServices.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Web">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Web.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Web.Services">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Web.Services.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Windows.Forms">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Windows.Forms.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="System.Xml">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Xml.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="System.Xml.Linq">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Xml.Linq.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="System.Xml.XPath.XDocument">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Xml.XPath.XDocument.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Tobii.GameIntegration.Net">
@@ -417,22 +377,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Analytics.DataPrivacy.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Unity.Build.SlimPlayerRuntime">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Build.SlimPlayerRuntime.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Burst.Cecil.Mdb">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Burst.Cecil.Mdb.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Burst.Cecil.Pdb">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Burst.Cecil.Pdb.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Burst.Cecil.Rocks">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Burst.Cecil.Rocks.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Unity.Burst">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Burst.dll</HintPath>
             <Private>False</Private>
@@ -465,14 +409,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Entities.Hybrid.HybridComponents.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Unity.Entities.Hybrid.Tests.SeparateAssembly">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Entities.Hybrid.Tests.SeparateAssembly.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Entities.UI">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Entities.UI.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Unity.InputSystem">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.InputSystem.dll</HintPath>
             <Private>False</Private>
@@ -503,10 +439,6 @@
         </Reference>
         <Reference Include="Unity.Mathematics.Extensions.Hybrid">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Mathematics.Extensions.Hybrid.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.MemoryProfiler">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.MemoryProfiler.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.Platforms.Common">
@@ -571,10 +503,6 @@
         </Reference>
         <Reference Include="Unity.Scenes">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Scenes.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Scenes.Hybrid">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Scenes.Hybrid.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.ScriptableBuildPipeline">
@@ -645,10 +573,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Vivox.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Unity.Subsystem.Registration">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Subsystem.Registration.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.TextMeshPro.dll</HintPath>
             <Private>False</Private>
@@ -667,6 +591,18 @@
         </Reference>
         <Reference Include="Unity.VectorGraphics">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.VectorGraphics.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.XR.CoreUtils">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.CoreUtils.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.XR.Hands">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.Hands.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.XR.Hands.Samples.VisualizerSample">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.Hands.Samples.VisualizerSample.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.XR.Management">
@@ -717,10 +653,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.AccessibilityModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="UnityEngine.Advertisements">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.Advertisements.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="UnityEngine.AIModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.AIModule.dll</HintPath>
             <Private>False</Private>
@@ -755,10 +687,6 @@
         </Reference>
         <Reference Include="UnityEngine.ClusterRendererModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.ClusterRendererModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.ContentLoadModule">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.ContentLoadModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
@@ -821,10 +749,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.LocalizationModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="UnityEngine.Monetization">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.Monetization.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="UnityEngine.NVIDIAModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.NVIDIAModule.dll</HintPath>
             <Private>False</Private>
@@ -847,10 +771,6 @@
         </Reference>
         <Reference Include="UnityEngine.ProfilerModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.ProfilerModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.PropertiesModule">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.PropertiesModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule">
@@ -899,10 +819,6 @@
         </Reference>
         <Reference Include="UnityEngine.TextCoreFontEngineModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.TextCoreModule">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.TextCoreModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.TextCoreTextEngineModule">
@@ -1021,8 +937,8 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="VivoxUnity">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\VivoxUnity.dll</HintPath>
+        <Reference Include="websocket-sharp">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\websocket-sharp.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

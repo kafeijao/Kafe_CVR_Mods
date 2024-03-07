@@ -1,6 +1,10 @@
 # BetterCache
 
-[![Download Latest BetterCache.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest BetterCache.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/BetterCache.dll)
+![Download Latest BetterCache.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest BetterCache.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
 
 Simple mod to manage the cache. It checks whether the total cache size is above the set limit, if so, it deletes files
 until reaching 80% of the defined limit. It focuses on deleting files with older access dates.

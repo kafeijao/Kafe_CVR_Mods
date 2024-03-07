@@ -3,8 +3,11 @@ using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Player.EyeMovement;
+using ABI_RC.Core.Player.EyeMovement.Targets;
 using ABI_RC.Core.Savior;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
+using ABI_RC.Systems.RuntimeDebug;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.CCK.Debugger.Components;
@@ -59,7 +62,7 @@ public class CCKDebugger : MelonMod {
     }
 
     [HarmonyPatch]
-    private class HarmonyPatches {
+    internal class HarmonyPatches {
 
         // Avatar Destroyed
         [HarmonyPostfix]
@@ -199,9 +202,9 @@ public class CCKDebugger : MelonMod {
 
         // Player
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateAnimatorManager))]
-        static void AfterUpdateAnimatorManager(CVRAnimatorManager manager) {
-            Events.Avatar.OnAnimatorManagerUpdate(manager);
+        [HarmonyPatch(typeof(BetterBetterCharacterController), nameof(BetterBetterCharacterController.CurrentAnimatorManager), MethodType.Setter)]
+        static void AfterUpdateAnimatorManager(BetterBetterCharacterController __instance) {
+            Events.Avatar.OnAnimatorManagerUpdate(__instance.CurrentAnimatorManager);
         }
 
         // Players
@@ -235,7 +238,30 @@ public class CCKDebugger : MelonMod {
             }
 
             // Add ourselves to the player list (why not here xd)
-            Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, AuthManager.username);
+            Events.Player.OnPlayerLoaded(MetaPort.Instance.ownerId, AuthManager.Username);
+        }
+
+        public static bool EnabledEyeVisualizers;
+
+        // EyeMovement
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(EyeMovementController), nameof(EyeMovementController.LateUpdate))]
+        private static void BeforeEyeMovementControllerLateUpdate(ref EyeMovementController __instance) {
+
+            try {
+                if (EnabledEyeVisualizers && __instance.IsLocal) {
+                    foreach (EyeMovementTarget candidate in EyeMovementControllerManager.TargetCandidates)
+                    {
+                        RuntimeGizmos.DrawSphere(candidate.GetPosition(), 0.015f, candidate == __instance.CurrentTarget ? Color.green : Color.blue, CVRLayers.UIInternal, 1f);
+                        RuntimeGizmos.DrawText(candidate.GetPosition() + Vector3.up * 0.2f, $"{candidate} - {(__instance._nextTargetTimeSeconds-Time.time):F1}", 0.025f, candidate == __instance.CurrentTarget ? Color.green : Color.blue, CVRLayers.UIInternal);
+                    }
+                }
+            }
+            catch (Exception e) {
+                MelonLogger.Error("Error executing BeforeEyeMovementControllerLateUpdate Postfix...");
+                MelonLogger.Error(e);
+                throw;
+            }
         }
     }
 }

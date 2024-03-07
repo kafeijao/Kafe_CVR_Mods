@@ -201,7 +201,7 @@ public static class Spawnable {
         if (Guid.TryParse(propGuid, out _)) {
             if (posX.HasValue && posX.Value.IsAbsurd() && posY.HasValue && posY.Value.IsAbsurd() && posZ.HasValue && posZ.Value.IsAbsurd()) {
                 // Spawn prop with the local coordinates provided
-                CVRSyncHelper.SpawnProp(propGuid, posX.Value, posY.Value, posZ.Value);
+                CVRSyncHelper.SpawnProp(propGuid, posX.Value, posY.Value, posZ.Value, false);
             }
             else {
                 // Spawn prop without coordinates -> spawns in front of the player

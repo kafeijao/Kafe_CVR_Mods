@@ -35,7 +35,7 @@ public static class RequestLibIntegration {
 
         PendingRequests.Add(playerID);
         MelonLogger.Msg($"Sending a {nameof(NavMeshFollower)} interact request to {playerName}...");
-        RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{AuthManager.username} is requesting allow their Prop Follower interact with you.", OnResponse));
+        RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{AuthManager.Username} is requesting allow their Prop Follower interact with you.", OnResponse));
     }
 
     private static void OnResponse(RequestLib.API.Request request, RequestLib.API.Response response) {

@@ -1,6 +1,11 @@
 # EyeMovementFix
 
-[![Download Latest EyeMovementFix.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest EyeMovementFix.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/EyeMovementFix.dll)
+![Download Latest EyeMovementFix.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest EyeMovementFix.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
+
 
 Mod to attempt to fix some of the current issues with the eye movement. This will affect the local and remote players
 eye movement but only for the local client. Over time I also implemented some new features.

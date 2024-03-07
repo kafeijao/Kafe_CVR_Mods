@@ -85,7 +85,10 @@ public class ProfilesExtended : MelonMod {
         if (!_autoProfileEnabled) yield break;
 
         // Saves current parameters to profile and sets it as the default
-        PlayerSetup.Instance.SaveCurrentAvatarSettingsProfile(_autoProfileName);
+        if (PlayerSetup.Instance._avatar != null && PlayerSetup.Instance._avatarDescriptor != null &&
+            PlayerSetup.Instance._avatarDescriptor.avatarUsesAdvancedSettings) {
+            PlayerSetup.Instance._avatarDescriptor.avatarSettings.SaveCurrentAvatarProfile(_autoProfileName, PlayerSetup.Instance.animatorManager);
+        }
 
         _coroutineCancellationToken = null;
     }
@@ -104,54 +107,69 @@ public class ProfilesExtended : MelonMod {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.ApplyAdvancedSettingsFileProfile))]
         private static void AfterApplyAdvancedSettingsFileProfile(ref List<CVRAdvancedSettingsFileProfileValue> values) {
+            try {
 
-            if (_loadingProfile.Contains(_profileTag)) {
-                // The profile name is forcing all parameters to change
-                MelonLogger.Msg($"Loaded profile {_loadingProfile} which contains a tag that forces all params to change.");
-                return;
-            }
-
-            var removedString = "";
-
-            // Otherwise -> Check if there are tags to be ignored
-            if (PlayerSetup.Instance._avatarDescriptor.avatarUsesAdvancedSettings) {
-                var settings = PlayerSetup.Instance._avatarDescriptor.avatarSettings.settings;
-
-                // Remove all values that are not AAS parameters
-                if (_onlyLoadAASParams) {
-                    var removedAAS = values.RemoveAll(value =>
-                        !settings.Exists(setting =>
-                            setting.machineName == value.name));
-                    if (removedAAS > 0) removedString += $"Ignored {removedAAS} animator params because they're not AAS parameters.";
+                if (_loadingProfile.Contains(_profileTag)) {
+                    // The profile name is forcing all parameters to change
+                    MelonLogger.Msg($"Loaded profile {_loadingProfile} which contains a tag that forces all params to change.");
+                    return;
                 }
 
-                // Remove all values which their AAS name includes the character *
-                var removedWildcard = values.RemoveAll(value =>
-                    settings.Any(setting =>
-                        setting.machineName == value.name && setting.name.Contains(_paramTag)));
-                if (removedWildcard > 0) removedString += $"Ignored {removedWildcard} animator params because their AAS contains the {_paramTag} wildcard.";
-            }
+                var removedString = "";
 
-            MelonLogger.Msg($"Loaded profile {_loadingProfile}. {removedString}");
+                // Otherwise -> Check if there are tags to be ignored
+                if (PlayerSetup.Instance._avatarDescriptor.avatarUsesAdvancedSettings) {
+                    var settings = PlayerSetup.Instance._avatarDescriptor.avatarSettings.settings;
+
+                    // Remove all values that are not AAS parameters
+                    if (_onlyLoadAASParams) {
+                        var removedAAS = values.RemoveAll(value =>
+                            !settings.Exists(setting =>
+                                setting.machineName == value.name));
+                        if (removedAAS > 0) removedString += $"Ignored {removedAAS} animator params because they're not AAS parameters.";
+                    }
+
+                    // Remove all values which their AAS name includes the character *
+                    var removedWildcard = values.RemoveAll(value =>
+                        settings.Any(setting =>
+                            setting.machineName == value.name && setting.name.Contains(_paramTag)));
+                    if (removedWildcard > 0) removedString += $"Ignored {removedWildcard} animator params because their AAS contains the {_paramTag} wildcard.";
+                }
+
+                MelonLogger.Msg($"Loaded profile {_loadingProfile}. {removedString}");
+
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(AfterApplyAdvancedSettingsFileProfile)}");
+                MelonLogger.Error(e);
+            }
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.HandleSystemCall))]
         private static void AfterCVR_MenuManagerHandleSystemCall(string type, string param1, string param2) {
             // We're detecting the Quick Menu parameter change events here
-            if (type is "AppChangeAnimatorParam" or "ChangeAnimatorParam") QueueSaveAvatarSettingsProfile();
+            try {
+                if (type is "AppChangeAnimatorParam" or "ChangeAnimatorParam") QueueSaveAvatarSettingsProfile();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(AfterApplyAdvancedSettingsFileProfile)}");
+                MelonLogger.Error(e);
+            }
         }
 
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.RegisterEvents))]
-        private static void BeforeViewManagerRegisterEvents(ViewManager __instance) {
-            // We're detecting the Main Menu change parameter events here
-            // Lets bind this before the game binds it, otherwise we can't overwrite it later
-            __instance.gameMenuView.View._view.BindCall("CVRAppCallChangeAnimatorParam", (string name, float value) => {
-                // Call the original function
-                PlayerSetup.Instance.changeAnimatorParam(name, value);
-                QueueSaveAvatarSettingsProfile();
-            });
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.changeAnimatorParam))]
+        private static void After_PlayerSetup_changeAnimatorParam(PlayerSetup __instance, string name, float value, int source) {
+            // We're detecting the Main Menu change parameter events here -> Save current changes
+            try {
+                // Source 1 and 2 are the menus, 0 is automatic stuff that we should ignore
+                if (source != 0) QueueSaveAvatarSettingsProfile();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(AfterApplyAdvancedSettingsFileProfile)}");
+                MelonLogger.Error(e);
+            }
         }
     }
 }

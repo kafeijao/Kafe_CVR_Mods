@@ -4,7 +4,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Util;
 using ABI_RC.Systems.IK.TrackingModules;
 using ABI_RC.Systems.InputManagement;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Rug.Osc.Core;
@@ -30,9 +30,9 @@ internal class HarmonyPatches {
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(MovementSystem), nameof(MovementSystem.UpdateAnimatorManager))]
-    internal static void AfterUpdateAnimatorManager(CVRAnimatorManager manager) {
-        Events.Avatar.OnAnimatorManagerUpdate(manager);
+    [HarmonyPatch(typeof(BetterBetterCharacterController), nameof(BetterBetterCharacterController.CurrentAnimatorManager), MethodType.Setter)]
+    static void AfterUpdateAnimatorManager(BetterBetterCharacterController __instance) {
+        Events.Avatar.OnAnimatorManagerUpdate(__instance.CurrentAnimatorManager);
     }
 
     // Parameters

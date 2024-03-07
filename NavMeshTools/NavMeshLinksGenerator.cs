@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using ABI_RC.Core;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.AI;
@@ -18,13 +19,13 @@ public class NavMeshLinksGenerator : MonoBehaviour {
 
         // Add each layer to the mask
         var mask = 0;
-        mask |= (1 << NavMeshTools.UILayer);
-        mask |= (1 << NavMeshTools.UIInternalLayer);
-        mask |= (1 << NavMeshTools.PlayerCloneLayer);
-        mask |= (1 << NavMeshTools.PlayerLocalLayer);
-        mask |= (1 << NavMeshTools.PlayerNetworkLayer);
-        mask |= (1 << NavMeshTools.IgnoreRaycastLayer);
-        mask |= (1 << NavMeshTools.MirrorReflectionLayer);
+        mask |= (1 << CVRLayers.UI);
+        mask |= (1 << CVRLayers.UIInternal);
+        mask |= (1 << CVRLayers.PlayerClone);
+        mask |= (1 << CVRLayers.PlayerLocal);
+        mask |= (1 << CVRLayers.PlayerNetwork);
+        mask |= (1 << CVRLayers.IgnoreRaycast);
+        mask |= (1 << CVRLayers.CVRReserved3);
 
         // Now invert the mask to exclude the layers you've added
         return allLayers & ~mask;

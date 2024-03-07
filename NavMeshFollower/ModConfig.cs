@@ -71,6 +71,9 @@ public static class ModConfig {
 
     internal static void UpdateMainPage() {
 
+        if (_mainCategory == null)
+            return;
+
         _mainCategory.ClearChildren();
 
         foreach (var controller in FollowerController.FollowerControllers) {
@@ -242,7 +245,8 @@ public static class ModConfig {
         _mainCategory = _mainPage.AddCategory("");
 
         // Follower Controller Page
-        _followerControllerPage = _mainCategory.AddPage(nameof(NavMeshFollower) + " Controller", "", "", nameof(NavMeshFollower));
+        // _followerControllerPage = _mainCategory.AddPage(nameof(NavMeshFollower) + " Controller", "", "", nameof(NavMeshFollower));
+        _followerControllerPage = BTKUILib.UIObjects.Page.GetOrCreatePage(nameof(NavMeshFollower), nameof(NavMeshFollower) + " Controller");
         _followerControllerPage.MenuTitle = nameof(NavMeshFollower) + " Controller";
         _followerControllerPage.MenuSubtitle = "Control the follower.";
         _followerControllerPage.Disabled = true;
@@ -250,7 +254,8 @@ public static class ModConfig {
         _followerControllerBehaviorsCategory = _followerControllerPage.AddCategory("Behaviors");
 
         // Pickup Selector Page
-        _pickupPage = _followerControllerCategory.AddPage(nameof(NavMeshFollower) + " Pickup Selector", "", "", nameof(NavMeshFollower));
+        // _pickupPage = _followerControllerCategory.AddPage(nameof(NavMeshFollower) + " Pickup Selector", "", "", nameof(NavMeshFollower));
+        _pickupPage = BTKUILib.UIObjects.Page.GetOrCreatePage(nameof(NavMeshFollower), nameof(NavMeshFollower) + " Pickup Selector");
         _pickupPage.MenuTitle = nameof(NavMeshFollower) + " Pickup Selector";
         _pickupPage.MenuSubtitle = "Chose the pickup you want to interact with.";
         _pickupPage.Disabled = true;
@@ -280,7 +285,11 @@ public static class ModConfig {
 
         _startFollowingTargetButton = _playersNavMeshCat.AddButton("All Follow X", "", "Make all followers follow X.");
 
-        _playersNavMeshAdvancedPage = _playersNavMeshCat.AddPage("Advanced", "", "Advanced following targeting", nameof(NavMeshFollower));
+        _playersNavMeshAdvancedPage = BTKUILib.UIObjects.Page.GetOrCreatePage(nameof(NavMeshFollower), nameof(NavMeshFollower) + " Advanced");
+        _playersNavMeshCat.AddButton("Advanced", "", "Advanced following targeting").OnPress += () => {
+            _playersNavMeshAdvancedPage.OpenPage();
+        };
+        // _playersNavMeshAdvancedPage = _playersNavMeshCat.AddPage("Advanced", "", "Advanced following targeting", nameof(NavMeshFollower));
         _playersNavMeshAdvancedPageCat = _playersNavMeshAdvancedPage.AddCategory("");
 
         BTKUILib.QuickMenuAPI.OnPlayerSelected += UpdatePlayerPage;

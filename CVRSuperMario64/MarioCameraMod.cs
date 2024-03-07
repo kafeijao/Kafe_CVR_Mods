@@ -1,8 +1,8 @@
 ﻿using ABI_RC.Core.IO;
-using ABI_RC.Core.Player;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.Camera;
 using ABI_RC.Systems.Camera.VisualMods;
+using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using UnityEngine;
 
@@ -228,7 +228,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     }
 
     public void Enable() {
-        if (PlayerSetup.Instance.CheckInSeat()) {
+        if (BetterBetterCharacterController.Instance.IsSitting()) {
             CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while in seat", "");
             SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
         }
@@ -272,6 +272,6 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         var transform = _camera.transform;
         transform.SetParent(_cameraParent, false);
         transform.localPosition = Vector3.zero;
-        _portableCamera.RestoreFlip();
+        _portableCamera.ApplyFlip(false);
     }
 }

@@ -14,7 +14,8 @@ namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
 public class MiscCohtmlHandler : ICohtmlHandler {
 
      // Finger Curls
-    private static Section _fingerCurlSection;
+    private static Section _fingerNormalizedCurlSection;
+    private static Section _fingerCurlsAndSpreadSection;
 
     // VR Inputs
     private static Section _vrInputsSection;
@@ -51,7 +52,7 @@ public class MiscCohtmlHandler : ICohtmlHandler {
             }
 
             // Update trackers visualizers
-            foreach (var tracker in IKSystem.Instance.AllTrackingPoints) {
+            foreach (var tracker in IKSystem.Instance.TrackingSystem.AllTrackingPoints) {
                 if (!tracker.isActive || !tracker.isValid || tracker.suggestedRole == TrackingPoint.TrackingRole.Invalid) continue;
 
                 var name = tracker.deviceName == "" ? "N/A" : tracker.deviceName;
@@ -66,21 +67,96 @@ public class MiscCohtmlHandler : ICohtmlHandler {
         // FingerCurls
         var im = CVRInputManager.Instance;
 
-        _fingerCurlSection = core.AddSection("Finger Curls", true);
+        // Normalized finger curls
+        _fingerNormalizedCurlSection = core.AddSection("Finger Curls Normalized", true);
 
-        // Left Finger Curls
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftThumb)).AddValueGetter(() => im.fingerCurlLeftThumb.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftIndex)).AddValueGetter(() => im.fingerCurlLeftIndex.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftMiddle)).AddValueGetter(() => im.fingerCurlLeftMiddle.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftRing)).AddValueGetter(() => im.fingerCurlLeftRing.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlLeftPinky)).AddValueGetter(() => im.fingerCurlLeftPinky.ToString(CultureInfo.InvariantCulture));
+        // Left Hand
+        var leftHandNormalized = _fingerNormalizedCurlSection.AddSection("Left Hand");
 
-        // Right Finger Curls
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlRightThumb)).AddValueGetter(() => im.fingerCurlRightThumb.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlRightIndex)).AddValueGetter(() => im.fingerCurlRightIndex.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlRightMiddle)).AddValueGetter(() => im.fingerCurlRightMiddle.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlRightRing)).AddValueGetter(() => im.fingerCurlRightRing.ToString(CultureInfo.InvariantCulture));
-        _fingerCurlSection.AddSection(nameof(im.fingerCurlRightPinky)).AddValueGetter(() => im.fingerCurlRightPinky.ToString(CultureInfo.InvariantCulture));
+        // Left Finger Curls Normalized
+        leftHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedLeftThumb)).AddValueGetter(() => im.fingerFullCurlNormalizedLeftThumb.ToString(CultureInfo.InvariantCulture));
+        leftHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedLeftIndex)).AddValueGetter(() => im.fingerFullCurlNormalizedLeftIndex.ToString(CultureInfo.InvariantCulture));
+        leftHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedLeftMiddle)).AddValueGetter(() => im.fingerFullCurlNormalizedLeftMiddle.ToString(CultureInfo.InvariantCulture));
+        leftHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedLeftRing)).AddValueGetter(() => im.fingerFullCurlNormalizedLeftRing.ToString(CultureInfo.InvariantCulture));
+        leftHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedLeftPinky)).AddValueGetter(() => im.fingerFullCurlNormalizedLeftPinky.ToString(CultureInfo.InvariantCulture));
+
+        // Left Hand
+        var rightHandNormalized = _fingerNormalizedCurlSection.AddSection("Right Hand");
+
+        // Right Finger Curls Normalized
+        rightHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedRightThumb)).AddValueGetter(() => im.fingerFullCurlNormalizedRightThumb.ToString(CultureInfo.InvariantCulture));
+        rightHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedRightIndex)).AddValueGetter(() => im.fingerFullCurlNormalizedRightIndex.ToString(CultureInfo.InvariantCulture));
+        rightHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedRightMiddle)).AddValueGetter(() => im.fingerFullCurlNormalizedRightMiddle.ToString(CultureInfo.InvariantCulture));
+        rightHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedRightRing)).AddValueGetter(() => im.fingerFullCurlNormalizedRightRing.ToString(CultureInfo.InvariantCulture));
+        rightHandNormalized.AddSection(nameof(im.fingerFullCurlNormalizedRightPinky)).AddValueGetter(() => im.fingerFullCurlNormalizedRightPinky.ToString(CultureInfo.InvariantCulture));
+
+        _fingerCurlsAndSpreadSection = core.AddSection("Finger Curls & Spread", true);
+
+        // Left Hand
+        var leftHand = _fingerCurlsAndSpreadSection.AddSection("Left Hand");
+
+        var leftThumb = leftHand.AddSection("Thumb");
+        leftThumb.AddSection(nameof(im.fingerSpreadLeftThumb)).AddValueGetter(() => im.fingerSpreadLeftThumb.ToString(CultureInfo.InvariantCulture));
+        leftThumb.AddSection(nameof(im.finger1StretchedLeftThumb)).AddValueGetter(() => im.finger1StretchedLeftThumb.ToString(CultureInfo.InvariantCulture));
+        leftThumb.AddSection(nameof(im.finger2StretchedLeftThumb)).AddValueGetter(() => im.finger2StretchedLeftThumb.ToString(CultureInfo.InvariantCulture));
+        leftThumb.AddSection(nameof(im.finger3StretchedLeftThumb)).AddValueGetter(() => im.finger3StretchedLeftThumb.ToString(CultureInfo.InvariantCulture));
+
+        var leftIndex = leftHand.AddSection("Index");
+        leftIndex.AddSection(nameof(im.fingerSpreadLeftIndex)).AddValueGetter(() => im.fingerSpreadLeftIndex.ToString(CultureInfo.InvariantCulture));
+        leftIndex.AddSection(nameof(im.finger1StretchedLeftIndex)).AddValueGetter(() => im.finger1StretchedLeftIndex.ToString(CultureInfo.InvariantCulture));
+        leftIndex.AddSection(nameof(im.finger2StretchedLeftIndex)).AddValueGetter(() => im.finger2StretchedLeftIndex.ToString(CultureInfo.InvariantCulture));
+        leftIndex.AddSection(nameof(im.finger3StretchedLeftIndex)).AddValueGetter(() => im.finger3StretchedLeftIndex.ToString(CultureInfo.InvariantCulture));
+
+        var leftMiddle = leftHand.AddSection("Middle");
+        leftMiddle.AddSection(nameof(im.fingerSpreadLeftMiddle)).AddValueGetter(() => im.fingerSpreadLeftMiddle.ToString(CultureInfo.InvariantCulture));
+        leftMiddle.AddSection(nameof(im.finger1StretchedLeftMiddle)).AddValueGetter(() => im.finger1StretchedLeftMiddle.ToString(CultureInfo.InvariantCulture));
+        leftMiddle.AddSection(nameof(im.finger2StretchedLeftMiddle)).AddValueGetter(() => im.finger2StretchedLeftMiddle.ToString(CultureInfo.InvariantCulture));
+        leftMiddle.AddSection(nameof(im.finger3StretchedLeftMiddle)).AddValueGetter(() => im.finger3StretchedLeftMiddle.ToString(CultureInfo.InvariantCulture));
+
+        var leftRing = leftHand.AddSection("Ring");
+        leftRing.AddSection(nameof(im.fingerSpreadLeftRing)).AddValueGetter(() => im.fingerSpreadLeftRing.ToString(CultureInfo.InvariantCulture));
+        leftRing.AddSection(nameof(im.finger1StretchedLeftRing)).AddValueGetter(() => im.finger1StretchedLeftRing.ToString(CultureInfo.InvariantCulture));
+        leftRing.AddSection(nameof(im.finger2StretchedLeftRing)).AddValueGetter(() => im.finger2StretchedLeftRing.ToString(CultureInfo.InvariantCulture));
+        leftRing.AddSection(nameof(im.finger3StretchedLeftRing)).AddValueGetter(() => im.finger3StretchedLeftRing.ToString(CultureInfo.InvariantCulture));
+
+        var leftPinky = leftHand.AddSection("Pinky");
+        leftPinky.AddSection(nameof(im.fingerSpreadLeftPinky)).AddValueGetter(() => im.fingerSpreadLeftPinky.ToString(CultureInfo.InvariantCulture));
+        leftPinky.AddSection(nameof(im.finger1StretchedLeftPinky)).AddValueGetter(() => im.finger1StretchedLeftPinky.ToString(CultureInfo.InvariantCulture));
+        leftPinky.AddSection(nameof(im.finger2StretchedLeftPinky)).AddValueGetter(() => im.finger2StretchedLeftPinky.ToString(CultureInfo.InvariantCulture));
+        leftPinky.AddSection(nameof(im.finger3StretchedLeftPinky)).AddValueGetter(() => im.finger3StretchedLeftPinky.ToString(CultureInfo.InvariantCulture));
+
+        // Right Hand
+        var rightHand = _fingerCurlsAndSpreadSection.AddSection("Right Hand");
+
+        var rightThumb = rightHand.AddSection("Thumb");
+        rightThumb.AddSection(nameof(im.fingerSpreadRightThumb)).AddValueGetter(() => im.fingerSpreadRightThumb.ToString(CultureInfo.InvariantCulture));
+        rightThumb.AddSection(nameof(im.finger1StretchedRightThumb)).AddValueGetter(() => im.finger1StretchedRightThumb.ToString(CultureInfo.InvariantCulture));
+        rightThumb.AddSection(nameof(im.finger2StretchedRightThumb)).AddValueGetter(() => im.finger2StretchedRightThumb.ToString(CultureInfo.InvariantCulture));
+        rightThumb.AddSection(nameof(im.finger3StretchedRightThumb)).AddValueGetter(() => im.finger3StretchedRightThumb.ToString(CultureInfo.InvariantCulture));
+
+        var rightIndex = rightHand.AddSection("Index");
+        rightIndex.AddSection(nameof(im.fingerSpreadRightIndex)).AddValueGetter(() => im.fingerSpreadRightIndex.ToString(CultureInfo.InvariantCulture));
+        rightIndex.AddSection(nameof(im.finger1StretchedRightIndex)).AddValueGetter(() => im.finger1StretchedRightIndex.ToString(CultureInfo.InvariantCulture));
+        rightIndex.AddSection(nameof(im.finger2StretchedRightIndex)).AddValueGetter(() => im.finger2StretchedRightIndex.ToString(CultureInfo.InvariantCulture));
+        rightIndex.AddSection(nameof(im.finger3StretchedRightIndex)).AddValueGetter(() => im.finger3StretchedRightIndex.ToString(CultureInfo.InvariantCulture));
+
+        var rightMiddle = rightHand.AddSection("Middle");
+        rightMiddle.AddSection(nameof(im.fingerSpreadRightMiddle)).AddValueGetter(() => im.fingerSpreadRightMiddle.ToString(CultureInfo.InvariantCulture));
+        rightMiddle.AddSection(nameof(im.finger1StretchedRightMiddle)).AddValueGetter(() => im.finger1StretchedRightMiddle.ToString(CultureInfo.InvariantCulture));
+        rightMiddle.AddSection(nameof(im.finger2StretchedRightMiddle)).AddValueGetter(() => im.finger2StretchedRightMiddle.ToString(CultureInfo.InvariantCulture));
+        rightMiddle.AddSection(nameof(im.finger3StretchedRightMiddle)).AddValueGetter(() => im.finger3StretchedRightMiddle.ToString(CultureInfo.InvariantCulture));
+
+        var rightRing = rightHand.AddSection("Ring");
+        rightRing.AddSection(nameof(im.fingerSpreadRightRing)).AddValueGetter(() => im.fingerSpreadRightRing.ToString(CultureInfo.InvariantCulture));
+        rightRing.AddSection(nameof(im.finger1StretchedRightRing)).AddValueGetter(() => im.finger1StretchedRightRing.ToString(CultureInfo.InvariantCulture));
+        rightRing.AddSection(nameof(im.finger2StretchedRightRing)).AddValueGetter(() => im.finger2StretchedRightRing.ToString(CultureInfo.InvariantCulture));
+        rightRing.AddSection(nameof(im.finger3StretchedRightRing)).AddValueGetter(() => im.finger3StretchedRightRing.ToString(CultureInfo.InvariantCulture));
+
+        var rightPinky = rightHand.AddSection("Pinky");
+        rightPinky.AddSection(nameof(im.fingerSpreadRightPinky)).AddValueGetter(() => im.fingerSpreadRightPinky.ToString(CultureInfo.InvariantCulture));
+        rightPinky.AddSection(nameof(im.finger1StretchedRightPinky)).AddValueGetter(() => im.finger1StretchedRightPinky.ToString(CultureInfo.InvariantCulture));
+        rightPinky.AddSection(nameof(im.finger2StretchedRightPinky)).AddValueGetter(() => im.finger2StretchedRightPinky.ToString(CultureInfo.InvariantCulture));
+        rightPinky.AddSection(nameof(im.finger3StretchedRightPinky)).AddValueGetter(() => im.finger3StretchedRightPinky.ToString(CultureInfo.InvariantCulture));
 
         // VR Inputs
         if (CVRInputManager.Instance._inputModules.Find(module => module is CVRInputModule_XR) is CVRInputModule_XR xrInputModule) {
@@ -123,13 +199,14 @@ public class MiscCohtmlHandler : ICohtmlHandler {
         Core.UpdateButtonsState();
 
         // Update the finger curl values
-        _fingerCurlSection?.UpdateFromGetter(true);
+        _fingerNormalizedCurlSection?.UpdateFromGetter(true);
+        _fingerCurlsAndSpreadSection?.UpdateFromGetter(true);
 
         // Update vr inputs
         _vrInputsSection?.UpdateFromGetter(true);
 
         // Update Face Tracking
-        _fingerCurlSection?.UpdateFromGetter(true);
+        _faceTrackingSection?.UpdateFromGetter(true);
     }
 
 }

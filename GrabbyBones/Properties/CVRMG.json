@@ -1,8 +1,8 @@
 {
   "_id": 160,
   "name": "GrabbyBones",
-  "modversion": "1.0.5",
-  "gameversion": "2023r173",
+  "modversion": "1.0.6",
+  "gameversion": "2024r174",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "bone"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/GrabbyBones.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
-  "changelog": "- Fixed for 2023r173. Added initial support for Magica Cloth 2 (can be buggy)",
+  "changelog": "- Fixed for 2024r174\n- Added configurable min curl for grabbing",
   "embedcolor": "16C60C"
 }

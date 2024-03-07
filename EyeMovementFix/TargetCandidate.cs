@@ -239,7 +239,7 @@ public sealed class TargetCandidate : IReusable {
 
                 // See if it's the local player
                 if (targetCandidate._controller.isLocal) {
-                    targetCandidate._username = AuthManager.username;
+                    targetCandidate._username = AuthManager.Username;
                     // Todo: If we can get the amplitude for remotes, get the local one as well
                     // return Mathf.InverseLerp(0f, 0.1f, VivoxDeviceHandler.InputAmplitude);
                     return VivoxService.Instance != null && !VivoxService.Instance.IsInputDeviceMuted ? 0.1f : 0f;

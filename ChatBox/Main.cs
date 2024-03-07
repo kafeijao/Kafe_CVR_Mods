@@ -63,7 +63,7 @@ public class ChatBox : MelonMod {
         };
         CohtmlPatches.AutoCompleteRequested += (currentInput, index) => {
             if (CVRPlayerManager.Instance == null) return;
-            var usernames = new List<string> { AuthManager.username };
+            var usernames = new List<string> { AuthManager.Username };
             usernames.AddRange(CVRPlayerManager.Instance.NetworkPlayers.Select(u => u.Username));
 
             var isEmptyStart = string.IsNullOrEmpty(currentInput) || currentInput.EndsWith(" ") || currentInput.EndsWith("@");
