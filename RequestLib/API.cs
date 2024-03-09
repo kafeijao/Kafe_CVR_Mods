@@ -70,7 +70,7 @@ public static class API {
 
             Metadata = metadata;
 
-            ModName = RequestLib.GetModName();
+            ModName = RequestLib.GetModName(2);
             SourcePlayerGuid = MetaPort.Instance.ownerId;
             Timeout = DateTime.UtcNow + RequestTimeout;
         }
@@ -108,6 +108,22 @@ public static class API {
             Result = result;
             Metadata = metadata;
         }
+    }
+
+    /// <summary>
+    /// Represents the Handlers on the requested side. It allows to setup an interceptor or a sent response listener.
+    /// </summary>
+    public class RequestHandlers {
+
+        /// <summary>
+        /// Interceptor for the requests.
+        /// </summary>
+        public Func<Request, InterceptorResult> Inteceptor = null;
+
+        /// <summary>
+        /// Listener for when a response is going to be sent from the requested side.
+        /// </summary>
+        public Action<Request, Response> OnResponseSent = null;
     }
 
     /// <summary>
@@ -171,7 +187,7 @@ public static class API {
         /// Check if the Remote Player has your mod Installed.
         /// </summary>
         /// <returns>Whether this Remote Player has your mod install or not.</returns>
-        public bool HasMod() => API.HasRequestLib(Guid) && RemotePlayerMods[Guid].Contains(RequestLib.GetModName());
+        public bool HasMod() => API.HasRequestLib(Guid) && RemotePlayerMods[Guid].Contains(RequestLib.GetModName(2));
 
         internal PlayerInfo(string guid) {
             Guid = guid;
@@ -180,7 +196,7 @@ public static class API {
     }
 
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(1);
-    internal static readonly Dictionary<string, Func<Request, InterceptorResult>> RegisteredMods = new();
+    internal static readonly Dictionary<string, RequestHandlers> RegisteredMods = new();
     internal static readonly Dictionary<string, string[]> RemotePlayerMods = new();
 
     /// <summary>
@@ -192,13 +208,26 @@ public static class API {
     /// <summary>
     /// Registers your Mod from the RequestLib. You should run this during the initialization of your mod.
     /// </summary>
-    public static void RegisterMod(Func<Request, InterceptorResult> interceptor = null) {
-        var modName = RequestLib.GetModName();
+    [Obsolete("RegisterMod(Func<Request, InterceptorResult> interceptor) is deprecated, " +
+              "please use RegisterMod() or RegisterMod(RequestHandlers handlers) instead.")]
+    public static void RegisterMod(Func<Request, InterceptorResult> interceptor) {
+        RegisterModeInternal(new RequestHandlers() { Inteceptor = interceptor });
+    }
+
+    /// <summary>
+    /// Registers your Mod from the RequestLib. You should run this during the initialization of your mod.
+    /// </summary>
+    public static void RegisterMod(RequestHandlers handlers = null) {
+        RegisterModeInternal(handlers);
+    }
+
+    private static void RegisterModeInternal(RequestHandlers handlers) {
+        var modName = RequestLib.GetModName(3);
         if (RegisteredMods.ContainsKey(modName)) {
-            MelonLogger.Warning($"[RegisterMod] {modName} is already Registered! Ignoring...");
+            MelonLogger.Warning($"[RegisterMod] The mod '{modName}' is already Registered! Ignoring...");
             return;
         }
-        RegisteredMods.Add(modName, interceptor);
+        RegisteredMods.Add(modName, handlers ?? new RequestHandlers());
     }
 
     /// <summary>
@@ -222,7 +251,7 @@ public static class API {
     /// <param name="playerGuid">The Remote Player Guid you want to check.</param>
     /// <returns>Whether the remote player has your mod installed or not.</returns>
     public static bool HasMod(string playerGuid) {
-        return HasRequestLib(playerGuid) && RemotePlayerMods[playerGuid].Contains(RequestLib.GetModName());
+        return HasRequestLib(playerGuid) && RemotePlayerMods[playerGuid].Contains(RequestLib.GetModName(2));
     }
 
     /// <summary>
@@ -230,7 +259,7 @@ public static class API {
     /// This might be useful if you want to cancel a request, but you didn't save it previously.
     /// </summary>
     /// <returns>The currently pending requests sent by your mod.</returns>
-    public static HashSet<Request> GetPendingSentRequests() => ModNetwork.GetPendingSentRequests(RequestLib.GetModName());
+    public static HashSet<Request> GetPendingSentRequests() => ModNetwork.GetPendingSentRequests(RequestLib.GetModName(2));
 
     /// <summary>
     /// Cancels a pending request you sent.
@@ -243,7 +272,7 @@ public static class API {
     /// This might be useful if you want to answer to the requests via the mod, but you don't want to use an interceptor.
     /// </summary>
     /// <returns>The currently pending request received from your mod from a remote player.</returns>
-    public static HashSet<Request> GetPendingReceivedRequests() => ModNetwork.GetPendingReceivedRequests(RequestLib.GetModName());
+    public static HashSet<Request> GetPendingReceivedRequests() => ModNetwork.GetPendingReceivedRequests(RequestLib.GetModName(2));
 
     /// <summary>
     /// Resolves manually a currently pending request you received.
@@ -258,13 +287,13 @@ public static class API {
     internal static InterceptorResult RunInterceptor(Request request) {
 
         // If there are no interceptors for this request => display the request
-        if (!RegisteredMods.TryGetValue(request.ModName, out var interceptor) || interceptor == null) {
+        if (!RegisteredMods.TryGetValue(request.ModName, out var requestHandlers) || requestHandlers.Inteceptor == null) {
             return InterceptorResult.GetShowRequest();
         }
 
         // Otherwise run the interceptor and let it decide whether to display the request to the target user or not.
         try {
-            return interceptor.Invoke(request);
+            return requestHandlers.Inteceptor.Invoke(request);
         }
         catch (Exception e) {
             MelonLogger.Warning($"[RunInterceptor] There was an error running the interceptor for the mod {request.ModName}!");
@@ -272,5 +301,15 @@ public static class API {
         }
 
         return InterceptorResult.GetShowRequest();
+    }
+
+    internal static void SendResponse(Request request, Response response, string pendingResponseGuid) {
+
+        // Handle the OnResponseSent Action
+        if (RegisteredMods.TryGetValue(request.ModName, out var requestHandlers) && requestHandlers.OnResponseSent != null) {
+            requestHandlers.OnResponseSent.Invoke(request, response);
+        }
+
+        ModNetwork.SendResponse(pendingResponseGuid, response.Result == RequestResult.Accepted, response.Metadata);
     }
 }

@@ -71,7 +71,7 @@ internal static class ModNetwork {
         foreach (var key in keysToResolve) {
             CohtmlPatches.Request.DeleteRequest(key);
             if (result != API.RequestResult.TimedOut) {
-                SendResponse(key, result == API.RequestResult.Accepted, metadata);
+                API.SendResponse(request, new API.Response(result, metadata), key);
             }
             PendingResponses.Remove(key);
         }
@@ -188,7 +188,7 @@ internal static class ModNetwork {
 
             case ConfigJson.UserOverride.AutoAccept:
                 MelonLogger.Msg($"[{requestModName}] Auto-Accepted a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
-                SendResponse(pendingResponseGuid, true, "");
+                API.SendResponse(request, new API.Response(API.RequestResult.Accepted, ""), pendingResponseGuid);
                 if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
                     CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                 }
@@ -196,7 +196,7 @@ internal static class ModNetwork {
 
             case ConfigJson.UserOverride.AutoDecline:
                 MelonLogger.Msg($"[{requestModName}] Auto-Declined a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
-                SendResponse(pendingResponseGuid, false, "");
+                API.SendResponse(request, new API.Response(API.RequestResult.Declined, ""), pendingResponseGuid);
                 if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
                     CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                 }
@@ -213,7 +213,7 @@ internal static class ModNetwork {
 
         // We're displaying the request, so we'll leave the the user to reply to it
         if (interceptorResult.ShouldDisplayRequest) {
-            CohtmlPatches.Request.CreateRequest(pendingResponseGuid, senderGuid, requestModName, requestMessage);
+            CohtmlPatches.Request.CreateRequest(request, pendingResponseGuid, senderGuid, requestModName, requestMessage);
         }
 
         // We're not displaying the request, so we need to decide which result to send.
@@ -221,14 +221,14 @@ internal static class ModNetwork {
             switch (interceptorResult.ResponseResult) {
                 case API.RequestResult.Accepted:
                     MelonLogger.Msg($"[Interceptor] [{requestModName}] Auto-Accepted a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
-                    SendResponse(pendingResponseGuid, true, interceptorResult.ResponseMetadata);
+                    API.SendResponse(request, new API.Response(API.RequestResult.Accepted, interceptorResult.ResponseMetadata), pendingResponseGuid);
                     if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
                         CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:green; display:inline\">Auto-Accepted</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                     }
                     break;
                 case API.RequestResult.Declined:
                     MelonLogger.Msg($"[Interceptor] [{requestModName}] Auto-Declined a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}. Message: {requestMessage}");
-                    SendResponse(pendingResponseGuid, false, interceptorResult.ResponseMetadata);
+                    API.SendResponse(request, new API.Response(API.RequestResult.Declined, interceptorResult.ResponseMetadata), pendingResponseGuid);
                     if (ModConfig.MeHudNotificationOnAutoAccept.Value) {
                         CohtmlHud.Instance.ViewDropText(nameof(RequestLib), $"<span>[{requestModName}] <span style=\"color:red; display:inline\">Auto-Declined</span> a request from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}.</span>");
                     }
@@ -242,8 +242,7 @@ internal static class ModNetwork {
 
     internal static void SendResponse(string guid, bool accepted, string responseMetadata) {
 
-        if (!PendingResponses.TryGetValue(guid, out var request)) return;
-        PendingResponses.Remove(guid);
+        if (!PendingResponses.Remove(guid, out var request)) return;
 
         // If the player is not in the instance anymore ignore
         if (!IsPlayerInInstance(request.SourcePlayerGuid)) {
@@ -276,10 +275,9 @@ internal static class ModNetwork {
         }
 
         var pendingRequestGuid = responseGuid.ToString(GuidFormat);
-        if (PendingRequests.TryGetValue(pendingRequestGuid, out var request)) {
+        if (PendingRequests.Remove(pendingRequestGuid, out var request)) {
             var response = new API.Response(accepted ? API.RequestResult.Accepted : API.RequestResult.Declined, responseMetadata);
             request.OnResponse?.Invoke(request, response);
-            PendingRequests.Remove(pendingRequestGuid);
         }
     }
 

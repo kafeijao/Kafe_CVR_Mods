@@ -62,6 +62,8 @@ internal static class CohtmlPatches {
             }
         }
 
+        public API.Request APIRequest;
+
         public string ID;
         public string SenderName;
         public string Name;
@@ -73,20 +75,20 @@ internal static class CohtmlPatches {
         internal static int Count() => Requests.Count;
 
         internal static Request DeleteRequest(string id) {
-            if (!Requests.TryGetValue(id, out var req)) return null;
-            Requests.Remove(id);
+            if (!Requests.Remove(id, out var req)) return null;
             UpdateRequests();
             return req;
         }
 
-        internal static void CreateRequest(string guid, string senderGuid, string modName, string message) {
+        internal static void CreateRequest(API.Request apiRequest, string pendingResponseGuid, string senderGuid, string modName, string message) {
             var req = new Request {
-                ID = guid,
+                ID = pendingResponseGuid,
+                APIRequest = apiRequest,
                 SenderName = CVRPlayerManager.Instance.TryGetPlayerName(senderGuid),
                 Name = modName,
                 Text = message,
             };
-            Requests[guid] = req;
+            Requests[pendingResponseGuid] = req;
             UpdateRequests();
         }
 
@@ -98,10 +100,10 @@ internal static class CohtmlPatches {
             Enum.TryParse<OptionType>(result, true, out var responseType);
             switch (responseType) {
                 case OptionType.Accept:
-                    ModNetwork.SendResponse(request.ID, true, "");
+                    API.SendResponse(request.APIRequest, new API.Response(API.RequestResult.Accepted, ""), request.ID);
                     break;
                 case OptionType.Decline:
-                    ModNetwork.SendResponse(request.ID, false, "");
+                    API.SendResponse(request.APIRequest, new API.Response(API.RequestResult.Declined, ""), request.ID);
                     break;
             }
         }

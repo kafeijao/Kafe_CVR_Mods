@@ -11,6 +11,7 @@
   - [HasMod(playerGuid)](#M-Kafe-RequestLib-API-HasMod-System-String- 'Kafe.RequestLib.API.HasMod(System.String)')
   - [HasRequestLib(playerGuid)](#M-Kafe-RequestLib-API-HasRequestLib-System-String- 'Kafe.RequestLib.API.HasRequestLib(System.String)')
   - [RegisterMod()](#M-Kafe-RequestLib-API-RegisterMod-System-Func{Kafe-RequestLib-API-Request,Kafe-RequestLib-API-InterceptorResult}- 'Kafe.RequestLib.API.RegisterMod(System.Func{Kafe.RequestLib.API.Request,Kafe.RequestLib.API.InterceptorResult})')
+  - [RegisterMod()](#M-Kafe-RequestLib-API-RegisterMod-Kafe-RequestLib-API-RequestHandlers- 'Kafe.RequestLib.API.RegisterMod(Kafe.RequestLib.API.RequestHandlers)')
   - [ResolveReceivedRequest(request,result,metadata)](#M-Kafe-RequestLib-API-ResolveReceivedRequest-Kafe-RequestLib-API-Request,Kafe-RequestLib-API-RequestResult,System-String- 'Kafe.RequestLib.API.ResolveReceivedRequest(Kafe.RequestLib.API.Request,Kafe.RequestLib.API.RequestResult,System.String)')
   - [SendRequest(request)](#M-Kafe-RequestLib-API-SendRequest-Kafe-RequestLib-API-Request- 'Kafe.RequestLib.API.SendRequest(Kafe.RequestLib.API.Request)')
 - [InterceptorResult](#T-Kafe-RequestLib-API-InterceptorResult 'Kafe.RequestLib.API.InterceptorResult')
@@ -27,6 +28,9 @@
   - [Metadata](#F-Kafe-RequestLib-API-Request-Metadata 'Kafe.RequestLib.API.Request.Metadata')
   - [SourcePlayerGuid](#F-Kafe-RequestLib-API-Request-SourcePlayerGuid 'Kafe.RequestLib.API.Request.SourcePlayerGuid')
   - [TargetPlayerGuid](#F-Kafe-RequestLib-API-Request-TargetPlayerGuid 'Kafe.RequestLib.API.Request.TargetPlayerGuid')
+- [RequestHandlers](#T-Kafe-RequestLib-API-RequestHandlers 'Kafe.RequestLib.API.RequestHandlers')
+  - [Inteceptor](#F-Kafe-RequestLib-API-RequestHandlers-Inteceptor 'Kafe.RequestLib.API.RequestHandlers.Inteceptor')
+  - [OnResponseSent](#F-Kafe-RequestLib-API-RequestHandlers-OnResponseSent 'Kafe.RequestLib.API.RequestHandlers.OnResponseSent')
 - [RequestResult](#T-Kafe-RequestLib-API-RequestResult 'Kafe.RequestLib.API.RequestResult')
   - [Accepted](#F-Kafe-RequestLib-API-RequestResult-Accepted 'Kafe.RequestLib.API.RequestResult.Accepted')
   - [Declined](#F-Kafe-RequestLib-API-RequestResult-Declined 'Kafe.RequestLib.API.RequestResult.Declined')
@@ -135,6 +139,17 @@ Whether the remote player has the RequestLib installed or not.
 | playerGuid | [System.String](http://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k:System.String 'System.String') | The Remote Player Guid you want to check. |
 
 <a name='M-Kafe-RequestLib-API-RegisterMod-System-Func{Kafe-RequestLib-API-Request,Kafe-RequestLib-API-InterceptorResult}-'></a>
+### RegisterMod() `method`
+
+##### Summary
+
+Registers your Mod from the RequestLib. You should run this during the initialization of your mod.
+
+##### Parameters
+
+This method has no parameters.
+
+<a name='M-Kafe-RequestLib-API-RegisterMod-Kafe-RequestLib-API-RequestHandlers-'></a>
 ### RegisterMod() `method`
 
 ##### Summary
@@ -328,6 +343,31 @@ Gets the Guid of the source player from whom the request is originating.
 ##### Summary
 
 Gets the Guid of the target player to whom the request is being sent.
+
+<a name='T-Kafe-RequestLib-API-RequestHandlers'></a>
+## RequestHandlers `type`
+
+##### Namespace
+
+Kafe.RequestLib.API
+
+##### Summary
+
+Represents the Handlers on the requested side. It allows to setup an interceptor or a sent response listener.
+
+<a name='F-Kafe-RequestLib-API-RequestHandlers-Inteceptor'></a>
+### Inteceptor `constants`
+
+##### Summary
+
+Interceptor for the requests.
+
+<a name='F-Kafe-RequestLib-API-RequestHandlers-OnResponseSent'></a>
+### OnResponseSent `constants`
+
+##### Summary
+
+Listener for when a response is going to be sent from the requested side.
 
 <a name='T-Kafe-RequestLib-API-RequestResult'></a>
 ## RequestResult `type`

@@ -32,9 +32,9 @@ internal class RequestLib : MelonMod {
     //     }
     // }
 
-    internal static string GetModName() {
+    internal static string GetModName(int frameIncrement) {
         try {
-            var callingFrame = new StackTrace().GetFrame(2);
+            var callingFrame = new StackTrace().GetFrame(frameIncrement);
             var callingAssembly = callingFrame.GetMethod().Module.Assembly;
             var callingMelonAttr = callingAssembly.CustomAttributes.FirstOrDefault(
                 attr => attr.AttributeType == typeof(MelonInfoAttribute));
