@@ -228,6 +228,9 @@ public class ChatBoxBehavior : MonoBehaviour {
         _textBubbleRoundImg = _textBubbleTransform.Find(ChildTextBubbleRoundName).GetComponent<Image>();
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
 
+        // Needed to prevent funny crashes :c
+        _textBubbleOutputTMP.richText = false;
+
         // Add Typing Audio Source
         _typingAudioSource = _typingGo.AddComponent<AudioSource>();
         _typingAudioSource.spatialBlend = 1f;

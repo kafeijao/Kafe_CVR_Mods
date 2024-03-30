@@ -1,7 +1,7 @@
 {
   "_id": 168,
   "name": "ChatBox",
-  "modversion": "1.0.14",
+  "modversion": "1.0.15",
   "gameversion": "2024r174",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
-  "changelog": "- Fixed for 2024r174",
+  "changelog": "- Removed rich text on the chat box bubbles. TextMeshPro can crash the game when certain inputs ;_; Thanks `Obi 1` for the report!",
   "embedcolor": "16C60C"
 }

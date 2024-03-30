@@ -366,6 +366,10 @@ public class HistoryBehavior : MonoBehaviour {
         }
     }
 
+    private static string CleanTMPString(string input) => string.IsNullOrWhiteSpace(input)
+        ? ""
+        : input.Replace("<", "&lt;").Replace(">", "&gt;");
+
     private void AddMessage(API.ChatBoxMessage chatBoxMessage) {
 
         var isSelf = MetaPort.Instance.ownerId == chatBoxMessage.SenderGuid;
@@ -382,7 +386,7 @@ public class HistoryBehavior : MonoBehaviour {
             modNameTmp.color = ChatBoxBehavior.TealTransparency;
         }
         else if (chatBoxMessage.Source == API.MessageSource.Mod) {
-            modNameTmp.text = $"[{chatBoxMessage.ModName}]";
+            modNameTmp.text = $"[{CleanTMPString(chatBoxMessage.ModName)}]";
             modNameTmp.color = ChatBoxBehavior.PinkTransparency;
         }
 
@@ -391,11 +395,11 @@ public class HistoryBehavior : MonoBehaviour {
         usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
         if (isSelf) {
-            usernameTmp.text = AuthManager.Username;
+            usernameTmp.text = CleanTMPString(AuthManager.Username);
             usernameTmp.color = ColorBlue;
         }
         else {
-            usernameTmp.text = CVRPlayerManager.Instance.TryGetPlayerName(chatBoxMessage.SenderGuid);
+            usernameTmp.text = CleanTMPString(CVRPlayerManager.Instance.TryGetPlayerName(chatBoxMessage.SenderGuid));
             usernameTmp.color = Friends.FriendsWith(chatBoxMessage.SenderGuid) ? ColorGreen : Color.white;
         }
 
@@ -409,6 +413,7 @@ public class HistoryBehavior : MonoBehaviour {
         // // Color our own username in messages (I disabled formatting so this won't work ;_;
         // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{AuthManager.Username}</color>";
         // message = Regex.Replace(message, Regex.Escape("@" + AuthManager.Username), coloredUsername, RegexOptions.IgnoreCase);
+        messageTmp.richText = false;
         messageTmp.text = msg;
 
         var entry = new ChatBoxEntry(chatBoxMessage.SenderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);
