@@ -51,8 +51,8 @@ internal static class ModConfig {
         });
     }
 
-    private static void AddMelonSlider(BTKUILib.UIObjects.Page page, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
-        var slider = page.AddSlider(entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
+    private static void AddMelonSlider(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
+        var slider = category.AddSlider(entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
         slider.OnValueUpdated += f => {
             if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
         };

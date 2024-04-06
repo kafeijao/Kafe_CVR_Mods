@@ -81,7 +81,7 @@ public class MarioInputModule : CVRInputModule {
             }
 
             // Thanks NotAKidS for finding the issue and suggesting the fix!
-            if (!ViewManager.Instance.isGameMenuOpen()) {
+            if (!ViewManager.Instance.IsAnyMenuOpen) {
 
                 // Lets attempt to do a left hand only movement (let's ignore vive wants because it messes the jump)
 
@@ -106,7 +106,7 @@ public class MarioInputModule : CVRInputModule {
 
     public override void Update_Always() {
         // Prevent Mario from moving while we're using the menu
-        if (!ViewManager.Instance.isGameMenuOpen()) return;
+        if (!ViewManager.Instance.IsAnyMenuOpen) return;
         horizontal = 0;
         vertical = 0;
         jump = false;

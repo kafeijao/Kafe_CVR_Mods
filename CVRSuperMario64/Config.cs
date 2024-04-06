@@ -184,7 +184,7 @@ public static class Config {
             if (newValue != disableAudio.ToggleValue) playRandomMusicOnMarioStart.ToggleValue = newValue;
         });
 
-        var audioVolume = page.AddSlider(
+        var audioVolume = audioCategory.AddSlider(
             "Volume",
             "The volume for all the Super Mario 64 sounds.",
             MeAudioVolume.Value, 0f, 1f, 3);
@@ -208,7 +208,7 @@ public static class Config {
             if (newValue != disableAudio.ToggleValue) deleteMarioAfterDead.ToggleValue = newValue;
         });
 
-        var skipFarMarioDistance = page.AddSlider(
+        var skipFarMarioDistance = performanceCategory.AddSlider(
             "Skip Mario Engine Updates Distance",
             "The distance where it should stop using the Super Mario 64 Engine to handle other players Marios.",
             MeSkipFarMarioDistance.Value, 0f, 50f, 2);
@@ -219,7 +219,7 @@ public static class Config {
             if (!Mathf.Approximately(newValue, skipFarMarioDistance.SliderValue)) skipFarMarioDistance.SetSliderValue(newValue);
         });
 
-        var maxMariosAnimatedPerPerson = page.AddSlider(
+        var maxMariosAnimatedPerPerson = performanceCategory.AddSlider(
             "Max Marios per Player",
             "Max number of Marios per player that will be animated using the Super Mario 64 Engine.",
             MeMaxMariosAnimatedPerPerson.Value, 0, 20, 0);
@@ -230,7 +230,7 @@ public static class Config {
             if (newValue != Mathf.RoundToInt(maxMariosAnimatedPerPerson.SliderValue)) maxMariosAnimatedPerPerson.SetSliderValue(newValue);
         });
 
-        var maxMeshColliderTotalTris = page.AddSlider(
+        var maxMeshColliderTotalTris = performanceCategory.AddSlider(
             "Max Mesh Collider Total Triangles",
             "Maximum total number of triangles of automatically generated mesh colliders allowed.",
             MeMaxMeshColliderTotalTris.Value, 0, 250000, 0);
@@ -244,7 +244,7 @@ public static class Config {
         // Engine Category
         var engineCategory = page.AddCategory("SM64 Engine");
 
-        var audioPitch = page.AddSlider(
+        var audioPitch = engineCategory.AddSlider(
             "Pitch of the Audio [Default: 0.74]",
             "The audio pitch of the game sounds. You can use this to fine tune the Engine Sounds",
             MeAudioPitch.Value, 0f, 1f, 2);
@@ -255,7 +255,7 @@ public static class Config {
             if (!Mathf.Approximately(newValue, audioPitch.SliderValue)) audioPitch.SetSliderValue(newValue);
         });
 
-        var gameTicksMs = page.AddSlider(
+        var gameTicksMs = engineCategory.AddSlider(
             "Game Ticks Interval [Default: 25]",
             "The game ticks Interval in Milliseconds. This will directly impact the speed of Mario's behavior.",
             MeGameTickMs.Value, 1, 100, 0);

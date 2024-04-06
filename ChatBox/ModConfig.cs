@@ -215,8 +215,8 @@ public static class ModConfig {
         return toggle;
     }
 
-    private static void AddMelonSlider(BTKUILib.UIObjects.Page page, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces, string overrideName = null) {
-        var slider = page.AddSlider(overrideName ?? entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
+    private static void AddMelonSlider(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces, string overrideName = null) {
+        var slider = category.AddSlider(overrideName ?? entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
         slider.OnValueUpdated += f => {
             if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
         };
@@ -356,12 +356,12 @@ public static class ModConfig {
             "Pins the History Window back to quick menu. Useful if you lost your window :)");
         pinButtonBTKUI.OnPress += () => HistoryBehavior.Instance.ParentTo(HistoryBehavior.MenuTarget.QuickMenu);
 
-        AddMelonSlider(modPage, MeSoundsVolume, 0f, 1f, 1);
-        AddMelonSlider(modPage, MeNotificationSoundMaxDistance, 1f, 25f, 1, "Sound Distance");
-        AddMelonSlider(modPage, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0, "Timeout (secs)");
-        AddMelonSlider(modPage, MeChatBoxOpacity, 0.1f, 1f, 2);
-        AddMelonSlider(modPage, MeChatBoxSize, 0f, 2f, 2);
-        AddMelonSlider(modPage, MeHistoryFontSize, 25f, 50f, 0);
+        AddMelonSlider(modSettingsCategory, MeSoundsVolume, 0f, 1f, 1);
+        AddMelonSlider(modSettingsCategory, MeNotificationSoundMaxDistance, 1f, 25f, 1, "Sound Distance");
+        AddMelonSlider(modSettingsCategory, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0, "Timeout (secs)");
+        AddMelonSlider(modSettingsCategory, MeChatBoxOpacity, 0.1f, 1f, 2);
+        AddMelonSlider(modSettingsCategory, MeChatBoxSize, 0f, 2f, 2);
+        AddMelonSlider(modSettingsCategory, MeHistoryFontSize, 25f, 50f, 0);
 
         // Player visibility overrides
         var playerCat = BTKUILib.QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(ChatBox), nameof(ChatBox));
