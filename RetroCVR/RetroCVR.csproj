@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <Reference Include="BTKUILib">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Reference Include="SK.Libretro">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\SK.Libretro.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SK.Libretro.NAudio">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\SK.Libretro.NAudio.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="SK.Libretro.Unity">
+            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\SK.Libretro.Unity.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18" />
+        <PackageReference Include="Microsoft.Win32.Registry" Version="6.0.0-preview.5.21301.5" />
+        <PackageReference Include="NAudio.Core" Version="2.1.0" />
+        <PackageReference Include="NAudio.WinMM" Version="2.1.0" />
+        <PackageReference Include="System.Security.AccessControl" Version="6.0.2-mauipre.1.22102.15" />
+        <PackageReference Include="System.Security.Principal.Windows" Version="6.0.0-preview.5.21301.5" />
+    </ItemGroup>
+    
+    <Target Name="CopyNuggetPackagesToManagedLibs" BeforeTargets="BeforeBuild">
+        <!-- Copy the NuggetPackages DLLs to a known location, you might have to modify the location if it doesn't match with yours -->
+        <Exec Command="copy /y %USERPROFILE%\.nuget\packages\microsoft.win32.registry\6.0.0-preview.5.21301.5\lib\netstandard2.0\Microsoft.Win32.Registry.dll $(MsBuildThisFileDirectory)\..\.ManagedLibs\" />
+        <Exec Command="copy /y %USERPROFILE%\.nuget\packages\naudio.core\2.1.0\lib\netstandard2.0\NAudio.Core.dll $(MsBuildThisFileDirectory)\..\.ManagedLibs\" />
+        <Exec Command="copy /y %USERPROFILE%\.nuget\packages\naudio.winmm\2.1.0\lib\netstandard2.0\NAudio.WinMM.dll $(MsBuildThisFileDirectory)\..\.ManagedLibs\" />
+        <Exec Command="copy /y %USERPROFILE%\.nuget\packages\system.security.accesscontrol\6.0.2-mauipre.1.22102.15\lib\netstandard2.0\System.Security.AccessControl.dll $(MsBuildThisFileDirectory)\..\.ManagedLibs\" />
+        <Exec Command="copy /y %USERPROFILE%\.nuget\packages\system.security.principal.windows\6.0.0-preview.5.21301.5\lib\netstandard2.0\System.Security.Principal.Windows.dll $(MsBuildThisFileDirectory)\..\.ManagedLibs\" />
+    </Target>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\NativeLibraries\*.dll" />
+        <EmbeddedResource Include="Resources\AssetBundles\retrocvr">
+            <LogicalName>retrocvr.assetbundle</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <!-- Target to Zip Native Libs -->
+    <Target Name="ZipNativeLibs" BeforeTargets="BeforeBuild">
+        <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)\Resources\NativeLibraries" DestinationFile="$(MSBuildProjectDirectory)\Resources\NativeLibraries.zip" Overwrite="true" />
+        <!-- After creating the zip file, dynamically add it as an embedded resource -->
+        <ItemGroup>
+            <EmbeddedResource Include="Resources\NativeLibraries.zip">
+                <LogicalName>NativeLibraries.zip</LogicalName>
+            </EmbeddedResource>
+        </ItemGroup>
+    </Target>
+    
+</Project>

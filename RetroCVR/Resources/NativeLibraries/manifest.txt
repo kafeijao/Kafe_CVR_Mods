@@ -1,0 +1,2 @@
+﻿The Native Libraries can be downloaded from here:
+	https://github.com/Skurdt/SK.Libretro/tree/master/Unity/Plugins
