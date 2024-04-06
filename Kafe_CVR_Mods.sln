@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoginProfiles", "LoginProfiles\LoginProfiles.csproj", "{2082ECCF-E330-4EA0-B169-A4A9B92FB228}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PickupOverrides", "PickupOverrides\PickupOverrides.csproj", "{32DE0532-A91B-4EA0-98D4-5A67C3CEBB8F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCK.Debugger", "CCK.Debugger\CCK.Debugger.csproj", "{050A4F78-3010-482F-91F0-516D40ABAF84}"
@@ -56,10 +54,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2082ECCF-E330-4EA0-B169-A4A9B92FB228}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2082ECCF-E330-4EA0-B169-A4A9B92FB228}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2082ECCF-E330-4EA0-B169-A4A9B92FB228}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2082ECCF-E330-4EA0-B169-A4A9B92FB228}.Release|Any CPU.Build.0 = Release|Any CPU
 		{32DE0532-A91B-4EA0-98D4-5A67C3CEBB8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{32DE0532-A91B-4EA0-98D4-5A67C3CEBB8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32DE0532-A91B-4EA0-98D4-5A67C3CEBB8F}.Release|Any CPU.ActiveCfg = Release|Any CPU

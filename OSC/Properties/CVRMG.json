@@ -1,8 +1,8 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "1.1.10",
-  "gameversion": "2024r174",
+  "modversion": "1.1.11",
+  "gameversion": "2024r175ex1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed for 2024r174",
+  "changelog": "- Fixed for 2024r175ex1",
   "embedcolor": "16C60C"
 }

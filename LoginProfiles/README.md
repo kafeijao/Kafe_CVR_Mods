@@ -1,6 +1,11 @@
 # LoginProfiles
 
-[![Download Latest LoginProfiles.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest LoginProfiles.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/LoginProfiles.dll)
+![Download Latest LoginProfiles.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest LoginProfiles.dll")
+
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
 
 This mod allows to use an argument when starting ChilloutVR in order to select a login profile. This enables
 swapping accounts without requiring to enter the credentials (if logged in on that profile previously).

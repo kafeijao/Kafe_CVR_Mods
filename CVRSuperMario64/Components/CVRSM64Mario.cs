@@ -463,10 +463,10 @@ public class CVRSM64Mario : MonoBehaviour {
 
         if (spawnable.IsMine()) {
 
-            if (_pickup != null && _pickup.IsGrabbedByMe() != _wasPickedUp) {
+            if (_pickup != null && _pickup.IsGrabbedByMe != _wasPickedUp) {
                 if (_wasPickedUp) Throw();
                 else Hold();
-                _wasPickedUp = _pickup.IsGrabbedByMe();
+                _wasPickedUp = _pickup.IsGrabbedByMe;
             }
 
             // Send the current flags and action to remotes
@@ -784,7 +784,7 @@ public class CVRSM64Mario : MonoBehaviour {
     }
 
     private bool IsBeingGrabbedByMe() {
-        return _pickup != null && _pickup.IsGrabbedByMe();
+        return _pickup != null && _pickup.IsGrabbedByMe;
     }
 
     public bool IsMine() => spawnable.IsMine();

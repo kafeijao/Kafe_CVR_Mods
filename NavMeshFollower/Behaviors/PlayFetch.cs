@@ -74,8 +74,8 @@ public class PlayFetch : Behavior {
                 }
 
                 // If someone grabbed it -> next stage
-                if (pickup.grabbedBy != "") {
-                    _lastGrabber = pickup.grabbedBy;
+                if (pickup.GrabbedBy != "") {
+                    _lastGrabber = pickup.GrabbedBy;
                     _fetchingStartTime = Time.time;
                     _currentState = State.WaitingThrow;
                     break;
@@ -90,8 +90,8 @@ public class PlayFetch : Behavior {
             case State.WaitingThrow:
 
                 // Update the last grabber, and reset the timer
-                if (pickup.grabbedBy != "") {
-                    _lastGrabber = pickup.grabbedBy;
+                if (pickup.GrabbedBy != "") {
+                    _lastGrabber = pickup.GrabbedBy;
                     _fetchingStartTime = Time.time;
                     if (FollowerController.TryGetPlayerPos(_lastGrabber, out var possiblePlayerPos)) {
                         destinationPos = possiblePlayerPos;
@@ -159,10 +159,10 @@ public class PlayFetch : Behavior {
 
                 if (_target.hasInteractable && UnityEngine.Random.value >= 0.95) {
                     if (_wasDown) {
-                        _target.interactable.InteractUp();
+                        _target.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
                     }
                     else {
-                        _target.interactable.InteractDown();
+                        _target.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
                     }
                     _wasDown = !_wasDown;
                 }

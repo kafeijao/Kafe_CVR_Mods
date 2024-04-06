@@ -1,16 +1,12 @@
-﻿using System.Collections;
-using ABI_RC.Core.Networking;
-using ABI_RC.Core.Player;
+﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
-using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.NavMeshFollower.CCK;
 using Kafe.NavMeshFollower.InteractableWrappers;
 using MelonLoader;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace Kafe.NavMeshFollower;
 
@@ -86,7 +82,7 @@ public class NavMeshFollower : MelonMod {
             try {
 
                 // Ignore props that are not grabbed by me (when followers grab it's as if I was grabbing)
-                if (__instance.pickup == null || !__instance.pickup.IsGrabbedByMe()) return;
+                if (__instance.pickup == null || !__instance.pickup.IsGrabbedByMe) return;
 
                 foreach (var availableSpawnablePickup in Pickups.AvailableSpawnablePickups) {
 

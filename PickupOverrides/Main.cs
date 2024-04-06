@@ -8,7 +8,7 @@ namespace Kafe.PickupOverrides;
 
 internal record PickupSettings {
     public bool AutoHold { get; set; }
-    public float MaxHoldDistance { get; set; }
+    // public float MaxHoldDistance { get; set; }
     public float MaxGrabDistance { get; set; }
 }
 
@@ -20,7 +20,7 @@ public class PickupOverrides : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntryAutoHoldValue;
 
     private static MelonPreferences_Entry<bool> _melonEntryOverrideMaxHoldDistance;
-    private static MelonPreferences_Entry<float> _melonEntryMaxHoldDistanceValue;
+    // private static MelonPreferences_Entry<float> _melonEntryMaxHoldDistanceValue;
 
     private static MelonPreferences_Entry<bool> _melonEntryOverrideMaxGrabDistance;
     private static MelonPreferences_Entry<float> _melonEntryMaxGrabDistanceValue;
@@ -46,11 +46,11 @@ public class PickupOverrides : MelonMod {
             false, description: "Whether this mod should override the pickup max holding distance setting " +
                                 "or not.");
         _melonEntryOverrideMaxHoldDistance.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
-        _melonEntryMaxHoldDistanceValue = _melonCategoryPickupOverrides.CreateEntry("MaxHoldDistance",
-            3f, description: "The value for the max holding distance setting. This will set the max " +
-                             "distance from which the object will be from your hand when you grab. Useful to prevent " +
-                             "needing to drag your hands to bring the object closer. (default 3f)");
-        _melonEntryMaxHoldDistanceValue.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
+        // _melonEntryMaxHoldDistanceValue = _melonCategoryPickupOverrides.CreateEntry("MaxHoldDistance",
+        //     3f, description: "The value for the max holding distance setting. This will set the max " +
+        //                      "distance from which the object will be from your hand when you grab. Useful to prevent " +
+        //                      "needing to drag your hands to bring the object closer. (default 3f)");
+        // _melonEntryMaxHoldDistanceValue.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
 
         _melonEntryOverrideMaxGrabDistance = _melonCategoryPickupOverrides.CreateEntry("OverrideMaxGrabDistance",
             false, description: "Whether this mod should override the pickup maximum grabbing distance " +
@@ -79,10 +79,11 @@ public class PickupOverrides : MelonMod {
             ? _melonEntryAutoHoldValue.Value
             : PickupSettings[pickup].AutoHold;
 
-        // Update max hold distance
-        pickup.maxDistance = _melonEntryOverrideMaxHoldDistance.Value
-            ? _melonEntryMaxHoldDistanceValue.Value
-            : PickupSettings[pickup].MaxHoldDistance;
+        // This was nuked from native game
+        // // Update max hold distance
+        // pickup.maxDistance = _melonEntryOverrideMaxHoldDistance.Value
+        //     ? _melonEntryMaxHoldDistanceValue.Value
+        //     : PickupSettings[pickup].MaxHoldDistance;
 
         // Update max grab distance
         pickup.maximumGrabDistance = _melonEntryOverrideMaxGrabDistance.Value
@@ -99,7 +100,7 @@ public class PickupOverrides : MelonMod {
             if (!PickupSettings.ContainsKey(_pickup)) {
                 PickupSettings.Add(_pickup, new PickupSettings {
                     AutoHold = _pickup.autoHold,
-                    MaxHoldDistance = _pickup.maxDistance,
+                    // MaxHoldDistance = _pickup.maxDistance,
                     MaxGrabDistance = _pickup.maximumGrabDistance,
                 });
             }

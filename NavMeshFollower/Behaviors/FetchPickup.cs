@@ -61,7 +61,7 @@ public class FetchPickup : Behavior {
         destinationPos = pickupPos;
 
         // We successfully delivered (the target player picked it up)
-        if (!Controller.IsGrabbedByMyRightHand(_targetPickup) && _targetPickup.pickupObject.grabbedBy == _targetPlayer) {
+        if (!Controller.IsGrabbedByMyRightHand(_targetPickup) && _targetPickup.pickupObject.GrabbedBy == _targetPlayer) {
             FinishFetch();
             return true;
         }
@@ -126,10 +126,10 @@ public class FetchPickup : Behavior {
 
                 if (_targetPickup.hasInteractable && UnityEngine.Random.value >= 0.95) {
                     if (_wasDown) {
-                        _targetPickup.interactable.InteractUp();
+                        _targetPickup.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
                     }
                     else {
-                        _targetPickup.interactable.InteractDown();
+                        _targetPickup.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
                     }
                     _wasDown = !_wasDown;
                 }

@@ -264,7 +264,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler {
         // Restore Pickups
         foreach (var pickup in currentSpawnable.pickups) {
             var pickupSection = categoryPickups.AddSection(pickup.name);
-            pickupSection.AddSection("GrabbedBy").AddValueGetter(() => GetUsername(pickup.grabbedBy));
+            pickupSection.AddSection("GrabbedBy").AddValueGetter(() => GetUsername(pickup.GrabbedBy));
         }
 
         // Restore Attachments

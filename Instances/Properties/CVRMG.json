@@ -1,8 +1,8 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.16",
-  "gameversion": "2024r174",
+  "modversion": "1.0.17",
+  "gameversion": "2024r175ex1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "BTKUILib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/Instances.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed for 2024r174",
+  "changelog": "- Fixed for 2024r175ex1 (just needed to be recompiled)",
   "embedcolor": "16C60C"
 }

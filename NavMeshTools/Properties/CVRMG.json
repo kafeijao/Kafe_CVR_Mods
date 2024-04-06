@@ -1,8 +1,8 @@
 {
-  "_id": -1,
+  "_id": 193,
   "name": "NavMeshTools",
   "modversion": "0.0.2",
-  "gameversion": "2024r174",
+  "gameversion": "2024r175ex1",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,7 +15,7 @@
     "path"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r65/NavMeshTools.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/NavMeshTools.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshTools",
   "changelog": "- Initial Release.",
   "embedcolor": "16C60C"

@@ -407,11 +407,9 @@ public class FollowerController : MonoBehaviour {
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
         var attachPoint = controllerRay.attachmentPoint.transform.position;
         pickup.pickupObject.transform.position = attachPoint;
-        pickup.pickupObject.Grab(null, controllerRay, attachPoint);
+        pickup.pickupObject.Grab(controllerRay, attachPoint);
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
-        pickup.pickupObject.initialPositionOffset = Vector3.zero;
-        pickup.pickupObject.initialRotationalOffset = Quaternion.identity;
-        pickup.pickupObject.initialRayRotationOffset = Quaternion.identity;
+        pickup.pickupObject._initialPositionOffset = Vector3.zero;
         foreach (var key in Pickups.SpawnablePickupWrapper.OwnerUpdatedBy) {
             UpdatedByValues[key] = 1f;
         }
@@ -429,7 +427,7 @@ public class FollowerController : MonoBehaviour {
     public void GrabPickupRightHand(Pickups.PickupWrapper pickup) => GrabPickup(pickup, true);
     public void DropPickupLeftHand(Pickups.PickupWrapper pickup) => DropPickup(pickup, false);
     public void DropPickupRightHand(Pickups.PickupWrapper pickup) => DropPickup(pickup, true);
-    public static bool IsGrabbed(Pickups.PickupWrapper pickup) => pickup != null && pickup.pickupObject != null && pickup.pickupObject.grabbedBy != "";
+    public static bool IsGrabbed(Pickups.PickupWrapper pickup) => pickup != null && pickup.pickupObject != null && pickup.pickupObject.GrabbedBy != "";
     public bool IsGrabbedByMyLeftHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(false, out _, out _) == pickup.pickupObject._controllerRay;
     public bool IsGrabbedByMyRightHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(true, out _, out _) == pickup.pickupObject._controllerRay;
 

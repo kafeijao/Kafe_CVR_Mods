@@ -15,11 +15,11 @@ With Auto-Hold set to `true` all pickups will stick to your hand once you grab t
 
 If the Auto-Hold is set to `false` the pickup will be released as soon as you stop holding it.
 
-## Maximum Held Distance
+## ~~Maximum Held Distance~~ This was removed from the game
 
-This is how far the pickup can be from your hand. It's useful in VR to set a closer distance (like 0.5 for example)
+~~This is how far the pickup can be from your hand. It's useful in VR to set a closer distance (like 0.5 for example)
 because when you grab an object it will be brought close to your hand (instead of forcing us to do that weird gymnastics
-to bring it closer).
+to bring it closer).~~
 
 ## Maximum Grab Distance
 

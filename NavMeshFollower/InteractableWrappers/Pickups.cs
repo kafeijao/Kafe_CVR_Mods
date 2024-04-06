@@ -60,11 +60,11 @@ public static class Pickups {
 
         public override bool IsGrabbable() => Spawnable.SyncType == 0
                                               // For some reason the SyncType doesn't go back to 0 when we drop it... So let's consider this grabbable!
-                                              || Spawnable.SyncType == 1 && Spawnable.IsMine() && Spawnable.pickup != null && Spawnable.pickup.grabbedBy == "";
+                                              || Spawnable.SyncType == 1 && Spawnable.IsMine() && Spawnable.pickup != null && Spawnable.pickup.GrabbedBy == "";
 
         public bool GrabbedByFollower(out FollowerController controller) {
             // When our followers are grabbing it's as if we were grabbing it. So ignore all others.
-            if (pickupObject == null || !pickupObject.IsGrabbedByMe() || pickupObject._controllerRay == null) {
+            if (pickupObject == null || !pickupObject.IsGrabbedByMe|| pickupObject._controllerRay == null) {
                 controller = null;
                 return false;
             }
