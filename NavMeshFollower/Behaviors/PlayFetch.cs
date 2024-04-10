@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.Savior;
+using ABI.CCK.Components;
 using Kafe.NavMeshFollower.InteractableWrappers;
 using UnityEngine;
 
@@ -158,13 +159,19 @@ public class PlayFetch : Behavior {
                 lookAtPos = possibleLastGrabbedViewPointPos;
 
                 if (_target.hasInteractable && UnityEngine.Random.value >= 0.95) {
-                    if (_wasDown) {
-                        _target.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
+                    bool hasSitOperation = _target.interactable.actions.Exists(a =>
+                        a.operations.Exists(o =>
+                            o.type == CVRInteractableActionOperation.ActionType.SitAtPosition));
+                    if (!hasSitOperation) {
+                        if (_wasDown) {
+                            _target.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
+                        }
+                        else {
+                            _target.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
+                        }
+                        _wasDown = !_wasDown;
+
                     }
-                    else {
-                        _target.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
-                    }
-                    _wasDown = !_wasDown;
                 }
 
                 // Start lifting the arm to deliver

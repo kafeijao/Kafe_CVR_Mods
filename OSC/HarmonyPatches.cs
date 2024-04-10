@@ -2,12 +2,14 @@
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Util;
+using ABI_RC.Core.Util.AnimatorManager;
 using ABI_RC.Systems.IK.TrackingModules;
 using ABI_RC.Systems.InputManagement;
 using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Rug.Osc.Core;
+using UnityEngine;
 
 namespace Kafe.OSC;
 
@@ -30,38 +32,39 @@ internal class HarmonyPatches {
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(BetterBetterCharacterController), nameof(BetterBetterCharacterController.CurrentAnimatorManager), MethodType.Setter)]
-    static void AfterUpdateAnimatorManager(BetterBetterCharacterController __instance) {
-        Events.Avatar.OnAnimatorManagerUpdate(__instance.CurrentAnimatorManager);
+    [HarmonyPatch(typeof(AvatarAnimatorManager), nameof(AvatarAnimatorManager.Setup))]
+    static void AfterUpdateAnimatorManager(AvatarAnimatorManager __instance) {
+        if (__instance != PlayerSetup.Instance.animatorManager) return;
+        Events.Avatar.OnAnimatorManagerUpdate(__instance);
     }
 
     // Parameters
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterFloat))]
-    internal static void AfterSetAnimatorParameterFloat(string name, float value, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged || _performanceMode) return;
-        Events.Avatar.OnParameterChangedFloat(__instance, name, value);
+    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetParameter_Internal), typeof(CVRAnimatorManager.ParamDef), typeof(float))]
+    internal static void AfterSetAnimatorParameterFloat(CVRAnimatorManager.ParamDef param, float value, CVRAnimatorManager __instance) {
+        if (__instance is not AvatarAnimatorManager avatarAnimatorManager) return;
+        if (!avatarAnimatorManager.AASParameterChangedSinceLastSync || _performanceMode) return;
+        Events.Avatar.OnParameterChangedFloat(avatarAnimatorManager, param.name, value);
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterInt))]
-    internal static void AfterSetAnimatorParameterInt(string name, int value, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged || _performanceMode) return;
-        Events.Avatar.OnParameterChangedInt(__instance, name, value);
+    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetParameter_Internal), typeof(CVRAnimatorManager.ParamDef), typeof(int))]
+    internal static void AfterSetAnimatorParameterInt(CVRAnimatorManager.ParamDef param, int value, CVRAnimatorManager __instance) {
+        if (__instance is not AvatarAnimatorManager avatarAnimatorManager) return;
+        if (!avatarAnimatorManager.AASParameterChangedSinceLastSync || _performanceMode) return;
+        Events.Avatar.OnParameterChangedInt(avatarAnimatorManager, param.name, value);
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterBool))]
-    internal static void AfterSetAnimatorParameterBool(string name, bool value, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged || _performanceMode) return;
-        Events.Avatar.OnParameterChangedBool(__instance, name, value);
-    }
+    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetParameter_Internal), typeof(CVRAnimatorManager.ParamDef), typeof(bool))]
+    internal static void AfterSetAnimatorParameterBool(CVRAnimatorManager.ParamDef param, bool value, CVRAnimatorManager __instance) {
+        if (__instance is not AvatarAnimatorManager avatarAnimatorManager) return;
+        if (!avatarAnimatorManager.AASParameterChangedSinceLastSync || _performanceMode) return;
 
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.SetAnimatorParameterTrigger))]
-    internal static void AfterSetAnimatorParameterTrigger(string name, CVRAnimatorManager __instance, bool ____parametersChanged) {
-        if (!____parametersChanged || _performanceMode) return;
-        Events.Avatar.OnParameterChangedTrigger(__instance, name);
+        if (param.type == AnimatorControllerParameterType.Bool)
+            Events.Avatar.OnParameterChangedBool(avatarAnimatorManager, param.name, value);
+        else if (param.type == AnimatorControllerParameterType.Trigger && value)
+            Events.Avatar.OnParameterChangedTrigger(avatarAnimatorManager, param.name);
     }
 
     // Spawnables

@@ -2,7 +2,7 @@
   "_id": 170,
   "name": "TeleportRequest",
   "modversion": "0.0.6",
-  "gameversion": "2024r175ex1",
+  "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -12,7 +12,7 @@
     "lib"
   ],
   "requirements": ["[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/TeleportRequest.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/TeleportRequest.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TeleportRequest",
   "changelog": "- Fixed for 2024r174",
   "embedcolor": "16C60C"

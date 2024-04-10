@@ -314,8 +314,8 @@ internal static class Data {
             // Animator parameters
             if (IsBoneFromLocalPlayer) {
                 // Set Grabbed parameter to true (both synced and local params)
-                PlayerSetup.Instance.animatorManager.SetAnimatorParameter(Info.GetName() + ParameterGrabbedSuffix, 1.0f);
-                PlayerSetup.Instance.animatorManager.SetAnimatorParameter("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
+                PlayerSetup.Instance.animatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 1.0f);
+                PlayerSetup.Instance.animatorManager.SetParameter("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
             else {
                 // Set Grabbed parameter on remotes to true (local params only)
@@ -337,9 +337,9 @@ internal static class Data {
             // Animator parameters
             if (IsBoneFromLocalPlayer) {
                 // Set Grabbed parameter to false (both synced and local params)
-                PlayerSetup.Instance.animatorManager.SetAnimatorParameter(Info.GetName() + ParameterGrabbedSuffix, 0.0f);
+                PlayerSetup.Instance.animatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 0.0f);
                 // Reset the Angle parameter to 0 (both synced and local params)
-                PlayerSetup.Instance.animatorManager.SetAnimatorParameter(_currentAngleParameterName, 0.0f);
+                PlayerSetup.Instance.animatorManager.SetParameter(_currentAngleParameterName, 0.0f);
                 // Do the same for the local parameters
                 if (PlayerSetup.Instance._animator != null) {
                     PlayerSetup.Instance._animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
@@ -361,7 +361,7 @@ internal static class Data {
             if (Mathf.Approximately(newAngle, _oldAngle)) return;
             _oldAngle = newAngle;
             if (IsBoneFromLocalPlayer) {
-                PlayerSetup.Instance.animatorManager.SetAnimatorParameter(_currentAngleParameterName, newAngle);
+                PlayerSetup.Instance.animatorManager.SetParameter(_currentAngleParameterName, newAngle);
                 PlayerSetup.Instance._animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
             else {

@@ -1,8 +1,8 @@
 {
   "_id": 66,
   "name": "PickupOverrides",
-  "modversion": "1.0.5",
-  "gameversion": "2024r175ex1",
+  "modversion": "1.0.6",
+  "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -18,8 +18,8 @@
     "settings"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/PickupOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/PickupOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides",
-  "changelog": "- Fixed for 2024r175ex1. Removed Maximum Held Distance, since this was removed from the game.",
+  "changelog": "- Fixed for 2024r175",
   "embedcolor": "16C60C"
 }

@@ -126,7 +126,7 @@ public class ChatBox : MelonMod {
     internal static void SetIsTyping(API.MessageSource msgSource, bool isTyping, bool notification) {
         if (PlayerSetup.Instance == null) return;
         ModNetwork.SendTyping(msgSource, isTyping, notification);
-        PlayerSetup.Instance.animatorManager.SetAnimatorParameter(AnimatorParameterTyping, isTyping ? 1f : 0f);
+        PlayerSetup.Instance.animatorManager.SetParameter(AnimatorParameterTyping, isTyping);
         var animator = PlayerSetup.Instance._animator;
         if (animator != null) {
             animator.SetBool(AnimatorParameterTypingLocal, isTyping);

@@ -2,6 +2,7 @@
 using ABI_RC.Core;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Util.AnimatorManager;
 using ABI.CCK.Scripts;
 using HarmonyLib;
 using MelonLoader;
@@ -105,7 +106,7 @@ public class ProfilesExtended : MelonMod {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVRAnimatorManager), nameof(CVRAnimatorManager.ApplyAdvancedSettingsFileProfile))]
+        [HarmonyPatch(typeof(AvatarAnimatorManager), nameof(AvatarAnimatorManager.ApplyAdvancedSettingsFileProfile))]
         private static void AfterApplyAdvancedSettingsFileProfile(ref List<CVRAdvancedSettingsFileProfileValue> values) {
             try {
 

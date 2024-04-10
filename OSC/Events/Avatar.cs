@@ -2,6 +2,7 @@
 using ABI_RC.Core;
 using ABI_RC.Core.EventSystem;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util.AnimatorManager;
 using Kafe.OSC.Utils;
 using MelonLoader;
 using UnityEngine;
@@ -12,7 +13,7 @@ public static class Avatar {
 
     // Data
     private static readonly Dictionary<string, string> AvatarsNamesCache = new();
-    private static CVRAnimatorManager _localPlayerAnimatorManager;
+    private static AvatarAnimatorManager _localPlayerAnimatorManager;
 
     // Caches for osc input
     private static readonly Dictionary<string, float> ParameterCacheInFloat = new();
@@ -33,7 +34,7 @@ public static class Avatar {
     private static readonly Stopwatch AvatarSetStopwatch = new();
 
     // Actions
-    public static event Action<CVRAnimatorManager> AnimatorManagerUpdated;
+    public static event Action<AvatarAnimatorManager> AnimatorManagerUpdated;
 
     // Actions parameters changed
     public static event Action<string, float> ParameterChangedFloat;
@@ -66,7 +67,7 @@ public static class Avatar {
         OnAnimatorManagerUpdate(_localPlayerAnimatorManager);
     }
 
-    internal static async void OnAnimatorManagerUpdate(CVRAnimatorManager animatorManager) {
+    internal static async void OnAnimatorManagerUpdate(AvatarAnimatorManager animatorManager) {
         _localPlayerAnimatorManager = animatorManager;
 
         // Clear caches
@@ -168,19 +169,19 @@ public static class Avatar {
     internal static void OnParameterSetFloat(string name, float value) {
         if (ParameterCacheOutFloat.ContainsKey(name) && Mathf.Approximately(ParameterCacheOutFloat[name], value)) return;
         ParameterCacheOutFloat[name] = value;
-        _localPlayerAnimatorManager?.SetAnimatorParameterFloat(name, value);
+        _localPlayerAnimatorManager?.SetParameter(name, value);
     }
 
     internal static void OnParameterSetInt(string name, int value) {
         if (ParameterCacheOutInt.ContainsKey(name) && ParameterCacheOutInt[name] == value) return;
         ParameterCacheOutInt[name] = value;
-        _localPlayerAnimatorManager?.SetAnimatorParameterInt(name, value);
+        _localPlayerAnimatorManager?.SetParameter(name, value);
     }
 
     internal static void OnParameterSetBool(string name, bool value) {
         if (ParameterCacheOutBool.ContainsKey(name) && ParameterCacheOutBool[name] == value) return;
         ParameterCacheOutBool[name] = value;
-        _localPlayerAnimatorManager?.SetAnimatorParameterBool(name, value);
+        _localPlayerAnimatorManager?.SetParameter(name, value);
     }
 
     internal static void OnParameterSetTrigger(string name) {
@@ -191,6 +192,6 @@ public static class Avatar {
             }
             return;
         }
-        _localPlayerAnimatorManager?.SetAnimatorParameterTrigger(name);
+        _localPlayerAnimatorManager?.SetParameter(name, true);
     }
 }

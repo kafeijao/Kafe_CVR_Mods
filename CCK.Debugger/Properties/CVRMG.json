@@ -1,8 +1,8 @@
 {
   "_id": 74,
   "name": "CCK.Debugger",
-  "modversion": "2.0.11",
-  "gameversion": "2024r175ex1",
+  "modversion": "2.0.12",
+  "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -21,8 +21,8 @@
     "layer"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
-  "changelog": "- Fixed for 2024r175ex1",
+  "changelog": "- Fixed for 2024r175\n- Added f-i-b-t in front of the avatar params to dictate the type of param",
   "embedcolor": "16C60C"
 }

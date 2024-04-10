@@ -3,6 +3,7 @@ using ABI_RC.Core;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util.AnimatorManager;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.CCK.Debugger.Components.GameObjectVisualizers;
@@ -28,7 +29,6 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         }
 
         PlayerEntities = new LooseList<CVRPlayerEntity>(players, IsValid, true);
-        CoreParameterNames = CVRAnimatorManager.coreParameters;
 
         // Triggers
         TrackedTriggers = new List<CVRAdvancedAvatarSettingsTrigger>();
@@ -111,7 +111,6 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
     public static event Action<Core, bool, CVRPlayerEntity, GameObject, Animator> AvatarChangeEvent;
 
     private static readonly LooseList<CVRPlayerEntity> PlayerEntities;
-    private static readonly HashSet<string> CoreParameterNames;
     private static readonly List<CVRAdvancedAvatarSettingsTrigger> TrackedTriggers;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTask, float> TriggerAasTaskLastTriggered;
     private static readonly Dictionary<CVRAdvancedAvatarSettingsTriggerTask, float> TriggerAasTasksLastExecuted;
@@ -257,7 +256,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         };
 
         var mainAnimator = avatarAnimator = isLocal
-            ? Events.Avatar.LocalPlayerAnimatorManager?.animator
+            ? Events.Avatar.LocalPlayerAvatarAnimatorManager?.Animator
             : currentPlayer.PuppetMaster._animator;
 
         // Check if something borked and there is no animator ;_;
@@ -286,7 +285,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             // Add the parameter to the proper category
             string GetParamValue() => parameterEntry.GetValue();
             if (parameter.name.StartsWith("#")) sectionLocalParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
-            else if (CoreParameterNames.Contains(parameter.name)) sectionCoreParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
+            else if (AvatarDefinitions.CoreParameters.Contains(parameter.name)) sectionCoreParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
             else sectionSyncedParameters.AddSection(parameter.name).AddValueGetter(GetParamValue);
         }
 

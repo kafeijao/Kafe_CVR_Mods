@@ -2,7 +2,7 @@
   "_id": 101,
   "name": "FreedomFingers",
   "modversion": "1.0.7",
-  "gameversion": "2024r175ex1",
+  "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,7 +15,7 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r66/FreedomFingers.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/FreedomFingers.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers",
   "changelog": "- Fixed for 2024r174",
   "embedcolor": "16C60C"

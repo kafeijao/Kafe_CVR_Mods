@@ -76,8 +76,12 @@ public class RetroCVR : MelonMod {
             try {
 
                 // Initialize the input processor
-                GameObject processorGameObject = new("LibretroInputProcessor");
-                UnityEngine.Object.DontDestroyOnLoad(processorGameObject);
+                GameObject modGameObject = new($"[{nameof(RetroCVR)} Mod]");
+                UnityEngine.Object.DontDestroyOnLoad(modGameObject);
+
+                GameObject processorGameObject = new($"LibretroInputProcessor");
+                processorGameObject.transform.SetParent(modGameObject.transform, false);
+
                 var playerInputManager = processorGameObject.AddComponent<PlayerInputManager>();
                 playerInputManager.EnableJoining();
                 playerInputManager.joinBehavior = PlayerJoinBehavior.JoinPlayersWhenButtonIsPressed;

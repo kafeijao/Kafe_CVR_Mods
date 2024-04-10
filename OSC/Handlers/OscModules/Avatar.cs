@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util.AnimatorManager;
 using Kafe.OSC.Utils;
 using MelonLoader;
 using Rug.Osc.Core;
@@ -15,14 +16,12 @@ public class Avatar : OscHandler {
     internal const string AddressPrefixAvatarParametersLegacy = $"{AddressPrefixAvatar}parameters/";
     private const string AddressPrefixAvatarChange = $"{AddressPrefixAvatar}change";
 
-    private static readonly HashSet<string> CoreParameters = CVRAnimatorManager.coreParameters;
-
     private bool _enabled;
     private bool _bypassJsonConfig;
     private bool _debugConfigWarnings;
     private readonly Dictionary<string, JsonConfigParameterEntry> _parameterAddressCache = new();
 
-    private readonly Action<CVRAnimatorManager> _animatorManagerUpdated;
+    private readonly Action<AvatarAnimatorManager> _animatorManagerUpdated;
     private readonly Action<string, float> _parameterChangedFloat;
     private readonly Action<string, int> _parameterChangedInt;
     private readonly Action<string, bool> _parameterChangedBool;
@@ -158,25 +157,22 @@ public class Avatar : OscHandler {
             JsonConfigOsc.GetConfigFilePath(userGuid, avatarGuid));
 
         // Send all parameter values when loads a new avatar
-        foreach (var param in manager.animator.parameters) {
+        foreach (var param in manager.Animator.parameters) {
             // Cache addresses
             CacheAddress(param.name);
 
             switch (param.type) {
                 case AnimatorControllerParameterType.Float:
-                    var fValue = manager.GetAnimatorParameterFloat(param.name);
-                    if (!fValue.HasValue) continue;
-                    Events.Avatar.OnParameterChangedFloat(manager, param.name, fValue.Value);
+                    if (!manager.GetParameter(param.name, out float fValue)) continue;
+                    Events.Avatar.OnParameterChangedFloat(manager, param.name, fValue);
                     break;
                 case AnimatorControllerParameterType.Int:
-                    var iValue = manager.GetAnimatorParameterInt(param.name);
-                    if (!iValue.HasValue) continue;
-                    Events.Avatar.OnParameterChangedInt(manager, param.name, iValue.Value);
+                    if (!manager.GetParameter(param.name, out int iValue)) continue;
+                    Events.Avatar.OnParameterChangedInt(manager, param.name, iValue);
                     break;
                 case AnimatorControllerParameterType.Bool:
-                    var bValue = manager.GetAnimatorParameterBool(param.name);
-                    if (!bValue.HasValue) continue;
-                    Events.Avatar.OnParameterChangedBool(manager, param.name, bValue.Value);
+                    if (!manager.GetParameter(param.name, out bool bValue)) continue;
+                    Events.Avatar.OnParameterChangedBool(manager, param.name, bValue);
                     break;
                 case AnimatorControllerParameterType.Trigger:
                 default:
@@ -188,7 +184,7 @@ public class Avatar : OscHandler {
     private void ParameterChangeHandler(string parameter, object valueObj) {
 
         // Reject core parameters
-        if (CoreParameters.Contains(parameter)) {
+        if (AvatarDefinitions.CoreParameters.Contains(parameter)) {
             MelonLogger.Msg($"[Error] Attempted to change the core {parameter}. These parameters are set by the " +
                             $"game every frame, attempting to set them is pointless. If you want to change those use " +
                             $"the /input/ address instead, it allows to send inputs that actually change the core " +

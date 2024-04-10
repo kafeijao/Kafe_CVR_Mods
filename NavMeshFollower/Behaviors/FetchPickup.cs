@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI.CCK.Components;
 using Kafe.NavMeshFollower.InteractableWrappers;
 using MelonLoader;
 using UnityEngine;
@@ -125,13 +126,18 @@ public class FetchPickup : Behavior {
                 lookAtPos = possibleLastGrabbedViewPointPos;
 
                 if (_targetPickup.hasInteractable && UnityEngine.Random.value >= 0.95) {
-                    if (_wasDown) {
-                        _targetPickup.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
+                    bool hasSitOperation = _targetPickup.interactable.actions.Exists(a =>
+                            a.operations.Exists(o =>
+                                o.type == CVRInteractableActionOperation.ActionType.SitAtPosition));
+                    if (!hasSitOperation) {
+                        if (_wasDown) {
+                            _targetPickup.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
+                        }
+                        else {
+                            _targetPickup.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
+                        }
+                        _wasDown = !_wasDown;
                     }
-                    else {
-                        _targetPickup.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
-                    }
-                    _wasDown = !_wasDown;
                 }
 
                 // Start lifting the arm to deliver

@@ -202,9 +202,9 @@ public class CCKDebugger : MelonMod {
 
         // Player
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(BetterBetterCharacterController), nameof(BetterBetterCharacterController.CurrentAnimatorManager), MethodType.Setter)]
+        [HarmonyPatch(typeof(BetterBetterCharacterController), nameof(BetterBetterCharacterController.AvatarAnimatorManager), MethodType.Setter)]
         static void AfterUpdateAnimatorManager(BetterBetterCharacterController __instance) {
-            Events.Avatar.OnAnimatorManagerUpdate(__instance.CurrentAnimatorManager);
+            Events.Avatar.OnAnimatorManagerUpdate(__instance.AvatarAnimatorManager);
         }
 
         // Players

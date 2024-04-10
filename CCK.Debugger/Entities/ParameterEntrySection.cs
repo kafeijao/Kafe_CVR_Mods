@@ -8,15 +8,17 @@ public abstract class ParameterEntrySection {
     public static ParameterEntrySection Get(Animator animator, AnimatorControllerParameter param) {
         switch (param.type) {
             case AnimatorControllerParameterType.Float:
-                var entityFloat = new ParameterEntrySection<float>(param, id => animator.GetFloat(id));
+                var entityFloat = new ParameterEntrySection<float>(param, id => animator.GetFloat(id) + " f");
                 return entityFloat;
             case AnimatorControllerParameterType.Int:
-                var entityInt = new ParameterEntrySection<int>(param, id => animator.GetInteger(id));
+                var entityInt = new ParameterEntrySection<int>(param, id => animator.GetInteger(id) + " i");
                 return entityInt;
             case AnimatorControllerParameterType.Bool:
-            case AnimatorControllerParameterType.Trigger:
-                var entityBool = new ParameterEntrySection<bool>(param, id => animator.GetBool(id));
+                var entityBool = new ParameterEntrySection<bool>(param, id => animator.GetBool(id) + " b");
                 return entityBool;
+            case AnimatorControllerParameterType.Trigger:
+                var entityTrigger = new ParameterEntrySection<bool>(param, id => animator.GetBool(id) + " t");
+                return entityTrigger;
                 //Entries.AddLast(new ParameterEntry<bool>(param, display, animator.GetBool, true));
                 //return;
         }
@@ -28,22 +30,21 @@ public abstract class ParameterEntrySection {
 internal class ParameterEntrySection<T> : ParameterEntrySection {
 
     private readonly int _hash;
-    private readonly Func<int, T> _getParameterFunc;
+    private readonly Func<int, string> _getParameterFunc;
 
     // Trigger related stuff
     // private bool IsTrigger;
     // private bool WasTriggered;
     // private float TriggerCooldown;
 
-    public ParameterEntrySection(AnimatorControllerParameter param, Func<int, T> getParameterFunc, bool isTrigger = false) {
+    public ParameterEntrySection(AnimatorControllerParameter param, Func<int, string> getParameterFunc, bool isTrigger = false) {
         _hash = param.nameHash;
         _getParameterFunc = getParameterFunc;
         //IsTrigger = isTrigger;
     }
 
     public override string GetValue() {
-        var value = _getParameterFunc.Invoke(_hash);
-        return value.ToString();
+        return _getParameterFunc.Invoke(_hash);
 
         // Trigger delay to fade implementation
         // Removed because people might think their animator is broken because the triggers last for so long

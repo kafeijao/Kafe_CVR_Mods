@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core;
 using ABI_RC.Core.Networking.IO.UserGeneratedContent;
+using ABI_RC.Core.Util.AnimatorManager;
 using ABI.CCK.Components;
 
 namespace Kafe.CCK.Debugger.Events;
@@ -12,9 +13,9 @@ internal static class Avatar {
         AvatarsNamesCache[details.AvatarId] = details.AvatarName;
     }
 
-    public static CVRAnimatorManager LocalPlayerAnimatorManager;
-    public static void OnAnimatorManagerUpdate(CVRAnimatorManager animatorManager) {
-        LocalPlayerAnimatorManager = animatorManager;
+    public static AvatarAnimatorManager LocalPlayerAvatarAnimatorManager;
+    public static void OnAnimatorManagerUpdate(AvatarAnimatorManager animatorManager) {
+        LocalPlayerAvatarAnimatorManager = animatorManager;
     }
 
     // Avatar AAS Triggers

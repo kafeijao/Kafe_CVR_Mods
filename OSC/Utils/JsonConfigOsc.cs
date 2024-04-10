@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core;
+using ABI_RC.Core.Util.AnimatorManager;
 using HarmonyLib;
 using MelonLoader;
 using Newtonsoft.Json;
@@ -14,8 +15,6 @@ namespace Kafe.OSC.Utils {
     public static class JsonConfigOsc {
 
         public static JsonConfigAvatar CurrentAvatarConfig { get; private set; }
-
-        private static readonly HashSet<string> CoreParameters = CVRAnimatorManager.coreParameters;
 
         internal static void ClearCurrentAvatarConfig() {
             CurrentAvatarConfig = null;
@@ -38,10 +37,10 @@ namespace Kafe.OSC.Utils {
             avatarGuid = usePrefix ? $"avtr_{avatarGuid}" : avatarGuid;
         }
 
-        public static void CreateConfig(string userGuid, string avatarGuid, string avatarName, CVRAnimatorManager animatorManager) {
+        public static void CreateConfig(string userGuid, string avatarGuid, string avatarName, AvatarAnimatorManager animatorManager) {
             try {
                 List<JsonConfigParameter> parameters = new();
-                foreach (var parameter in animatorManager.animator.parameters) {
+                foreach (var parameter in animatorManager.Animator.parameters) {
 
                     // Ignore triggers if the triggers module is disabled
                     if (!OSC.Instance.meOSCAvatarModuleTriggers.Value &&
@@ -57,7 +56,7 @@ namespace Kafe.OSC.Utils {
                     };
 
                     // Don't allow the core parameters to be inputs
-                    var isCoreParameter = CoreParameters.Contains(parameter.name);
+                    var isCoreParameter = AvatarDefinitions.CoreParameters.Contains(parameter.name);
                     var jsonParameter = isCoreParameter
                         ? new JsonConfigParameter { name = parameter.name, output = output }
                         : new JsonConfigParameter { name = parameter.name, input = input, output = output };
