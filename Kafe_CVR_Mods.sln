@@ -48,6 +48,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavMeshFollower", "NavMeshF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RetroCVR", "RetroCVR\RetroCVR.csproj", "{F7647272-AF14-4A6A-BEE0-344126943285}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamAudioOverrides", "SteamAudioOverrides\SteamAudioOverrides.csproj", "{B2B79B1E-FF4B-4B02-8487-46280EEA00CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -150,5 +152,9 @@ Global
 		{F7647272-AF14-4A6A-BEE0-344126943285}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7647272-AF14-4A6A-BEE0-344126943285}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F7647272-AF14-4A6A-BEE0-344126943285}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2B79B1E-FF4B-4B02-8487-46280EEA00CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2B79B1E-FF4B-4B02-8487-46280EEA00CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2B79B1E-FF4B-4B02-8487-46280EEA00CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2B79B1E-FF4B-4B02-8487-46280EEA00CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
