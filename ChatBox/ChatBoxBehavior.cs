@@ -67,8 +67,14 @@ public class ChatBoxBehavior : MonoBehaviour {
     private const float NameplateOffsetYTyping = -65f;
     private const float NameplateOffsetYTypingMultiplier = 25f;
 
-    private static Coroutine _resetTextAfterDelayCoroutine;
-    private static Coroutine _resetTypingAfterDelayCoroutine;
+    private Coroutine _resetTextAfterDelayCoroutine;
+    private Coroutine _resetTypingAfterDelayCoroutine;
+
+    private static readonly int FadeStartDistance = Shader.PropertyToID("_FadeStartDistance");
+    private static readonly int FadeEndDistance = Shader.PropertyToID("_FadeEndDistance");
+    private static readonly int PerspectiveFilter = Shader.PropertyToID("_PerspectiveFilter");
+
+    private readonly List<Material> _materialsToCleanup = [];
 
     // Config updates
     private static float _volume;
@@ -188,6 +194,30 @@ public class ChatBoxBehavior : MonoBehaviour {
         });
     }
 
+    private void ApplyNameplateMaterial(Image img, Material sourceMaterial) {
+        var newMat = new Material(sourceMaterial);
+        // MelonLogger.Msg($"src: {sourceMaterial.name}, new: {newMat.name}");
+        _materialsToCleanup.Add(newMat);
+        newMat.SetFloat(FadeStartDistance, 0f);
+        newMat.SetFloat(FadeEndDistance, 0f);
+        newMat.SetFloat(PerspectiveFilter, 0f);
+        img.material = newMat;
+    }
+
+    private void ApplyNameplateMaterial(TextMeshProUGUI tmpTrg, TMP_Text tmpSrc) {
+
+        var newMat = new Material(tmpTrg.m_sharedMaterial);
+        _materialsToCleanup.Add(newMat);
+        newMat.shader = tmpSrc.m_sharedMaterial.shader;
+
+        newMat.SetFloat(FadeStartDistance, 0f);
+        newMat.SetFloat(FadeEndDistance, 0f);
+        newMat.SetFloat(PerspectiveFilter, 0f);
+
+        tmpTrg.m_sharedMaterial = newMat;
+        tmpTrg.fontSharedMaterial = newMat;
+    }
+
     private void Start() {
 
         _nameplate = transform.GetComponent<PlayerNameplate>();
@@ -195,14 +225,20 @@ public class ChatBoxBehavior : MonoBehaviour {
 
         // Setup the game object
         _root = Instantiate(ModConfig.ChatBoxPrefab, transform);
-        // prefab.layer = LayerMask.NameToLayer("UI Internal");
+
         _root.name = $"[{nameof(ChatBox)} Mod]";
-        _root.transform.rotation = _nameplate.transform.rotation;
+
+        // Copy layer from the nameplate canvas
+        _root.layer = _nameplate._canvasGroup.gameObject.layer;
+
+        var nameplateBackgroundMaterial = _nameplate.nameplateBackground.material;
+
         _root.transform.localPosition = Vector3.zero;
+        _root.transform.rotation = _nameplate.transform.rotation;
         _root.transform.localScale = ChatBoxDefaultLocalScale;
 
         // Handle the chat box position and scale
-        _root.AddComponent<CameraFacingObject>();
+        // _root.AddComponent<CameraFacingObject>();
 
         // Add Canvas Group
         _canvasGroup = _root.GetComponent<CanvasGroup>();
@@ -216,17 +252,26 @@ public class ChatBoxBehavior : MonoBehaviour {
         _typingGo = _typingTransform.gameObject;
         _typingBackground = _typingGo.transform.GetChild(0).GetComponent<Image>();
         _typingBackground.color = Green;
+        ApplyNameplateMaterial(_typingBackground, nameplateBackgroundMaterial);
         for (var i = 0; i < _typingBackground.transform.childCount; i++) {
-            _typingGoChildren.Add(_typingBackground.transform.GetChild(i).gameObject);
+            var typingGoChild = _typingBackground.transform.GetChild(i).gameObject;
+            _typingGoChildren.Add(typingGoChild);
+            ApplyNameplateMaterial(typingGoChild.GetComponent<Image>(), nameplateBackgroundMaterial);
         }
 
         // Text Bubble
         _textBubbleGo = _root.transform.Find(ChildTextBubbleName).gameObject;
         _textBubbleTransform = _textBubbleGo.transform;
         var tmpGo = _textBubbleTransform.Find(ChildTextBubbleOutputName);
+
         _textBubbleHexagonImg = _textBubbleTransform.Find(ChildTextBubbleHexagonName).GetComponent<Image>();
+        ApplyNameplateMaterial(_textBubbleHexagonImg, nameplateBackgroundMaterial);
+
         _textBubbleRoundImg = _textBubbleTransform.Find(ChildTextBubbleRoundName).GetComponent<Image>();
+        ApplyNameplateMaterial(_textBubbleRoundImg, nameplateBackgroundMaterial);
+
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
+        ApplyNameplateMaterial(_textBubbleOutputTMP, _nameplate.usrNameText);
 
         // Needed to prevent funny crashes :c
         _textBubbleOutputTMP.richText = false;
@@ -266,6 +311,12 @@ public class ChatBoxBehavior : MonoBehaviour {
 
     private void OnDestroy() {
         if (ChatBoxes.ContainsKey(_playerGuid)) ChatBoxes.Remove(_playerGuid);
+
+        // Clean the materials we instantiated
+        foreach (var material in _materialsToCleanup.Where(material => material != null)) {
+            Destroy(material);
+        }
+        _materialsToCleanup.Clear();
     }
 
     private void StopTyping() {
