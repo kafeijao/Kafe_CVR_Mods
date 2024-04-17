@@ -1,7 +1,7 @@
 {
   "_id": 160,
   "name": "GrabbyBones",
-  "modversion": "1.0.7",
+  "modversion": "1.0.8",
   "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,8 +15,8 @@
     "bone"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/GrabbyBones.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
-  "changelog": "- Fixed for 2024r175",
+  "changelog": "- Fixed for 2024r175 Hotfix 2",
   "embedcolor": "16C60C"
 }

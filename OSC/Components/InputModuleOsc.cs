@@ -243,7 +243,7 @@ public class InputModuleOSC : CVRInputModule {
         if (GetKeyDown(ButtonNames.DropLeft)) {
             foreach (var pickup in CVR_InteractableManager.Instance.pickupList) {
                 // pickup._controllerRay.hand == true -> Left hand
-                if (!pickup.IsGrabbedByMe || !pickup._controllerRay.hand) return;
+                if (!pickup.IsGrabbedByMe || pickup._controllerRay.hand == CVRHand.Left) return;
                 MelonLogger.Msg("[Command] Dropping pickup held by left hand...");
                 pickup.onDrop.Invoke();
             }
@@ -253,7 +253,7 @@ public class InputModuleOSC : CVRInputModule {
         if (GetKeyDown(ButtonNames.DropRight)) {
             foreach (var pickup in CVR_InteractableManager.Instance.pickupList) {
                 // pickup._controllerRay.hand == false -> Right hand
-                if (!pickup.IsGrabbedByMe || pickup._controllerRay.hand) return;
+                if (!pickup.IsGrabbedByMe || pickup._controllerRay.hand == CVRHand.Right) return;
                 MelonLogger.Msg("[Command] Dropping pickup held by right hand...");
                 pickup.onDrop.Invoke();
             }

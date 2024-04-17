@@ -49,7 +49,7 @@ public static class ModConfig {
 
     internal static void UpdatePickupList() {
 
-        if (_pickupSpawnableCategory == null) return;
+        if (_pickupSpawnableCategory == null || PlayerSetup.Instance == null) return;
 
         _pickupSpawnableCategory.ClearChildren();
         var sortedSpawnablePickups = Pickups.AvailableSpawnablePickups.OrderBy(p => Vector3.Distance(p.transform.position, PlayerSetup.Instance.GetPlayerPosition()));

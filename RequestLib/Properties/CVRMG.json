@@ -12,7 +12,7 @@
     "lib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/RequestLib.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
   "changelog": "- Added a listener on the receiver of the request when the response is about to get sent. This is useful when you want to do something with the request result (since auto-accept/decline exist you wouldn't be able to intercept those without this)",
   "embedcolor": "16C60C"

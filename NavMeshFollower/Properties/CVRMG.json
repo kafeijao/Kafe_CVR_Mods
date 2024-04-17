@@ -1,7 +1,7 @@
 {
   "_id": 194,
   "name": "NavMeshFollower",
-  "modversion": "0.0.6",
+  "modversion": "0.0.7",
   "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,8 +15,8 @@
     "prop"
   ],
   "requirements": ["[NavMeshTools](https://api.cvrmg.com/v1/mods/download/193)", "[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/NavMeshFollower.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/NavMeshFollower.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshFollower",
-  "changelog": "- Fixed for 2024r175\n- Prevent followers from making you seat when they're holding a prop with a seat",
+  "changelog": "- Fixed for 2024r175 Hotfix 2",
   "embedcolor": "16C60C"
 }

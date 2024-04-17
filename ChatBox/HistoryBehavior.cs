@@ -467,7 +467,7 @@ public class HistoryBehavior : MonoBehaviour {
                 if (!Instance.gameObject.activeInHierarchy || !ModConfig.MeHistoryWindowOnCenter.Value ||
                     Instance._currentMenuParent != MenuTarget.QuickMenu) return;
             
-                var isInteracting = __instance.hand ? CVRInputManager.Instance.interactLeftDown : CVRInputManager.Instance.interactRightDown;
+                var isInteracting = __instance.hand == CVRHand.Left ? CVRInputManager.Instance.interactLeftDown : CVRInputManager.Instance.interactRightDown;
 
                 // Raycast the internal looking for unity UI in the internal UI layer
                 if (!Physics.Raycast(__instance.transform.TransformPoint(__instance.RayDirection * -0.15f),

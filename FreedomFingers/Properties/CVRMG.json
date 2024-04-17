@@ -1,7 +1,7 @@
 {
   "_id": 101,
   "name": "FreedomFingers",
-  "modversion": "1.0.7",
+  "modversion": "1.0.8",
   "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/FreedomFingers.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/FreedomFingers.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers",
-  "changelog": "- Fixed for 2024r174",
+  "changelog": "- Fixed for 2024r175 Hotfix 2",
   "embedcolor": "16C60C"
 }

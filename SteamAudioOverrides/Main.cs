@@ -21,7 +21,8 @@ public class SteamAudioOverrides : MelonMod {
                 sas.distanceAttenuation = true;
                 sas.directivity = true;
                 sas.occlusion = true;
-                sas.pathing = true;
+                // Throws warnings because it needs baking?
+                sas.pathing = false;
                 sas.reflections = true;
                 sas.transmission = true;
             }

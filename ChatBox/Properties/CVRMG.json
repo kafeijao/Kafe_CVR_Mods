@@ -1,7 +1,7 @@
 {
   "_id": 168,
   "name": "ChatBox",
-  "modversion": "1.0.17",
+  "modversion": "1.0.18",
   "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,8 +15,8 @@
     "network"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r67/ChatBox.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
-  "changelog": "- Fixed ChatBoxes getting stuck\n- Change ChatBoxes to use the same shader as nameplates (they will rotate the same way now).",
+  "changelog": "- Fixed for 2024r175 Hotfix 2",
   "embedcolor": "16C60C"
 }

@@ -1,3 +1,4 @@
+using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.InputManagement;
@@ -56,7 +57,7 @@ public class FreedomFingers : MelonMod {
 			    // Send the notification when toggling gestures
 			    if (_melonEntryEnableNotification.Value && CohtmlHud.Instance != null) {
 				    CohtmlHud.Instance.ViewDropTextImmediate("", "", $"Gestures {(__instance.GestureToggleValue ? "Enabled" : "Disabled")}");
-				    CohtmlHud.Instance.UpdateVoiceConnection();
+				    CohtmlHud.Instance.ShowHud();
 			    }
 
 			    // Since the Gesture is reset every frame, we need to set it to the one we're doing when locked

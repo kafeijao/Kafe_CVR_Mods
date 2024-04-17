@@ -246,7 +246,7 @@ internal static class Data {
         }
 
         internal float GetAvatarHeight() {
-            return IsLocalPlayerHand ? PlayerSetup.Instance._avatarHeight : PuppetMaster._avatarHeight;
+            return IsLocalPlayerHand ? PlayerSetup.Instance._avatarHeight : PuppetMaster.netIkController.GetRemoteHeight();
         }
 
         internal static bool IsRootGrabbed(GrabbyBoneInfo.Root root) {
@@ -283,8 +283,8 @@ internal static class Data {
         }
 
         internal bool ShouldBreak() {
-            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance._avatarHeight : BoneOwnerPuppetMaster._avatarHeight;
-            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance._avatarHeight : GrabberHandPuppetMaster._avatarHeight;
+            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance._avatarHeight : BoneOwnerPuppetMaster.netIkController.GetRemoteHeight();
+            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance._avatarHeight : GrabberHandPuppetMaster.netIkController.GetRemoteHeight();
             var breakDistance = (boneOwnerAvatarHeight + grabbedAvatarHeight) * AvatarSizeToBreakDistance;
             var currentDistance = Vector3.Distance(HandInfo.GrabbingOffset.position, TargetChildBone.position);
             if (currentDistance > breakDistance) {

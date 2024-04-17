@@ -430,7 +430,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Update button visibility
         triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 
-        var avatarHeight = isLocal ? PlayerSetup.Instance._avatarHeight : currentPlayer.PuppetMaster._avatarHeight;
+        var avatarHeight = isLocal ? PlayerSetup.Instance._avatarHeight : currentPlayer.PuppetMaster.netIkController.GetRemoteHeight();
 
         // Set up the Humanoid Bones
         CurrentEntityBoneList.Clear();
