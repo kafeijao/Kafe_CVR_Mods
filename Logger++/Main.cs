@@ -140,8 +140,11 @@ public class LoggerPlusPlus : MelonPlugin {
 
         public static void Log(string message, LogType type, bool isStacktrace, Exception exception) {
             var now = DateTime.UtcNow;
-            if (MessageTimestamps.TryGetValue(message, out var lastLogged)) {
-                if (now - lastLogged < RateLimit) return;
+            var lastLogged = MessageTimestamps.GetOrAdd(message, now);
+            if (now - lastLogged < RateLimit) {
+                // Update with the most recent attempt
+                MessageTimestamps.TryUpdate(message, now, lastLogged);
+                return;
             }
             MessageTimestamps[message] = now;
             ActualLogMessage(type, message, isStacktrace, exception);

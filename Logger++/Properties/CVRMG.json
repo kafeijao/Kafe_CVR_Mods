@@ -1,7 +1,7 @@
 {
   "_id": 159,
   "name": "Logger++",
-  "modversion": "0.0.7",
+  "modversion": "0.0.8",
   "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Plugin",
@@ -15,6 +15,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/Logger++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++",
-  "changelog": "- Fixed for 2024r174",
+  "changelog": "- Possibly fixed the VLC crashing issues (needs testing).",
   "embedcolor": "16C60C"
 }
