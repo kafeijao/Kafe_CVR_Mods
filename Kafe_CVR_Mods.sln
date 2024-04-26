@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CVRSuperMario64", "CVRSuper
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Instances", "Instances\Instances.csproj", "{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostProcessingOverrides", "PostProcessingOverrides\PostProcessingOverrides.csproj", "{8042B46E-3158-4BDA-AD3A-1D20B76D9AB0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticFlight", "RealisticFlight\RealisticFlight.csproj", "{23A2E4F2-7B05-42CF-8C18-916E1696249D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterPlayerCollider", "BetterPlayerCollider\BetterPlayerCollider.csproj", "{3390F14C-7B81-4DF2-88C5-47EE734A18DD}"
@@ -88,10 +86,6 @@ Global
 		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8CC3CEBC-1CFE-4FD7-8E08-375FFF9C0349}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8042B46E-3158-4BDA-AD3A-1D20B76D9AB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8042B46E-3158-4BDA-AD3A-1D20B76D9AB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8042B46E-3158-4BDA-AD3A-1D20B76D9AB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8042B46E-3158-4BDA-AD3A-1D20B76D9AB0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{23A2E4F2-7B05-42CF-8C18-916E1696249D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{23A2E4F2-7B05-42CF-8C18-916E1696249D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23A2E4F2-7B05-42CF-8C18-916E1696249D}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,6 +1,11 @@
 # PostProcessingOverrides
 
-[![Download Latest PostProcessingOverrides.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest PostProcessingOverrides.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/PostProcessingOverrides.dll)
+![Download Latest PostProcessingOverrides.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest 
+PostProcessingOverrides.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it broke too often, and there was not many interest in using (including myself)
 
 This mod gives you more control over the world's Post Processing configurations.
 
