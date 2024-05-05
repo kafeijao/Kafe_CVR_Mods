@@ -1,0 +1,19 @@
+{
+  "_id": -1,
+  "name": "CompanionProp",
+  "modversion": "0.0.1",
+  "gameversion": "2024r175",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Automatically spawn a single prop upon joining an instance (that allows props), while being able to optionally exclude them from being removed when pressing the Remove All Props or Remove my Props buttons.\n\nYou can start using by setting the prop Guid on the melon preferences. Either by editing the config file or by using the `UIExpansionKit` mod.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CompanionProp) for more in-depth info.\n\n",
+  "searchtags": [
+    "prop",
+    "companion"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/CompanionProp.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CompanionProp",
+  "changelog": "- Initial Implementation",
+  "embedcolor": "16C60C"
+}
