@@ -13,7 +13,6 @@ namespace Kafe.CompanionProp;
 
 public class CompanionProp : MelonMod {
 
-
     public override void OnInitializeMelon() {
 
         ModConfig.InitializeMelonPrefs();
