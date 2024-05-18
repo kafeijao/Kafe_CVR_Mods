@@ -10,6 +10,8 @@ namespace Kafe.TheClapper;
 public class TheClapper : MelonMod {
 
     private static MelonPreferences_Category _melonCategory;
+    internal static MelonPreferences_Entry<bool> EnableClappingProps;
+    internal static MelonPreferences_Entry<bool> EnableClappingAvatars;
     internal static MelonPreferences_Entry<bool> PreventClappingFriends;
     private static MelonPreferences_Entry<bool> _showVisualizerAfterOpenHands;
     private static MelonPreferences_Entry<float> _showVisualizerDelay;
@@ -22,6 +24,12 @@ public class TheClapper : MelonMod {
     public override void OnInitializeMelon() {
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(TheClapper));
+
+        EnableClappingProps = _melonCategory.CreateEntry("EnableClappingProps", true,
+            description: "Whether or not to allow clapping props.");
+
+        EnableClappingAvatars = _melonCategory.CreateEntry("EnableClappingAvatars", true,
+            description: "Whether or not to allow clapping avatars.");
 
         PreventClappingFriends = _melonCategory.CreateEntry("PreventClappingFriendAvatars", true,
             description: "Whether or not to ignore friend's avatars when clapping.");
