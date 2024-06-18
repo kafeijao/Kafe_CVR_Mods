@@ -97,7 +97,7 @@ public static class ModConfig {
             description: "The opacity of the Chat Box, between 0 (invisible) and 1 (opaque).");
 
         MeChatBoxSize = _melonCategory.CreateEntry("ChatBoxSize", 1f,
-            description: "The size of the Chat Box, between 0 (smallest) and 2 (biggest). The default is 0.5");
+            description: "The size of the Chat Box, between 0 (smallest) and 2 (biggest). The default is 1");
 
         MeIgnoreOscMessages = _melonCategory.CreateEntry("IgnoreOscMessages", false,
             description: "Whether to ignore messages sent via OSC or not.");
