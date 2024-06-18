@@ -29,7 +29,7 @@ using MelonLoader;
 
 namespace Kafe.RequestLib.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.12";
+    public const string Version = "0.0.13";
     public const string Author = "kafeijao";
     public const string BTKUILibName = "BTKUILib";
     public const string BTKSAImmersiveHudName = "BTKSAImmersiveHud";

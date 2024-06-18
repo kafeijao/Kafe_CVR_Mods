@@ -277,7 +277,12 @@ internal static class ModNetwork {
         var pendingRequestGuid = responseGuid.ToString(GuidFormat);
         if (PendingRequests.Remove(pendingRequestGuid, out var request)) {
             var response = new API.Response(accepted ? API.RequestResult.Accepted : API.RequestResult.Declined, responseMetadata);
-            request.OnResponse?.Invoke(request, response);
+            try {
+                request.OnResponse?.Invoke(request, response);
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"The response handler function has errored. This is a problem with the mod {request.ModName}", e);
+            }
         }
     }
 
@@ -354,9 +359,10 @@ internal static class ModNetwork {
                     break;
             }
         }
-        catch (Exception) {
+        catch (Exception ex) {
             MelonLogger.Warning($"Received a malformed message from {CVRPlayerManager.Instance.TryGetPlayerName(senderGuid)}, " +
                                 $"they might be running an outdated version of the mod, or I broke something, or they're trying to do something funny.");
+            MelonLogger.Error(ex);
         }
     }
 

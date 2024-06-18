@@ -1,7 +1,7 @@
 {
   "_id": 169,
   "name": "RequestLib",
-  "modversion": "0.0.12",
+  "modversion": "0.0.13",
   "gameversion": "2024r175",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -14,6 +14,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
-  "changelog": "- Added a listener on the receiver of the request when the response is about to get sent. This is useful when you want to do something with the request result (since auto-accept/decline exist you wouldn't be able to intercept those without this)",
+  "changelog": "- Added better error logging",
   "embedcolor": "16C60C"
 }
