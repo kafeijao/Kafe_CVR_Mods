@@ -1,8 +1,8 @@
 {
   "_id": 134,
   "name": "CVRSuperMario64",
-  "modversion": "1.0.7",
-  "gameversion": "2024r175",
+  "modversion": "1.0.8",
+  "gameversion": "2024r176",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "engine"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/CVRSuperMario64.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/CVRSuperMario64.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64",
-  "changelog": "- Fixed for 2024r175ex1",
+  "changelog": "- Fixed for 2024r176",
   "embedcolor": "16C60C"
 }

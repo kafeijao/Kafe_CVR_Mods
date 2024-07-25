@@ -70,13 +70,26 @@ public static class ModConfig {
 
     private const string VREnvArg = "-vr";
 
-    public static void InitializeMelonPrefs() {
+    private static bool _melonPrefsAlreadyInitialized = false;
+
+    private static void UpdateFilePath(string userId) {
+        // Use a diff file path so we can have per-user melon prefs. Requires to be ran after MetaPort.Instance.ownerId was set
+        _melonCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, $"MelonPreferences-{userId}.cfg"));
+    }
+
+    public static void InitializeOrUpdateMelonPrefs() {
+
+        // If just updating the user, just needs to change target file
+        if (_melonPrefsAlreadyInitialized) {
+            UpdateFilePath(MetaPort.Instance.ownerId);
+            return;
+        }
+        _melonPrefsAlreadyInitialized = true;
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(Instances));
 
-        // Use a diff file path so we can have per-user melon prefs. Requires to be ran after MetaPort.Instance.ownerId was set
-        _melonCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, $"MelonPreferences-{MetaPort.Instance.ownerId}.cfg"));
+        UpdateFilePath(MetaPort.Instance.ownerId);
 
         MeRejoinLastInstanceOnGameRestart = _melonCategory.CreateEntry("RejoinLastInstanceOnRestart", true,
             description: "Whether to join the last instance (if still available) when restarting the game or not.");

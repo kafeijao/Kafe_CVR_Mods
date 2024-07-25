@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using ABI_RC.Core.Util.AssetFiltering;
 using ABI_RC.Systems.Camera;
+using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.InputManagement;
 using HarmonyLib;
 using Kafe.CVRSuperMario64.Properties;
@@ -120,19 +121,26 @@ public class CVRSuperMario64 : MelonMod {
             Config.InitializeBTKUI();
         }
 
-        // Add our CCK component to the prop whitelist
-        var propWhitelist = SharedFilter._spawnableWhitelist;
-        propWhitelist.Add(typeof(CVRSM64Mario));
-        propWhitelist.Add(typeof(CVRSM64Interactable));
-        propWhitelist.Add(typeof(CVRSM64LevelModifier));
-        propWhitelist.Add(typeof(CVRSM64ColliderStatic));
-        propWhitelist.Add(typeof(CVRSM64ColliderDynamic));
-        propWhitelist.Add(typeof(CVRSM64InteractableParticles));
-        propWhitelist.Add(typeof(CVRSM64Teleporter));
+        // Calling on melon initializing was causing issues sometimes
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
 
-        // Add our CCK component to the avatar whitelist
-        var avatarWhitelist = SharedFilter._avatarWhitelist;
-        avatarWhitelist.Add(typeof(CVRSM64ColliderDynamic));
+            MelonLogger.Msg($"Adding {nameof(CVRSuperMario64)} components to the whitelist");
+
+            // Add our CCK component to the prop whitelist
+            var propWhitelist = SharedFilter.SpawnableWhitelist;
+            propWhitelist.Add(typeof(CVRSM64Mario));
+            propWhitelist.Add(typeof(CVRSM64Interactable));
+            propWhitelist.Add(typeof(CVRSM64LevelModifier));
+            propWhitelist.Add(typeof(CVRSM64ColliderStatic));
+            propWhitelist.Add(typeof(CVRSM64ColliderDynamic));
+            propWhitelist.Add(typeof(CVRSM64InteractableParticles));
+            propWhitelist.Add(typeof(CVRSM64Teleporter));
+
+            // Add our CCK component to the avatar whitelist
+            var avatarWhitelist = SharedFilter.AvatarWhitelist;
+            avatarWhitelist.Add(typeof(CVRSM64ColliderDynamic));
+
+        });
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");

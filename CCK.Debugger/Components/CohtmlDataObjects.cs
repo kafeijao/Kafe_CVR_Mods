@@ -116,6 +116,7 @@ public class Core {
     [JsonProperty("Buttons")] private List<Button> Buttons { get; } = new();
 
     public Section AddSection(string title, bool collapsable = false) {
+        if (ModConfig.MeDisableCollapsible.Value) collapsable = false;
         var section = new Section(this) { Title = title, Collapsable = collapsable };
         Sections.Add(CacheSection(section));
         return section;
@@ -208,6 +209,7 @@ public class Section {
     [JsonIgnore] private List<Section> _dynamicSubsectionsLatest;
     public Section(Core core) => _core = core;
     public Section AddSection(string title, string value = "", bool collapsable = false, bool dynamicSubsections = false) {
+        if (ModConfig.MeDisableCollapsible.Value) collapsable = false;
         var section = new Section(_core) { Title = title, Collapsable = collapsable, Value = value, DynamicSubsections = dynamicSubsections};
         SubSections.Add(_core.CacheSection(section));
         return section;

@@ -16,9 +16,9 @@ public class FollowPlayer : Behavior {
 
     static FollowPlayer() {
         // Stop from following a player when they leave
-        CVRGameEventSystem.Player.OnLeave.AddListener(descriptor => {
+        CVRGameEventSystem.Player.OnLeaveEntity.AddListener(entity => {
             foreach (var followPlayerInstance in FollowPlayerInstances) {
-                if (followPlayerInstance.IsFollowing && descriptor.ownerId == followPlayerInstance._playerGuidToFollow) {
+                if (followPlayerInstance.IsFollowing && entity.PlayerDescriptor.ownerId == followPlayerInstance._playerGuidToFollow) {
                     followPlayerInstance.IsFollowing = false;
                 }
             }

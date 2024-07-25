@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
+using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.NavMeshFollower.CCK;
@@ -24,8 +25,15 @@ public class NavMeshFollower : MelonMod {
 
         FollowerController.Initialize();
 
-        // Add our CCK script because duh
-        SharedFilter._spawnableWhitelist.Add(typeof(FollowerInfo));
+        // Calling on melon initializing was causing issues sometimes
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
+
+            MelonLogger.Msg($"Adding {nameof(NavMeshFollower)} components to the whitelist");
+
+            // Add our CCK script because duh
+            SharedFilter.SpawnableWhitelist.Add(typeof(FollowerInfo));
+
+        });
 
         // Check if it is in debug mode
         // Keeping it hard-ish to enable so people don't abuse it

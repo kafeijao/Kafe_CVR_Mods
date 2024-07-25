@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
-using ABI_RC.Core;
 using ABI_RC.Core.EventSystem;
+using ABI_RC.Core.Networking;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AnimatorManager;
 using Kafe.OSC.Utils;
@@ -96,7 +96,7 @@ public static class Avatar {
         }
 
         // Request the avatar name from the API
-        if (avatarName == null) {
+        if (avatarName == null && AuthManager.IsAuthenticated) {
             avatarName = await ApiRequests.RequestAvatarDetailsPageTask(avatarGuid);
         }
 

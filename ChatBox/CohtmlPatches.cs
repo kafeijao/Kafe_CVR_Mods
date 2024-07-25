@@ -19,6 +19,9 @@ internal static class CohtmlPatches {
 
     internal static Action KeyboardPreviousPressed;
 
+    internal static Action CohtmlKeyboardOpened;
+    internal static Action CohtmlKeyboardClosed;
+
     internal static void SetKeyboardContent(string content) {
         if (!_initialized) {
             MelonLogger.Warning($"[SetKeyboardContent] Attempted to set the keyboard content, but the view was not initialized.");
@@ -62,6 +65,9 @@ internal static class CohtmlPatches {
                     __instance.gameMenuView.View._view.BindCall("ChatBoxAutoComplete", AutoCompleteRequested);
 
                     __instance.gameMenuView.View._view.BindCall("ChatBoxPrevious", KeyboardPreviousPressed);
+
+                    __instance.gameMenuView.View._view.RegisterForEvent("ChatBoxKeyboardOpened", CohtmlKeyboardOpened);
+                    __instance.gameMenuView.View._view.RegisterForEvent("ChatBoxKeyboardClosed", CohtmlKeyboardClosed);
                 };
 
                 // Inject our Cohtml

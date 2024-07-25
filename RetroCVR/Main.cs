@@ -26,7 +26,16 @@ public class RetroCVR : MelonMod {
         ModConfig.InitializeFolders();
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
-        SharedFilter._spawnableWhitelist.Add(typeof(RetroCVRCore));
+
+        // Calling on melon initializing was causing issues sometimes
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
+
+            MelonLogger.Msg($"Adding {nameof(RetroCVR)} components to the whitelist");
+
+            SharedFilter.SpawnableWhitelist.Add(typeof(RetroCVRCore));
+
+        });
+
 
         // CVRGameEventSystem.Instance.OnConnected.AddListener(instanceID => {
         //     if (!CVRWorld.Instance.allowSpawnables || AuthManager.Username != "Kafeijao" || MetaPort.Instance.isUsingVr) return;

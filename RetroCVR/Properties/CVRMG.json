@@ -1,7 +1,7 @@
 ﻿{
   "_id": -1,
   "name": "RetroCVR",
-  "modversion": "0.0.1",
+  "modversion": "0.0.2",
   "gameversion": "2023r173",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/RetroCVR.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RetroCVR",
-  "changelog": "- Initial Release.",
+  "changelog": "- Fixed for 2024r176",
   "embedcolor": "16C60C"
 }

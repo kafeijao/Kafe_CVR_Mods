@@ -492,5 +492,4 @@ const scrollerComponents = {
 scrollerComponents.initialize();
 
 // Tell the game we're ready (needs to be executed at the end of the file).
-// The game will reply by sending the event CCKDebuggerModReady
 engine.trigger('CCKDebuggerMenuReady');

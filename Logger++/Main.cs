@@ -107,25 +107,30 @@ public class LoggerPlusPlus : MelonPlugin {
             if (!ModConfig.MeShowUnknownError.Value) return;
         }
 
-        switch (type) {
-            case LogType.Log:
-                MelonLogger.Msg(message);
-                break;
-            case LogType.Warning:
-                MelonLogger.Warning(message);
-                break;
-            case LogType.Error:
-                MelonLogger.Error(message);
-                break;
-            case LogType.Assert:
-                MelonLogger.Error(message);
-                break;
-            case LogType.Exception:
-                MelonLogger.Error(message);
-                break;
-            default:
-                MelonLogger.Msg(message);
-                break;
+        try {
+            switch (type) {
+                case LogType.Log:
+                    MelonLogger.Msg(message);
+                    break;
+                case LogType.Warning:
+                    MelonLogger.Warning(message);
+                    break;
+                case LogType.Error:
+                    MelonLogger.Error(message);
+                    break;
+                case LogType.Assert:
+                    MelonLogger.Error(message);
+                    break;
+                case LogType.Exception:
+                    MelonLogger.Error(message);
+                    break;
+                default:
+                    MelonLogger.Msg(message);
+                    break;
+            }
+        }
+        catch (Exception e) {
+            MelonLogger.Error("Error while trying to print the error...", e);
         }
     }
 
@@ -140,20 +145,25 @@ public class LoggerPlusPlus : MelonPlugin {
 
         public static void Log(string message, LogType type, bool isStacktrace, Exception exception) {
             var now = DateTime.UtcNow;
-            var lastLogged = MessageTimestamps.GetOrAdd(message, now);
-            if (now - lastLogged < RateLimit) {
-                // Update with the most recent attempt
-                MessageTimestamps.TryUpdate(message, now, lastLogged);
-                return;
+
+            bool isNewMessage = !MessageTimestamps.TryGetValue(message, out var lastLogged);
+
+            bool loggedMsg = false;
+
+            // Log it if it's a new message, or the rate limit has passed
+            if (isNewMessage || (now - lastLogged >= RateLimit)) {
+                ActualLogMessage(type, message, isStacktrace, exception);
+                loggedMsg = true;
             }
-            MessageTimestamps[message] = now;
-            ActualLogMessage(type, message, isStacktrace, exception);
+
+            // Either add the value, or update with
+            MessageTimestamps.AddOrUpdate(message, now, (_, time) => loggedMsg ? now : time);
 
             // Cleanup the cache
             lock (CleanupLock) {
                 if (now - _lastCleanup > CleanupInterval) {
                     var keysToRemove = (from kvp in MessageTimestamps where now - kvp.Value > RateLimit select kvp.Key).ToList();
-                    foreach (var key in keysToRemove) {
+                    foreach (string key in keysToRemove) {
                         MessageTimestamps.TryRemove(key, out _);
                     }
                     _lastCleanup = now;

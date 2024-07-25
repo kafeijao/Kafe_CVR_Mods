@@ -2,7 +2,7 @@
   "_id": -1,
   "name": "SteamAudioOverrides",
   "modversion": "0.0.1",
-  "gameversion": "2024r175",
+  "gameversion": "2024r176",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -13,7 +13,7 @@
     "better"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/SteamAudioOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/SteamAudioOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/SteamAudioOverrides",
   "changelog": "- Initial Implementation",
   "embedcolor": "16C60C"

@@ -141,4 +141,39 @@ engine.on("ChatBoxBlurKeyboardInput", function(){
 });
 
 
+// // Add a listener for when OpenTTSKeyboard is called (because it's also called from within the cohtml)
+// const ChatBoxOriginalOpenTTSKeyboard = OpenTTSKeyboard;
+// OpenTTSKeyboard = function () {
+//     engine.trigger("ChatBoxTTSKeyboardOpened");
+//     console.log("[ChatBox] Detected TTS keyboard opening...")
+//     ChatBoxOriginalOpenTTSKeyboard();
+// };
+//
+// // Add a listener for when keyboardClosed is called (because it's also called from within the cohtml)
+// const ChatBoxOriginalkeyboardClosed = keyboardClosed;
+// keyboardClosed = function () {
+//     engine.trigger("ChatBoxKeyboardClosed");
+//     console.log("[ChatBox] Detected keyboard closing...")
+//     ChatBoxOriginalkeyboardClosed();
+// };
+
+// Add a listener for when displayKeyboard(_e) is called
+// Some keyboards are called directly from withing cohtml, so here we can catch them all
+const ChatBoxOriginal_displayKeyboard = displayKeyboard;
+displayKeyboard = function (_e) {
+    engine.trigger("ChatBoxKeyboardOpened");
+    console.log("[ChatBox] Detected TTS keyboard opening...")
+    ChatBoxOriginal_displayKeyboard(_e);
+};
+
+// Add a listener for when closeKeyboard() is called
+// Some keyboards are called directly from withing cohtml, so here we can catch them all
+const ChatBoxOriginal_closeKeyboard = closeKeyboard;
+closeKeyboard = function () {
+    engine.trigger("ChatBoxKeyboardClosed");
+    console.log("[ChatBox] Detected keyboard closing...")
+    ChatBoxOriginal_closeKeyboard();
+};
+
+
 console.log('ChatBox patches ran successfully!')

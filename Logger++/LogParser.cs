@@ -9,6 +9,7 @@ public static class LogParser {
     // Game Logs Regex
     private static readonly Regex CVRLogRegex = new(@"\((?<id>[A-Za-z0-9]+) \| (?<severity>[A-Za-z]+)\) \[(?<source>[^\]]+)\] (?<message>.*)", RegexOptions.Compiled);
     private static readonly Regex CVRLogRegexAlt = new(@"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \((?<source>[^\|]+)\| (?<severity>[A-Za-z]+)\) (?<message>.*)", RegexOptions.Compiled);
+    private static readonly Regex CVRLogRegexAuto = new(@"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \((?<source>[^\:]+)\:(?<id>\d+) \| (?<severity>[A-Za-z]+)\) (?<message>.*)", RegexOptions.Compiled);
 
     // Cohtml Logs Regex
     private static readonly Regex CohtmlLogRegex = new(@"\[Cohtml\] \((Info|Warning|Error|AssertFailure)\) ", RegexOptions.Compiled);
@@ -61,14 +62,29 @@ public static class LogParser {
     };
 
 
+    private enum GameMsgType {
+        Default,
+        Alt,
+        Auto,
+    }
+
     public static bool TryParseGame(ref string message, ref LogType logType) {
-        var isAlt = false;
+        var msgType = GameMsgType.Default;
+
         var match = CVRLogRegex.Match(message);
+
+        if (!match.Success) {
+            match = CVRLogRegexAuto.Match(message);
+            msgType = GameMsgType.Auto;
+        }
+
         if (!match.Success) {
             match = CVRLogRegexAlt.Match(message);
-            isAlt = true;
-            if (!match.Success) return false;
+            msgType = GameMsgType.Alt;
         }
+
+        if (!match.Success)
+            return false;
 
         // Attempt to parse the severity
         if (!Enum.TryParse(match.Groups["severity"].Value, out CommonTools.LogLevelType_t cvrLogType)) return false;
@@ -87,11 +103,16 @@ public static class LogParser {
                 return false;
         }
 
-        var id = isAlt ? "N/A" : match.Groups["id"].Value;
+        var idOrLine = msgType == GameMsgType.Alt ? "N/A" : match.Groups["id"].Value;
         var source = match.Groups["source"].Value;
         var msg = match.Groups["message"].Value;
 
-        message = $"[CVR] [{id}] [{source}] {msg}";
+        if (msgType == GameMsgType.Auto) {
+            message = $"[CVR] [{source} => {idOrLine}] {msg}";
+        }
+        else {
+            message = $"[CVR] [{idOrLine}] [{source}] {msg}";
+        }
 
         return true;
     }

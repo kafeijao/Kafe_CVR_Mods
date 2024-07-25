@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Systems.GameEventSystem;
 using ABI.CCK.Components;
+using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.CCK.Debugger.Components.CohtmlMenuHandlers;
@@ -13,7 +14,8 @@ public class WorldCohtmlHandler : ICohtmlHandler {
             _isLoaded = true;
             SetupWorld();
         });
-        CVRGameEventSystem.World.OnUnload.AddListener(_ => {
+        CVRGameEventSystem.World.OnUnload.AddListener(worldId => {
+            if (string.IsNullOrEmpty(worldId)) return;
             _isLoaded = false;
             SetupWorld();
         });
@@ -27,8 +29,8 @@ public class WorldCohtmlHandler : ICohtmlHandler {
         var world = CVRWorld.Instance;
 
         var attributesSection = core.AddSection("Attributes");
-        attributesSection.AddSection("World Id").Value = _isLoaded ? world.assetInfo.objectId : "N/A";
-        attributesSection.AddSection("World Name").AddValueGetter(() => _isLoaded && Events.World.WorldNamesCache.TryGetValue(world.assetInfo.objectId, out var worldName) ? worldName : "N/A");
+        attributesSection.AddSection("World Id").Value = _isLoaded ? world.AssetInfo.objectId : "N/A";
+        attributesSection.AddSection("World Name").AddValueGetter(() => _isLoaded && Events.World.WorldNamesCache.TryGetValue(world.AssetInfo.objectId, out var worldName) ? worldName : "N/A");
         attributesSection.AddSection("Has Custom Matrix").Value = ToString(world.useCustomCollisionMatrix);
 
         var colMatrixSection = attributesSection.AddSection("Collision Matrix", "", true);

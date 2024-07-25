@@ -8,9 +8,9 @@ namespace Kafe.NavMeshFollower.Integrations;
 public static class RequestLibIntegration {
 
     static RequestLibIntegration() {
-        CVRGameEventSystem.Player.OnLeave.AddListener(descriptor => {
-            if (AcceptedRequestPlayerIds.Remove(descriptor.ownerId)) {
-                MelonLogger.Warning($"{descriptor.userName} has left, revoking {nameof(NavMeshFollower)} interaction...");
+        CVRGameEventSystem.Player.OnLeaveEntity.AddListener(entity => {
+            if (AcceptedRequestPlayerIds.Remove(entity.PlayerDescriptor.ownerId)) {
+                MelonLogger.Warning($"{entity.PlayerDescriptor.userName} has left, revoking {nameof(NavMeshFollower)} interaction...");
             }
         });
         RequestLib.API.RegisterMod();

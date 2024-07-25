@@ -76,6 +76,14 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Cohtml.Runtime.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="com.dogu.gamium.engine.unity.runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\com.dogu.gamium.engine.unity.runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="com.dogu.gamium.engine.unity.runtime.protocol">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\com.dogu.gamium.engine.unity.runtime.protocol.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Crc32.NET">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Crc32.NET.dll</HintPath>
             <Private>False</Private>
@@ -136,6 +144,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MeshBakerCore.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Meta.XR.BuildingBlocks">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.BuildingBlocks.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Mono.Security">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Mono.Security.dll</HintPath>
             <Private>False</Private>
@@ -150,6 +162,10 @@
         </Reference>
         <Reference Include="MTJobSystem">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MTJobSystem.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="NETOpus">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\NETOpus.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="NewBlood.EngineInternals">
@@ -168,20 +184,12 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Oculus.LipSync.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Photon3Unity3D">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Photon3Unity3D.dll</HintPath>
+        <Reference Include="Oculus.Platform">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Oculus.Platform.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="PhotonRealtime">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PhotonRealtime.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="PhotonVoice.API">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PhotonVoice.API.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="PhotonVoice">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PhotonVoice.dll</HintPath>
+        <Reference Include="Oculus.VR">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Oculus.VR.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="PICO.Platform">
@@ -542,10 +550,6 @@
         </Reference>
         <Reference Include="Unity.Services.Core.Threading">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Threading.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Vivox">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Vivox.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
@@ -910,10 +914,6 @@
         </Reference>
         <Reference Include="Valve.Newtonsoft.Json">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="websocket-sharp">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\websocket-sharp.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

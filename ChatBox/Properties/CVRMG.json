@@ -1,8 +1,8 @@
 {
   "_id": 168,
   "name": "ChatBox",
-  "modversion": "1.0.18",
-  "gameversion": "2024r175",
+  "modversion": "1.0.19",
+  "gameversion": "2024r176",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "network"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r68/ChatBox.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
-  "changelog": "- Fixed for 2024r175 Hotfix 2",
+  "changelog": "- Fixed for 2024r176\n- Added the option to also TTS when sending a msg via chatbox (off by default)\n- Fixed annoying bug where sometimes when you were typing a TTS msg and pressed `Y` it would reset and start sending a ChatBox msg.",
   "embedcolor": "16C60C"
 }

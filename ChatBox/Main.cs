@@ -20,6 +20,8 @@ public class ChatBox : MelonMod {
 
     private static bool _isChatBoxKeyboardOpened;
 
+    private static bool _isCohtmlKeyboardOpened;
+
     private static object _openKeyboardCoroutineToken;
 
     private static readonly List<string> SentHistory = new();
@@ -47,13 +49,12 @@ public class ChatBox : MelonMod {
         // Setup Sent History
         API.OnMessageSent += chatBoxMessage => {
             if (chatBoxMessage.Source != API.MessageSource.Internal) return;
-            _currentHistoryIndex = -1;
-
-            // Ignore if the message is the same
-            if (SentHistory.Count > 0 && SentHistory.Last() == chatBoxMessage.Message) return;
-
-            SentHistory.Add(chatBoxMessage.Message);
+            AddMessageToHistory(chatBoxMessage.Message);
+            if (ModConfig.MeAlsoSendMsgsToTTS.Value) ViewManager.Instance.SendTTSMessage(chatBoxMessage.Message);
         };
+
+        // Add TTS msgs to history
+        CVRGameEventSystem.Communications.TextToSpeech.OnMessage.AddListener(AddMessageToHistory);
 
         // Setup the Cohtml Events
         CohtmlPatches.KeyboardCancelButtonPressed += () => DisableKeyboard(true);
@@ -105,6 +106,8 @@ public class ChatBox : MelonMod {
                 CohtmlPatches.SetKeyboardContent("");
             }
         };
+        CohtmlPatches.CohtmlKeyboardOpened += () => _isCohtmlKeyboardOpened = true;
+        CohtmlPatches.CohtmlKeyboardClosed += () => _isCohtmlKeyboardOpened = false;
 
         CVRGameEventSystem.MainMenu.OnClose.AddListener(() => {
             // When closing the Game Menu (also closes the keyboard) mark keyboard as disabled
@@ -112,6 +115,16 @@ public class ChatBox : MelonMod {
                 MelonCoroutines.Start(DisableKeyboardWithDelay());
             }
         });
+    }
+
+    internal static void AddMessageToHistory(string msg) {
+
+        _currentHistoryIndex = -1;
+
+        // Ignore if the message is the same
+        if (SentHistory.Count > 0 && SentHistory.Last() == msg) return;
+
+        SentHistory.Add(msg);
     }
 
     internal static void OpenKeyboard(string initialMessage, bool delayed) {
@@ -137,6 +150,7 @@ public class ChatBox : MelonMod {
 
         if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
             && !_isChatBoxKeyboardOpened
+            && !_isCohtmlKeyboardOpened
             && CVRInputManager.Instance != null && !CVRInputManager.Instance.textInputFocused
             && CVR_MenuManager.Instance != null && !CVR_MenuManager.Instance.textInputFocused
             && ViewManager.Instance != null && !ViewManager.Instance.textInputFocused) {

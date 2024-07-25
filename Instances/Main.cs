@@ -1,16 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Text;
+using ABI_RC.Core;
 using ABI_RC.Core.Base;
+using ABI_RC.Core.EventSystem;
 using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.API;
 using ABI_RC.Core.Networking.API.Responses;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Savior.SceneManagers;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.Movement;
+using ABI_RC.Systems.UI;
 using ABI.CCK.Components;
 using Assets.ABI_RC.Systems.Safety.AdvancedSafety;
 using HarmonyLib;
@@ -20,7 +24,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using CVRInstances = ABI_RC.Core.Networking.IO.Instancing.Instances;
 
 namespace Kafe.Instances;
@@ -60,6 +63,66 @@ public class Instances : MelonMod {
     public override void OnInitializeMelon() {
 
         CVRGameEventSystem.Authentication.OnLogin.AddListener(InitializeAfterAuthentication);
+        CVRGameEventSystem.Authentication.OnLogout.AddListener(() => {
+            if (_startedJob) {
+                // Stop the job that updates the rejoin location
+                SchedulerSystem.RemoveJob(UpdateRejoinLocation);
+                _startedJob = false;
+            }
+            _skipInitialLoad = false;
+            AllConfig = null;
+            PlayerConfig = null;
+        });
+
+        // Initialize BTKUI
+        ModConfig.InitializeBTKUI();
+
+        // Start Saving Config Thread
+        _saveConfigThread = new Thread(SaveJsonConfigsThread);
+        _saveConfigThread.Start();
+
+        // Check for ChatBox
+        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null) {
+            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration! You can use " +
+                            $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and " +
+                            $"{Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
+            Integrations.ChatBoxIntegration.InitializeChatBox();
+        }
+        else {
+            MelonLogger.Msg($"You can optionally install ChatBox mod to enable " +
+                            $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and " +
+                            $"{Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
+        }
+
+        // Setup the instances selected listener
+        InstanceSelected += (instanceId, isInitial) => {
+            // Lets wait for the previous attempt to succeed/fail
+            if (_isChangingInstance) return;
+            MelonCoroutines.Start(LoadIntoLastInstance(instanceId, isInitial));
+        };
+
+        // Update the player counts to dictate whether we should re-join or not an instance
+        // Joining an empty instance results in weird stuff happening
+        CVRGameEventSystem.Player.OnJoinEntity.AddListener(_ => {
+            if (CommonTools.IsQuitting) return;
+            if (PlayerConfig?.LastInstance != null) {
+                #if DEBUG
+                MelonLogger.Msg($"Instance player count updated! Player Count: {CVRPlayerManager.Instance.NetworkPlayers.Count}");
+                #endif
+                PlayerConfig.LastInstance.RemotePlayersCount = CVRPlayerManager.Instance.NetworkPlayers.Count;
+                SaveConfig(false);
+            }
+        });
+        CVRGameEventSystem.Player.OnLeaveEntity.AddListener(_ => {
+            if (CommonTools.IsQuitting) return;
+            if (PlayerConfig?.LastInstance != null) {
+                #if DEBUG
+                MelonLogger.Msg($"Instance player count updated! Player Count: {CVRPlayerManager.Instance.NetworkPlayers.Count}");
+                #endif
+                PlayerConfig.LastInstance.RemotePlayersCount = CVRPlayerManager.Instance.NetworkPlayers.Count;
+                SaveConfig(false);
+            }
+        });
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
@@ -68,7 +131,7 @@ public class Instances : MelonMod {
 
     private static void InitializeAfterAuthentication(UserAuthResponse loginInfo) {
 
-        ModConfig.InitializeMelonPrefs();
+        ModConfig.InitializeOrUpdateMelonPrefs();
 
         var instancesConfigPath = Path.GetFullPath(Path.Combine("UserData", nameof(Instances), InstancesConfigFile));
         var instancesConfigFile = new FileInfo(instancesConfigPath);
@@ -130,49 +193,6 @@ public class Instances : MelonMod {
             AllConfig = config;
             PlayerConfig = config.PlayerConfigs[MetaPort.Instance.ownerId];
         }
-
-        // Start Saving Config Thread
-        _saveConfigThread = new Thread(SaveJsonConfigsThread);
-        _saveConfigThread.Start();
-
-        // Initialize BTKUI
-        ModConfig.InitializeBTKUI();
-
-        // Check for ChatBox
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null) {
-            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration! You can use " +
-                            $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and {Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
-            Integrations.ChatBoxIntegration.InitializeChatBox();
-        }
-        else {
-            MelonLogger.Msg($"You can optionally install ChatBox mod to enable " +
-                            $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and {Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
-        }
-
-        InstanceSelected += (instanceId, isInitial) => {
-            // Lets wait for the previous attempt to succeed/fail
-            if (_isChangingInstance) return;
-            MelonCoroutines.Start(LoadIntoLastInstance(instanceId, isInitial));
-        };
-
-        CVRGameEventSystem.Player.OnJoin.AddListener(_ => {
-            if (PlayerConfig?.LastInstance != null) {
-                #if DEBUG
-                MelonLogger.Msg($"Instance player count updated! Player Count: {CVRPlayerManager.Instance.NetworkPlayers.Count}");
-                #endif
-                PlayerConfig.LastInstance.RemotePlayersCount = CVRPlayerManager.Instance.NetworkPlayers.Count;
-                SaveConfig(false);
-            }
-        });
-        CVRGameEventSystem.Player.OnLeave.AddListener(_ => {
-            if (PlayerConfig?.LastInstance != null) {
-                #if DEBUG
-                MelonLogger.Msg($"Instance player count updated! Player Count: {CVRPlayerManager.Instance.NetworkPlayers.Count}");
-                #endif
-                PlayerConfig.LastInstance.RemotePlayersCount = CVRPlayerManager.Instance.NetworkPlayers.Count;
-                SaveConfig(false);
-            }
-        });
     }
 
     private static void UpdateRejoinLocation() {
@@ -216,6 +236,7 @@ public class Instances : MelonMod {
     }
 
     private static void SaveConfig(bool recentInstancesChanged) {
+        if (AllConfig == null) return;
         var jsonContent = JsonConvert.SerializeObject(AllConfig, Formatting.Indented);
         // Queue the json to be saved on a thread
         JsonContentQueue.Add(jsonContent);
@@ -585,13 +606,11 @@ public class Instances : MelonMod {
         Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
     }
 
-    private static bool _ranHQToolsStart;
-    private static bool _ranHQCVRWorldStart;
     private static bool _skipInitialLoad;
 
     public override void OnUpdate() {
         // Already ran the initialization or already pressed to skip!
-        if (_ranHQToolsStart || _ranHQCVRWorldStart || _skipInitialLoad) return;
+        if (_skipInitialLoad) return;
         // If presses left shift or left ctrl when starting the game, prevent the initial Instances Initialize
         if (Keyboard.current[Key.LeftCtrl].isPressed || Keyboard.current[Key.LeftShift].isPressed) {
             _skipInitialLoad = true;
@@ -617,9 +636,6 @@ public class Instances : MelonMod {
     }
 
     private static void Initialize() {
-
-        // Funny race condition >.> Let's not
-        if (!_ranHQToolsStart || !_ranHQCVRWorldStart) return;
 
         // Let's attempt to join the last instance
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && PlayerConfig.LastInstance != null) {
@@ -661,34 +677,22 @@ public class Instances : MelonMod {
     [HarmonyPatch]
     internal class HarmonyPatches {
 
-        private static bool _isInitialHomeWorldLoad = false;
-
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(HQTools), nameof(HQTools.Start))]
-        public static void Before_HQTools_Start() {
+        [HarmonyPatch(typeof(LoginRoom), nameof(LoginRoom.LoadPlayerChosenContent))]
+        public static bool Before_LoginRoom_LoadPlayerChosenContent() {
+            // Prevent the initial joining to the offline home world
             try {
-                _isInitialHomeWorldLoad = true;
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(Before_HQTools_Start)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Content), nameof(Content.LoadIntoWorld))]
-        public static bool Before_Content_LoadIntoWorld() {
-            try {
-                // Normal Instances Startup
-                if (!_skipInitialLoad && _isInitialHomeWorldLoad) {
-                    _isInitialHomeWorldLoad = false;
-                    _ranHQToolsStart = true;
+                if (!_skipInitialLoad) {
+                    _skipInitialLoad = true;
+                    // Still load the avatar
+                    AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
+                    // We're assuming we already authenticated (we wouldn't be reaching here otherwise)
                     Initialize();
                     return false;
                 }
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(Before_Content_LoadIntoWorld)}");
+                MelonLogger.Error($"Error during the patched function {nameof(Before_LoginRoom_LoadPlayerChosenContent)}");
                 MelonLogger.Error(e);
             }
             return true;
@@ -701,25 +705,11 @@ public class Instances : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
-        public static void After_CVRWorld_Start() {
-            #if DEBUG
-            MelonLogger.Msg($"[After_CVRWorld_Start] CurrentWorldId: {MetaPort.Instance.CurrentWorldId}, CurrentInstanceId: {MetaPort.Instance.CurrentInstanceId}, Name: {SceneManager.GetActiveScene().name}");
-            #endif
-
-            // If it's the HQ Scene
-            if (!_ranHQCVRWorldStart && SceneManager.GetActiveScene().name == "Headquarters") {
-                _ranHQCVRWorldStart = true;
-                Initialize();
-            }
-        }
-
-        [HarmonyPostfix]
         [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.ReadPresenceUpdateFromNetwork))]
         public static void After_RichPresence_ReadPresenceUpdateFromNetwork() {
             try {
                 #if DEBUG
-                MelonLogger.Msg($"[After_RichPresence_ReadPresenceUpdateFromNetwork] CurrentWorldId: {MetaPort.Instance.CurrentWorldId}, CurrentInstanceId: {MetaPort.Instance.CurrentInstanceId}, Name: {SceneManager.GetActiveScene().name}");
+                MelonLogger.Msg($"[After_RichPresence_ReadPresenceUpdateFromNetwork] CurrentWorldId: {MetaPort.Instance.CurrentWorldId}, CurrentInstanceId: {MetaPort.Instance.CurrentInstanceId}, Name: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
                 #endif
 
                 // Update current instance

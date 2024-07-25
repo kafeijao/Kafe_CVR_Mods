@@ -34,6 +34,8 @@ public static class ModConfig {
 
     internal static MelonPreferences_Entry<bool> MeProfanityFilter;
 
+    internal static MelonPreferences_Entry<bool> MeAlsoSendMsgsToTTS;
+
 
     // Asset Bundle
     public static GameObject ChatBoxPrefab;
@@ -119,6 +121,9 @@ public static class ModConfig {
 
         MeProfanityFilter = _melonCategory.CreateEntry("ProfanityFilter", true,
             description: "Whether to use the profanity filter or not.");
+
+        MeAlsoSendMsgsToTTS = _melonCategory.CreateEntry("AlsoSendMsgsToTTS", false,
+            description: "Whether to also send msgs to TTS or not.");
     }
 
     public static void LoadAssemblyResources(Assembly assembly) {
@@ -317,6 +322,7 @@ public static class ModConfig {
         AddMelonToggle(modSettingsCategory, MeMessageTimeoutDependsLength, "Dynamic Timeout");
         AddMelonToggle(modSettingsCategory, MeIgnoreOscMessages, "Hide OSC Msgs");
         AddMelonToggle(modSettingsCategory, MeIgnoreModMessages, "Hide Mod Msgs");
+        AddMelonToggle(modSettingsCategory, MeAlsoSendMsgsToTTS, "Also send via TTS");
 
         var profanityPage = modSettingsCategory.AddPage("Manage Profanity", iconProfanity, "Manage the profanity filter.", nameof(ChatBox));
         var profanityCat = profanityPage.AddCategory("");

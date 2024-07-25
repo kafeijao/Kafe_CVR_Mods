@@ -10,6 +10,7 @@ public static class ModConfig {
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<bool> MeIsHidden;
     internal static MelonPreferences_Entry<bool> MeOverwriteUIResources;
+    internal static MelonPreferences_Entry<bool> MeDisableCollapsible;
 
     public static void InitializeMelonPrefs() {
 
@@ -26,6 +27,9 @@ public static class ModConfig {
             CohtmlMenuController.Instance.UpdateMenuState();
             Core.PinToQuickMenu();
         });
+
+        MeDisableCollapsible = _melonCategory.CreateEntry("DisableCollapsible", false,
+            description: "Whether to disable all collapsible info or not. Warning: Disabling it may cause a huge performance impact.");
     }
 
     public enum ShaderType {

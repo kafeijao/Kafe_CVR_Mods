@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Util.AssetFiltering;
 using ABI_RC.Systems.Camera;
+using ABI_RC.Systems.GameEventSystem;
 using HarmonyLib;
 using Kafe.QRCode.ResultHandlers;
 using MelonLoader;
@@ -29,9 +30,13 @@ public class QRCode : MelonMod {
         // Fallback default to copying to clipboard
         ResultHandler.RegisterHandler(new DefaultResultHandler());
 
-        // Add Text Mesh Pro to the props whitelist
-        SharedFilter._spawnableWhitelist.Add(typeof(TextMeshPro));
-        MelonLogger.Msg($"Adding {nameof(TextMeshPro)} type to the props whitelist...");
+        // Calling on melon initializing was causing issues sometimes
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
+
+            // Add Text Mesh Pro to the props whitelist
+            SharedFilter.SpawnableWhitelist.Add(typeof(TextMeshPro));
+            MelonLogger.Msg($"Adding {nameof(TextMeshPro)} type to the props whitelist...");
+        });
     }
 
 

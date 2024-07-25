@@ -6,6 +6,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Player.EyeMovement;
 using ABI_RC.Core.Player.EyeMovement.Targets;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.InputManagement;
 using ABI_RC.Systems.Movement;
 using ABI_RC.Systems.RuntimeDebug;
 using ABI.CCK.Components;
@@ -57,8 +58,9 @@ public class CCKDebugger : MelonMod {
         #endif
     }
 
-    public override void OnLateUpdate() {
-        if (Input.GetKeyDown(KeyCode.F5)) Events.DebuggerMenuCohtml.OnCohtmlMenuReload();
+    public override void OnUpdate()
+    {
+        if (CVRInputManager.Instance != null && CVRInputManager.Instance.reload) Events.DebuggerMenuCohtml.OnCohtmlMenuReload();
     }
 
     [HarmonyPatch]

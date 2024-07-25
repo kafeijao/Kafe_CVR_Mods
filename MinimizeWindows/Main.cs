@@ -1,6 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 using ABI_RC.Core.Savior;
+using ABI_RC.Core.Savior.SceneManagers;
+using ABI_RC.Systems.GameEventSystem;
 using HarmonyLib;
 using MelonLoader;
 
@@ -13,6 +15,17 @@ public class MinimizeWindows : MelonMod {
 
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
+
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
+            try {
+                EnumWindows(MinimizeConsoleWindow, IntPtr.Zero);
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during {nameof(CVRGameEventSystem.Initialization.OnPlayerSetupStart)}");
+                MelonLogger.Error(e);
+            }
+        });
+
     }
 
     [DllImport("user32.dll")]
@@ -49,21 +62,5 @@ public class MinimizeWindows : MelonMod {
 
         // Continue iterating the windows
         return true;
-    }
-
-    [HarmonyPatch]
-    internal class HarmonyPatches {
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HQTools), nameof(HQTools.Start))]
-        public static void After_MetaPort_Awake() {
-            try {
-                EnumWindows(MinimizeConsoleWindow, IntPtr.Zero);
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_MetaPort_Awake)}");
-                MelonLogger.Error(e);
-            }
-        }
     }
 }

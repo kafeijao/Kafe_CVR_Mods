@@ -173,6 +173,13 @@ public class CohtmlMenuController : MonoBehaviour {
         }
 
         _cohtmlControlledView.View.Reload();
+
+        // Reload current handler
+        ICohtmlHandler.Reload();
+
+        // Mark as initialized and update state
+        Initialized = true;
+        UpdateMenuState();
     }
 
     internal void UpdateMenuState() {
@@ -237,6 +244,7 @@ public class CohtmlMenuController : MonoBehaviour {
         CohtmlInputHandler.Input.OnTouchEvent += OnTouchEvent;
 
         _cohtmlControlledView.Listener.ReadyForBindings += RegisterMenuViewEvents;
+        // _cohtmlControlledView.Listener.FinishLoad += OnFinishedLoad;
 
         // Calculate the resolution
         var resolutionX = (int)(_scaleX * 2500);
@@ -303,224 +311,21 @@ public class CohtmlMenuController : MonoBehaviour {
         view.RegisterForEvent("CCKDebuggerMenuReady", () => {
             MelonLogger.Msg("Cohtml menu has loaded successfully!");
 
-            view.TriggerEvent("CCKDebuggerModReady");
-
-            // Reload current handler
-            ICohtmlHandler.Reload();
-
-            // Mark as initialized and update state
-            Initialized = true;
-            UpdateMenuState();
+            // Todo: Move next to _cohtmlControlledView.Listener.ReadyForBindings when we get a better callback
+            _cohtmlControlledView.Listener.FinishLoad += OnFinishedLoad;
         });
     }
-    //
-    // [HarmonyPatch]
-    // private class HarmonyPatches {
-    //
-    //     private static bool _vrMInteractDownOnMenu;
-    //     private static Vector2 _vrQuickMenuLastCoords;
-    //
-    //     [HarmonyPostfix]
-    //     [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
-    //     private static void After_ControllerRay_LateUpdate(ControllerRay __instance) {
-    //         if (_errored) return;
-    //         try {
-    //             LateUpdateCCKRayController(__instance);
-    //         }
-    //         catch (Exception e) {
-    //             _errored = true;
-    //             MelonLogger.Error(e);
-    //             MelonLogger.Error("Execution of the menu will stop. Report this error to the creator.");
-    //             throw;
-    //         }
-    //     }
-    //
-    //     // private static bool RaycastCohtmlPlane(CohtmlView view, Ray ray, out float distance, out Vector2 viewCoords) {
-    //     //     if (new Plane(view.transform.forward, view.transform.position).Raycast(ray, out distance)) {
-    //     //         Vector3 vector3 = view.transform.InverseTransformPoint(ray.origin + ray.direction * distance);
-    //     //         viewCoords = new Vector2(vector3.x + 0.5f, vector3.y + 0.5f);
-    //     //         return viewCoords.x >= 0.0 && viewCoords.x <= 1.0 && viewCoords.y >= 0.0 && viewCoords.y <= 1.0;
-    //     //     }
-    //     //     distance = -1f;
-    //     //     viewCoords = Vector2.zero;
-    //     //     return false;
-    //     // }
-    //     //
-    //     // private static void LateUpdateCCKRayController(ControllerRay controllerRay) {
-    //     //
-    //     //     if (!Initialized || !Instance._cohtmlControlledView.enabled) return;
-    //     //
-    //     //     // Check the ray hands
-    //     //     var interactingWithCurrentHand = controllerRay.hand
-    //     //         ? CVRInputManager.Instance.interactLeftDown
-    //     //         : CVRInputManager.Instance.interactRightDown;
-    //     //     var stoppedInteractingWithCurrentHand = controllerRay.hand
-    //     //         ? CVRInputManager.Instance.interactLeftUp
-    //     //         : CVRInputManager.Instance.interactRightUp;
-    //     //
-    //     //     var ray = new Ray(controllerRay.transform.position,
-    //     //         controllerRay.transform.TransformDirection(controllerRay.RayDirection));
-    //     //
-    //     //     // Check if the raycast intercepts the menu
-    //     //     if (RaycastCohtmlPlane(Instance._cohtmlControlledView, ray, out var distance, out var viewCoords)) {
-    //     //
-    //     //         // Mark as pointing the menu
-    //     //         // CVRInputManager.Instance.controllerPointingMenu = true;
-    //     //
-    //     //         if (!controllerRay.uiActive) return;
-    //     //
-    //     //         // Get the values for x and y
-    //     //         var x = (int)(viewCoords.x * Instance._cohtmlControlledView.Width);
-    //     //         var y = (int)((1.0 - viewCoords.y) * Instance._cohtmlControlledView.Height);
-    //     //
-    //     //         _vrQuickMenuLastCoords.x = x;
-    //     //         _vrQuickMenuLastCoords.y = y;
-    //     //
-    //     //         // Mouse move event
-    //     //         var mouseMove = new MouseEventData { X = x, Y = y, Type = MouseEventData.EventType.MouseMove };
-    //     //         Instance._cohtmlControlledView.View.MouseEvent(mouseMove);
-    //     //
-    //     //         // Mouse down event
-    //     //         if (interactingWithCurrentHand && !_vrMInteractDownOnMenu) {
-    //     //             var mouseDown = new MouseEventData { X = x, Y = y, Type = MouseEventData.EventType.MouseDown };
-    //     //             Instance._cohtmlControlledView.View.MouseEvent(mouseDown);
-    //     //             _vrMInteractDownOnMenu = true;
-    //     //         }
-    //     //
-    //     //         // Mouse up event
-    //     //         if (stoppedInteractingWithCurrentHand && _vrMInteractDownOnMenu) {
-    //     //             var mouseup = new MouseEventData { X = x, Y = y, Type = MouseEventData.EventType.MouseUp };
-    //     //             Instance._cohtmlControlledView.View.MouseEvent(mouseup);
-    //     //             _vrMInteractDownOnMenu = false;
-    //     //         }
-    //     //
-    //     //         // Mouse wheel event
-    //     //         if (CVRInputManager.Instance.scrollValue > 0.0 || CVRInputManager.Instance.scrollValue < 0.0) {
-    //     //             var mouseWheel = new MouseEventData {
-    //     //                 WheelX = 0.0f, WheelY = CVRInputManager.Instance.scrollValue * -750f,
-    //     //                 Type = MouseEventData.EventType.MouseWheel
-    //     //             };
-    //     //             Instance._cohtmlControlledView.View.MouseEvent(mouseWheel);
-    //     //         }
-    //     //
-    //     //         // Clear targeted candidates and highlights, because we're selecting our menu. I could've used a
-    //     //         // transpiler to properly fix this, but Daky hates me if I do
-    //     //         controllerRay.clearTelepathicGrabTargetHighlight();
-    //     //         controllerRay._telepathicPickupCandidate = null;
-    //     //         controllerRay._telepathicPickupTargeted = false;
-    //     //
-    //     //         // If the line renderer doesn't exist, ignore
-    //     //         if (!controllerRay.lineRenderer) return;
-    //     //
-    //     //         controllerRay.lineRenderer.enabled = true;
-    //     //         var rayPos = controllerRay.transform.position + controllerRay.transform.TransformDirection(controllerRay.RayDirection) * distance;
-    //     //         controllerRay.lineRenderer.SetPosition(1, controllerRay.transform.InverseTransformPoint(rayPos));
-    //     //     }
-    //     //
-    //     //     // If it was being hold down, release
-    //     //     else if (stoppedInteractingWithCurrentHand && _vrMInteractDownOnMenu) {
-    //     //         Instance._cohtmlControlledView.View.MouseEvent(new MouseEventData {
-    //     //             X = (int) _vrQuickMenuLastCoords.x,
-    //     //             Y = (int) _vrQuickMenuLastCoords.y,
-    //     //             Type = MouseEventData.EventType.MouseUp,
-    //     //         });
-    //     //         _vrMInteractDownOnMenu = false;
-    //     //     }
-    //     // }
-    //
-    //
-    //     // [HarmonyPostfix]
-    //     // [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.Update))]
-    //     // private static void After_CVR_MenuManager_LateUpdate(CVR_MenuManager __instance) {
-    //     //     if (_errored) return;
-    //     //     try {
-    //     //         LateUpdateMenuManager(__instance);
-    //     //     }
-    //     //     catch (Exception e) {
-    //     //         _errored = true;
-    //     //         MelonLogger.Error(e);
-    //     //         MelonLogger.Error("Execution of the menu will stop. Report this error to the creator.");
-    //     //         throw;
-    //     //     }
-    //     // }
-    //     //
-    //     // private static bool _desktopMouseDownOnMenu;
-    //     // private static bool _desktopMouseMovingOnMenu;
-    //     // private static Vector2 _desktopQuickMenuLastCoords;
-    //     //
-    //     // private static void LateUpdateMenuManager(CVR_MenuManager menuManager) {
-    //     //     if (!Initialized) return;
-    //     //
-    //     //     var cckView = Instance._cohtmlControlledView;
-    //     //     var isCursorLocked = Cursor.lockState == CursorLockMode.Locked;
-    //     //
-    //     //     var camera = menuManager._camera;
-    //     //
-    //     //     if (!cckView.enabled || InputManager.Instance.isMenuFreeLook || MetaPort.Instance.isUsingVr || camera == null) return;
-    //     //
-    //     //     int x = -1, y = -1;
-    //     //     bool hasHit;
-    //     //
-    //     //     // Calculate menu raycast using the camera as a raycast source point (when the menu is in world space)
-    //     //     if (isCursorLocked) {
-    //     //         var ray = new Ray(camera.transform.position, camera.transform.TransformDirection(Vector3.forward));
-    //     //         hasHit = RaycastCohtmlPlane(cckView, ray, out var hitInfoCamera, out var viewCoords);
-    //     //         if (hasHit) {
-    //     //             x = (int)(viewCoords.x * cckView.Width);
-    //     //             y = (int)((1.0 - viewCoords.y) * cckView.Height);
-    //     //         }
-    //     //     }
-    //     //     // Calculate menu raycast using the cursor as the raycast source point (when menu is on quick menu or hud)
-    //     //     else {
-    //     //         var ray = camera.ScreenPointToRay(Input.mousePosition);
-    //     //         hasHit = Instance._cohtmlViewCollider.Raycast(ray, out var hitInfoCursor, 1000f);
-    //     //         if (hasHit) {
-    //     //             x = (int) (hitInfoCursor.textureCoord.x * cckView.Width);
-    //     //             y = (int) ((1.0 - hitInfoCursor.textureCoord.y) * cckView.Height);
-    //     //         }
-    //     //     }
-    //     //
-    //     //     if (hasHit)  {
-    //     //         // Mark as pointing the menu
-    //     //         // CVRInputManager.Instance.controllerPointingMenu = true;
-    //     //
-    //     //         // Grab the x and y positions
-    //     //         _desktopQuickMenuLastCoords.x = x;
-    //     //         _desktopQuickMenuLastCoords.y = y;
-    //     //
-    //     //         // Mouse move event
-    //     //         cckView.View.MouseEvent(new MouseEventData { X = x, Y = y, Type = MouseEventData.EventType.MouseMove });
-    //     //         _desktopMouseMovingOnMenu = true;
-    //     //
-    //     //         // Mouse down event
-    //     //         if (Input.GetMouseButtonDown(0)) {
-    //     //             cckView.View.MouseEvent(new MouseEventData { X = x, Y = y, Type = MouseEventData.EventType.MouseDown });
-    //     //             _desktopMouseDownOnMenu = true;
-    //     //         }
-    //     //
-    //     //         // Mouse up event
-    //     //         if (Input.GetMouseButtonUp(0)) {
-    //     //             cckView.View.MouseEvent(new MouseEventData { X = x, Y = y, Type = MouseEventData.EventType.MouseUp });
-    //     //             _desktopMouseDownOnMenu = false;
-    //     //         }
-    //     //
-    //     //         // Mouse scroll event
-    //     //         if (CVRInputManager.Instance.scrollValue > 0.0 || CVRInputManager.Instance.scrollValue < 0.0) {
-    //     //             cckView.View.MouseEvent(new MouseEventData { WheelX = 0.0f, WheelY = CVRInputManager.Instance.scrollValue * -750f, Type = MouseEventData.EventType.MouseWheel });
-    //     //         }
-    //     //     }
-    //     //
-    //     //     // Detect the mouse got out of the menu
-    //     //     if (_desktopMouseMovingOnMenu) {
-    //     //         cckView.View.MouseEvent(new MouseEventData { X = -1, Y = -1, Type = MouseEventData.EventType.MouseMove });
-    //     //         _desktopMouseMovingOnMenu = false;
-    //     //     }
-    //     //
-    //     //     // Mouse up event when stopped clicking
-    //     //     if (Input.GetMouseButtonUp(0) && _desktopMouseDownOnMenu) {
-    //     //         cckView.View.MouseEvent(new MouseEventData { X = (int) _desktopQuickMenuLastCoords.x, Y = (int) _desktopQuickMenuLastCoords.y, Type = MouseEventData.EventType.MouseUp });
-    //     //         _desktopMouseDownOnMenu = false;
-    //     //     }
-    //     // }
-    // }
+
+    private void OnFinishedLoad(string url) {
+        _cohtmlControlledView.Listener.FinishLoad -= OnFinishedLoad;
+
+        _cohtmlControlledView.View.TriggerEvent("CCKDebuggerModReady");
+
+        // Reload current handler
+        ICohtmlHandler.Reload();
+
+        // Mark as initialized and update state
+        Initialized = true;
+        UpdateMenuState();
+    }
 }
