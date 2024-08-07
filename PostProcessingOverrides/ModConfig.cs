@@ -52,7 +52,8 @@ public static class ModConfig {
             MenuSubtitle = "Configure Post Processing Overrides per world",
         };
 
-        SetupOverrideButtons();
+        if (PostProcessingOverrides.IsWorldLoaded())
+            SetupOverrideButtons();
 
         // Since updating buttons is bugged currently in BTKUI I need to recreate the whole menu ;_;
         // Todo: Implement Input updates instead of recreating, waiting on: https://github.com/BTK-Development/BTKUILib/issues/8
@@ -127,13 +128,24 @@ public static class ModConfig {
         CreateButton(currentOverride, current.Vignette, "Vignette");
 
         // Sliders
-        _page.AddSlider("Bloom Intensity", "Set the Bloom Intensity", current.Bloom.Intensity/Multiplier, 0f, 5f, 2).OnValueUpdated += newValue => {
+        currentOverride.AddSlider("Bloom Intensity", "Set the Bloom Intensity", current.Bloom.Intensity/Multiplier, 0f, 5f, 2).OnValueUpdated += newValue => {
             current.Bloom.Intensity = newValue * Multiplier;
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };
-        _page.AddSlider("Bloom Threshold", "Set the Bloom Threshold", current.Bloom.Threshold, 0f, 5f, 2).OnValueUpdated += newValue => {
+        currentOverride.AddSlider("Bloom Threshold", "Set the Bloom Threshold", current.Bloom.Threshold, 0f, 5f, 2).OnValueUpdated += newValue => {
             current.Bloom.Threshold = newValue;
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };
+
+        // currentOverride.AddSlider("ColorGrading Hue Shift", "Set the ColorGrading Hue Shift", current.ColorGrading.HueShift, 0f, 360f, 2).OnValueUpdated += newValue => {
+        //     current.ColorGrading.HueShift = newValue;
+        //     PostProcessingOverrides.SaveConfigAndApplyChanges(true);
+        // };
+        // Button hdrButton = currentOverride.AddButton($"ColorGrading Mode: {current.ColorGrading.GradingMode.ToString()}", "", $"ColorGrading Grading Mode", ButtonStyle.TextOnly);
+        // hdrButton.OnPress += () => {
+        //     current.ColorGrading.GradingMode = (GradingMode)(((int)current.ColorGrading.GradingMode + 1) % Enum.GetValues(typeof(GradingMode)).Length);
+        //     hdrButton.ButtonText = $"ColorGrading Mode: {current.ColorGrading.GradingMode.ToString()}";
+        //     PostProcessingOverrides.SaveConfigAndApplyChanges(true);
+        // };
     }
 }

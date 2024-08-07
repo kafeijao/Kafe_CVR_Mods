@@ -1,19 +1,19 @@
 ﻿using System.Reflection;
-using Kafe.PostProcessingOverrides;
-using Kafe.PostProcessingOverrides.Properties;
+using Kafe.AMDQuestWirelessStutterFix;
+using Kafe.AMDQuestWirelessStutterFix.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(PostProcessingOverrides))]
+[assembly: AssemblyTitle(nameof(AMDQuestWirelessStutterFix))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(PostProcessingOverrides))]
+[assembly: AssemblyProduct(nameof(AMDQuestWirelessStutterFix))]
 
 [assembly: MelonInfo(
-    typeof(PostProcessingOverrides),
-    nameof(Kafe.PostProcessingOverrides),
+    typeof(AMDQuestWirelessStutterFix),
+    nameof(Kafe.AMDQuestWirelessStutterFix),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -25,10 +25,12 @@ using MelonLoader;
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
+[assembly: MelonAdditionalCredits(AssemblyInfoParams.Patchuuri)]
 
-namespace Kafe.PostProcessingOverrides.Properties;
+namespace Kafe.AMDQuestWirelessStutterFix.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.7";
+    public const string Version = "0.0.2";
     public const string Author = "kafeijao";
     public const string BTKUILibName = "BTKUILib";
+    public const string Patchuuri = "Patchuuri";
 }

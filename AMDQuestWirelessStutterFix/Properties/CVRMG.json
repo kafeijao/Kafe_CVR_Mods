@@ -1,0 +1,23 @@
+{
+  "_id": -1,
+  "name": "AMDQuestWirelessStutterFix",
+  "modversion": "0.0.2",
+  "gameversion": "2024r176",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Simple mod that possibly fixes the stutter when using Quest Wireless on an AMD GPU.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/AMDQuestWirelessStutterFix) for more in-depth info.\n\n",
+  "searchtags": [
+    "amd",
+    "quest",
+    "wireless",
+    "stutter",
+    "fix",
+    "hdr"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/AMDQuestWirelessStutterFix.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/AMDQuestWirelessStutterFix",
+  "changelog": "- Initial Release",
+  "embedcolor": "16C60C"
+}

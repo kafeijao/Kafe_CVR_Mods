@@ -98,6 +98,10 @@ public class PostProcessingOverrides : MelonMod {
         return Config.WorldPPConfigs[_currentWorldGuid];
     }
 
+    public static bool IsWorldLoaded() {
+        return !string.IsNullOrEmpty(_currentWorldGuid);
+    }
+
     internal static void SaveConfigAndApplyChanges(bool applyChanges) {
 
         // Save the current config to file
@@ -145,7 +149,11 @@ public class PostProcessingOverrides : MelonMod {
         public float Threshold = 1.0f;
     }
     public record JsonConfigPPSettingAO : JsonConfigPPSetting;
-    public record JsonConfigPPSettingColorGrading : JsonConfigPPSetting;
+    public record JsonConfigPPSettingColorGrading : JsonConfigPPSetting {
+        // public float Brightness = 0.2f;
+        // public float HueShift = 0.0f;
+        // public GradingMode GradingMode = GradingMode.HighDefinitionRange;
+    }
     public record JsonConfigPPSettingAutoExposure : JsonConfigPPSetting;
     public record JsonConfigPPSettingChromaticAberration : JsonConfigPPSetting;
     public record JsonConfigPPSettingDepthOfField : JsonConfigPPSetting;
@@ -221,11 +229,11 @@ public class PostProcessingOverrides : MelonMod {
         PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
 
         // Configure our global override profile
+
+        // Bloom
         if (!ModProfile.TryGetSettings(out Bloom bloom)) {
             bloom = ModProfile.AddSettings<Bloom>();
         }
-
-        // Bloom
         bloom.enabled.value = configToBeUsed!.Bloom.Active == OverrideSetting.Override;
         bloom.enabled.overrideState = configToBeUsed.Bloom.Active == OverrideSetting.Override;
         // Bloom Intensity
@@ -234,6 +242,22 @@ public class PostProcessingOverrides : MelonMod {
         // Bloom Threshold
         bloom.threshold.value = configToBeUsed.Bloom.Threshold;
         bloom.threshold.overrideState = configToBeUsed.Bloom.Active == OverrideSetting.Override;
+
+        // // ColorGrading
+        // if (!ModProfile.TryGetSettings(out ColorGrading colorGrading)) {
+        //     colorGrading = ModProfile.AddSettings<ColorGrading>();
+        // }
+        // colorGrading.enabled.value = configToBeUsed.ColorGrading.Active == OverrideSetting.Override;
+        // colorGrading.enabled.overrideState = configToBeUsed.ColorGrading.Active == OverrideSetting.Override;
+        // // ColorGrading Brightness
+        // colorGrading.brightness.value = configToBeUsed.ColorGrading.Brightness;
+        // colorGrading.brightness.overrideState = configToBeUsed.ColorGrading.Active == OverrideSetting.Override;
+        // ColorGrading Hue
+        // colorGrading.hueShift.value = configToBeUsed.ColorGrading.HueShift;
+        // colorGrading.hueShift.overrideState = configToBeUsed.ColorGrading.Active == OverrideSetting.Override;
+        // // ColorGrading Mode
+        // colorGrading.gradingMode.value = configToBeUsed.ColorGrading.GradingMode;
+        // colorGrading.gradingMode.overrideState = configToBeUsed.ColorGrading.Active == OverrideSetting.Override;
 
         // Disable/Enable all world's volumes according the config
         foreach (var postProcessingBloom in _currentWorld._postProcessingBloomList) {
@@ -281,7 +305,7 @@ public class PostProcessingOverrides : MelonMod {
             _currentWorldGuid = MetaPort.Instance.CurrentWorldId;
             _currentWorldInitialized = false;
 
-            _currentWorldCamera = PlayerSetup.Instance._movementSystem.rotationPivot.GetComponent<Camera>();
+            _currentWorldCamera = PlayerSetup.Instance.GetActiveCamera().GetComponent<Camera>();
             _currentWorldLayer = _currentWorldCamera.GetComponent<PostProcessLayer>();
 
             // Enforce the PPLayer on the Post Processing layer
