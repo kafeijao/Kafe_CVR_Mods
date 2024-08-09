@@ -10,6 +10,10 @@ public class ClappableSpawnable : Clappable {
     private string _spawnableId;
     private CVRSpawnable _spawnable;
 
+    protected override bool IsClappable() {
+        return TheClapper.EnableClappingProps.Value;
+    }
+
     protected override void OnClapped(Vector3 clappablePosition) {
 
         if (_spawnable == null) return;

@@ -14,7 +14,8 @@ public class ClappableAvatar : Clappable {
 
     protected override bool IsClappable() {
         var isHidden = _puppetMaster._isBlocked;
-        return isHidden || !TheClapper.PreventClappingFriends.Value || !Friends.FriendsWith(_playerId);
+        var isFriend = TheClapper.PreventClappingFriends.Value && Friends.FriendsWith(_playerId);
+        return TheClapper.EnableClappingAvatars.Value && !isHidden && !isFriend;
     }
 
     protected override void OnClapped(Vector3 clappablePosition) {
