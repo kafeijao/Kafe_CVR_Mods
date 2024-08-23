@@ -12,9 +12,17 @@ public class ClappableAvatar : Clappable {
     private string _playerUserName;
     private PuppetMaster _puppetMaster;
 
-    protected override bool IsClappable() {
-        var isHidden = _puppetMaster._isBlocked;
-        return isHidden || !TheClapper.PreventClappingFriends.Value || !Friends.FriendsWith(_playerId);
+    protected override bool IsClappable()
+    {
+        if (TheClapper.DisableClappingAvatars.Value) return false;
+
+        // When the avatar is hidden bypass the friend check
+        bool avatarIsHidden = _puppetMaster._isBlocked;
+        if (TheClapper.AlwaysAllowClappingHiddenAvatars.Value && avatarIsHidden) return true;
+
+        if (TheClapper.PreventClappingFriends.Value && Friends.FriendsWith(_playerId)) return false;
+
+        return true;
     }
 
     protected override void OnClapped(Vector3 clappablePosition) {

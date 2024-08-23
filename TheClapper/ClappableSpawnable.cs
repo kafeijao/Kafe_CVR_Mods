@@ -10,6 +10,12 @@ public class ClappableSpawnable : Clappable {
     private string _spawnableId;
     private CVRSpawnable _spawnable;
 
+    protected override bool IsClappable()
+    {
+        if (TheClapper.DisableClappingProps.Value) return false;
+        return true;
+    }
+
     protected override void OnClapped(Vector3 clappablePosition) {
 
         if (_spawnable == null) return;
@@ -24,13 +30,37 @@ public class ClappableSpawnable : Clappable {
 
     public static void Create(CVRSyncHelper.PropData propData) {
 
-        var target = propData.Spawnable.gameObject;
+        var rootTarget = propData.Spawnable.gameObject;
 
-        if (!target.gameObject.TryGetComponent(out ClappableSpawnable clappableSpawnable)) {
-            clappableSpawnable = target.gameObject.AddComponent<ClappableSpawnable>();
+        var targets = new HashSet<GameObject> { rootTarget };
+
+        if (TheClapper.ClappablePropPickups.Value)
+        {
+            // Add all pickup targets
+            CVRPickupObject[] pickupGameObjects = rootTarget.GetComponentsInChildren<CVRPickupObject>();
+            targets.UnionWith(pickupGameObjects.Select(p => p.gameObject));
         }
 
-        clappableSpawnable._spawnableId = propData.InstanceId;
-        clappableSpawnable._spawnable = propData.Spawnable;
+        if (TheClapper.ClappablePropSubSyncs.Value)
+        {
+            // Add all prop sun-sync transforms
+            foreach (var subSync in propData.Spawnable.subSyncs)
+            {
+                if (subSync == null || subSync.transform == null) continue;
+                targets.Add(subSync.transform.gameObject);
+            }
+        }
+
+        // Add the clappable component to all targets
+        foreach (GameObject target in targets)
+        {
+            if (!target.TryGetComponent(out ClappableSpawnable clappableSpawnable)) {
+                clappableSpawnable = target.AddComponent<ClappableSpawnable>();
+            }
+
+            clappableSpawnable._spawnableId = propData.InstanceId;
+            clappableSpawnable._spawnable = propData.Spawnable;
+        }
+
     }
 }

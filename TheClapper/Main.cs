@@ -10,7 +10,12 @@ namespace Kafe.TheClapper;
 public class TheClapper : MelonMod {
 
     private static MelonPreferences_Category _melonCategory;
+    internal static MelonPreferences_Entry<bool> DisableClappingProps;
+    internal static MelonPreferences_Entry<bool> DisableClappingAvatars;
+    internal static MelonPreferences_Entry<bool> AlwaysAllowClappingHiddenAvatars;
     internal static MelonPreferences_Entry<bool> PreventClappingFriends;
+    internal static MelonPreferences_Entry<bool> ClappablePropPickups;
+    internal static MelonPreferences_Entry<bool> ClappablePropSubSyncs;
     private static MelonPreferences_Entry<bool> _showVisualizerAfterOpenHands;
     private static MelonPreferences_Entry<float> _showVisualizerDelay;
 
@@ -23,8 +28,23 @@ public class TheClapper : MelonMod {
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(TheClapper));
 
+        DisableClappingProps = _melonCategory.CreateEntry("DisableClappingProps", false,
+            description: "Whether clapping props is completely disabled or not.");
+
+        DisableClappingAvatars = _melonCategory.CreateEntry("DisableClappingAvatars", false,
+            description: "Whether clapping avatars is completely disabled or not.");
+
+        AlwaysAllowClappingHiddenAvatars = _melonCategory.CreateEntry("AlwaysAllowClappingHiddenAvatars", true,
+            description: "Whether always allow clapping avatars when they are hidden. (clapping hidden avatars reveals them)");
+
         PreventClappingFriends = _melonCategory.CreateEntry("PreventClappingFriendAvatars", true,
             description: "Whether or not to ignore friend's avatars when clapping.");
+
+        ClappablePropPickups = _melonCategory.CreateEntry("ClappablePropPickups", false,
+            description: "Makes all prop's pickup points clappable. Changes only apply to newly spawned props.");
+
+        ClappablePropSubSyncs = _melonCategory.CreateEntry("ClappablePropSubSyncs", false,
+            description: "Makes all prop's sub-sync points clappable. Changes only apply to newly spawned props.");
 
         _showVisualizerAfterOpenHands = _melonCategory.CreateEntry("ShowVisualizersAfterOpenHands", true,
             description: "Whether or not to show visualizers of where to clap. The visualizers appear 1 second " +
