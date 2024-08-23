@@ -1,4 +1,6 @@
-﻿using ABI_RC.Core.Util;
+﻿using ABI_RC.Core.Networking.IO.Social;
+using ABI_RC.Core.Savior;
+using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
@@ -13,6 +15,11 @@ public class ClappableSpawnable : Clappable {
     protected override bool IsClappable()
     {
         if (TheClapper.DisableClappingProps.Value) return false;
+
+        if (TheClapper.PreventClappingMyProps.Value && _spawnable.ownerId == MetaPort.Instance.ownerId) return false;
+
+        if (TheClapper.PreventClappingFriendsProps.Value && Friends.FriendsWith(_spawnable.ownerId)) return false;
+
         return true;
     }
 

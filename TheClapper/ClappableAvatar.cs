@@ -20,7 +20,7 @@ public class ClappableAvatar : Clappable {
         bool avatarIsHidden = _puppetMaster._isBlocked;
         if (TheClapper.AlwaysAllowClappingHiddenAvatars.Value && avatarIsHidden) return true;
 
-        if (TheClapper.PreventClappingFriends.Value && Friends.FriendsWith(_playerId)) return false;
+        if (TheClapper.PreventClappingFriendsAvatars.Value && Friends.FriendsWith(_playerId)) return false;
 
         return true;
     }

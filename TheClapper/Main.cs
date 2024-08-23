@@ -13,7 +13,9 @@ public class TheClapper : MelonMod {
     internal static MelonPreferences_Entry<bool> DisableClappingProps;
     internal static MelonPreferences_Entry<bool> DisableClappingAvatars;
     internal static MelonPreferences_Entry<bool> AlwaysAllowClappingHiddenAvatars;
-    internal static MelonPreferences_Entry<bool> PreventClappingFriends;
+    internal static MelonPreferences_Entry<bool> PreventClappingFriendsAvatars;
+    internal static MelonPreferences_Entry<bool> PreventClappingFriendsProps;
+    internal static MelonPreferences_Entry<bool> PreventClappingMyProps;
     internal static MelonPreferences_Entry<bool> ClappablePropPickups;
     internal static MelonPreferences_Entry<bool> ClappablePropSubSyncs;
     private static MelonPreferences_Entry<bool> _showVisualizerAfterOpenHands;
@@ -37,8 +39,14 @@ public class TheClapper : MelonMod {
         AlwaysAllowClappingHiddenAvatars = _melonCategory.CreateEntry("AlwaysAllowClappingHiddenAvatars", true,
             description: "Whether always allow clapping avatars when they are hidden. (clapping hidden avatars reveals them)");
 
-        PreventClappingFriends = _melonCategory.CreateEntry("PreventClappingFriendAvatars", true,
+        PreventClappingFriendsAvatars = _melonCategory.CreateEntry("PreventClappingFriendAvatars", true,
             description: "Whether or not to ignore friend's avatars when clapping.");
+
+        PreventClappingMyProps = _melonCategory.CreateEntry("PreventClappingMyProps", false,
+            description: "Whether or not to ignore props spawned by me props when clapping.");
+
+        PreventClappingFriendsProps = _melonCategory.CreateEntry("PreventClappingFriendsProps", true,
+            description: "Whether or not to ignore friend's spawned props when clapping.");
 
         ClappablePropPickups = _melonCategory.CreateEntry("ClappablePropPickups", false,
             description: "Makes all prop's pickup points clappable. Changes only apply to newly spawned props.");
