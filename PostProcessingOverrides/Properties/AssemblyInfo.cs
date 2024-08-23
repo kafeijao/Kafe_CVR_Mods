@@ -28,7 +28,7 @@ using MelonLoader;
 
 namespace Kafe.PostProcessingOverrides.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.7";
+    public const string Version = "0.0.8";
     public const string Author = "kafeijao";
     public const string BTKUILibName = "BTKUILib";
 }

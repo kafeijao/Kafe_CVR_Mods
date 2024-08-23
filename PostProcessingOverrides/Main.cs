@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Player;
+﻿using ABI_RC.Core;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.Camera;
 using ABI.CCK.Components;
@@ -33,7 +34,7 @@ public class PostProcessingOverrides : MelonMod {
     private const int CurrentConfigVersion = 1;
 
     // Layer Indices and Masks
-    private const int PPLayer = 4;
+    private const int PPLayer = CVRLayers.Water;
     private const int PPLayerMask = 1 << PPLayer;
 
     public static event Action ConfigChanged;
@@ -308,6 +309,14 @@ public class PostProcessingOverrides : MelonMod {
             _currentWorldCamera = PlayerSetup.Instance.GetActiveCamera().GetComponent<Camera>();
             _currentWorldLayer = _currentWorldCamera.GetComponent<PostProcessLayer>();
 
+            // If the camera doesn't have a post process layer, add one
+            if (_currentWorldLayer == null)
+            {
+                _currentWorldLayer = _currentWorldCamera.gameObject.AddComponent<PostProcessLayer>();
+                _currentWorldLayer.Init(MetaPort.Instance.postProcessResources);
+                _currentWorldLayer.volumeTrigger = _currentWorldLayer.transform;
+            }
+
             // Enforce the PPLayer on the Post Processing layer
             if (world.referenceCamera != null && world.referenceCamera.TryGetComponent(out PostProcessLayer refCameraPostProcessLayer)) {
                 _currentWorldLayer.volumeLayer = refCameraPostProcessLayer.volumeLayer;
@@ -343,7 +352,6 @@ public class PostProcessingOverrides : MelonMod {
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_CopyRefCamValues)}");
                 MelonLogger.Error(e);
-                throw;
             }
         }
 
@@ -357,7 +365,6 @@ public class PostProcessingOverrides : MelonMod {
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_CopyRefCamValues)}");
                 MelonLogger.Error(e);
-                throw;
             }
         }
 
@@ -391,7 +398,6 @@ public class PostProcessingOverrides : MelonMod {
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_UpdatePostProcessing)}");
                 MelonLogger.Error(e);
-                throw;
             }
         }
 
