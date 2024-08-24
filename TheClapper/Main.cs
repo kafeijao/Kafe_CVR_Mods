@@ -45,7 +45,7 @@ public class TheClapper : MelonMod {
         PreventClappingMyProps = _melonCategory.CreateEntry("PreventClappingMyProps", false,
             description: "Whether or not to ignore props spawned by me props when clapping.");
 
-        PreventClappingFriendsProps = _melonCategory.CreateEntry("PreventClappingFriendsProps", true,
+        PreventClappingFriendsProps = _melonCategory.CreateEntry("PreventClappingFriendsProps", false,
             description: "Whether or not to ignore friend's spawned props when clapping.");
 
         ClappablePropPickups = _melonCategory.CreateEntry("ClappablePropPickups", false,

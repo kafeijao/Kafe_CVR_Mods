@@ -16,9 +16,11 @@ public class ClappableSpawnable : Clappable {
     {
         if (TheClapper.DisableClappingProps.Value) return false;
 
-        if (TheClapper.PreventClappingMyProps.Value && _spawnable.ownerId == MetaPort.Instance.ownerId) return false;
+        bool spawnedByMe = _spawnable.ownerId == MetaPort.Instance.ownerId;
 
-        if (TheClapper.PreventClappingFriendsProps.Value && Friends.FriendsWith(_spawnable.ownerId)) return false;
+        if (TheClapper.PreventClappingMyProps.Value && spawnedByMe) return false;
+
+        if (TheClapper.PreventClappingFriendsProps.Value && Friends.FriendsWith(_spawnable.ownerId) & !spawnedByMe) return false;
 
         return true;
     }
