@@ -10,6 +10,8 @@ public static class ModConfig {
     private const string MenuJsPatches = "MenuCSSLoader.MenuPatches.js";
     internal static string MenuJsPatchesContent;
 
+    private static MelonPreferences_Entry<string> CurentTheme = MelonPreferences.GetEntry<string>("MenuCSSLoader", "CurrentTheme");
+
     private const string MainMenuCSSFolder = "MainMenu";
     private const string QuickMenuCSSFolder = "QuickMenu";
 
@@ -39,8 +41,10 @@ public static class ModConfig {
             MenuCSSLoader.MainMenuCSSFilePaths.Clear();
             MenuCSSLoader.QuickMenuCSSFilePaths.Clear();
 
+            
+
             // Create MainMenu directory if it doesn't exist
-            var mainMenuCSSFolderPath = Path.GetFullPath(Path.Combine(ModDataFolder, MainMenuCSSFolder));
+            var mainMenuCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurentTheme.Value), MainMenuCSSFolder));
             if (!Directory.Exists(mainMenuCSSFolderPath))
             {
                 Directory.CreateDirectory(mainMenuCSSFolderPath);
@@ -48,7 +52,7 @@ public static class ModConfig {
             }
 
             // Create QuickMenu directory if it doesn't exist
-            var quickMenuCSSFolderPath = Path.GetFullPath(Path.Combine(ModDataFolder, QuickMenuCSSFolder));
+            var quickMenuCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurentTheme.Value), QuickMenuCSSFolder));
             if (!Directory.Exists(quickMenuCSSFolderPath))
             {
                 Directory.CreateDirectory(quickMenuCSSFolderPath);

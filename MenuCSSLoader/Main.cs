@@ -9,7 +9,13 @@ public class MenuCSSLoader : MelonMod
     public static readonly HashSet<string> MainMenuCSSFilePaths = new HashSet<string>();
     public static readonly HashSet<string> QuickMenuCSSFilePaths = new HashSet<string>();
 
+    private MelonPreferences_Category MenuCSSLoaderPrefrenceCategory;
+    private MelonPreferences_Entry<string> CurrentTheme;
+
     public override void OnInitializeMelon() {
+
+        MenuCSSLoaderPrefrenceCategory = MelonPreferences.CreateCategory("MenuCSSLoader");
+        CurrentTheme = MelonPreferences.CreateEntry<string>("MenuCSSLoader", "CurrentTheme", "", "Current Theme", "The theme to use. Press shift+F5 to reload.");
 
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
