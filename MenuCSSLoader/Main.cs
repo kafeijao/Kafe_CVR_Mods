@@ -15,11 +15,13 @@ public class MenuCSSLoader : MelonMod
     public override void OnInitializeMelon() {
 
         MenuCSSLoaderPrefrenceCategory = MelonPreferences.CreateCategory("MenuCSSLoader");
-        CurrentTheme = MelonPreferences.CreateEntry<string>("MenuCSSLoader", "CurrentTheme", "", "Current Theme", "The theme to use. Press shift+F5 to reload.");
+        CurrentTheme = MelonPreferences.CreateEntry<string>("MenuCSSLoader", "CurrentTheme", "Default", "Current Theme", "The theme to use. Press shift+F5 to reload.");
 
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
+        BTKUIIntegration.CreateIcons(MelonAssembly.Assembly);
 
         ModConfig.LoadCSSFilePaths();
+        BTKUIIntegration.CreateCategory();
 
         CohtmlPatches.MainMenuInitialized += OnMMInitialized;
         CohtmlPatches.QuickMenuInitialized += OnQMInitialized;
@@ -31,6 +33,7 @@ public class MenuCSSLoader : MelonMod
         {
             MelonLogger.Msg("Detected Shift + F5 press, reloading the css file paths...");
             ModConfig.LoadCSSFilePaths();
+            BTKUIIntegration.CreateThemeSelector();
         }
     }
 

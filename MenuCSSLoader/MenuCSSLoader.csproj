@@ -1,8 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
+      <None Remove="Resources\pallete.jpg" />
+    </ItemGroup>
+    <ItemGroup>
         <EmbeddedResource Include="Resources\CohtmlMenuPatches.js">
           <LogicalName>MenuCSSLoader.MenuPatches.js</LogicalName>
         </EmbeddedResource>
+    </ItemGroup>
+    <ItemGroup>
+		<EmbeddedResource Include="Resources\pallete.png">
+			<LogicalName>MenuCSSLoader.Pallete.png</LogicalName>
+		</EmbeddedResource>
+    </ItemGroup>
+    <ItemGroup>
+      <Reference Include="BTKUILib">
+        <HintPath>..\.ManagedLibs\BTKUILib.dll</HintPath>
+      </Reference>
     </ItemGroup>
 </Project>
