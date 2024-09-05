@@ -1,4 +1,6 @@
-﻿using MelonLoader;
+﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Systems.InputManagement;
+using MelonLoader;
 using UnityEngine;
 
 namespace MenuCSSLoader;
@@ -35,6 +37,15 @@ public class MenuCSSLoader : MelonMod
             ModConfig.LoadCSSFilePaths();
             BTKUIIntegration.CreateThemeSelector();
         }
+    }
+
+    public static void ReloadUI()
+    {
+        if (ViewManager.Instance.IsMainMenuOpen)
+            ViewManager.Instance.UiStateToggle(false);
+        if (CVR_MenuManager.Instance.IsQuickMenuOpen)
+            CVR_MenuManager.Instance.ToggleQuickMenu(false);
+        CVRInputManager.Instance.reload = true;
     }
 
     private static void OnMMInitialized()

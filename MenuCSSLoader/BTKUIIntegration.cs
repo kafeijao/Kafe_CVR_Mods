@@ -34,9 +34,7 @@ namespace MenuCSSLoader
             foreach (string themePath in Directory.GetDirectories(ModDataFolder))
             {
                 AvailableThemes.Add(themePath.Split("\\").Last());
-                MelonLogger.Msg($"Adding theme({themePath.Split("\\").Last()}) to BTKUI");
             }
-            MelonLogger.Msg($"{AvailableThemes.Count} Available themes.");
             ThemeSelector = new MultiSelection("Select a theme.",
                                                AvailableThemes.ToArray<string>(),
                                                AvailableThemes.FindIndex(a => a.Equals(CurentTheme.Value))); 
@@ -51,6 +49,8 @@ namespace MenuCSSLoader
         public static void SelectTheme(int themeIndex)
         {
             CurentTheme.Value = AvailableThemes[themeIndex];
+            ModConfig.LoadCSSFilePaths();
+            QuickMenuAPI.ShowConfirm("Reload UI?", "Would you like to reload the UI now?", MenuCSSLoader.ReloadUI);
         }
     }
 }
