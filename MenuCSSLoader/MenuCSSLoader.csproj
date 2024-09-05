@@ -10,6 +10,11 @@
 			<LogicalName>MenuCSSLoader.Pallete.png</LogicalName>
 		</EmbeddedResource>
     </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\reload.png">
+			<LogicalName>MenuCSSLoader.Reload.png</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
     <ItemGroup>
       <Reference Include="BTKUILib">
         <HintPath>..\.ManagedLibs\BTKUILib.dll</HintPath>

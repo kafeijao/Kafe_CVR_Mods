@@ -35,7 +35,6 @@ public class MenuCSSLoader : MelonMod
         {
             MelonLogger.Msg("Detected Shift + F5 press, reloading the css file paths...");
             ModConfig.LoadCSSFilePaths();
-            BTKUIIntegration.CreateThemeSelector();
         }
     }
 
