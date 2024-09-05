@@ -24,11 +24,12 @@ using MelonLoader;
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
+[assembly: MelonAdditionalCredits(AssemblyInfoParams.JillTheSomething)]
 
 namespace Kafe.Test.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "0.0.4";
+    public const string Version = "0.0.5";
     public const string Author = "kafeijao";
+    public const string JillTheSomething = "JillTheSomething";
     public const string BTKUILibName = "BTKUILib";
 }
-
