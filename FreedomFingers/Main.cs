@@ -1,3 +1,4 @@
+using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
@@ -22,6 +23,47 @@ public class FreedomFingers : MelonMod {
 
         _melonEntryEnableNotification = _melonCategoryFreedomFingers.CreateEntry("EnableNotifications", false,
             description: "Whether the mod should send notifications when toggling gestures.");
+
+        MethodInfo viewDropTextImmediateOld = AccessTools.Method(typeof(CohtmlHud), nameof(CohtmlHud.ViewDropTextImmediate), new[]
+        {
+	        typeof(string),
+	        typeof(string),
+	        typeof(string),
+        });
+        if (viewDropTextImmediateOld != null)
+        {
+	        MelonLogger.Msg($"Patching the old {nameof(CohtmlHud)} {nameof(CohtmlHud.ViewDropTextImmediate)}");
+	        HarmonyInstance.Patch(viewDropTextImmediateOld,
+		        prefix: new HarmonyMethod(AccessTools.Method(typeof(FreedomFingers),
+			        nameof(ViewDropTextImmediatePrefixPatchOld))));
+        }
+
+        MethodInfo viewDropTextImmediateNew = AccessTools.Method(typeof(CohtmlHud), nameof(CohtmlHud.ViewDropTextImmediate), new[]
+        {
+	        typeof(string),
+	        typeof(string),
+	        typeof(string),
+	        typeof(string),
+	        typeof(bool),
+        });
+        if (viewDropTextImmediateNew != null)
+        {
+	        MelonLogger.Msg($"Patching the new {nameof(CohtmlHud)} {nameof(CohtmlHud.ViewDropTextImmediate)}");
+	        HarmonyInstance.Patch(viewDropTextImmediateNew,
+		        prefix: new HarmonyMethod(AccessTools.Method(typeof(FreedomFingers),
+			        nameof(ViewDropTextImmediatePrefixPatchNew))));
+
+        }
+    }
+
+    private static bool ViewDropTextImmediatePrefixPatchOld(string cat, string headline, string small) {
+	    // Skip the execution of the message if it's the Skeletal Input changed.
+	    return headline != "Skeletal Input changed ";
+    }
+
+    private static bool ViewDropTextImmediatePrefixPatchNew(string cat, string headline, string small, string msgIdToOverride, bool parseHtml) {
+	    // Skip the execution of the message if it's the Skeletal Input changed.
+	    return headline != "Skeletal Input changed ";
     }
 
     [HarmonyPatch]
@@ -98,13 +140,6 @@ public class FreedomFingers : MelonMod {
 				    gestureAnimationsDuringFingerTracking.Value = false;
 			    }
 		    });
-	    }
-
-	    [HarmonyPrefix]
-	    [HarmonyPatch(typeof(CohtmlHud), nameof(CohtmlHud.ViewDropTextImmediate))]
-	    private static bool After_PlayerSetup_SetFingerTracking(string cat, string headline, string small) {
-		    // Skip the execution of the message if it's the Skeletal Input changed.
-		    return headline != "Skeletal Input changed ";
 	    }
     }
 }
