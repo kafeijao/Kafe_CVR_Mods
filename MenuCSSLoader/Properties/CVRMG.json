@@ -6,7 +6,7 @@
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao & Jill The Something",
-  "description": "Allows loading CSS files into the MainMenu or QuickMenu with theme selection. This happens in runtime, so no files need to be replaced.\n\nTo load CSS files put them on the following folders:\n- `ChilloutVR\\UserData\\MenuCSSLoader\\Default\\MainMenu\\`\n- `ChilloutVR\\UserData\\MenuCSSLoader\\Default\\QuickMenu\\`\n\nTo create a theme:\n- Create a folder in `ChilloutVR\\UserData\\MenuCSSLoader\\` with your theme name\n- Put CSS files for the MainMenu in `<theme-name>\\MainMenu`\n- Put CSS files for the QuickMenu in `<theme-name>\\QuickMenu`\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MenuCSSLoader) for more in-depth info.",
+  "description": "Allows loading CSS files into the MainMenu or QuickMenu with theme selection. This happens in runtime, so no files need to be replaced.\n\nTo load CSS files put them on the following folders:\n- `ChilloutVR\\UserData\\MenuCSSLoader\\Default\\MainMenu\\`\n- `ChilloutVR\\UserData\\MenuCSSLoader\\Default\\QuickMenu\\`\n\nTheme Repositories:\n- <https://github.com/jll123567/MenuCSSLoader-Themes/releases/latest>\n\nTo create a theme:\n- Create a folder in `ChilloutVR\\UserData\\MenuCSSLoader\\` with your theme name\n- Put CSS files for the MainMenu in `<theme-name>\\MainMenu`\n- Put CSS files for the QuickMenu in `<theme-name>\\QuickMenu`\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MenuCSSLoader) for more in-depth info.",
   "searchtags": [
     "css",
     "menu",

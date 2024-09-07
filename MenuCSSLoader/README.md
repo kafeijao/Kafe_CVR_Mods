@@ -9,6 +9,10 @@ To load CSS files simply place them on the following folders:
 - `ChilloutVR\UserData\MenuCSSLoader\Default\MainMenu\`
 - `ChilloutVR\UserData\MenuCSSLoader\Default\QuickMenu\`
 
+Theme Repositories:
+
+- https://github.com/jll123567/MenuCSSLoader-Themes/releases/latest
+
 To create a theme:
 
 - Create a folder in `ChilloutVR\UserData\MenuCSSLoader\` with your theme name.
