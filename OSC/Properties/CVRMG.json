@@ -1,7 +1,7 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "1.1.14",
+  "modversion": "1.1.15",
   "gameversion": "2024r176",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed for 2024r176",
+  "changelog": "- Changed a log to prevent being picked up by lum as an error when it's not",
   "embedcolor": "16C60C"
 }

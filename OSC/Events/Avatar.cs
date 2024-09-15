@@ -82,6 +82,12 @@ public static class Avatar {
         var userGuid = MetaPort.Instance.ownerId;
         var avatarGuid = MetaPort.Instance.currentAvatarGuid;
 
+        if (!Guid.TryParse(avatarGuid, out Guid _))
+        {
+            MelonLogger.Msg($"Found an invalid avatar ID {avatarGuid}, ignoring the setup...");
+            return;
+        }
+
         string avatarName = null;
 
         // Look in cache for the avatar name
@@ -103,7 +109,7 @@ public static class Avatar {
         // If the avatar name is still null, just give up
         if (avatarName == null) {
             JsonConfigOsc.ClearCurrentAvatarConfig();
-            MelonLogger.Msg($"[Error] The config for the avatar {avatarGuid} won't be generated.");
+            MelonLogger.Msg($"Failed to get the avatar name. The config for the Avatar ID {avatarGuid} won't be generated.");
         }
         // Otherwise create the config! (if needed)
         else {

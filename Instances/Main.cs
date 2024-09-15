@@ -12,6 +12,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Savior.SceneManagers;
 using ABI_RC.Core.UI;
+using ABI_RC.Core.Util;
 using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.Movement;
 using ABI_RC.Systems.UI;
@@ -49,6 +50,7 @@ public class Instances : MelonMod {
     public const int TeleportToLocationTimeout = 5;
 
     public const string InstanceRestartConfigArg = "--instances-owo-what-is-dis";
+    public const string InstanceSkipDeepLink = "--instances-skip-deep-link";
 
 
     // Config File Saving
@@ -494,7 +496,7 @@ public class Instances : MelonMod {
                 // User clicked on an instance that is no longer valid, or the initial instance we created borked
                 MelonLogger.Msg($"Instance {instanceId} has not been found.");
                 CohtmlHud.Instance.ViewDropTextImmediate("", "Instance not Available",
-                    "The instance you're trying to join doesn't was deleted or you don't have permission...");
+                    "The instance you're trying to join doesn't was deleted or you don't have permission...", "", false);
             }
             // Let's invalidate the attempted instance
             InvalidateInstance(instanceId);
@@ -505,7 +507,7 @@ public class Instances : MelonMod {
 
             // Load into the instance
             MelonLogger.Msg($"The previous instance {instanceDetails.Data.Name} is still up! Attempting to join...");
-            ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id, instanceDetails.Data.World.Id);
+            ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id);
         }
 
         _isChangingInstance = false;
@@ -592,7 +594,7 @@ public class Instances : MelonMod {
 
                         // Load into the instance
                         MelonLogger.Msg($"The created {instanceDetails.Data.Name} is {(attemptNum > 1 ? "finally" : "")} up! Attempting to join...");
-                        ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id, instanceDetails.Data.World.Id);
+                        ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id);
 
                         // We succeeded so lets break the coroutine here
                         yield break;
@@ -674,16 +676,43 @@ public class Instances : MelonMod {
         Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
     }
 
+    private static bool HasCommandLineArg(string arg)
+    {
+        foreach (string commandLineArg in Environment.GetCommandLineArgs()) {
+            if (commandLineArg.Contains(arg))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(LoginRoom), nameof(LoginRoom.LoadPlayerChosenContent))]
-        public static bool Before_LoginRoom_LoadPlayerChosenContent() {
+        public static bool Before_LoginRoom_LoadPlayerChosenContent()
+        {
             // Prevent the initial joining to the offline home world
             try {
                 if (!_skipInitialLoad) {
                     _skipInitialLoad = true;
+
+                    // Prevent running our stuff if the game is starting with a DeepLink Url
+                    if (CheckVR.Instance.hasDeepLinkUrl && !DeepLinkHelper._consumedJoinInstanceLaunchArg)
+                    {
+                        if (HasCommandLineArg(InstanceSkipDeepLink))
+                        {
+                            MelonLogger.Msg("Skipping the DeepLink Url because the game is is starting from an Instances Restart");
+                        }
+                        else
+                        {
+                            MelonLogger.Msg("Skipping Instances initial join because the game is starting with a DeepLink Url");
+                            return true;
+                        }
+                    }
+
                     // Still load the avatar
                     AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
                     // We're assuming we already authenticated (we wouldn't be reaching here otherwise)
@@ -760,10 +789,9 @@ public class Instances : MelonMod {
         [HarmonyPatch(typeof(MetaPort), nameof(MetaPort.Start))]
         public static void After_MetaPort_Start() {
             // Look for arguments set by a previous restart of the game by the Instances Mod
-            foreach (var commandLineArg in Environment.GetCommandLineArgs()) {
-                if (!commandLineArg.Contains(InstanceRestartConfigArg)) continue;
+            if (HasCommandLineArg(InstanceRestartConfigArg))
+            {
                 MetaPort.Instance.matureContentAllowed = true;
-                break;
             }
         }
     }

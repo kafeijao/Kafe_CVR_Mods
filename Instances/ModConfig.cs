@@ -256,6 +256,8 @@ public static class ModConfig {
                 envArguments.Add(Instances.InstanceRestartConfigArg);
             }
 
+            envArguments.Add(Instances.InstanceSkipDeepLink);
+
             // Handle platform switches
             if (switchPlatform) {
                 if (envArguments.Contains(VREnvArg)) {

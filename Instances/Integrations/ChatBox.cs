@@ -61,8 +61,7 @@ public static class ChatBoxIntegration {
 
     private static void HandleRejoin(ChatBox.API.ChatBoxMessage chatBoxMessage) {
         if (chatBoxMessage.Message.StartsWith(RejoinCommandPrefix) && !string.IsNullOrEmpty(MetaPort.Instance.CurrentInstanceId)) {
-            ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(MetaPort.Instance.CurrentInstanceId,
-                MetaPort.Instance.CurrentWorldId);
+            ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(MetaPort.Instance.CurrentInstanceId);
         }
     }
 
