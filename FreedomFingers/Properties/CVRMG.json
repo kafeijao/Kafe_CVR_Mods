@@ -1,7 +1,7 @@
 {
   "_id": 101,
   "name": "FreedomFingers",
-  "modversion": "1.0.9",
+  "modversion": "1.0.10",
   "gameversion": "2024r176",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/FreedomFingers.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers",
-  "changelog": "- Added compatibility with both Stable and Nightly",
+  "changelog": "- Fixed gesture toggle not working when bound to the right hand controller",
   "embedcolor": "16C60C"
 }

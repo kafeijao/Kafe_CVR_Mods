@@ -78,9 +78,11 @@ public class FreedomFingers : MelonMod {
 	    private static void After_CVRInputModule_XR_Update_Emotes(CVRInputModule_XR __instance) {
 
 		    // Undo the default clicking of the button. We have our own detection (so you can change the keybind in steamvr)
-		    if (__instance._leftModule.Type == eXRControllerType.Index && (!__instance.firstFindIndex ||
-		                                                                   !__instance._inputManager.oneHanded &&
-		                                                                   __instance._leftModule.PrimaryButton)) {
+		    if (__instance._leftModule.Type == eXRControllerType.Index &&
+		        (!__instance.firstFindIndex ||
+		         !__instance._inputManager.oneHanded && __instance._leftModule.PrimaryButton ||
+		         __instance._leftModule.GestureToggleOverride || __instance._rightModule.GestureToggleOverride))
+		    {
 			    // Revert the toggling
 				Traverse.Create(__instance).Property<bool>(nameof(__instance.GestureToggleValue)).Value = !__instance.GestureToggleValue;
 
@@ -98,7 +100,7 @@ public class FreedomFingers : MelonMod {
 
 			    // Send the notification when toggling gestures
 			    if (_melonEntryEnableNotification.Value && CohtmlHud.Instance != null) {
-				    CohtmlHud.Instance.ViewDropTextImmediate("", "", $"Gestures {(__instance.GestureToggleValue ? "Enabled" : "Disabled")}");
+				    CohtmlHud.Instance.ViewDropTextImmediate("", "", $"Gestures {(__instance.GestureToggleValue ? "Enabled" : "Disabled")}", "", false);
 				    CohtmlHud.Instance.ShowHud();
 			    }
 
