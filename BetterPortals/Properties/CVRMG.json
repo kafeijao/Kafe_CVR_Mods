@@ -1,8 +1,8 @@
 {
   "_id": 167,
   "name": "BetterPortals",
-  "modversion": "0.0.6",
-  "gameversion": "2024r176",
+  "modversion": "0.0.7",
+  "gameversion": "2025r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -13,8 +13,8 @@
     "drop"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/BetterPortals.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/BetterPortals.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterPortals",
-  "changelog": "- Fixed for 2024r174",
+  "changelog": "- Fixed for 2025r178",
   "embedcolor": "16C60C"
 }

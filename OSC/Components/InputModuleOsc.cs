@@ -239,23 +239,34 @@ public class InputModuleOSC : CVRInputModule {
             CVRSyncHelper.DeleteAllProps();
         }
 
+        bool alreadyDroppedDesktop = false;
+
         // Drop left controller
         if (GetKeyDown(ButtonNames.DropLeft)) {
-            foreach (var pickup in CVR_InteractableManager.Instance.pickupList) {
-                // pickup._controllerRay.hand == true -> Left hand
-                if (!pickup.IsGrabbedByMe || pickup._controllerRay.hand == CVRHand.Left) return;
+            if (MetaPort.Instance.isUsingVr)
+            {
+                PlayerSetup.Instance.vrRayLeft.DropObject(true);
                 MelonLogger.Msg("[Command] Dropping pickup held by left hand...");
-                pickup.onDrop.Invoke();
+            }
+            else
+            {
+                PlayerSetup.Instance.desktopRay.DropObject(true);
+                MelonLogger.Msg("[Command] Dropping held pickup...");
+                alreadyDroppedDesktop = true;
             }
         }
 
         // Drop right controller
         if (GetKeyDown(ButtonNames.DropRight)) {
-            foreach (var pickup in CVR_InteractableManager.Instance.pickupList) {
-                // pickup._controllerRay.hand == false -> Right hand
-                if (!pickup.IsGrabbedByMe || pickup._controllerRay.hand == CVRHand.Right) return;
+            if (MetaPort.Instance.isUsingVr)
+            {
+                PlayerSetup.Instance.vrRayRight.DropObject(true);
                 MelonLogger.Msg("[Command] Dropping pickup held by right hand...");
-                pickup.onDrop.Invoke();
+            }
+            else if (!alreadyDroppedDesktop)
+            {
+                PlayerSetup.Instance.desktopRay.DropObject(true);
+                MelonLogger.Msg("[Command] Dropping held pickup...");
             }
         }
 

@@ -14,6 +14,8 @@
   - [RegisterMod()](#M-Kafe-RequestLib-API-RegisterMod-Kafe-RequestLib-API-RequestHandlers- 'Kafe.RequestLib.API.RegisterMod(Kafe.RequestLib.API.RequestHandlers)')
   - [ResolveReceivedRequest(request,result,metadata)](#M-Kafe-RequestLib-API-ResolveReceivedRequest-Kafe-RequestLib-API-Request,Kafe-RequestLib-API-RequestResult,System-String- 'Kafe.RequestLib.API.ResolveReceivedRequest(Kafe.RequestLib.API.Request,Kafe.RequestLib.API.RequestResult,System.String)')
   - [SendRequest(request)](#M-Kafe-RequestLib-API-SendRequest-Kafe-RequestLib-API-Request- 'Kafe.RequestLib.API.SendRequest(Kafe.RequestLib.API.Request)')
+- [Extensions](#T-Kafe-RequestLib-Extensions 'Kafe.RequestLib.Extensions')
+  - [SanitizeForHtml()](#M-Kafe-RequestLib-Extensions-SanitizeForHtml-System-String- 'Kafe.RequestLib.Extensions.SanitizeForHtml(System.String)')
 - [InterceptorResult](#T-Kafe-RequestLib-API-InterceptorResult 'Kafe.RequestLib.API.InterceptorResult')
   - [GetPreventShowingRequest(resultOverride,responseMetadata)](#M-Kafe-RequestLib-API-InterceptorResult-GetPreventShowingRequest-Kafe-RequestLib-API-RequestResult,System-String- 'Kafe.RequestLib.API.InterceptorResult.GetPreventShowingRequest(Kafe.RequestLib.API.RequestResult,System.String)')
   - [GetShowRequest()](#M-Kafe-RequestLib-API-InterceptorResult-GetShowRequest 'Kafe.RequestLib.API.InterceptorResult.GetShowRequest')
@@ -187,6 +189,24 @@ Sends a request to a remote player in the Instance.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | request | [Kafe.RequestLib.API.Request](#T-Kafe-RequestLib-API-Request 'Kafe.RequestLib.API.Request') | Instance of the request you want to send. Use it's constructor to create one. |
+
+<a name='T-Kafe-RequestLib-Extensions'></a>
+## Extensions `type`
+
+##### Namespace
+
+Kafe.RequestLib
+
+<a name='M-Kafe-RequestLib-Extensions-SanitizeForHtml-System-String-'></a>
+### SanitizeForHtml() `method`
+
+##### Summary
+
+Sanitizes the string input to be ready to display on an HTML page
+
+##### Parameters
+
+This method has no parameters.
 
 <a name='T-Kafe-RequestLib-API-InterceptorResult'></a>
 ## InterceptorResult `type`

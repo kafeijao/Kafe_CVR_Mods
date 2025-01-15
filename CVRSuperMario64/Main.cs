@@ -126,20 +126,26 @@ public class CVRSuperMario64 : MelonMod {
 
             MelonLogger.Msg($"Adding {nameof(CVRSuperMario64)} components to the whitelist");
 
-            // Add our CCK component to the prop whitelist
-            var propWhitelist = SharedFilter.SpawnableWhitelist;
-            propWhitelist.Add(typeof(CVRSM64Mario));
-            propWhitelist.Add(typeof(CVRSM64Interactable));
-            propWhitelist.Add(typeof(CVRSM64LevelModifier));
-            propWhitelist.Add(typeof(CVRSM64ColliderStatic));
-            propWhitelist.Add(typeof(CVRSM64ColliderDynamic));
-            propWhitelist.Add(typeof(CVRSM64InteractableParticles));
-            propWhitelist.Add(typeof(CVRSM64Teleporter));
-
             // Add our CCK component to the avatar whitelist
             var avatarWhitelist = SharedFilter.AvatarWhitelist;
             avatarWhitelist.Add(typeof(CVRSM64ColliderDynamic));
 
+            HashSet<Type> allTypes = new HashSet<Type>
+            {
+                typeof(CVRSM64Mario),
+                typeof(CVRSM64Interactable),
+                typeof(CVRSM64LevelModifier),
+                typeof(CVRSM64ColliderStatic),
+                typeof(CVRSM64ColliderDynamic),
+                typeof(CVRSM64InteractableParticles),
+                typeof(CVRSM64Teleporter),
+            };
+
+            // Add our CCK component to the prop whitelist
+            SharedFilter.SpawnableWhitelist.UnionWith(allTypes);
+
+            // Add our CCK component to the worlds whitelist
+            WorldFilter._Base.UnionWith(allTypes);
         });
 
         #if DEBUG

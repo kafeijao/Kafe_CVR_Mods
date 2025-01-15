@@ -15,7 +15,7 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/FreedomFingers.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/FreedomFingers.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/FreedomFingers",
   "changelog": "- Fixed gesture toggle not working when bound to the right hand controller",
   "embedcolor": "16C60C"

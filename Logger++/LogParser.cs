@@ -7,16 +7,16 @@ namespace Kafe.LoggerPlusPlus;
 public static class LogParser {
 
     // Game Logs Regex
-    private static readonly Regex CVRLogRegex = new(@"\((?<id>[A-Za-z0-9]+) \| (?<severity>[A-Za-z]+)\) \[(?<source>[^\]]+)\] (?<message>.*)", RegexOptions.Compiled);
-    private static readonly Regex CVRLogRegexAlt = new(@"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \((?<source>[^\|]+)\| (?<severity>[A-Za-z]+)\) (?<message>.*)", RegexOptions.Compiled);
-    private static readonly Regex CVRLogRegexAuto = new(@"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \((?<source>[^\:]+)\:(?<id>\d+) \| (?<severity>[A-Za-z]+)\) (?<message>.*)", RegexOptions.Compiled);
+    private static readonly Regex CVRLogRegex = new(@"\((?<id>[A-Za-z0-9]+) \| (?<severity>[A-Za-z]+)\) \[(?<source>[^\]]+)\] (?<message>.*)", RegexOptions.Compiled | RegexOptions.Singleline);
+    private static readonly Regex CVRLogRegexAlt = new(@"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \((?<source>[^\|]+)\| (?<severity>[A-Za-z]+)\) (?<message>.*)", RegexOptions.Compiled | RegexOptions.Singleline);
+    private static readonly Regex CVRLogRegexAuto = new(@"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \((?<source>[^\:]+)\:(?<id>\d+) \| (?<severity>[A-Za-z]+)\) (?<message>.*)", RegexOptions.Compiled | RegexOptions.Singleline);
 
     // Cohtml Logs Regex
-    private static readonly Regex CohtmlLogRegex = new(@"\[Cohtml\] \((Info|Warning|Error|AssertFailure)\) ", RegexOptions.Compiled);
+    private static readonly Regex CohtmlLogRegex = new(@"\[Cohtml\] \((Info|Warning|Error|AssertFailure)\) ", RegexOptions.Compiled | RegexOptions.Singleline);
 
     // Missing Script Messages
-    private static readonly Regex ScriptMissingPattern1 = new(@"The referenced script \((?<scriptName>.+?)\) on this Behaviour is missing!", RegexOptions.Compiled);
-    private static readonly Regex ScriptMissingPattern2 = new(@"The referenced script on this Behaviour \(Game Object '(?<scriptName>.*?)'\) is missing!", RegexOptions.Compiled);
+    private static readonly Regex ScriptMissingPattern1 = new(@"The referenced script \((?<scriptName>.+?)\) on this Behaviour is missing!", RegexOptions.Compiled | RegexOptions.Singleline);
+    private static readonly Regex ScriptMissingPattern2 = new(@"The referenced script on this Behaviour \(Game Object '(?<scriptName>.*?)'\) is missing!", RegexOptions.Compiled | RegexOptions.Singleline);
 
     // AV Pro Messages
     private static readonly HashSet<string> AvProPrefixMessages = new() {
@@ -35,6 +35,10 @@ public static class LogParser {
         "Kinematic body only supports Speculative Continuous collision detection",
         "RenderTexture.Create: Depth|ShadowMap RenderTexture requested without a depth buffer. Changing to a 16 bit depth buffer.",
         "Bundle in old format attempting legacy loading!",
+        "The login profile is going to be deleted. Reason: Authentication succeeded",
+        "Deep Link Status:",
+        "Welcome to ChilloutVR DeepLinkTools",
+        "Matched Result: {\"FailedRead\":false,",
     };
     private static readonly HashSet<string> MiscSpamPrefixMessages = new() {
         "IK chain has no Bones.",
@@ -103,9 +107,9 @@ public static class LogParser {
                 return false;
         }
 
-        var idOrLine = msgType == GameMsgType.Alt ? "N/A" : match.Groups["id"].Value;
-        var source = match.Groups["source"].Value;
-        var msg = match.Groups["message"].Value;
+        var idOrLine = (msgType == GameMsgType.Alt ? "N/A" : match.Groups["id"].Value).Trim();
+        var source = match.Groups["source"].Value.Trim();
+        var msg = match.Groups["message"].Value.Trim();
 
         if (msgType == GameMsgType.Auto) {
             message = $"[CVR] [{source} => {idOrLine}] {msg}";
@@ -159,7 +163,7 @@ public static class LogParser {
     }
 
     public static bool IsSpamMessage(string message) =>
-        MiscSpamMessages.Contains(message)
+        MiscSpamMessages.Any(message.Contains)
         || MiscSpamPrefixMessages.Any(message.StartsWith)
         || MiscSpamSuffixMessages.Any(message.EndsWith);
 

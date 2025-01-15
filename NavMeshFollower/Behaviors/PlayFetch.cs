@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Savior;
+﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using Kafe.NavMeshFollower.InteractableWrappers;
 using UnityEngine;
@@ -164,10 +165,14 @@ public class PlayFetch : Behavior {
                             o.type == CVRInteractableActionOperation.ActionType.SitAtPosition));
                     if (!hasSitOperation) {
                         if (_wasDown) {
-                            _target.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
+                            _target.interactable.InteractUp(
+                                new InteractionContext(InteractionContext.SourceType.Internal),
+                                Controller.GetRayController(true, out _, out _));
                         }
                         else {
-                            _target.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
+                            _target.interactable.InteractDown(
+                                new InteractionContext(InteractionContext.SourceType.Internal),
+                                Controller.GetRayController(true, out _, out _));
                         }
                         _wasDown = !_wasDown;
 

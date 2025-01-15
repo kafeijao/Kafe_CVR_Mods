@@ -1,8 +1,8 @@
 {
   "_id": 169,
   "name": "RequestLib",
-  "modversion": "0.0.13",
-  "gameversion": "2024r176",
+  "modversion": "0.0.14",
+  "gameversion": "2025r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -12,8 +12,8 @@
     "lib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/RequestLib.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
-  "changelog": "- Added better error logging",
+  "changelog": "- Fixed for 2025r178\n- Added sanitization to some fields",
   "embedcolor": "16C60C"
 }

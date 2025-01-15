@@ -40,12 +40,13 @@ public class TeleportRequest : MelonMod {
         if (PendingRequests.Contains(request.TargetPlayerGuid)) PendingRequests.Remove(request.TargetPlayerGuid);
 
         var playerName = CVRPlayerManager.Instance.TryGetPlayerName(request.TargetPlayerGuid);
+        playerName = System.Net.WebUtility.HtmlEncode(playerName);
         switch (response.Result) {
 
             case RequestLib.API.RequestResult.Accepted:
                 MelonLogger.Msg($"The player {playerName} has ACCEPTED the teleport request!");
                 if (ModConfig.MeShowHudMessages.Value) {
-                    CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The player {playerName} has <span style=\"color:green; display:inline\">Accepted</span> the teleport request!</span>");
+                    CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The player {playerName} has <span style=\"color:green; display:inline\">Accepted</span> the teleport request!</span>", "", true);
                 }
                 var target = CVRPlayerManager.Instance.NetworkPlayers.FirstOrDefault(np => np.Uuid == request.TargetPlayerGuid);
                 if (target == null) {
@@ -70,14 +71,14 @@ public class TeleportRequest : MelonMod {
             case RequestLib.API.RequestResult.Declined:
                 MelonLogger.Msg($"The player {playerName} has DECLINED the teleport request!");
                 if (ModConfig.MeShowHudMessages.Value) {
-                    CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The player {playerName} has <span style=\"color:red; display:inline\">Declined</span> the teleport request!</span>");
+                    CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The player {playerName} has <span style=\"color:red; display:inline\">Declined</span> the teleport request!</span>", "", true);
                 }
                 break;
 
             case RequestLib.API.RequestResult.TimedOut:
                 MelonLogger.Msg($"The teleport request to the player {playerName} has TIMED OUT...");
                 if (ModConfig.MeShowHudMessages.Value) {
-                    CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The teleport request to the player {playerName} has <span style=\"color:yellow; display:inline\">Timed Out</span>...</span>");
+                    CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>The teleport request to the player {playerName} has <span style=\"color:yellow; display:inline\">Timed Out</span>...</span>", "", true);
                 }
                 break;
         }
@@ -89,7 +90,7 @@ public class TeleportRequest : MelonMod {
         if (!RequestLib.API.HasRequestLib(playerID)) {
             MelonLogger.Warning($"Attempted to send a teleport request to {playerName}, but the player doesn't have the {nameof(RequestLib)} mod :(");
             if (ModConfig.MeShowHudMessages.Value) {
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>Attempted to send a teleport request to <span style=\"color:green\">{playerName}</span>, but the player doesn't have the <span style=\"color:green\">{nameof(RequestLib)}</span> mod :(</span>");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>Attempted to send a teleport request to <span style=\"color:green\">{playerName}</span>, but the player doesn't have the <span style=\"color:green\">{nameof(RequestLib)}</span> mod :(</span>", "", true);
             }
             return;
         }
@@ -97,7 +98,7 @@ public class TeleportRequest : MelonMod {
         if (PendingRequests.Contains(playerID)) {
             MelonLogger.Warning($"There is already a pending request for {playerName}");
             if (ModConfig.MeShowHudMessages.Value) {
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>There is already a pending request to <span style=\"color:green\">{playerName}</span>...</span>");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>There is already a pending request to <span style=\"color:green\">{playerName}</span>...</span>", "", true);
             }
             return;
         }
@@ -106,7 +107,7 @@ public class TeleportRequest : MelonMod {
 
         MelonLogger.Msg($"Sending teleport request to {playerName}...");
         if (ModConfig.MeShowHudMessages.Value) {
-            CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>Sending <span style=\"color:green; display:inline\">{playerName}</span> a teleport request...</span>");
+            CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>Sending <span style=\"color:green; display:inline\">{playerName}</span> a teleport request...</span>", "", true);
         }
         RequestLib.API.SendRequest(new RequestLib.API.Request(playerID, $"{AuthManager.Username} is requesting to teleport to you.", OnResponse));
     }
@@ -120,7 +121,7 @@ public class TeleportRequest : MelonMod {
         else {
             MelonLogger.Msg("There are no previous destinations to teleport to...");
             if (ModConfig.MeShowHudMessages.Value) {
-                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>There are no previous destinations to teleport to...</span>");
+                CohtmlHud.Instance.ViewDropText(nameof(TeleportRequest), $"<span>There are no previous destinations to teleport to...</span>", "", true);
             }
         }
         PreviousTeleportLocationsChanged?.Invoke();

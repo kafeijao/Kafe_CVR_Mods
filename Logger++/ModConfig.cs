@@ -8,6 +8,8 @@ public static class ModConfig {
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
 
+    internal static MelonPreferences_Entry<bool> MeEnable;
+
     internal static MelonPreferences_Entry<bool> MeShowUnknownInfo;
     internal static MelonPreferences_Entry<bool> MeShowUnknownWarning;
     internal static MelonPreferences_Entry<bool> MeShowUnknownError;
@@ -38,6 +40,9 @@ public static class ModConfig {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(AssemblyInfoParams.Name);
+
+        MeEnable = _melonCategory.CreateEntry("Enabled", true,
+            description: "Whether the mod is globally enabled, or not.");
 
         MeShowUnknownInfo = _melonCategory.CreateEntry("ShowUnknownInfo", true,
             description: "Whether only show Unknown Info logs or not.");

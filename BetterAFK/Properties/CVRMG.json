@@ -2,7 +2,7 @@
   "_id": 148,
   "name": "BetterAFK",
   "modversion": "0.0.8",
-  "gameversion": "2024r176",
+  "gameversion": "2025r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -13,8 +13,8 @@
     "better"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/BetterAFK.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/BetterAFK.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterAFK",
-  "changelog": "- Fixed for 2024r175",
+  "changelog": "- Fixed for 2025r178",
   "embedcolor": "16C60C"
 }

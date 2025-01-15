@@ -406,8 +406,9 @@ public class FollowerController : MonoBehaviour {
         var controllerRay = GetRayController(isRightHand, out var posOffset, out var rotOffset);
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
         var attachPoint = controllerRay.attachmentPoint.transform.position;
+        pickup.pickupObject.ControllerRay = controllerRay;
         pickup.pickupObject.transform.position = attachPoint;
-        pickup.pickupObject.Grab(controllerRay, attachPoint);
+        pickup.pickupObject.Grab(new InteractionContext(InteractionContext.SourceType.Internal), controllerRay, attachPoint);
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
         pickup.pickupObject._initialPositionOffset = Vector3.zero;
         foreach (var key in Pickups.SpawnablePickupWrapper.OwnerUpdatedBy) {
@@ -420,7 +421,7 @@ public class FollowerController : MonoBehaviour {
             UpdatedByValues[key] = 0f;
         }
         if (pickup == null || pickup.pickupObject == null || isRightHand && !IsGrabbedByMyRightHand(pickup) || (!isRightHand && !IsGrabbedByMyLeftHand(pickup))) return;
-        pickup.pickupObject.Drop();
+        pickup.pickupObject.Drop(new InteractionContext(InteractionContext.SourceType.Internal));
     }
 
     public void GrabPickupLeftHand(Pickups.PickupWrapper pickup) => GrabPickup(pickup, false);

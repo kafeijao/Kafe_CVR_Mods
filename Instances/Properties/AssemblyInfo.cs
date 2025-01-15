@@ -29,7 +29,7 @@ using MelonLoader;
 
 namespace Kafe.Instances.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.20";
+    public const string Version = "1.0.21";
     public const string Author = "kafeijao";
     public const string BTKUILibName = "BTKUILib";
     public const string ChatBoxName = "ChatBox";

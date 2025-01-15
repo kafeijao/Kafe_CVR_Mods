@@ -15,7 +15,7 @@
     "bone"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/GrabbyBones.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
   "changelog": "- Fixed for 2024r175 Hotfix 2",
   "embedcolor": "16C60C"

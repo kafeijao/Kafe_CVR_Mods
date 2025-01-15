@@ -44,7 +44,7 @@ public class BetterPortals : MelonMod {
 
     private static IEnumerator JoinPortal() {
         _portalClickingCoolingDown = true;
-        Instances.SetJoinTarget(_showingJoinPromptPortal.Portal.InstanceId, _showingJoinPromptPortal.Portal.WorldId);
+        Instances.SetJoinTarget(_showingJoinPromptPortal.Portal.InstanceId);
         _showingJoinPromptPortal.Despawn();
         DisableJoiningPrompt();
         yield return new WaitForSeconds(3);
@@ -214,7 +214,7 @@ public class BetterPortals : MelonMod {
                     var playerDistance = Vector3.Distance(PlayerSetup.Instance.GetActiveCamera().transform.position, __instance.transform.position);
                     var maxDistance = MetaPort.Instance.settings.GetSettingsFloat("GeneralPortalSafeDistance") / 100f;
                     if (!__instance.IsVisible && __instance.IsInitialized && playerDistance <= maxDistance && __instance.portalOwner != MetaPort.Instance.ownerId) {
-                        CohtmlHud.Instance.ViewDropText("", "A portal was dropped on top of you, walk away to make it visible.");
+                        CohtmlHud.Instance.ViewDropText("", "A portal was dropped on top of you, walk away to make it visible.", string.Empty, false);
                     }
                 }
             }

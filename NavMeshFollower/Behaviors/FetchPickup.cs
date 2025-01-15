@@ -1,4 +1,5 @@
-﻿using ABI_RC.Core.Player;
+﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using Kafe.NavMeshFollower.InteractableWrappers;
@@ -131,10 +132,14 @@ public class FetchPickup : Behavior {
                                 o.type == CVRInteractableActionOperation.ActionType.SitAtPosition));
                     if (!hasSitOperation) {
                         if (_wasDown) {
-                            _targetPickup.interactable.InteractUp(Controller.GetRayController(true, out _, out _));
+                            _targetPickup.interactable.InteractUp(
+                                new InteractionContext(InteractionContext.SourceType.Internal),
+                                Controller.GetRayController(true, out _, out _));
                         }
                         else {
-                            _targetPickup.interactable.InteractDown(Controller.GetRayController(true, out _, out _));
+                            _targetPickup.interactable.InteractDown(
+                                new InteractionContext(InteractionContext.SourceType.Internal),
+                                Controller.GetRayController(true, out _, out _));
                         }
                         _wasDown = !_wasDown;
                     }

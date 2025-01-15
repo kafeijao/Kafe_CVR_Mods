@@ -1,8 +1,8 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.20",
-  "gameversion": "2024r176",
+  "modversion": "1.0.21",
+  "gameversion": "2025r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "BTKUILib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/Instances.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Added DeepLink compatibility (Instances will no longer skip the deep link urls to start the game in a certain instance)\n- Updated obsolete code",
+  "changelog": "- Fixed for 2025r178",
   "embedcolor": "16C60C"
 }

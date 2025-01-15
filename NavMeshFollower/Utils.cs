@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using ABI_RC.Core.Base;
 using ABI_RC.Core.InteractionSystem;
 using ABI.CCK.Components;
 using UnityEngine;
@@ -24,6 +25,7 @@ public static class Utils {
         attachPoint.transform.position = worldSpaceOffset;
         controllerRay.attachmentPoint = attachPoint.transform;
         controllerRay.pivotPoint = attachPoint.transform;
+        controllerRay.pickupVelocityTracker = controllerRay.pivotPoint.AddComponentIfMissing<VelocityTracker>();
         posOffset = attachPoint.transform.localPosition;
         rotOffset = attachPoint.transform.localRotation;
         // #if DEBUG

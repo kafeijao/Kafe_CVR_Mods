@@ -1,8 +1,8 @@
 {
   "_id": 170,
   "name": "TeleportRequest",
-  "modversion": "0.0.7",
-  "gameversion": "2024r176",
+  "modversion": "0.0.9",
+  "gameversion": "2025r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -12,8 +12,8 @@
     "lib"
   ],
   "requirements": ["[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/TeleportRequest.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/TeleportRequest.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TeleportRequest",
-  "changelog": "- Fixed teleport erroring, thanks H3wastooshort for the report.",
+  "changelog": "- Fixed for 2025r178\n- Fixed message not being properly parsed (was showing html code instead of parsing it).",
   "embedcolor": "16C60C"
 }

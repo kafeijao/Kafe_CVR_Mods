@@ -8,6 +8,16 @@ namespace Kafe.LoggerPlusPlus;
 
 public class LoggerPlusPlus : MelonPlugin {
 
+    internal static MelonLogger.Instance Logger { get; set; }
+
+    private static readonly ConcurrentQueue<(LogType logType, string msg, Exception ex)> LOGQueue =
+        new ConcurrentQueue<(LogType logType, string msg, Exception ex)>();
+
+    public override void OnPreInitialization()
+    {
+        Logger = LoggerInstance;
+    }
+
     public override void OnApplicationEarlyStart() {
 
         ModConfig.InitializeMelonPrefs();
@@ -66,7 +76,48 @@ public class LoggerPlusPlus : MelonPlugin {
         );
     }
 
+    public override void OnUpdate()
+    {
+        // Log stuff in main thread because it was sometimes causing native crashes when called outside of main thread
+        while (LOGQueue.TryDequeue(out (LogType logType, string msg, Exception ex) log))
+        {
+            ActualActualLogMessage(log);
+        }
+    }
+
+    private static void ActualActualLogMessage((LogType logType, string msg, Exception ex) log)
+    {
+        switch (log.logType) {
+            case LogType.Error:
+            case LogType.Assert:
+            case LogType.Exception:
+                if (log.ex == null)
+                    Logger.Error(log.msg);
+                else
+                    Logger.Error(log.msg, log.ex);
+                break;
+            case LogType.Warning:
+                if (log.ex == null)
+                    Logger.Warning(log.msg);
+                else
+                    Logger.Warning(log.msg, log.ex);
+                break;
+            case LogType.Log:
+            default:
+                if (log.ex == null)
+                    Logger.Msg(log.msg);
+                else
+                    Logger.Msg(log.msg, log.ex);
+                break;
+        }
+    }
+
     private static void ActualLogMessage(LogType type, string message, bool isStackTrace, Exception exception) {
+
+        if (string.IsNullOrEmpty(message))
+        {
+            message = "<null or empty>";
+        }
 
         // Check if it's a spam log
         if (LogParser.IsSpamMessage(message)) {
@@ -108,29 +159,11 @@ public class LoggerPlusPlus : MelonPlugin {
         }
 
         try {
-            switch (type) {
-                case LogType.Log:
-                    MelonLogger.Msg(message);
-                    break;
-                case LogType.Warning:
-                    MelonLogger.Warning(message);
-                    break;
-                case LogType.Error:
-                    MelonLogger.Error(message);
-                    break;
-                case LogType.Assert:
-                    MelonLogger.Error(message);
-                    break;
-                case LogType.Exception:
-                    MelonLogger.Error(message);
-                    break;
-                default:
-                    MelonLogger.Msg(message);
-                    break;
-            }
+            LOGQueue.Enqueue(new ValueTuple<LogType, string, Exception>(type, message, exception));
+            // ActualActualLogMessage(new ValueTuple<LogType, string, Exception>(type, message, exception));
         }
         catch (Exception e) {
-            MelonLogger.Error("Error while trying to print the error...", e);
+            Logger.Error("Error while trying to enqueue the log...", e);
         }
     }
 
@@ -143,7 +176,10 @@ public class LoggerPlusPlus : MelonPlugin {
         private static readonly TimeSpan CleanupInterval = TimeSpan.FromMinutes(1);
         private static readonly object CleanupLock = new();
 
-        public static void Log(string message, LogType type, bool isStacktrace, Exception exception) {
+        public static void Log(string message, LogType type, bool isStacktrace, Exception exception)
+        {
+            if (!ModConfig.MeEnable.Value) return;
+
             var now = DateTime.UtcNow;
 
             bool isNewMessage = !MessageTimestamps.TryGetValue(message, out var lastLogged);
@@ -177,7 +213,7 @@ public class LoggerPlusPlus : MelonPlugin {
             RateLimitedLogger.Log($"{condition}{(stackTrace.IsNullOrEmpty() ? "" : $"\n{stackTrace}")}", type, false, null);
         }
         catch (Exception e) {
-            MelonLogger.Error(e);
+            Logger.Error(e);
         }
     }
 
@@ -186,7 +222,7 @@ public class LoggerPlusPlus : MelonPlugin {
             RateLimitedLogger.Log($"{msg}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", level, false, null);
         }
         catch (Exception e) {
-            MelonLogger.Error(e);
+            Logger.Error(e);
         }
     }
 
@@ -195,7 +231,7 @@ public class LoggerPlusPlus : MelonPlugin {
             RateLimitedLogger.Log($"{exception}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", LogType.Exception, true, exception);
         }
         catch (Exception e) {
-            MelonLogger.Error(e);
+            Logger.Error(e);
         }
     }
 }

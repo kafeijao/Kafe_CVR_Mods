@@ -93,7 +93,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         _collider = _camera.gameObject.AddComponent<SphereCollider>();
 
         _pickup = _camera.gameObject.GetComponent<CVRPickupObject>();
-        _pickup.SetWasUsingGravity(false);
+        // _pickup.SetWasUsingGravity(false);
 
         _rigidbody = _camera.gameObject.GetComponent<Rigidbody>();
 
@@ -161,7 +161,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
             if (_wasNullAlready) return;
             if (!ChangeMario()) {
                 // Disable the camera mod since we got no marios
-                CohtmlHud.Instance.ViewDropText("CVRSM64Camera exited since we are not controlling any marios.", "");
+                CohtmlHud.Instance.ViewDropText("CVRSM64Camera exited since we are not controlling any marios.", "", "", false);
                 SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
                 _wasNullAlready = true;
                 return;
@@ -229,7 +229,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
     public void Enable() {
         if (BetterBetterCharacterController.Instance.IsSitting()) {
-            CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while in seat", "");
+            CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while in seat", "", "", false);
             SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
         }
 
@@ -237,7 +237,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
             // Check if mario is null, and if it is attempt to get one
             if (_currentMario == null && !ChangeMario()) {
-                CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while not controlling any mario", "");
+                CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while not controlling any mario", "", "", false);
                 SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
                 return;
             }

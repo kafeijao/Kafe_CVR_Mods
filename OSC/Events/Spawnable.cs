@@ -1,7 +1,7 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.Util;
+using ABI_RC.Systems.Safety.AdvancedSafety;
 using ABI.CCK.Components;
-using Assets.ABI_RC.Systems.Safety.AdvancedSafety;
 using MelonLoader;
 using UnityEngine;
 

@@ -15,9 +15,8 @@ using ABI_RC.Core.UI;
 using ABI_RC.Core.Util;
 using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.Movement;
-using ABI_RC.Systems.UI;
+using ABI_RC.Systems.Safety.AdvancedSafety;
 using ABI.CCK.Components;
-using Assets.ABI_RC.Systems.Safety.AdvancedSafety;
 using HarmonyLib;
 using Kafe.Instances.Properties;
 using MelonLoader;
@@ -239,6 +238,15 @@ public class Instances : MelonMod {
 
     private static void SaveConfig(bool recentInstancesChanged) {
         if (AllConfig == null) return;
+
+        if (JsonContentQueue.IsAddingCompleted)
+        {
+            MelonLogger.Msg("Unable to save the current config since the saving thread already closed. " +
+                            "This is normal if the game is closing. " +
+                            "On application quit the config is saved somewhere else.");
+            return;
+        }
+
         var jsonContent = JsonConvert.SerializeObject(AllConfig, Formatting.Indented);
         // Queue the json to be saved on a thread
         JsonContentQueue.Add(jsonContent);

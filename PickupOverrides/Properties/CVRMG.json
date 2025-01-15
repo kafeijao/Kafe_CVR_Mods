@@ -1,12 +1,12 @@
 {
   "_id": 66,
   "name": "PickupOverrides",
-  "modversion": "1.0.6",
-  "gameversion": "2024r176",
+  "modversion": "1.0.7",
+  "gameversion": "2025r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Allows to override a few settings for all the pickups in the scene.\n\n__**Auto-Hold**__ whether the pickups will stick to your hand or not, to drop a Auto-Held pickup you need to squeeze the right grip and pull the thumbstick back (both on the **right** controller even if the pickup is held on the left controller)\n\n__**Maximum Grab Distance**__ sets the max distance you can actually grab a pickup. This is useful if you're tired of grabbing random pickups from across the world. Note: The pickups will still highlight meaning they can be tele-grabbed (the alyx style pull), but you won't be able to grab unless it is within the max distance.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides) for more in-depth info.\n\n",
+  "description": "Allows to override a few settings for all the pickups in the scene.\n\n__**Auto-Hold**__ whether the pickups will stick to your hand or not, to drop a Auto-Held pickup you need to squeeze the right grip and pull the thumbstick back (both on the **right** controller even if the pickup is held on the left controller)\n\n__**Throw Force Multiplier**__ value of the force to be multiplied when throwing pickups.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides) for more in-depth info.\n\n",
   "searchtags": [
     "pickup",
     "pickups",
@@ -18,8 +18,8 @@
     "settings"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r72/PickupOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/PickupOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides",
-  "changelog": "- Fixed for 2024r175",
+  "changelog": "- Fixed for 2025r178\n- Removed MaxGrabDistance (game deprecated it)\n- Added ThrowForceMultiplier to things you can override, it doesn't override by default.",
   "embedcolor": "16C60C"
 }

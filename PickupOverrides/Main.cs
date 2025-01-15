@@ -1,5 +1,4 @@
-﻿using ABI_RC.Core.InteractionSystem;
-using ABI.CCK.Components;
+﻿using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -10,6 +9,7 @@ internal record PickupSettings {
     public bool AutoHold { get; set; }
     // public float MaxHoldDistance { get; set; }
     public float MaxGrabDistance { get; set; }
+    public float ThrowForceMultiplier { get; set; }
 }
 
 public class PickupOverrides : MelonMod {
@@ -19,11 +19,14 @@ public class PickupOverrides : MelonMod {
     private static MelonPreferences_Entry<bool> _melonEntryOverrideAutoHold;
     private static MelonPreferences_Entry<bool> _melonEntryAutoHoldValue;
 
-    private static MelonPreferences_Entry<bool> _melonEntryOverrideMaxHoldDistance;
+    // private static MelonPreferences_Entry<bool> _melonEntryOverrideMaxHoldDistance;
     // private static MelonPreferences_Entry<float> _melonEntryMaxHoldDistanceValue;
 
     private static MelonPreferences_Entry<bool> _melonEntryOverrideMaxGrabDistance;
     private static MelonPreferences_Entry<float> _melonEntryMaxGrabDistanceValue;
+
+    private static MelonPreferences_Entry<bool> _melonEntryOverrideThrowForceMultiplier;
+    private static MelonPreferences_Entry<float> _melonEntryThrowForceMultiplierValue;
 
     private static readonly Dictionary<CVRPickupObject, PickupSettings> PickupSettings = new();
 
@@ -32,6 +35,7 @@ public class PickupOverrides : MelonMod {
         // Melon Config
         _melonCategoryPickupOverrides = MelonPreferences.CreateCategory(nameof(PickupOverrides));
 
+        // AutoHold
         _melonEntryOverrideAutoHold = _melonCategoryPickupOverrides.CreateEntry("OverrideAutoHold", true,
             description: "Whether this mod should override the pickup auto hold setting or not.",
             oldIdentifier: "OverrideSettings");
@@ -42,16 +46,18 @@ public class PickupOverrides : MelonMod {
                          "grip and pull the right thumbstick down (on VR).");
         _melonEntryAutoHoldValue.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
 
-        _melonEntryOverrideMaxHoldDistance = _melonCategoryPickupOverrides.CreateEntry("OverrideMaxHoldDistance",
-            false, description: "Whether this mod should override the pickup max holding distance setting " +
-                                "or not.");
-        _melonEntryOverrideMaxHoldDistance.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
+        // MaxHoldDistance
+        // _melonEntryOverrideMaxHoldDistance = _melonCategoryPickupOverrides.CreateEntry("OverrideMaxHoldDistance",
+        //     false, description: "Whether this mod should override the pickup max holding distance setting " +
+        //                         "or not.");
+        // _melonEntryOverrideMaxHoldDistance.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
         // _melonEntryMaxHoldDistanceValue = _melonCategoryPickupOverrides.CreateEntry("MaxHoldDistance",
         //     3f, description: "The value for the max holding distance setting. This will set the max " +
         //                      "distance from which the object will be from your hand when you grab. Useful to prevent " +
         //                      "needing to drag your hands to bring the object closer. (default 3f)");
         // _melonEntryMaxHoldDistanceValue.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
 
+        // MaxGrabDistance
         _melonEntryOverrideMaxGrabDistance = _melonCategoryPickupOverrides.CreateEntry("OverrideMaxGrabDistance",
             false, description: "Whether this mod should override the pickup maximum grabbing distance " +
                                "setting or not.");
@@ -62,6 +68,14 @@ public class PickupOverrides : MelonMod {
                              "being grabbable from the other side of the world. 0 for no limit (default)");
         _melonEntryMaxGrabDistanceValue.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
 
+        // ThrowForceMultiplier
+        _melonEntryOverrideThrowForceMultiplier = _melonCategoryPickupOverrides.CreateEntry("OverrideThrowForceMultiplier",
+        false, description: "Whether this mod should override the pickup throw force multiplier setting or not.");
+        _melonEntryOverrideThrowForceMultiplier.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
+        _melonEntryThrowForceMultiplierValue = _melonCategoryPickupOverrides.CreateEntry("ThrowForceMultiplier",
+            1.5f, description: "The value for the throw force multipler setting. This setting will be multiplied " +
+                             "to the thrown force when throwing pickups. The CCK default is 1.5");
+        _melonEntryThrowForceMultiplierValue.OnEntryValueChanged.Subscribe((_, _) => UpdateAllPickups());
     }
 
     private static void UpdateAllPickups() {
@@ -89,6 +103,11 @@ public class PickupOverrides : MelonMod {
         pickup.maximumGrabDistance = _melonEntryOverrideMaxGrabDistance.Value
             ? _melonEntryMaxGrabDistanceValue.Value
             : PickupSettings[pickup].MaxGrabDistance;
+
+        // Update throw force multiplier
+        pickup.throwForceMultiplier = _melonEntryOverrideThrowForceMultiplier.Value
+            ? _melonEntryThrowForceMultiplierValue.Value
+            : PickupSettings[pickup].ThrowForceMultiplier;
     }
 
     private class PickupDestroyDetector : MonoBehaviour {
@@ -102,6 +121,7 @@ public class PickupOverrides : MelonMod {
                     AutoHold = _pickup.autoHold,
                     // MaxHoldDistance = _pickup.maxDistance,
                     MaxGrabDistance = _pickup.maximumGrabDistance,
+                    ThrowForceMultiplier = _pickup.throwForceMultiplier,
                 });
             }
             UpdatePickup(_pickup);
@@ -116,12 +136,12 @@ public class PickupOverrides : MelonMod {
     private class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVR_InteractableManager), nameof(CVR_InteractableManager.AddPickup))]
-        private static void After_CVR_InteractableManager_AddPickup(CVRPickupObject pickupObject) {
+        [HarmonyPatch(typeof(CVRPickupObject), nameof(CVRPickupObject.Start))]
+        private static void After_CVR_InteractableManager_AddPickup(CVRPickupObject __instance) {
             try {
-                if (pickupObject == null) return;
-                if (pickupObject.gameObject.GetComponent<PickupDestroyDetector>() == null)
-                    pickupObject.gameObject.AddComponent<PickupDestroyDetector>();
+                if (__instance == null) return;
+                if (__instance.gameObject.GetComponent<PickupDestroyDetector>() == null)
+                    __instance.gameObject.AddComponent<PickupDestroyDetector>();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_InteractableManager_AddPickup)}");
