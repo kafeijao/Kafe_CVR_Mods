@@ -105,6 +105,30 @@ public class ProfilesExtended : MelonMod {
             _loadingProfile = profileName;
         }
 
+        /// <summary>
+        /// Checks if the value belongs to this setting
+        /// </summary>
+        private static bool IsValueFromSetting(CVRAdvancedSettingsEntry setting, CVRAdvancedSettingsFileProfileValue value)
+        {
+            string originalName = value.name;
+            switch (setting.type)
+            {
+                case CVRAdvancedSettingsEntry.SettingsType.MaterialColor:
+                    if (originalName.EndsWith("-r") || originalName.EndsWith("-g") || originalName.EndsWith("-b"))
+                        originalName = originalName[..^2];
+                    break;
+                case CVRAdvancedSettingsEntry.SettingsType.Joystick3D:
+                    if (originalName.EndsWith("-x") || originalName.EndsWith("-y") || originalName.EndsWith("-z"))
+                        originalName = originalName[..^2];
+                    break;
+                case CVRAdvancedSettingsEntry.SettingsType.Joystick2D:
+                    if (originalName.EndsWith("-x") || originalName.EndsWith("-y"))
+                        originalName = originalName[..^2];
+                    break;
+            }
+            return originalName == setting.machineName;
+        }
+
         [HarmonyPrefix]
         [HarmonyPatch(typeof(AvatarAnimatorManager), nameof(AvatarAnimatorManager.ApplyAdvancedSettingsFileProfile))]
         private static void AfterApplyAdvancedSettingsFileProfile(ref List<CVRAdvancedSettingsFileProfileValue> values) {
@@ -124,9 +148,7 @@ public class ProfilesExtended : MelonMod {
 
                     // Remove all values that are not AAS parameters
                     if (_onlyLoadAASParams) {
-                        var removedAAS = values.RemoveAll(value =>
-                            !settings.Exists(setting =>
-                                setting.machineName == value.name));
+                        var removedAAS = values.RemoveAll(value => !settings.Exists(setting => IsValueFromSetting(setting, value)));
                         if (removedAAS > 0) removedString += $"Ignored {removedAAS} animator params because they're not AAS parameters.";
                     }
 
