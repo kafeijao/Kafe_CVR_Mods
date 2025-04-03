@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.InputManagement;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using UnityEngine;
@@ -52,8 +52,8 @@ public class FlightController : MonoBehaviour {
             // If we're not gliding make it go up
             if (!_previousGlide) {
                 // Use gravity to take off the floor, use half a jump height as a baseline
-                MovementSystem.Instance._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * movementSystem.gravity);
-                MovementSystem.Instance._gravityVelocity = 0f;
+                BetterBetterCharacterController.Instance._appliedGravity.y = Mathf.Sqrt(movementSystem.jumpHeight * movementSystem.gravity);
+                BetterBetterCharacterController.Instance._gravityVelocity = 0f;
             }
             // If it's already gliding, add to the last velocity
             else {
@@ -87,8 +87,8 @@ public class FlightController : MonoBehaviour {
 
     private static void HandleGliding(bool isGliding, Vector2 glideVector) {
 
-        var movementSystem = MovementSystem.Instance;
-        var actualGliding = isGliding && movementSystem.canFly && movementSystem.canMove && !movementSystem.flying && !movementSystem._holoPortEnabled;
+        var movementSystem = BetterBetterCharacterController.Instance;
+        var actualGliding = isGliding && movementSystem.CanFly() && movementSystem.CanFly() && !movementSystem.IsFlying() && !movementSystem._holoPortEnabled;
 
         var currentPosition = PlayerSetup.Instance._avatar.transform.position;
 

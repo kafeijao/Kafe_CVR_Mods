@@ -96,7 +96,7 @@ public class MarioInputModule : CVRInputModule {
 
                     _inputManager.movementVector.z = CVRTools.AxisDeadZone(
                         CVRInputManager._moduleXR._lookAxis.y,
-                        MetaPort.Instance.settings.GetSettingInt("ControlDeadZoneRight") / 100f);
+                        MetaPort.Instance.settings.GetSettingsInt("ControlDeadZoneRight") / 100f);
                 }
             }
         }

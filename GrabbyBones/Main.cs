@@ -34,6 +34,10 @@ public class GrabbyBones : MelonMod {
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
 
+        #if DEBUG_BONE_GEN
+        MelonLogger.Warning("This mod was compiled with the DEBUG_BONE_GEN mode on. There might be an excess of logging and performance overhead...");
+        #endif
+
         #if DEBUG_ROOT_GEN
         MelonLogger.Warning("This mod was compiled with the DEBUG_ROOT_GEN mode on. There might be an excess of logging and performance overhead...");
         #endif
@@ -648,14 +652,15 @@ public class GrabbyBones : MelonMod {
             // Everything else, let's just go down the chain... If already had a fixed parent let's keep it, otherwise just check if it's fixed
             foreach (var directChild in useTransformList.Where(c => c.parent == root)) {
                 #if DEBUG_ROOT_GEN
-                var typeName = rootType switch {
-                    SelectionData.Fixed => nameof(SelectionData.Fixed),
-                    SelectionData.Move => nameof(SelectionData.Move),
-                    SelectionData.Extend => nameof(SelectionData.Extend),
-                    _ => nameof(SelectionData.Invalid),
-                };
+                string props = $"[IsInvalid={rootType.IsInvalid()}] " +
+                               $"[IsFixed={rootType.IsFixed()}] " +
+                               $"[IsMove={rootType.IsMove()}] " +
+                               $"[IsDontMove={rootType.IsDontMove()}] " +
+                               $"[IsMotion={rootType.IsMotion()}] " +
+                               $"[IsDisableCollision={rootType.IsDisableCollision()}] " +
+                               $"[IsFixed={rootType.IsFixed()}]";
                 MelonLogger.Msg($"[PopulateMagica2Roots]{new string('\t', it)} Can't use {root.name} as root... " +
-                                $"[type={typeName}] [canFixedRotate={canFixedRotate}] [hasFixedParent={hasFixedParent}]");
+                                $"{props} [canFixedRotate={canFixedRotate}] [hasFixedParent={hasFixedParent}]");
                 #endif
                 PopulateMagica2Roots(ref results, directChild, useTransformList, attributesMapping, canFixedRotate, hasFixedParent || rootType == VertexAttribute.Fixed, it+1);
             }
@@ -663,19 +668,40 @@ public class GrabbyBones : MelonMod {
 
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(MagicaCloth2.MagicaCloth), nameof(MagicaCloth2.MagicaCloth.Start))]
+        [HarmonyPatch(typeof(MagicaCloth2.MagicaCloth), nameof(MagicaCloth2.MagicaCloth.Awake))] // Using Awake since Magica2 can be initialized during awake, and in that case we'd miss the OnBuildComplete
         public static void After_MagicaCloth2MagicaCloth_Start(MagicaCloth2.MagicaCloth __instance) {
             // Initialize FABRIK for magica bone 2 cloth roots
-            try {
+            try
+            {
+                string goName = __instance.gameObject.name;
 
                 // Only allow bone cloth
-                if (__instance.serializeData.clothType != ClothProcess.ClothType.BoneCloth) return;
+                if (__instance.serializeData.clothType != ClothProcess.ClothType.BoneCloth)
+                {
+                    #if DEBUG_BONE_GEN
+                    MelonLogger.Msg($"[MagicaCloth2.Start] Ignoring {goName} because we're only handling " +
+                                    $"{ClothProcess.ClothType.BoneCloth.ToString()} and this clothType is {__instance.serializeData.clothType.ToString()}.");
+                    #endif
+                    return;
+                }
 
                 // We only want to mess with the avatar's magica cloth 2 bones, for now
                 var avatar = __instance.GetComponentInParent<CVRAvatar>();
-                if (avatar == null) return;
+                if (avatar == null)
+                {
+                    #if DEBUG_BONE_GEN
+                    MelonLogger.Msg($"[MagicaCloth2.Start] Ignoring {goName} because couldn't find a CVRAvatar.");
+                    #endif
+                    return;
+                }
 
-                if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
+                if (goName.Contains(IgnoreGrabbyBonesTag))
+                {
+                    #if DEBUG_BONE_GEN
+                    MelonLogger.Msg($"[MagicaCloth2.Start] Ignoring {goName} because it has {IgnoreGrabbyBonesTag} in the name");
+                    #endif
+                    return;
+                }
 
                 var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
                 // var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
@@ -694,14 +720,44 @@ public class GrabbyBones : MelonMod {
                 // __instance.serializeData.blendWeight
                 // __instance.process.ProxyMesh.
 
-                __instance.OnBuildComplete += success => {
+                #if DEBUG_BONE_GEN
+                MelonLogger.Msg($"[MagicaCloth2.Start] Waiting for {goName} to build...");
+                #endif
+
+                __instance.OnBuildComplete += (magicaCloth, success) => {
+                    #if DEBUG_BONE_GEN
+                    MelonLogger.Msg($"[MagicaCloth2.Start.OnBuildComplete] The build of {goName} Completed! Setting up GrabbyBones...");
+                    #endif
 
                     if (!success) {
                         MelonLogger.Warning($"Error during the patched function {nameof(After_MagicaCloth2MagicaCloth_Start)} -> OnBuildComplete. The bone build didn't succeed.");
                         return;
                     }
 
-                    try {
+                    try
+                    {
+                        List<Transform> transformList;
+
+                        // Check if pre-built and attempt to get the transform list if so
+                        PreBuildSerializeData preBuildData = __instance.GetSerializeData2().preBuildData;
+                        bool usePrebuiltData = preBuildData.UsePreBuild();
+                        if (usePrebuiltData)
+                        {
+                            HashSet<Transform> usedTransforms = new HashSet<Transform>();
+                            preBuildData.GetUsedTransform(usedTransforms);
+                            if (usedTransforms.Count == 0)
+                            {
+                                MelonLogger.Warning($"Error during the patched function {nameof(After_MagicaCloth2MagicaCloth_Start)} -> OnBuildComplete. " +
+                                                    $"Failed to get the prebuilt transform list for {goName} because found no transforms in preBuildData.GetUsedTransform");
+                                return;
+                            }
+                            transformList = usedTransforms.ToList();
+                        }
+                        // Otherwise just grab from the calculated list
+                        else
+                        {
+                            transformList = __instance.process.boneClothSetupData.transformList;
+                        }
 
                         GrabbyBoneInfo grabbyBoneInfo = new GrabbyMagica2BoneInfo(avatar, puppetMaster, __instance);
 
@@ -716,7 +772,7 @@ public class GrabbyBones : MelonMod {
                             PopulateMagica2Roots(
                                 ref innerRoots,
                                 root,
-                                __instance.process.boneClothSetupData.transformList,
+                                transformList,
                                 __instance.process.ProxyMeshContainer.shareVirtualMesh.attributes,
                                 // __instance.process.ProxyMesh.attributes,
                                 canFixedRotate,

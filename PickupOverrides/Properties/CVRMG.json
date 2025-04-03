@@ -18,7 +18,7 @@
     "settings"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/PickupOverrides.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/PickupOverrides.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/PickupOverrides",
   "changelog": "- Fixed for 2025r178\n- Removed MaxGrabDistance (game deprecated it)\n- Added ThrowForceMultiplier to things you can override, it doesn't override by default.",
   "embedcolor": "16C60C"

@@ -13,7 +13,7 @@
     "debug"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/Logger++.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/Logger++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++",
   "changelog": "- Fixed for 2025r178\n- Added button to globally disable on MelonPrefs\n- Moved the logging into main thread to avoid some crashes",
   "embedcolor": "16C60C"

@@ -7,6 +7,9 @@ using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+#if UNITY_6
+using ABI_RC.Core.Util.AssetFiltering;
+#endif
 using ABI_RC.Systems.InputManagement;
 using ABI.CCK.Components;
 using HarmonyLib;
@@ -378,10 +381,16 @@ public class HistoryBehavior : MonoBehaviour {
         var chatEntry = Instantiate(_templateChatEntry, _contentRectTransform).transform;
         chatEntry.SetAsFirstSibling();
         var timestampTmp = chatEntry.Find("Header/Timestamp").GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(timestampTmp);
+#endif
         timestampTmp.text = $"[{DateTime.Now.ToString("T", CultureInfo.CurrentCulture)}]";
 
         // Handle OSC/Mod sources
         var modNameTmp = chatEntry.Find("Header/ModName").GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(modNameTmp);
+#endif
         if (chatBoxMessage.Source == API.MessageSource.OSC) {
             modNameTmp.text = "[OSC]";
             modNameTmp.color = ChatBoxBehavior.TealTransparency;
@@ -395,6 +404,9 @@ public class HistoryBehavior : MonoBehaviour {
         var usernameButton = usernameComponent.GetComponent<Button>();
         usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(usernameTmp);
+#endif
         if (isSelf) {
             usernameTmp.text = CleanTMPString(AuthManager.Username);
             usernameTmp.color = ColorBlue;
@@ -410,6 +422,9 @@ public class HistoryBehavior : MonoBehaviour {
             msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
         }
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(messageTmp);
+#endif
 
         // // Color our own username in messages (I disabled formatting so this won't work ;_;
         // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{AuthManager.Username}</color>";

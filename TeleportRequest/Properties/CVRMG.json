@@ -12,7 +12,7 @@
     "lib"
   ],
   "requirements": ["[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/TeleportRequest.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/TeleportRequest.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TeleportRequest",
   "changelog": "- Fixed for 2025r178\n- Fixed message not being properly parsed (was showing html code instead of parsing it).",
   "embedcolor": "16C60C"

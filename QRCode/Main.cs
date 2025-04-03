@@ -29,14 +29,6 @@ public class QRCode : MelonMod {
 
         // Fallback default to copying to clipboard
         ResultHandler.RegisterHandler(new DefaultResultHandler());
-
-        // Calling on melon initializing was causing issues sometimes
-        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
-
-            // Add Text Mesh Pro to the props whitelist
-            SharedFilter.SpawnableWhitelist.Add(typeof(TextMeshPro));
-            MelonLogger.Msg($"Adding {nameof(TextMeshPro)} type to the props whitelist...");
-        });
     }
 
 

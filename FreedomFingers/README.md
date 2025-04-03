@@ -1,6 +1,10 @@
 # FreedomFingers
 
-[![Download Latest FreedomFingers.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest FreedomFingers.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/FreedomFingers.dll)
+![Download Latest FreedomFingers.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest FreedomFingers.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
 
 Mod suggested by [AstroDoge](https://github.com/AstroDogeDX)
 

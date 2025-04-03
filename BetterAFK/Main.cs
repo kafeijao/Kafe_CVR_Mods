@@ -215,7 +215,7 @@ public class BetterAFK : MelonMod {
                     case CVRParameterStreamEntry.TargetType.AvatarAnimator:
                         if (stream.avatar == null || stream.avatar != PlayerSetup.Instance._avatarDescriptor)
                             break;
-                        PlayerSetup.Instance.changeAnimatorParam(__instance.parameterName, num13);
+                        PlayerSetup.Instance.ChangeAnimatorParam(__instance.parameterName, num13);
                         break;
                     case CVRParameterStreamEntry.TargetType.CustomFloat:
                         if (stream.spawnable == null) break;

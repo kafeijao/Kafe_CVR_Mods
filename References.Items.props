@@ -52,6 +52,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Bhaptics.Tact.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="BouncyCastle.Crypto">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\BouncyCastle.Crypto.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Boxophobic.TheVehetationEngine.Runtime">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Boxophobic.TheVehetationEngine.Runtime.dll</HintPath>
             <Private>False</Private>
@@ -94,6 +98,10 @@
         </Reference>
         <Reference Include="DarkRift">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DarkRift.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="DTLS.Net">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DTLS.Net.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ECM2">
@@ -304,6 +312,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.Serialization.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="System.Security.Cryptography.Cng">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Security.Cryptography.Cng.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="System.Security">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Security.dll</HintPath>
             <Private>False</Private>
@@ -364,6 +376,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UniTask.TextMeshPro.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Unity.2D.Common.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.2D.Common.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Unity.AI.Navigation">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.AI.Navigation.dll</HintPath>
             <Private>False</Private>
@@ -410,6 +426,10 @@
         </Reference>
         <Reference Include="Unity.InputSystem.ForUI">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.InputSystem.ForUI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.InternalAPIEngineBridge.001">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.InternalAPIEngineBridge.001.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.InternalAPIEngineBridge.002">

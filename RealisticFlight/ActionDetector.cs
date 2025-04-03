@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using ABI_RC.Systems.MovementSystem;
+using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -367,7 +367,7 @@ public class ActionDetector : MonoBehaviour {
         // Update Human Pose
         _humanPoseHandler.GetHumanPose(ref _humanPose);
 
-        var isGrounded = MovementSystem.Instance._isGrounded;
+        var isGrounded = BetterBetterCharacterController.Instance.IsGrounded();
 
         // Conditions to check if the avatar is in gliding position
         var armsStretched = _leftHandInfo.GetCurrentArmSpan() > _leftHandInfo.ArmLength * 0.8f &&

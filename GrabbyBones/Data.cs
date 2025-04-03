@@ -231,8 +231,20 @@ internal static class Data {
         internal GrabState GetGrabState() {
             var data = GetMovementData();
             return _isLeftHand
-                ? GetGrabStateHand((int)data.AnimatorGestureLeft, data.LeftThumb1Stretched, data.LeftIndex1Stretched, data.LeftMiddle1Stretched, data.LeftRing1Stretched, data.LeftPinky1Stretched)
-                : GetGrabStateHand((int)data.AnimatorGestureRight, data.RightThumb1Stretched, data.RightIndex1Stretched, data.RightMiddle1Stretched, data.RightRing1Stretched, data.RightPinky1Stretched);
+                ? GetGrabStateHand(
+                    (int)data.AnimatorGestureLeft,
+                    data.MuscleValues[MuscleIndex.LeftThumb1Stretched],
+                    data.MuscleValues[MuscleIndex.LeftIndex1Stretched],
+                    data.MuscleValues[MuscleIndex.LeftMiddle1Stretched],
+                    data.MuscleValues[MuscleIndex.LeftRing1Stretched],
+                    data.MuscleValues[MuscleIndex.LeftLittle1Stretched])
+                : GetGrabStateHand(
+                    (int)data.AnimatorGestureRight,
+                    data.MuscleValues[MuscleIndex.RightThumb1Stretched],
+                    data.MuscleValues[MuscleIndex.RightIndex1Stretched],
+                    data.MuscleValues[MuscleIndex.RightMiddle1Stretched],
+                    data.MuscleValues[MuscleIndex.RightRing1Stretched],
+                    data.MuscleValues[MuscleIndex.RightLittle1Stretched]);
         }
 
         internal bool IsAllowed() {
@@ -453,11 +465,18 @@ internal static class Data {
 
         internal override float GetLength(Transform childNode) => GetLength(_magicaBoneCloth, childNode);
 
-        internal static float GetRadius(MagicaCloth2.MagicaCloth magicaBone, Transform childNode) {
-            var idx = magicaBone.process.boneClothSetupData.GetTransformIndexFromId(childNode.GetInstanceID());
-            // var depth = magicaBone.process.HasProxyMesh.vertexDepths[idx];
-            // var depth = magicaBone.process.ProxyMesh.vertexDepths[idx];
-            var depth = magicaBone.process.ProxyMeshContainer.shareVirtualMesh.vertexDepths[idx];
+        internal static float GetRadius(MagicaCloth2.MagicaCloth magicaBone, Transform childNode)
+        {
+            float depth = 0.5f;
+            // If the bone was pre-build magicaBone.process.boneClothSetupData doesn't exist
+            // Todo: Find a way to get the depth of a transform for pre-built data
+            if (magicaBone.process.boneClothSetupData != null)
+            {
+                var idx = magicaBone.process.boneClothSetupData.GetTransformIndexFromId(childNode.GetInstanceID());
+                // var depth = magicaBone.process.HasProxyMesh.vertexDepths[idx];
+                // var depth = magicaBone.process.ProxyMesh.vertexDepths[idx];
+                depth = magicaBone.process.ProxyMeshContainer.shareVirtualMesh.vertexDepths[idx];
+            }
             var radius = magicaBone.SerializeData.radius.Evaluate(depth);
             return radius;
         }

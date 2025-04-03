@@ -12,7 +12,7 @@
     "lib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/RequestLib.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/RequestLib.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RequestLib",
   "changelog": "- Fixed for 2025r178\n- Added sanitization to some fields",
   "embedcolor": "16C60C"

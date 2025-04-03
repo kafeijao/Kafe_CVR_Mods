@@ -15,7 +15,7 @@
     "prop"
   ],
   "requirements": ["[NavMeshTools](https://api.cvrmg.com/v1/mods/download/193)", "[RequestLib](https://api.cvrmg.com/v1/mods/download/169)", "[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/NavMeshFollower.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/NavMeshFollower.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshFollower",
   "changelog": "- Fixed for 2025r178",
   "embedcolor": "16C60C"

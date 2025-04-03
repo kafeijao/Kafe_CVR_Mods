@@ -57,4 +57,36 @@ public static class Misc {
             source.lossyScale.x == 0 ? 0 : multiplier / source.lossyScale.z
         );
     }
+
+    public static string GetTransformHierarchyPathString(this Transform transform, bool includeLeaf, Transform rootToStop = null)
+    {
+        string str = includeLeaf ? $"/{transform.name}" : "/";
+        Transform current = transform;
+        while (current.parent != null || current == rootToStop)
+        {
+            current = current.parent;
+            str = "/" + current.name + str;
+        }
+        return str;
+    }
+
+    public static List<string> GetTransformHierarchyPath(this Transform transform, bool includeLeaf, Transform rootToStop = null)
+    {
+        List<string> result = new List<string>();
+        if (includeLeaf)
+            result.Add(transform.name);
+        Transform current = transform;
+        while (current.parent != null)
+        {
+            current = current.parent;
+            result.Add($"{current.name}/");
+
+            // Break early if we reached the root to stop
+            if (current == rootToStop)
+                break;
+        }
+        // Reverse so the list start from the top of the hierarchy
+        result.Reverse();
+        return result;
+    }
 }

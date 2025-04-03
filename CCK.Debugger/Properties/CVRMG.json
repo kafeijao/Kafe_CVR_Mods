@@ -21,7 +21,7 @@
     "layer"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
   "changelog": "- Fixed for 2024r176\n- Added a setting to disable the menu entries from being collapsible (this will probably cause massive lag but NAK asked)\n- Fixed menu reloads using F5 from killing the menu",
   "embedcolor": "16C60C"

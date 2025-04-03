@@ -157,11 +157,11 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             _wasInitialized = isInitialized;
 
             // Set up the base part of the menu
-            SetupAvatarBase(_isLoaded, isLocal, isDisabled, isInitialized, currentPlayer);
+            SetupAvatarBase(_isLoaded, isLocal, isDisabled, isInitialized, currentPlayer, out Section attributesSection);
 
             // Set up the body part of the menu
             if (!isDisabled && isInitialized && _isLoaded) {
-                SetupAvatarBody(isLocal, currentPlayer, out var avatarGameObject, out var avatarAnimator);
+                SetupAvatarBody(isLocal, currentPlayer, attributesSection, out var avatarGameObject, out var avatarAnimator);
                 AvatarChangeEvent?.Invoke(_core, isLocal, currentPlayer, avatarGameObject, avatarAnimator);
             }
 
@@ -198,13 +198,13 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         _core?.UpdateCore(playerCount > 1, $"{PlayerEntities.CurrentObjectIndex+1}/{playerCount}", true);
     }
 
-    private void SetupAvatarBase(bool isLoaded, bool isLocal, bool isAvatarDisabled, bool isInitialized, CVRPlayerEntity currentPlayer) {
+    private void SetupAvatarBase(bool isLoaded, bool isLocal, bool isAvatarDisabled, bool isInitialized, CVRPlayerEntity currentPlayer, out Section attributesSection) {
 
         // Recreate the core menu
         _core = new Core("Avatars");
 
         // Attributes section
-        var attributesSection = _core.AddSection("Attributes");
+        attributesSection = _core.AddSection("Attributes");
         attributesSection.AddSection("User Name").AddValueGetter(() => isLocal ? AuthManager.Username : currentPlayer.Username);
         attributesSection.AddSection("User ID").AddValueGetter(() => isLocal ? MetaPort.Instance.ownerId : currentPlayer.Uuid);
         attributesSection.AddSection("Avatar Name/ID").AddValueGetter(() => GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId));
@@ -212,7 +212,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         attributesSection.AddSection("Avatar Hidden").Value = ToString(isAvatarDisabled);
     }
 
-    private void SetupAvatarBody(bool isLocal, CVRPlayerEntity currentPlayer, out GameObject avatarGo, out Animator avatarAnimator) {
+    private void SetupAvatarBody(bool isLocal, CVRPlayerEntity currentPlayer, Section attributesSection, out GameObject avatarGo, out Animator avatarAnimator) {
 
         // Setup buttons
         var trackerButton = _core.AddButton(new Button(Button.ButtonType.Tracker, false, false));
@@ -278,6 +278,9 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         var sectionPointers = _core.AddSection("CVR Pointers", true);
         var sectionTriggers = _core.AddSection("CVR AAS Triggers", true);
 
+        var cvrAvatar = isLocal ? PlayerSetup.Instance._avatarDescriptor : currentPlayer.PuppetMaster._avatar;
+        attributesSection.AddSection("Uses AAS").Value = ToString(cvrAvatar.avatarUsesAdvancedSettings);
+
         // Restore Main Animator Parameters
         foreach (var parameter in mainAnimator.parameters) {
             var parameterEntry = ParameterEntrySection.Get(mainAnimator, parameter);
@@ -312,6 +315,61 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         }
 
         avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
+
+        #region Avatar Tags
+
+        // Set up the Tags
+        string avatarTags = isLocal ? PlayerSetup.Instance.AvatarTagsString : currentPlayer.AvatarTags;
+        List<string> tagList = string.IsNullOrWhiteSpace(avatarTags)
+            ? new List<string>()
+            : avatarTags.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+        bool hasTags = tagList.Count > 0;
+        var sectionTags = attributesSection.AddSection("Tags", hasTags ? tagList.Count.ToString() : "None", true);
+        foreach (string tag in tagList)
+            sectionTags.AddSection(tag);
+
+        #endregion Avatar Tags
+
+        #region Avatar Advanced Tagging
+
+        // Set up the Advanced Tags
+        string advTagsValue = cvrAvatar.advancedTaggingList.Count > 0
+            ? cvrAvatar.advancedTaggingList.Count.ToString()
+            : "None";
+        var sectionAdvancedTags = attributesSection.AddSection("Advanced Tags", advTagsValue, true);
+        for (int i = 0; i < cvrAvatar.advancedTaggingList.Count; i++)
+        {
+            CVRAvatarAdvancedTaggingEntry advTagEntry = cvrAvatar.advancedTaggingList[i];
+            var tagEntrySection = sectionAdvancedTags.AddSection($"#{i}", "", true);
+
+            // List selected tags
+            List<string> enabledTags = Enum.GetValues(typeof(CVRAvatarAdvancedTaggingEntry.Tags))
+                .Cast<CVRAvatarAdvancedTaggingEntry.Tags>()
+                .Where(tag => advTagEntry.tags.HasFlag(tag))
+                .Select(tag => tag.ToString())
+                .ToList();
+            var tagEntryTagsSection = tagEntrySection.AddSection("Selected Tags", enabledTags.Count > 0 ? enabledTags.Count.ToString() : "None");
+            foreach (string enabledTag in enabledTags)
+                tagEntryTagsSection.AddSection(enabledTag);
+
+            // Object Paths
+            var trgObjectSection = tagEntrySection.AddSection("Target Object");
+            if (advTagEntry.gameObject == null)
+            {
+                trgObjectSection.Value = "N/A";
+            }
+            else
+            {
+                var pathItems = advTagEntry.gameObject.transform.GetTransformHierarchyPath(true, avatarGo.transform);
+                foreach (string pathItem in pathItems)
+                    trgObjectSection.AddSection(pathItem);
+            }
+
+            string fallbackName = advTagEntry.fallbackGameObject != null ? advTagEntry.fallbackGameObject.name : "N/A";
+            tagEntrySection.AddSection("Fallback Object", fallbackName);
+        }
+
+        #endregion Avatar Advanced Tagging
 
         // Set up CVR Pointers
         var avatarPointers = avatarGo.GetComponentsInChildren<CVRPointer>(true);

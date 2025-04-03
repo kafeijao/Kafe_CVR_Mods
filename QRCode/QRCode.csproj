@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-    
+
+<!--    <PropertyGroup>-->
+<!--        <DefineConstants>UNITY_6</DefineConstants>-->
+<!--    </PropertyGroup>-->
+
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.31" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
@@ -18,12 +22,12 @@
         </EmbeddedResource>
     </ItemGroup>
     
-    <Target Name="CopyRugOscCoreToManagedLibs" BeforeTargets="BeforeBuild">
+    <Target Name="CopyToManagedLibs" BeforeTargets="BeforeBuild">
         <!-- Copy the zxing.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
         <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\zxing.net\0.16.9\lib\netstandard2.1\zxing.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
         <!-- Copy the TextCopy.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
         <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\textcopy\6.2.1\lib\netstandard2.1\TextCopy.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
-    <!-- Copy the Microsoft.Extensions.DependencyInjection.Abstractions.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
+        <!-- Copy the Microsoft.Extensions.DependencyInjection.Abstractions.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
         <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\7.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
     </Target>
     

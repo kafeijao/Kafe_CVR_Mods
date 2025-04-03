@@ -16,7 +16,7 @@
     "loader"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/MenuCSSLoader.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/MenuCSSLoader.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MenuCSSLoader",
   "changelog": "- Initial Release",
   "embedcolor": "16C60C"

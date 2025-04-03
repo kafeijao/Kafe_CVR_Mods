@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
+<!--    <PropertyGroup>-->
+<!--        <DefineConstants>DEBUG_ROOT_GEN,DEBUG_BONE_GEN</DefineConstants>-->
+<!--    </PropertyGroup>-->
+
     <ItemGroup>
         <Reference Include="BTKUILib">
             <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>

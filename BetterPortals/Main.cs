@@ -6,6 +6,9 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
 using ABI_RC.Core.Util;
+#if UNITY_6
+using ABI_RC.Core.Util.AssetFiltering;
+#endif
 using ABI_RC.Systems.InputManagement;
 using HarmonyLib;
 using MelonLoader;
@@ -107,7 +110,7 @@ public class BetterPortals : MelonMod {
 
         if (!_initialized || !ModConfig.MeJoinPortalWhenClose.Value) return;
 
-        // We still cooling down from clicking a portal...
+        // We're still cooling down from clicking a portal...
         if (_portalClickingCoolingDown) return;
 
         var currentMinDistance = float.MaxValue;
@@ -133,20 +136,26 @@ public class BetterPortals : MelonMod {
         public static void After_HudOperations_Start(HudOperations __instance) {
             // Initialize hud prefabs
             try {
-                var desktopHud = __instance.worldLoadingItemDesktop.transform.parent;
+                var desktopHud = __instance.worldLoadingItem.transform.parent;
                 var desktopHudText = UnityEngine.Object.Instantiate(ModConfig.TextPrefab, desktopHud, false);
                 desktopHudText.transform.localPosition = new Vector3(-1300f, -80f, 0f);
                 desktopHudText.transform.localScale = new Vector3(20f, 20f, 20f);
                 _hudTextAnimatorDesktop = desktopHudText.GetComponent<Animator>();
                 _hudTextTmpDesktop = desktopHudText.GetComponent<TextMeshPro>();
+#if UNITY_6
+                SharedFilter.ProcessTextMeshPro(_hudTextTmpDesktop);
+#endif
                 _hudTextTmpDesktop.text = "";
 
-                var vrHud = __instance.worldLoadingItemVr.transform.parent;
+                var vrHud = __instance.worldLoadingItem.transform.parent;
                 var vrHudText = UnityEngine.Object.Instantiate(ModConfig.TextPrefab, vrHud, false);
                 vrHudText.transform.localPosition = new Vector3(-800f, 200f, 0f);
                 vrHudText.transform.localScale = new Vector3(25f, 25f, 25f);
                 _hudTextAnimatorVR = vrHudText.GetComponent<Animator>();
                 _hudTextTmpVR = vrHudText.GetComponent<TextMeshPro>();
+#if UNITY_6
+                SharedFilter.ProcessTextMeshPro(_hudTextTmpVR);
+#endif
                 _hudTextTmpVR.text = "";
 
                 _initialized = true;

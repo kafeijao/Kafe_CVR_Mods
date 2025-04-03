@@ -14,7 +14,7 @@
     "BTKUILib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r75/Instances.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
   "changelog": "- Fixed for 2025r178",
   "embedcolor": "16C60C"

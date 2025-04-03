@@ -95,7 +95,7 @@ public class InputModuleOSC : CVRInputModule {
 
         _thisInputManager = CVRInputManager.Instance;
 
-        _sensitivity = MetaPort.Instance.settings.GetSettingInt("ControlMouseSensitivity");
+        _sensitivity = MetaPort.Instance.settings.GetSettingsInt("ControlMouseSensitivity");
         MetaPort.Instance.settings.settingIntChanged.AddListener((setting, value) => {
             if (setting != "ControlMouseSensitivity") return;
             _sensitivity = value;

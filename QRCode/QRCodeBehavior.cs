@@ -1,5 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
+#if UNITY_6
+using ABI_RC.Core.Util.AssetFiltering;
+#endif
 using ABI_RC.Systems.Camera;
 using Kafe.QRCode.ResultHandlers;
 using MelonLoader;
@@ -81,7 +84,13 @@ public class QRCodeBehavior : MonoBehaviour {
         var button = qrCodeEntryTrx.GetComponent<Button>();
         var img = qrCodeEntryTrx.Find(ResultImagePath).GetComponent<Image>();
         var title = qrCodeEntryTrx.Find(ResultTitlePath).GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(title);
+#endif
         var message = qrCodeEntryTrx.Find(ResultMessagePath).GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(message);
+#endif
 
         title.text = result.Type;
         message.text = result.Message;

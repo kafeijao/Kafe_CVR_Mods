@@ -3,8 +3,9 @@ using System.Text.RegularExpressions;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using ABI_RC.Core.Util.Object_Behaviour;
-using MelonLoader;
+#if UNITY_6
+using ABI_RC.Core.Util.AssetFiltering;
+#endif
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -271,6 +272,9 @@ public class ChatBoxBehavior : MonoBehaviour {
         ApplyNameplateMaterial(_textBubbleRoundImg, nameplateBackgroundMaterial);
 
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
+#if UNITY_6
+        SharedFilter.ProcessTextMeshProUGUI(_textBubbleOutputTMP);
+#endif
         ApplyNameplateMaterial(_textBubbleOutputTMP, _nameplate.usrNameText);
 
         // Needed to prevent funny crashes :c
