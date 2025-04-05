@@ -1,7 +1,7 @@
 {
   "_id": 107,
   "name": "ProfilesExtended",
-  "modversion": "1.0.8",
+  "modversion": "1.0.9",
   "gameversion": "2024r178",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/ProfilesExtended.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ProfilesExtended",
-  "changelog": "- Fixed AAS for Joystick2D, Joystick3D, and Color not saving/loading",
+  "changelog": "- Fixed AAS for Joystick2D, Joystick3D, and Color not respecting the * on the AAS name",
   "embedcolor": "16C60C"
 }

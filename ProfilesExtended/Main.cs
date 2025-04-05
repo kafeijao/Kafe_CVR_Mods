@@ -154,8 +154,7 @@ public class ProfilesExtended : MelonMod {
 
                     // Remove all values which their AAS name includes the character *
                     var removedWildcard = values.RemoveAll(value =>
-                        settings.Any(setting =>
-                            setting.machineName == value.name && setting.name.Contains(_paramTag)));
+                        settings.Any(setting => IsValueFromSetting(setting, value) && setting.name.Contains(_paramTag)));
                     if (removedWildcard > 0) removedString += $"Ignored {removedWildcard} animator params because their AAS contains the {_paramTag} wildcard.";
                 }
 
