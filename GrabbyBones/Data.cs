@@ -184,7 +184,7 @@ internal static class Data {
             PuppetMaster = puppetMaster;
             _isLeftHand = isLeftHand;
             IsLocalPlayerHand = PuppetMaster == null;
-            _playerGuid = IsLocalPlayerHand ? MetaPort.Instance.ownerId : puppetMaster._playerDescriptor.ownerId;
+            _playerGuid = IsLocalPlayerHand ? PlayerSetup.Instance.PlayerId : puppetMaster.PlayerId;
 
             GrabbingPoint = new GameObject(HandName).transform;
             GrabbingPoint.SetParent(handTransform);
@@ -249,7 +249,7 @@ internal static class Data {
 
         internal bool IsAllowed() {
             if (IsLocalPlayerHand) return true;
-            if (PuppetMaster._isHidden || PuppetMaster._isBlocked || PuppetMaster._isBlockedAlt) return false;
+            if (PuppetMaster.IsAvatarHidden || PuppetMaster.IsAvatarBlocked || PuppetMaster.IsAvatarBlockedAlt) return false;
             if (ModConfig.MeOnlyFriends.Value && !Friends.FriendsWith(_playerGuid)) return false;
             if (ModConfig.MeMaxPlayerDistance.Value > 0 &&
                 Vector3.Distance(PuppetMaster.transform.position, PlayerSetup.Instance.transform.position) >
@@ -258,7 +258,7 @@ internal static class Data {
         }
 
         internal float GetAvatarHeight() {
-            return IsLocalPlayerHand ? PlayerSetup.Instance._avatarHeight : PuppetMaster.netIkController.GetRemoteHeight();
+            return IsLocalPlayerHand ? PlayerSetup.Instance.AvatarHeight : PuppetMaster.netIkController.GetRemoteHeight();
         }
 
         internal static bool IsRootGrabbed(GrabbyBoneInfo.Root root) {
@@ -295,8 +295,8 @@ internal static class Data {
         }
 
         internal bool ShouldBreak() {
-            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance._avatarHeight : BoneOwnerPuppetMaster.netIkController.GetRemoteHeight();
-            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance._avatarHeight : GrabberHandPuppetMaster.netIkController.GetRemoteHeight();
+            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance.AvatarHeight : BoneOwnerPuppetMaster.netIkController.GetRemoteHeight();
+            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance.AvatarHeight : GrabberHandPuppetMaster.netIkController.GetRemoteHeight();
             var breakDistance = (boneOwnerAvatarHeight + grabbedAvatarHeight) * AvatarSizeToBreakDistance;
             var currentDistance = Vector3.Distance(HandInfo.GrabbingOffset.position, TargetChildBone.position);
             if (currentDistance > breakDistance) {
@@ -326,12 +326,12 @@ internal static class Data {
             // Animator parameters
             if (IsBoneFromLocalPlayer) {
                 // Set Grabbed parameter to true (both synced and local params)
-                PlayerSetup.Instance.animatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 1.0f);
-                PlayerSetup.Instance.animatorManager.SetParameter("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
+                PlayerSetup.Instance.AnimatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 1.0f);
+                PlayerSetup.Instance.AnimatorManager.SetParameter("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
             else {
                 // Set Grabbed parameter on remotes to true (local params only)
-                BoneOwnerPuppetMaster._animator.SetFloat("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
+                BoneOwnerPuppetMaster.Animator.SetFloat("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
             // Initialize stuff to update the angles
             _currentAngleParameterName = Info.GetName() + ParameterAngleSuffix;
@@ -349,20 +349,20 @@ internal static class Data {
             // Animator parameters
             if (IsBoneFromLocalPlayer) {
                 // Set Grabbed parameter to false (both synced and local params)
-                PlayerSetup.Instance.animatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 0.0f);
+                PlayerSetup.Instance.AnimatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 0.0f);
                 // Reset the Angle parameter to 0 (both synced and local params)
-                PlayerSetup.Instance.animatorManager.SetParameter(_currentAngleParameterName, 0.0f);
+                PlayerSetup.Instance.AnimatorManager.SetParameter(_currentAngleParameterName, 0.0f);
                 // Do the same for the local parameters
-                if (PlayerSetup.Instance._animator != null) {
-                    PlayerSetup.Instance._animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
-                    PlayerSetup.Instance._animator.SetFloat(_currentAngleParameterNameLocal, 0.0f);
+                if (PlayerSetup.Instance.Animator != null) {
+                    PlayerSetup.Instance.Animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
+                    PlayerSetup.Instance.Animator.SetFloat(_currentAngleParameterNameLocal, 0.0f);
                 }
             }
             else {
-                if (BoneOwnerPuppetMaster != null && BoneOwnerPuppetMaster._animator != null) {
+                if (BoneOwnerPuppetMaster != null && BoneOwnerPuppetMaster.Animator != null) {
                     // Set Grabbed and Angle parameter on remotes (local params only)
-                    BoneOwnerPuppetMaster._animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
-                    BoneOwnerPuppetMaster._animator.SetFloat(_currentAngleParameterNameLocal, 0f);
+                    BoneOwnerPuppetMaster.Animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
+                    BoneOwnerPuppetMaster.Animator.SetFloat(_currentAngleParameterNameLocal, 0f);
                 }
             }
         }
@@ -373,11 +373,11 @@ internal static class Data {
             if (Mathf.Approximately(newAngle, _oldAngle)) return;
             _oldAngle = newAngle;
             if (IsBoneFromLocalPlayer) {
-                PlayerSetup.Instance.animatorManager.SetParameter(_currentAngleParameterName, newAngle);
-                PlayerSetup.Instance._animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
+                PlayerSetup.Instance.AnimatorManager.SetParameter(_currentAngleParameterName, newAngle);
+                PlayerSetup.Instance.Animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
             else {
-                BoneOwnerPuppetMaster._animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
+                BoneOwnerPuppetMaster.Animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
         }
     }
@@ -602,7 +602,7 @@ internal static class Data {
         internal readonly HashSet<Root> Roots = new();
 
         internal GrabbyBoneInfo(PuppetMaster puppetMaster, CVRAvatar avatar) {
-            PlayerGuid = puppetMaster == null ? MetaPort.Instance.ownerId : puppetMaster._playerDescriptor.ownerId;
+            PlayerGuid = puppetMaster == null ? MetaPort.Instance.ownerId : puppetMaster.PlayerId;
             PuppetMaster = puppetMaster;
             AvatarGuid = avatar.GetComponent<CVRAssetInfo>()?.objectId;
             Avatar = avatar;

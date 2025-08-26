@@ -88,7 +88,7 @@ public class AMDQuestWirelessStutterFix : MelonMod {
             _currentWorld = world;
             _currentWorldGuid = MetaPort.Instance.CurrentWorldId;
 
-            _currentWorldCamera = PlayerSetup.Instance.GetActiveCamera().GetComponent<Camera>();
+            _currentWorldCamera = PlayerSetup.Instance.activeCam;
             _currentWorldLayer = _currentWorldCamera.GetComponent<PostProcessLayer>();
 
             // Enforce the PPLayer on the Post Processing layer

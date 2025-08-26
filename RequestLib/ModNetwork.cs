@@ -69,7 +69,7 @@ internal static class ModNetwork {
     internal static void ResolveReceivedRequest(API.Request request, API.RequestResult result, string metadata = "") {
         var keysToResolve = PendingResponses.Where(pair => pair.Value == request).Select(pair => pair.Key).ToList();
         foreach (var key in keysToResolve) {
-            CohtmlPatches.Request.DeleteRequest(key);
+            RequestLib.DeleteRequest(key);
             if (result != API.RequestResult.TimedOut) {
                 API.SendResponse(request, new API.Response(result, metadata), key);
             }
@@ -143,9 +143,16 @@ internal static class ModNetwork {
             writer.Write((uint) timeoutInSeconds.TotalSeconds);
             writer.Write(request.Message, Encoding.UTF8);
         });
+
+        RequestLib.CreateSentRequest(request, guid, request.TargetPlayerGuid, request.ModName, request.Message);
     }
 
-    private static void OnRequest(string senderGuid, string possibleRequestGuid, string requestModName, string requestMeta, uint requestTimeoutSeconds, string requestMessage) {
+#if DEBUG
+    internal
+#else
+    private
+#endif
+        static void OnRequest(string senderGuid, string possibleRequestGuid, string requestModName, string requestMeta, uint requestTimeoutSeconds, string requestMessage) {
 
         if (!Guid.TryParseExact(possibleRequestGuid, GuidFormat, out var requestGuid)) {
             MelonLogger.Warning($"Ignored request from {senderGuid} because the request GUID is not not valid ({possibleRequestGuid}). This should never happen...");
@@ -167,10 +174,12 @@ internal static class ModNetwork {
             return;
         }
 
+#if !DEBUG
         if (!API.RemotePlayerMods.TryGetValue(senderGuid, out var registeredMods) || !registeredMods.Contains(requestModName)) {
             MelonLogger.Warning($"Ignored request from {senderGuid} because the Request mod name {requestModName} was not registered. This should never happen...");
             return;
         }
+#endif
 
         if (requestMessage.Length > MessageMaxCharCount) {
             MelonLogger.Warning($"Ignored request from {senderGuid} because the Request message is over {MessageMaxCharCount} characters, sent: {requestMessage.Length}. This should never happen...");
@@ -216,9 +225,10 @@ internal static class ModNetwork {
         // Check whether there is an interceptor blocking the displaying of the request or not
         var interceptorResult = API.RunInterceptor(request);
 
-        // We're displaying the request, so we'll leave the the user to reply to it
+        // We're displaying the request, so we'll leave the user to reply to it
         if (interceptorResult.ShouldDisplayRequest) {
-            CohtmlPatches.Request.CreateRequest(request, pendingResponseGuid, senderGuid, requestModName, requestMessage);
+            RequestLib.CreateReceivedRequest(request, pendingResponseGuid, senderGuid, requestModName, requestMessage);
+            // CohtmlPatches.Request.CreateRequest(request, pendingResponseGuid, senderGuid, requestModName, requestMessage);
         }
 
         // We're not displaying the request, so we need to decide which result to send.
@@ -280,8 +290,9 @@ internal static class ModNetwork {
         }
 
         var pendingRequestGuid = responseGuid.ToString(GuidFormat);
+        var apiResponse = accepted ? API.RequestResult.Accepted : API.RequestResult.Declined;
         if (PendingRequests.Remove(pendingRequestGuid, out var request)) {
-            var response = new API.Response(accepted ? API.RequestResult.Accepted : API.RequestResult.Declined, responseMetadata);
+            var response = new API.Response(apiResponse, responseMetadata);
             try {
                 request.OnResponse?.Invoke(request, response);
             }
@@ -289,6 +300,9 @@ internal static class ModNetwork {
                 MelonLogger.Error($"The response handler function has errored. This is a problem with the mod {request.ModName}", e);
             }
         }
+
+        // Create the answer info
+        RequestLib.CreateAnsweredInfo(pendingRequestGuid, request.TargetPlayerGuid, request.ModName, request.Message, apiResponse);
     }
 
     private static void OnMessage(object _, MessageReceivedEventArgs e) {
@@ -439,12 +453,17 @@ internal static class ModNetwork {
                 var response = new API.Response(API.RequestResult.TimedOut, "");
                 timedOutRequest.Value.OnResponse?.Invoke(timedOutRequest.Value, response);
                 PendingRequests.Remove(timedOutRequest.Key);
+
+                var removedRequest = timedOutRequest.Value;
+                // Create the answer info saying our request timed-out
+                RequestLib.CreateAnsweredInfo(timedOutRequest.Key, removedRequest.TargetPlayerGuid, removedRequest.ModName, removedRequest.Message, API.RequestResult.TimedOut);
             }
 
             // Check timeouts for pending response (on the requester target)
             var timedOutResponses = PendingResponses.Where(pair => pair.Value.Timeout < DateTime.UtcNow).ToList();
             foreach (var timedOutResponse in timedOutResponses) {
-                CohtmlPatches.Request.DeleteRequest(timedOutResponse.Key);
+                // Remove the requested from our pendings
+                RequestLib.DeleteRequest(timedOutResponse.Key);
                 PendingResponses.Remove(timedOutResponse.Key);
             }
         }

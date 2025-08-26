@@ -12,9 +12,9 @@ public class SteamAudioOverrides : MelonMod {
 
         ModConfig.InitializeMelonPrefs();
 
-        CVRGameEventSystem.Spawnable.OnInstantiate.AddListener((spawnerGuid, spawnable) => {
+        CVRGameEventSystem.Spawnable.OnPropSpawned.AddListener((spawnerGuid, spawnable) => {
             if (!ModConfig.MeForceAddSteamAudioSources.Value) return;
-            foreach (var audioSource in spawnable.GetComponentsInChildren<AudioSource>(true)) {
+            foreach (var audioSource in spawnable.Spawnable.GetComponentsInChildren<AudioSource>(true)) {
                 if (audioSource.GetComponent<SteamAudioSource>() != null) continue;
                 audioSource.spatialize = true;
                 var sas = audioSource.gameObject.AddComponent<SteamAudioSource>();

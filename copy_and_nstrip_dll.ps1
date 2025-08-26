@@ -21,7 +21,7 @@ $dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVid
 $modNames = @("BTKUILib", "BTKSAImmersiveHud", "PortableMirrorMod", "VRBinding")
 
 # Array with dlls to ignore from ManagedLibs
-$cvrManagedLibNamesToIgnore = @("netstandard", "Mono.Cecil", "Unity.Burst.Cecil")
+$cvrManagedLibNamesToIgnore = @("netstandard", "Mono.Cecil", "Unity.Burst.Cecil", "Microsoft.Win32.Registry")
 
 if ($cvrPath -and (Test-Path "$cvrPath\$cvrExecutable")) {
     # Found ChilloutVR.exe in the existing CVRPATH

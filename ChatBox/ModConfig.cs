@@ -45,7 +45,7 @@ public static class ModConfig {
     private const string ChatBoxHistoryPrefabAssetPath = "Assets/Chatbox/History.prefab";
 
     internal static string JavascriptPatchesContent;
-    private const string ChatBoxJsPatches = "chatbox.cohtml.cvrtest.ui.patches.js";
+    private const string ChatBoxJsPatches = "chatbox.cohtml.keyboard.patches.js";
 
     // Files
     internal enum Sound {
@@ -275,7 +275,7 @@ public static class ModConfig {
 
         miscCategory.AddButton("Send Message", iconMsg, "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
             manager.ToggleQuickMenu(false);
-            ChatBox.OpenKeyboard("", false);
+            ChatBox.OpenKeyboard("");
         };
 
         var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", iconMsgSettings, $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));

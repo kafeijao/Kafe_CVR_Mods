@@ -15,22 +15,22 @@ internal static class CohtmlPatches {
 
     internal static void LoadCSSFileMM(string cssFilePath)
     {
-        ViewManager.Instance.gameMenuView.View.TriggerEvent(LoadCSSFileFunctionName, cssFilePath);
+        ViewManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSFileFunctionName, cssFilePath);
     }
 
     internal static void LoadCSSFileQM(string cssFilePath)
     {
-        CVR_MenuManager.Instance.quickMenu.View.TriggerEvent(LoadCSSFileFunctionName, cssFilePath);
+        CVR_MenuManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSFileFunctionName, cssFilePath);
     }
 
     internal static void LoadCSSTextMM(string cssText)
     {
-        ViewManager.Instance.gameMenuView.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
+        ViewManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
     }
 
     internal static void LoadCSSTextQM(string cssText)
     {
-        CVR_MenuManager.Instance.quickMenu.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
+        CVR_MenuManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
     }
 
     [HarmonyPatch]
@@ -43,14 +43,14 @@ internal static class CohtmlPatches {
             try {
 
                 // Load the bindings
-                __instance.gameMenuView.Listener.ReadyForBindings += () =>
+                __instance.cohtmlView.Listener.ReadyForBindings += () =>
                 {
-                    __instance.gameMenuView.View.RegisterForEvent(InitializedFunctionName, MainMenuInitialized);
+                    __instance.cohtmlView.View.RegisterForEvent(InitializedFunctionName, MainMenuInitialized);
                 };
 
                 // Inject our Cohtml
-                __instance.gameMenuView.Listener.FinishLoad += _ => {
-                    __instance.gameMenuView.View._view.ExecuteScript(ModConfig.MenuJsPatchesContent);
+                __instance.cohtmlView.Listener.FinishLoad += _ => {
+                    __instance.cohtmlView.View._view.ExecuteScript(ModConfig.MenuJsPatchesContent);
                 };
 
             }
@@ -67,14 +67,14 @@ internal static class CohtmlPatches {
             try {
 
                 // Load the bindings
-                __instance.quickMenu.Listener.ReadyForBindings += () =>
+                __instance.cohtmlView.Listener.ReadyForBindings += () =>
                 {
-                    __instance.quickMenu.View.RegisterForEvent(InitializedFunctionName, QuickMenuInitialized);
+                    __instance.cohtmlView.View.RegisterForEvent(InitializedFunctionName, QuickMenuInitialized);
                 };
 
                 // Inject our Cohtml
-                __instance.quickMenu.Listener.FinishLoad += _ => {
-                    __instance.quickMenu.View._view.ExecuteScript(ModConfig.MenuJsPatchesContent);
+                __instance.cohtmlView.Listener.FinishLoad += _ => {
+                    __instance.cohtmlView.View._view.ExecuteScript(ModConfig.MenuJsPatchesContent);
                 };
 
             }

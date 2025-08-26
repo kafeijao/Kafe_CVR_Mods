@@ -66,15 +66,19 @@ public class NavMeshFollower : MelonMod {
     private class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
-        public static void After_PlayerSetup_LateUpdate(PlayerSetup __instance) {
+        [HarmonyPatch(typeof(PlayerBase), nameof(PlayerBase.LateUpdate))]
+        public static void After_PlayerSetup_LateUpdate(PlayerBase __instance)
+        {
+            if (__instance is not PlayerSetup) return;
+
             // Save view point positions. This late update runs after VRIK, so all viewpoints should be gucci
             try {
                 // Save player's viewpoints
                 if (PlayerViewpoints.Count != CVRPlayerManager.Instance.NetworkPlayers.Count + 1) PlayerViewpoints.Clear();
-                PlayerViewpoints[MetaPort.Instance.ownerId] = PlayerSetup.Instance._viewPoint.GetPointPosition();
+                PlayerViewpoints[MetaPort.Instance.ownerId] = PlayerSetup.Instance.ViewPoint.GetPointPosition();
                 foreach (var player in CVRPlayerManager.Instance.NetworkPlayers) {
-                    PlayerViewpoints[player.Uuid] = player.PuppetMaster._viewPoint.GetPointPosition();
+                    if (!player.PuppetMaster.IsAvatarLoaded) continue; // GetPointPosition can have the fallback transform null on first frame
+                    PlayerViewpoints[player.Uuid] = player.PuppetMaster.ViewPoint.GetPointPosition();
                 }
             }
             catch (Exception e) {

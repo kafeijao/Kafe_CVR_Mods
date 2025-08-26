@@ -1,12 +1,12 @@
-﻿using ABI_RC.Core.Player;
-using ABI_RC.Systems.IK;
+﻿using ABI_RC.Systems.IK;
 using ABI_RC.Systems.IK.TrackingModules;
 using Kafe.OSC.Components;
 using UnityEngine;
 
 namespace Kafe.OSC.Events;
 
-public enum TrackingDataSource {
+public enum TrackingDataSource
+{
     hmd,
     base_station,
     right_controller,
@@ -15,9 +15,10 @@ public enum TrackingDataSource {
     unknown,
 }
 
-public static class Tracking {
-
+public static class Tracking
+{
     private static bool _enabled;
+
     // private static bool _sendTrackingData;
     // private static bool _receiveTrackingData;
     private static float _updateRate;
@@ -32,8 +33,8 @@ public static class Tracking {
     public static event Action<TrackingDataSource, int, string, Vector3, Vector3, float> TrackingDataDeviceUpdated;
     public static event Action<Vector3, Vector3> TrackingDataPlaySpaceUpdated;
 
-    static Tracking() {
-
+    static Tracking()
+    {
         // Set whether the module is enabled and handle the config changes
         _enabled = OSC.Instance.meOSCTrackingModule.Value;
         // _sendTrackingData = OSC.Instance.meOSCTrackingModuleSendData.Value;
@@ -45,7 +46,8 @@ public static class Tracking {
         // Set the update rate and handle the config changes
         _updateRate = OSC.Instance.meOSCTrackingModuleUpdateInterval.Value;
         _nextUpdate = _updateRate + Time.time;
-        OSC.Instance.meOSCTrackingModuleUpdateInterval.OnEntryValueChanged.Subscribe((_, newValue) => {
+        OSC.Instance.meOSCTrackingModuleUpdateInterval.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             _updateRate = newValue;
             _nextUpdate = Time.time + newValue;
         });
@@ -55,12 +57,13 @@ public static class Tracking {
         // Scene.PlayerSetup += () => _playerHmdTransform = PlayerSetup.Instance.vrCamera.transform;
     }
 
-    public static void OnTrackingDataDeviceUpdated(SteamVRTrackingModule steamVRTrackingModule) {
-
+    public static void OnTrackingDataDeviceUpdated(SteamVRTrackingModule steamVRTrackingModule)
+    {
         // Ignore if the module is disabled
         if (!_enabled /*|| !_sendTrackingData*/) return;
 
-        if (Time.time >= _nextUpdate) {
+        if (Time.time >= _nextUpdate)
+        {
             _nextUpdate = Time.time + _updateRate;
 
             // Handle Play Space
@@ -70,15 +73,17 @@ public static class Tracking {
             // var print = Input.GetKeyDown(KeyCode.P);
 
             // Handle trackers
-            foreach (var steamVRTracker in SteamVRTrackingModuleWrapper.TrackersInfo.Values) {
-
+            foreach (var steamVRTracker in SteamVRTrackingModuleWrapper.TrackersInfo.Values)
+            {
                 var isActive = steamVRTracker.IsActive && steamVRTracker.IsValid;
 
                 // Manage Connected/Disconnected trackers
                 if ((!TrackerLastState.ContainsKey(steamVRTracker) && isActive)
-                    || (TrackerLastState.ContainsKey(steamVRTracker) && TrackerLastState[steamVRTracker] != isActive)) {
+                    || (TrackerLastState.ContainsKey(steamVRTracker) && TrackerLastState[steamVRTracker] != isActive))
+                {
                     // MelonLogger.Msg($"[Tracker] Idx: {steamVRTracker.Index}, IsActive: {steamVRTracker.IsActive}, IsValid: {steamVRTracker.IsValid}, Name: {steamVRTracker.Name}, Class: {steamVRTracker.Class}, Role: {steamVRTracker.Role.ToString()}, DataSource: {steamVRTracker.DataSource.ToString()}, BatteryLevel: {steamVRTracker.BatteryLevel}, Position: {steamVRTracker.Position.ToString("F2")}, Rotation: {steamVRTracker.Rotation.eulerAngles.ToString("F2")}");
-                    TrackingDeviceConnected?.Invoke(isActive, steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name);
+                    TrackingDeviceConnected?.Invoke(isActive, steamVRTracker.DataSource, steamVRTracker.Index,
+                        steamVRTracker.Name);
                     TrackerLastState[steamVRTracker] = isActive;
                 }
 
@@ -89,7 +94,9 @@ public static class Tracking {
                 // Ignore inactive trackers
                 if (!isActive) continue;
 
-                TrackingDataDeviceUpdated?.Invoke(steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name, playSpace.TransformPoint(steamVRTracker.Position), (playSpace.rotation * steamVRTracker.Rotation).eulerAngles, steamVRTracker.BatteryLevel);
+                TrackingDataDeviceUpdated?.Invoke(steamVRTracker.DataSource, steamVRTracker.Index, steamVRTracker.Name,
+                    playSpace.TransformPoint(steamVRTracker.Position),
+                    (playSpace.rotation * steamVRTracker.Rotation).eulerAngles, steamVRTracker.BatteryLevel);
             }
 
             // // Handle HMD
@@ -102,7 +109,8 @@ public static class Tracking {
         }
     }
 
-    internal static void Reset() {
+    internal static void Reset()
+    {
         // Clear the cache to force an update to the connected devices
         TrackerLastState.Clear();
     }

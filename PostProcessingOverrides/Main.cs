@@ -306,7 +306,7 @@ public class PostProcessingOverrides : MelonMod {
             _currentWorldGuid = MetaPort.Instance.CurrentWorldId;
             _currentWorldInitialized = false;
 
-            _currentWorldCamera = PlayerSetup.Instance.GetActiveCamera().GetComponent<Camera>();
+            _currentWorldCamera = PlayerSetup.Instance.activeCam;
             _currentWorldLayer = _currentWorldCamera.GetComponent<PostProcessLayer>();
 
             // If the camera doesn't have a post process layer, add one

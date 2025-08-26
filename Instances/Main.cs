@@ -44,13 +44,9 @@ public class Instances : MelonMod {
     private static bool _isChangingInstance;
     private static bool _consumedTeleport;
 
-    private const string GroupId = "SFW";
-
     public const int TeleportToLocationTimeout = 5;
 
-    public const string InstanceRestartConfigArg = "--instances-owo-what-is-dis";
-    public const string InstanceSkipDeepLink = "--instances-skip-deep-link";
-
+    public const string RestartedWithInstancesMod = "--restarted-with-instances-mod";
 
     // Config File Saving
     private static readonly BlockingCollection<string> JsonContentQueue = new(new ConcurrentQueue<string>());
@@ -488,24 +484,18 @@ public class Instances : MelonMod {
             }
 
             if (isInitial) {
-
-                // We failed to get the last instance, let's give it a try to loading into an online initial instance
-                if (ModConfig.MeStartInAnOnlineInstance.Value) {
-                    yield return CreateAndJoinOnlineInstance();
-                }
-                // Otherwise let's just load to our offline world
-                else {
-                    // If failed to find the instance -> Load the offline instance home world
-                    MelonLogger.Msg($"Failed to join the previous Instance... Sending you to your offline home world.");
-                    Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
-                }
+                // If failed to find the instance -> Load the offline instance home world
+                MelonLogger.Msg($"Failed to join the previous Instance... Sending you to your offline home world.");
+                Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
             }
+
             else {
                 // User clicked on an instance that is no longer valid, or the initial instance we created borked
                 MelonLogger.Msg($"Instance {instanceId} has not been found.");
                 CohtmlHud.Instance.ViewDropTextImmediate("", "Instance not Available",
                     "The instance you're trying to join doesn't was deleted or you don't have permission...", "", false);
             }
+
             // Let's invalidate the attempted instance
             InvalidateInstance(instanceId);
         }
@@ -548,74 +538,6 @@ public class Instances : MelonMod {
         CVRInstances.Port = instanceInfo.JoinToken.Port;
     }
 
-
-    private static IEnumerator CreateAndJoinOnlineInstance() {
-
-        // I don't know why, but on r173 vivox won't connect when joining using the token... prob race condition
-        yield return new WaitForSeconds(2f);
-
-        var createInstanceTask = ApiConnection.MakeRequest<InstanceCreateResponse>(ApiConnection.ApiOperation.InstanceCreate, new {
-            worldId = MetaPort.Instance.homeWorldGuid,
-            privacy = ModConfig.MeStartingInstancePrivacyType.Value.ToString(),
-            region = ((int) ModConfig.MeStartingInstanceRegion.Value).ToString(),
-            groupId = GroupId,
-        });
-        yield return new WaitUntil(() => createInstanceTask.IsCompleted);
-
-        var createInstancedInfo = createInstanceTask.Result;
-
-        if (createInstancedInfo != null) {
-
-            // Failed to create the instance
-            if (createInstancedInfo.Data == null) {
-                MelonLogger.Warning($"Failed to create an Initial Online instance. Reason: {createInstancedInfo.Message}");
-            }
-            // Created the instance, let's join it!
-            else {
-                #if DEBUG
-                MelonLogger.Warning($"Created an Online Instance: [{createInstancedInfo.Data.Region}][{createInstancedInfo.Data.Id}] {createInstancedInfo.Data.Name}");
-                #endif
-
-                var instanceId = createInstancedInfo.Data.Id;
-
-                // Let's get the instance details to see if it's up (we'll try 3 times and then give up)
-                for (var attemptNum = 1; attemptNum <= 3; attemptNum++) {
-
-                    // They also wait on the UI for 300 ms... It seems it takes a while before we can request the instance details
-                    yield return new WaitForSeconds(ModConfig.MeInstanceCreationJoinAttemptInterval.Value * attemptNum);
-
-                    var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceId });
-                    yield return new WaitUntil(() => task.IsCompleted);
-                    var instanceDetails = task.Result;
-
-                    if (instanceDetails?.Data == null) {
-                        if (instanceDetails != null) {
-                            MelonLogger.Warning($"[Attempt {attemptNum}/3]The created Instance {instanceId} is still not up... Message: {instanceDetails.Message}");
-                        }
-                    }
-                    else {
-                        // Update the world image url
-                        UpdateWorldImageUrl(instanceDetails.Data.World.Id, instanceDetails.Data.World.ImageUrl);
-
-                        // Wait for the instance to warmup (reduces failed connections)
-                        yield return new WaitForSeconds(1f);
-
-                        // Load into the instance
-                        MelonLogger.Msg($"The created {instanceDetails.Data.Name} is {(attemptNum > 1 ? "finally" : "")} up! Attempting to join...");
-                        ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id);
-
-                        // We succeeded so lets break the coroutine here
-                        yield break;
-                    }
-                }
-            }
-        }
-
-        // If failed to create the instance -> Load the offline instance home world
-        MelonLogger.Warning($"Failed to create an Initial Online Instance :( Sending you to your offline home world.");
-        Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
-    }
-
     private static bool _skipInitialLoad;
 
     public override void OnUpdate() {
@@ -645,45 +567,6 @@ public class Instances : MelonMod {
         return false;
     }
 
-    private static void Initialize() {
-
-        // Let's attempt to join the last instance
-        if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && PlayerConfig.LastInstance != null) {
-
-            // Attempt to join with an instance token
-            if (ModConfig.MeAttemptToSaveAndLoadToken.Value && PlayerConfig.LastInstance.JoinToken != null) {
-                if (!ModConfig.MePreventRejoiningEmptyInstances.Value || PlayerConfig.LastInstance.RemotePlayersCount > 0) {
-                    if (AttemptToUseTicked(PlayerConfig.LastInstance)) return;
-                }
-                else {
-                    MelonLogger.Msg($"Skipping rejoining using token, because the instance is probably closing/closed. [MePreventRejoiningEmptyInstances=true]");
-                }
-            }
-
-            // Check if joining last instance timed out
-            if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && DateTime.UtcNow - PlayerConfig.RejoinLocation.ClosedDateTime > TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value)) {
-                MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
-            }
-            // Otherwise just attempt to join the last instance
-            else {
-                OnInstanceSelected(PlayerConfig.LastInstance.InstanceId, true);
-                return;
-            }
-        }
-
-        // Reset the last instance, there was a reason we didn't use it
-        PlayerConfig.LastInstance = null;
-
-        // Otherwise let's join our home world, but in an online instance
-        if (ModConfig.MeStartInAnOnlineInstance.Value) {
-            MelonCoroutines.Start(CreateAndJoinOnlineInstance());
-            return;
-        }
-
-        // Join our offline world
-        Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
-    }
-
     private static bool HasCommandLineArg(string arg)
     {
         foreach (string commandLineArg in Environment.GetCommandLineArgs()) {
@@ -707,25 +590,67 @@ public class Instances : MelonMod {
                 if (!_skipInitialLoad) {
                     _skipInitialLoad = true;
 
-                    // Prevent running our stuff if the game is starting with a DeepLink Url
-                    if (CheckVR.Instance.hasDeepLinkUrl && !DeepLinkHelper._consumedJoinInstanceLaunchArg)
+                    if (HasCommandLineArg(RestartedWithInstancesMod))
                     {
-                        if (HasCommandLineArg(InstanceSkipDeepLink))
+                        MelonLogger.Msg("Skipping the Deeplink, DiscordJoin, and LocalTesting because the game is is starting from an Instances Restart");
+                    }
+                    // Check if we should let the game do its thing
+                    else
+                    {
+                        // Prevent running our stuff if the game is starting with a DeepLink Url
+                        if (CheckVR.Instance.hasDeepLinkUrl && !DeepLinkHelper._consumedJoinInstanceLaunchArg)
                         {
-                            MelonLogger.Msg("Skipping the DeepLink Url because the game is is starting from an Instances Restart");
+                            MelonLogger.Msg("Skipping Instances initialize because the game is starting with a DeepLink Url");
+                            return true;
                         }
-                        else
+
+                        // Prevent running our stuff if the game is starting with discord join
+                        if (RichPresence.HasDiscordJoinId && !string.IsNullOrWhiteSpace(RichPresence.JoinInstanceId))
                         {
-                            MelonLogger.Msg("Skipping Instances initial join because the game is starting with a DeepLink Url");
+                            MelonLogger.Msg("Skipping Instances initialize because the game is starting with a Discord Join");
                             return true;
                         }
                     }
 
-                    // Still load the avatar
-                    AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
-                    // We're assuming we already authenticated (we wouldn't be reaching here otherwise)
-                    Initialize();
-                    return false;
+                    // Let's attempt to join the last instance
+                    if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value && PlayerConfig.LastInstance != null) {
+
+                        // Attempt to join with an instance token
+                        if (ModConfig.MeAttemptToSaveAndLoadToken.Value && PlayerConfig.LastInstance.JoinToken != null) {
+                            if (!ModConfig.MePreventRejoiningEmptyInstances.Value || PlayerConfig.LastInstance.RemotePlayersCount > 0) {
+                                if (AttemptToUseTicked(PlayerConfig.LastInstance))
+                                {
+                                    // We used the join ticket to join, lets load our avatar since we're skipping normal init
+                                    AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
+                                    return false;
+                                }
+                            }
+                            else {
+                                MelonLogger.Msg($"Skipping rejoining using token, because the instance is probably closing/closed. [MePreventRejoiningEmptyInstances=true]");
+                            }
+                        }
+
+                        // Check if joining last instance timed out
+                        var timeSinceLeavingInstance = DateTime.UtcNow - PlayerConfig.RejoinLocation.ClosedDateTime;
+                        var timeToTimeoutJoiningLastInstance = TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value);
+                        if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && timeSinceLeavingInstance > timeToTimeoutJoiningLastInstance) {
+                            MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
+                        }
+
+                        // Otherwise just attempt to join the last instance
+                        else {
+                            // We're manually joining an instance, lets load our avatar since we're skipping normal init
+                            AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
+                            OnInstanceSelected(PlayerConfig.LastInstance.InstanceId, true);
+                            return false;
+                        }
+                    }
+
+                    // Reset the last instance, there was a reason we didn't use it
+                    PlayerConfig.LastInstance = null;
+
+                    // We didn't use our initialization, let's let the game do its thing
+                    return true;
                 }
             }
             catch (Exception e) {
@@ -790,16 +715,6 @@ public class Instances : MelonMod {
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_ReadPresenceUpdateFromNetwork)}");
                 MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(MetaPort), nameof(MetaPort.Start))]
-        public static void After_MetaPort_Start() {
-            // Look for arguments set by a previous restart of the game by the Instances Mod
-            if (HasCommandLineArg(InstanceRestartConfigArg))
-            {
-                MetaPort.Instance.matureContentAllowed = true;
             }
         }
     }

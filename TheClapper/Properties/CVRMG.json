@@ -1,8 +1,8 @@
 {
   "_id": 119,
   "name": "TheClapper",
-  "modversion": "1.0.6",
-  "gameversion": "2024r176",
+  "modversion": "1.0.7",
+  "gameversion": "2025r180",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "prop"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/TheClapper.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r79/TheClapper.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper",
-  "changelog": "- Added option to disable Avatar clapping completely (`off` by default)\n- Added option to disable Prop clapping completely (`off` by default)\n- Added option to allow always clapping avatars when they are hidden, useless if avatar clapping is disabled (`on` by default)\n- Added option that adds all prop pickup points as clappable points (`off` by default)\n- Added option that adds all prop sub-sync points as clappable points (`off` by default)\n- Added option that prevents clapping props spawned by the local player (`off` by default)\n- Added option that prevents clapping friend's spawned props (`off` by default)\n- Fixed prevent clapping friends props being true by default\n- Fixed prevent clapping friend's props also preventing clapping our own.",
+  "changelog": "- Fixed for 2025r180",
   "embedcolor": "16C60C"
 }

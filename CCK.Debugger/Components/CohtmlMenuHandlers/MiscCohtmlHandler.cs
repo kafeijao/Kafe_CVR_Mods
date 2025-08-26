@@ -47,8 +47,8 @@ public class MiscCohtmlHandler : ICohtmlHandler {
             // Player stuff
             LabeledVisualizer.Create(PlayerSetup.Instance.gameObject, PlayerSetup.Instance.name);
             LabeledVisualizer.Create(PlayerSetup.Instance.PlayerAvatarParent, PlayerSetup.Instance.PlayerAvatarParent.name);
-            if (PlayerSetup.Instance._avatar != null) {
-                LabeledVisualizer.Create(PlayerSetup.Instance._avatar, PlayerSetup.Instance._avatar.name);
+            if (PlayerSetup.Instance.AvatarObject != null) {
+                LabeledVisualizer.Create(PlayerSetup.Instance.AvatarObject, PlayerSetup.Instance.AvatarObject.name);
             }
 
             // Update trackers visualizers
@@ -176,15 +176,16 @@ public class MiscCohtmlHandler : ICohtmlHandler {
         var hasFaceTracking = FaceTrackingManager.Instance.IsEyeDataAvailable;
         var eyeSection = _faceTrackingSection.AddSection("Eye Tracking");
         eyeSection.AddSection("Data Available").AddValueGetter(() => ToString(hasFaceTracking()));
-        eyeSection.AddSection("Gaze Direction").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().GazeDirection.ToString("F2") : "N/A");
+        eyeSection.AddSection("Gaze Direction").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().gazePoint.ToString("F2") : "N/A");
 
-        var hasLipTracking = FaceTrackingManager.Instance.IsLipDataAvailable;
-        var lipSection = _faceTrackingSection.AddSection("Lip Tracking");
-        lipSection.AddSection("Data Available").AddValueGetter(() => ToString(hasLipTracking()));
-        for (var i = 0; i < 37; i++) {
-            var shapeKeyIdx = i;
-            lipSection.AddSection($"BlendShape {i}").AddValueGetter(() => hasLipTracking() ? FaceTrackingManager.Instance.GetFacialTrackingData().LipShapeData[shapeKeyIdx].ToString(CultureInfo.InvariantCulture) : "N/A");
-        }
+        // Todo: Add the new ft stuff
+        // var hasLipTracking = FaceTrackingManager.Instance.IsLipDataAvailable;
+        // var lipSection = _faceTrackingSection.AddSection("Lip Tracking");
+        // lipSection.AddSection("Data Available").AddValueGetter(() => ToString(hasLipTracking()));
+        // for (var i = 0; i < 37; i++) {
+        //     var shapeKeyIdx = i;
+        //     lipSection.AddSection($"BlendShape {i}").AddValueGetter(() => hasLipTracking() ? FaceTrackingManager.Instance.GetFacialTrackingData().LipShapeData[shapeKeyIdx].ToString(CultureInfo.InvariantCulture) : "N/A");
+        // }
 
         Events.DebuggerMenuCohtml.OnCohtmlMenuCoreCreate(core);
     }

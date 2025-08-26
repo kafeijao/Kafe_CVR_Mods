@@ -8,14 +8,4 @@
         </Reference>
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.31" />
-        <PackageReference Include="Rug.Osc.Core" Version="1.0.0" />
-    </ItemGroup>
-
-    <Target Name="CopyRugOscCoreToManagedLibs" BeforeTargets="BeforeBuild">
-        <!-- Copy the Rug.Osc.Core DLL to a known location, you might have to modify the location if it doesn't match with yours -->
-        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\Rug.Osc.Core\1.0.0\lib\netstandard2.1\Rug.Osc.Core.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
-    </Target>
-
 </Project>

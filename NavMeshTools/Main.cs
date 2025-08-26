@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core;
+using ABI_RC.Core.Base;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.GameEventSystem;
@@ -149,6 +150,13 @@ internal class NavMeshTools : MelonMod {
 
                     readableMesh = Utils.MakeReadableMeshCopy(meshCollider.sharedMesh);
                     runtimeSharedMeshes[meshCollider.sharedMesh] = readableMesh;
+
+                    if (!CVRWorld.Instance)
+                    {
+                        // Queue cleanup for the created mesh and remove from the runtime created meshes
+                        CVRWorld.Instance.AddToCleanup(readableMesh);
+                        CVRWorld.Instance.OnCleanup += _ => runtimeSharedMeshes.Remove(meshCollider.sharedMesh);
+                    }
                 }
 
                 meshCollider.sharedMesh = readableMesh;

@@ -3,10 +3,12 @@ using UnityEngine;
 
 namespace Kafe.OSC.Utils;
 
-public static class Converters {
-
-    public static bool TryParseFloat(object valueObj, out float parsedFloat) {
-        switch (valueObj) {
+public static class Converters
+{
+    public static bool TryParseFloat(object valueObj, out float parsedFloat)
+    {
+        switch (valueObj)
+        {
             case float floatValue:
                 parsedFloat = floatValue;
                 return true;
@@ -22,8 +24,10 @@ public static class Converters {
         }
     }
 
-    public static bool TryHardToParseFloat(object valueObj, out float result) {
-        switch (valueObj) {
+    public static bool TryHardToParseFloat(object valueObj, out float result)
+    {
+        switch (valueObj)
+        {
             // Pfft easy mode
             case float floatValue:
                 result = floatValue;
@@ -54,8 +58,10 @@ public static class Converters {
         }
     }
 
-    public static bool TryToParseInt(object valueObj, out int result) {
-        switch (valueObj) {
+    public static bool TryToParseInt(object valueObj, out int result)
+    {
+        switch (valueObj)
+        {
             case int intValue:
                 result = intValue;
                 return true;
@@ -68,8 +74,10 @@ public static class Converters {
         }
     }
 
-    public static bool TryHardToParseInt(object valueObj, out int result) {
-        switch (valueObj) {
+    public static bool TryHardToParseInt(object valueObj, out int result)
+    {
+        switch (valueObj)
+        {
             case int intValue:
                 result = intValue;
                 return true;
@@ -93,8 +101,8 @@ public static class Converters {
         }
     }
 
-    public static AnimatorControllerParameterType? GetParameterType(object valueObj) {
-
+    public static AnimatorControllerParameterType? GetParameterType(object valueObj)
+    {
         // Sort their types and call the correct handler
         if (valueObj is float) return AnimatorControllerParameterType.Float;
         if (valueObj is int) return AnimatorControllerParameterType.Int;
@@ -102,7 +110,8 @@ public static class Converters {
         if (valueObj is null) return AnimatorControllerParameterType.Trigger;
 
         // Attempt to parse the string into their proper type and then call the correct handler
-        if (valueObj is string valueStr) {
+        if (valueObj is string valueStr)
+        {
             if (string.IsNullOrEmpty(valueStr)) return AnimatorControllerParameterType.Trigger;
             if (valueStr.ToLower().Equals("true")) return AnimatorControllerParameterType.Bool;
             if (valueStr.ToLower().Equals("false")) return AnimatorControllerParameterType.Bool;
@@ -111,9 +120,7 @@ public static class Converters {
         }
 
         MelonLogger.Error($"The parameter value {valueObj} was not able to be parsed, it has incorrect" +
-                                  $"format or the type {valueObj.GetType()} is not supported.");
+                          $"format or the type {valueObj.GetType()} is not supported.");
         return null;
     }
-
-
 }

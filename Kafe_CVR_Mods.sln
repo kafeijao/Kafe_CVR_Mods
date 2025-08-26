@@ -22,8 +22,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimizeWindows", "Minimize
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CVRUnverifiedModUpdaterPlugin", "CVRUnverifiedModUpdaterPlugin\CVRUnverifiedModUpdaterPlugin.csproj", "{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterAFK", "BetterAFK\BetterAFK.csproj", "{2FD32016-6331-46B9-9979-6676CED2E1B2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBox", "ChatBox\ChatBox.csproj", "{DF5222E3-DB35-4B81-85EC-ECC665F965D8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RequestLib", "RequestLib\RequestLib.csproj", "{E05795EE-A8E9-4633-A636-A780A90D0F74}"
@@ -31,8 +29,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrabbyBones", "GrabbyBones\GrabbyBones.csproj", "{E06897D7-0099-43C2-B824-4DE2F234CFC4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logger++", "Logger++\Logger++.csproj", "{F513CCEB-5AF5-45E0-9A38-4F5FCAA0D60A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterPortals", "BetterPortals\BetterPortals.csproj", "{14799FDA-25CB-40CD-B787-0050146851D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeleportRequest", "TeleportRequest\TeleportRequest.csproj", "{D75B219B-A126-4F45-A89C-58275E7E7E2B}"
 EndProject
@@ -104,10 +100,6 @@ Global
 		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFF9881B-3A4B-4411-BC98-E112DD5F7C3C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2FD32016-6331-46B9-9979-6676CED2E1B2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF5222E3-DB35-4B81-85EC-ECC665F965D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -124,10 +116,6 @@ Global
 		{F513CCEB-5AF5-45E0-9A38-4F5FCAA0D60A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F513CCEB-5AF5-45E0-9A38-4F5FCAA0D60A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F513CCEB-5AF5-45E0-9A38-4F5FCAA0D60A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{14799FDA-25CB-40CD-B787-0050146851D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{14799FDA-25CB-40CD-B787-0050146851D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{14799FDA-25CB-40CD-B787-0050146851D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{14799FDA-25CB-40CD-B787-0050146851D5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D75B219B-A126-4F45-A89C-58275E7E7E2B}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -33,6 +33,8 @@
 - [RequestHandlers](#T-Kafe-RequestLib-API-RequestHandlers 'Kafe.RequestLib.API.RequestHandlers')
   - [Inteceptor](#F-Kafe-RequestLib-API-RequestHandlers-Inteceptor 'Kafe.RequestLib.API.RequestHandlers.Inteceptor')
   - [OnResponseSent](#F-Kafe-RequestLib-API-RequestHandlers-OnResponseSent 'Kafe.RequestLib.API.RequestHandlers.OnResponseSent')
+- [RequestLib](#T-Kafe-RequestLib-RequestLib 'Kafe.RequestLib.RequestLib')
+  - [DeleteRequest()](#M-Kafe-RequestLib-RequestLib-DeleteRequest-System-String- 'Kafe.RequestLib.RequestLib.DeleteRequest(System.String)')
 - [RequestResult](#T-Kafe-RequestLib-API-RequestResult 'Kafe.RequestLib.API.RequestResult')
   - [Accepted](#F-Kafe-RequestLib-API-RequestResult-Accepted 'Kafe.RequestLib.API.RequestResult.Accepted')
   - [Declined](#F-Kafe-RequestLib-API-RequestResult-Declined 'Kafe.RequestLib.API.RequestResult.Declined')
@@ -388,6 +390,25 @@ Interceptor for the requests.
 ##### Summary
 
 Listener for when a response is going to be sent from the requested side.
+
+<a name='T-Kafe-RequestLib-RequestLib'></a>
+## RequestLib `type`
+
+##### Namespace
+
+Kafe.RequestLib
+
+<a name='M-Kafe-RequestLib-RequestLib-DeleteRequest-System-String-'></a>
+### DeleteRequest() `method`
+
+##### Summary
+
+Clears the message by Reference ID
+This is probably not needed since the UI should clea the message on its own
+
+##### Parameters
+
+This method has no parameters.
 
 <a name='T-Kafe-RequestLib-API-RequestResult'></a>
 ## RequestResult `type`

@@ -40,9 +40,9 @@ public class MenuCSSLoader : MelonMod
 
     public static void ReloadUI()
     {
-        if (ViewManager.Instance.IsMainMenuOpen)
+        if (ViewManager.Instance.IsViewShown)
             ViewManager.Instance.UiStateToggle(false);
-        if (CVR_MenuManager.Instance.IsQuickMenuOpen)
+        if (CVR_MenuManager.Instance.IsViewShown)
             CVR_MenuManager.Instance.ToggleQuickMenu(false);
         CVRInputManager.Instance.reload = true;
     }

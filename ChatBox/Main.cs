@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Core.Networking;
+﻿using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Player;
-using ABI_RC.Core.Savior;
-using ABI_RC.Systems.GameEventSystem;
-using ABI_RC.Systems.InputManagement;
+using ABI_RC.Core.UI.UIRework.Managers;
 using HarmonyLib;
 using Kafe.ChatBox.Properties;
 using MelonLoader;
@@ -17,15 +13,6 @@ public class ChatBox : MelonMod {
 
     private const string AnimatorParameterTyping = "ChatBox/Typing";
     private static readonly int AnimatorParameterTypingLocal = Animator.StringToHash("#" + AnimatorParameterTyping);
-
-    private static bool _isChatBoxKeyboardOpened;
-
-    private static bool _isCohtmlKeyboardOpened;
-
-    private static object _openKeyboardCoroutineToken;
-
-    private static readonly List<string> SentHistory = new();
-    private static int _currentHistoryIndex = -1;
 
     public override void OnInitializeMelon() {
 
@@ -46,175 +33,82 @@ public class ChatBox : MelonMod {
         // Disable warnings for broken Characters, as it may cause lag.
         TMP_Settings.instance.m_warningsDisabled = true;
 
-        // Setup Sent History
         API.OnMessageSent += chatBoxMessage => {
-            if (chatBoxMessage.Source != API.MessageSource.Internal) return;
-            AddMessageToHistory(chatBoxMessage.Message);
+            // Send TTS with chatbox option
             if (ModConfig.MeAlsoSendMsgsToTTS.Value) ViewManager.Instance.SendTTSMessage(chatBoxMessage.Message);
         };
 
-        // Add TTS msgs to history
-        CVRGameEventSystem.Communications.TextToSpeech.OnMessage.AddListener(AddMessageToHistory);
-
-        // Setup the Cohtml Events
-        CohtmlPatches.KeyboardCancelButtonPressed += () => DisableKeyboard(true);
+        // Send IsTyping to the network
         CohtmlPatches.KeyboardKeyPressed += () => {
-            if (!_isChatBoxKeyboardOpened) return;
+            if (!IsChatBoxKeyboardOpened()) return;
             SetIsTyping(API.MessageSource.Internal, true, true);
         };
-        CohtmlPatches.AutoCompleteRequested += (currentInput, index) => {
-            if (CVRPlayerManager.Instance == null) return;
-            var usernames = new List<string> { AuthManager.Username };
-            usernames.AddRange(CVRPlayerManager.Instance.NetworkPlayers.Select(u => u.Username));
 
-            var isEmptyStart = string.IsNullOrEmpty(currentInput) || currentInput.EndsWith(" ") || currentInput.EndsWith("@");
-
-            // Filter the list with usernames that start with the last word
-            if (!isEmptyStart) {
-                var lastSpaceIndex = Math.Max(currentInput.LastIndexOf(' '), currentInput.LastIndexOf('@'));
-                var lastWord = currentInput;
-                if (lastSpaceIndex != -1 && lastSpaceIndex < currentInput.Length - 1) {
-                    lastWord = currentInput.Substring(lastSpaceIndex + 1);
-                }
-                usernames = usernames.FindAll(username => lastWord != "" && username.StartsWith(lastWord, StringComparison.OrdinalIgnoreCase));
-                currentInput = currentInput.Substring(0, currentInput.Length - lastWord.Length);
-            }
-            if (usernames.Count == 0) return;
-
-            // Send the initial message + the username
-            CohtmlPatches.SetKeyboardContent(currentInput + usernames[index % usernames.Count]);
-        };
-
-        void HandleOnPrevious() {
-            if (SentHistory.Count == 0 || _currentHistoryIndex == 0) return;
-            if (_currentHistoryIndex == -1) _currentHistoryIndex = SentHistory.Count - 1;
-            else if (_currentHistoryIndex > 0) _currentHistoryIndex -= 1;
-            else return;
-            CohtmlPatches.SetKeyboardContent(SentHistory[_currentHistoryIndex]);
-        }
-        CohtmlPatches.KeyboardPreviousPressed += HandleOnPrevious;
-        CohtmlPatches.KeyboardArrowUpPressed += HandleOnPrevious;
-        CohtmlPatches.KeyboardArrowDownPressed += () => {
-            if (SentHistory.Count == 0 || _currentHistoryIndex < 0 || _currentHistoryIndex >= SentHistory.Count) return;
-            if (_currentHistoryIndex < SentHistory.Count - 1) {
-                _currentHistoryIndex += 1;
-                CohtmlPatches.SetKeyboardContent(SentHistory[_currentHistoryIndex]);
-            }
-            else {
-                // If we arrow down on the last history string, reset and set the keyboard input to empty.
-                _currentHistoryIndex = -1;
-                CohtmlPatches.SetKeyboardContent("");
-            }
-        };
-        CohtmlPatches.CohtmlKeyboardOpened += () => _isCohtmlKeyboardOpened = true;
-        CohtmlPatches.CohtmlKeyboardClosed += () => _isCohtmlKeyboardOpened = false;
-
-        CVRGameEventSystem.MainMenu.OnClose.AddListener(() => {
-            // When closing the Game Menu (also closes the keyboard) mark keyboard as disabled
-            if (_isChatBoxKeyboardOpened) {
-                MelonCoroutines.Start(DisableKeyboardWithDelay());
-            }
-        });
+        // CohtmlPatches.AutoCompleteRequested += (currentInput, index) => {
+        //     if (CVRPlayerManager.Instance == null) return;
+        //     var usernames = new List<string> { AuthManager.Username };
+        //     usernames.AddRange(CVRPlayerManager.Instance.NetworkPlayers.Select(u => u.Username));
+        //
+        //     var isEmptyStart = string.IsNullOrEmpty(currentInput) || currentInput.EndsWith(" ") || currentInput.EndsWith("@");
+        //
+        //     // Filter the list with usernames that start with the last word
+        //     if (!isEmptyStart) {
+        //         var lastSpaceIndex = Math.Max(currentInput.LastIndexOf(' '), currentInput.LastIndexOf('@'));
+        //         var lastWord = currentInput;
+        //         if (lastSpaceIndex != -1 && lastSpaceIndex < currentInput.Length - 1) {
+        //             lastWord = currentInput.Substring(lastSpaceIndex + 1);
+        //         }
+        //         usernames = usernames.FindAll(username => lastWord != "" && username.StartsWith(lastWord, StringComparison.OrdinalIgnoreCase));
+        //         currentInput = currentInput.Substring(0, currentInput.Length - lastWord.Length);
+        //     }
+        //     if (usernames.Count == 0) return;
+        //
+        //     // Send the initial message + the username
+        //     CohtmlPatches.SetKeyboardContent(currentInput + usernames[index % usernames.Count]);
+        // };
     }
 
-    internal static void AddMessageToHistory(string msg) {
-
-        _currentHistoryIndex = -1;
-
-        // Ignore if the message is the same
-        if (SentHistory.Count > 0 && SentHistory.Last() == msg) return;
-
-        SentHistory.Add(msg);
+    /// <summary>
+    /// Send the chatbox message to the network
+    /// </summary>
+    private static void OnChatboxMessage(string message)
+    {
+        ModNetwork.SendMessage(API.MessageSource.Internal, "", message, true, true, true);
     }
 
-    internal static void OpenKeyboard(string initialMessage, bool delayed) {
-        if (ViewManager.Instance == null) return;
-        _isChatBoxKeyboardOpened = true;
-        if (_openKeyboardCoroutineToken != null) {
-            MelonCoroutines.Stop(_openKeyboardCoroutineToken);
-        }
-        _openKeyboardCoroutineToken = MelonCoroutines.Start(OpenKeyboardCoroutine(initialMessage, delayed));
+    /// <summary>
+    /// Whether the chatbox keyboard is opened or not
+    /// </summary>
+    private static bool IsChatBoxKeyboardOpened()
+    {
+        return KeyboardManager.Instance != null
+               && KeyboardManager.Instance.IsViewShown
+               && KeyboardManager.Instance._keyboardCallback == OnChatboxMessage;
+    }
+
+    internal static void OpenKeyboard(string initialMessage) {
+        // Keyboard is not ready
+        if (KeyboardManager.Instance == null || !KeyboardManager.Instance.IsReady) return;
+
+        string title = $"Send a Chatbox {(ModConfig.MeAlsoSendMsgsToTTS.Value ? "& TTS " : "")}Message";
+        KeyboardManager.Instance.ShowKeyboard(initialMessage, OnChatboxMessage, "Chatbox Message", maxCharacterCount: 1000, multiLine: true, title: title);
     }
 
     internal static void SetIsTyping(API.MessageSource msgSource, bool isTyping, bool notification) {
         if (PlayerSetup.Instance == null) return;
         ModNetwork.SendTyping(msgSource, isTyping, notification);
-        PlayerSetup.Instance.animatorManager.SetParameter(AnimatorParameterTyping, isTyping);
-        var animator = PlayerSetup.Instance._animator;
+        PlayerSetup.Instance.AnimatorManager.SetParameter(AnimatorParameterTyping, isTyping);
+        var animator = PlayerSetup.Instance.Animator;
         if (animator != null) {
             animator.SetBool(AnimatorParameterTypingLocal, isTyping);
         }
     }
 
     public override void OnUpdate() {
-
         if (Input.GetKeyDown(KeyCode.Y) && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
-            && !_isChatBoxKeyboardOpened
-            && !_isCohtmlKeyboardOpened
-            && CVRInputManager.Instance != null && !CVRInputManager.Instance.textInputFocused
-            && CVR_MenuManager.Instance != null && !CVR_MenuManager.Instance.textInputFocused
-            && ViewManager.Instance != null && !ViewManager.Instance.textInputFocused) {
-            OpenKeyboard("", true);
+            && KeyboardManager.Instance != null && !KeyboardManager.Instance.IsViewShown) {
+            OpenKeyboard("");
         }
-
-        if (Input.GetKeyDown(KeyCode.Tab) && _isChatBoxKeyboardOpened) {
-            CohtmlPatches.SendAutoCompleteEvent();
-        }
-    }
-
-    private static float _timer;
-
-    private static IEnumerator OpenKeyboardCoroutine(string initialMsg, bool delay) {
-
-        // If delayed wait 0.2 secs and make sure we're not holding Y
-        _timer = 0f;
-        while (delay && _timer < 0.2f && Input.GetKey(KeyCode.Y)) {
-            _timer += Time.deltaTime;
-            yield return null;
-        }
-
-        if (!MetaPort.Instance.isUsingVr) {
-            CVRInputManager.Instance.inputEnabled = false;
-            CVRInputManager.Instance.textInputFocused = true;
-        }
-        else {
-            ViewManager.Instance._inputField = null;
-            ViewManager.Instance._tmp_inputField = null;
-        }
-
-        // Open main menu and wait for it to be opened (otherwise it won't receive the OpenInWorldKeyboard event)
-        ViewManager.Instance.ForceUiStatus(true);
-        yield return new WaitForSeconds(0.2f);
-
-        // Send the OpenInWorldKeyboard Event
-        ViewManager.Instance.gameMenuView.View.TriggerEvent("OpenInWorldKeyboard", initialMsg);
-
-        ModNetwork.SendTyping(API.MessageSource.Internal, true, true);
-        _openKeyboardCoroutineToken = null;
-    }
-
-    private static void DisableKeyboard(bool resetInputAndFocus) {
-
-        if (resetInputAndFocus) {
-            // Clear stuff (seems seems that is needed when clicking the Enter on the virtual keyboard?
-            if (!MetaPort.Instance.isUsingVr) {
-                CVRInputManager.Instance.inputEnabled = true;
-            }
-            CVRInputManager.Instance.textInputFocused = false;
-        }
-
-        _isChatBoxKeyboardOpened = false;
-        SetIsTyping(API.MessageSource.Internal, false, true);
-        if (_openKeyboardCoroutineToken != null) {
-            MelonCoroutines.Stop(_openKeyboardCoroutineToken);
-        }
-    }
-
-    private static IEnumerator DisableKeyboardWithDelay() {
-        // This delay is here because the menu close menu event happens before the SendToWorldUi
-        // Which would disable _openedKeyboard before we could send the message
-        yield return new WaitForSeconds(0.1f);
-        DisableKeyboard(true);
     }
 
     [HarmonyPatch]
@@ -232,37 +126,6 @@ public class ChatBox : MelonMod {
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerNameplate_Start)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.openMenuKeyboard), typeof(string))]
-        public static void Before_ViewManager_openMenuKeyboard(ViewManager __instance, ref string previousValue) {
-            // When another keyboard is opened while the ChatBox one is already opened -> Disable ChatBox input
-            try {
-                if (_isChatBoxKeyboardOpened) {
-                    DisableKeyboard(false);
-                }
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(Before_ViewManager_openMenuKeyboard)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.SendToWorldUi))]
-        public static void After_ViewManager_SendToWorldUi(ViewManager __instance, string value) {
-            // Capture the keyboard input, and close it after sending
-            try {
-                if (_isChatBoxKeyboardOpened) {
-                    ModNetwork.SendMessage(API.MessageSource.Internal, "", value, true, true, true);
-                    DisableKeyboard(true);
-                }
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_ViewManager_SendToWorldUi)}");
                 MelonLogger.Error(e);
             }
         }

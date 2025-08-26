@@ -18,10 +18,6 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeRejoinLastInstanceOnGameRestart;
     internal static MelonPreferences_Entry<bool> MeRejoinPreviousLocation;
 
-    internal static MelonPreferences_Entry<bool> MeStartInAnOnlineInstance;
-    internal static MelonPreferences_Entry<Region> MeStartingInstanceRegion;
-    internal static MelonPreferences_Entry<InstancePrivacyType> MeStartingInstancePrivacyType;
-
     internal static MelonPreferences_Entry<int> MeInstancesHistoryCount;
 
     internal static MelonPreferences_Entry<float> MeInstanceCreationJoinAttemptInterval;
@@ -94,15 +90,6 @@ public static class ModConfig {
         MeRejoinLastInstanceOnGameRestart = _melonCategory.CreateEntry("RejoinLastInstanceOnRestart", true,
             description: "Whether to join the last instance (if still available) when restarting the game or not.");
 
-        MeStartInAnOnlineInstance = _melonCategory.CreateEntry("StartInAnOnlineInstance", true,
-            description: "Whether to start the game in an online instance or not.");
-
-        MeStartingInstanceRegion = _melonCategory.CreateEntry("StartingInstanceRegion", Region.Europe,
-            description: "Which instance region to use when starting in an online instance.");
-
-        MeStartingInstancePrivacyType = _melonCategory.CreateEntry("StartingInstancePrivacyType", InstancePrivacyType.OwnerMustInvite,
-            description: "Which instance privacy type to use when starting the game in an online instance.");
-
         MeInstancesHistoryCount = _melonCategory.CreateEntry("InstancesHistoryCount", 8,
             description: "How many instances should we keep on the history, needs to be between 4 and 24.");
 
@@ -157,19 +144,6 @@ public static class ModConfig {
             "Restart in the current platform you're in currently.");
         restartButton.OnPress += () => MelonCoroutines.Start(RestartCVR(false));
 
-        var joinInitialOnline = categorySettings.AddToggle("Start on Online Home World",
-            "Should we create an online instance of your Home World when starting the game? Joining last " +
-            "instance takes priority if active.",
-            MeStartInAnOnlineInstance.Value);
-        joinInitialOnline.OnValueUpdated += b => {
-            if (b == MeStartInAnOnlineInstance.Value) return;
-            MeStartInAnOnlineInstance.Value = b;
-        };
-        MeStartInAnOnlineInstance.OnEntryValueChanged.Subscribe((_, newValue) => {
-            if (joinInitialOnline.ToggleValue == newValue) return;
-            joinInitialOnline.ToggleValue = newValue;
-        });
-
         var joinLastInstanceButton = categorySettings.AddToggle("Join last instance after Restart",
             "Should we attempt to join the last instance you were in upon restarting the game? This takes " +
             "priority over starting in an Online Home World.",
@@ -200,18 +174,6 @@ public static class ModConfig {
             GetName(MetaPort.Instance.isUsingVr ? Icon.RestartDesktop : Icon.RestartVR),
             "Restart but switch the platform.");
         restartOtherPlatformButton.OnPress += () => MelonCoroutines.Start(RestartCVR(true));
-
-        var privacyTypeButton = categorySettings.AddButton("Set Starting Instance Type", GetName(Icon.Privacy), "Set the Type of the starting Online Instance.");
-        var multiSelectPrivacy = new MultiSelection("Starting Online Instance Privacy Type", Enum.GetNames(typeof(InstancePrivacyType)), (int) MeStartingInstancePrivacyType.Value);
-        multiSelectPrivacy.OnOptionUpdated += privacyType => MeStartingInstancePrivacyType.Value = (InstancePrivacyType) privacyType;
-        privacyTypeButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectPrivacy);
-        MeStartingInstancePrivacyType.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectPrivacy.SelectedOption = (int) newValue);
-
-        var regionButton = categorySettings.AddButton("Set Starting Region", GetName(Icon.Region), "Set the Region of the starting Online Instance.");
-        var multiSelectRegion = new MultiSelection("Starting Online Instance Region", Enum.GetNames(typeof(Region)), (int) MeStartingInstanceRegion.Value);
-        multiSelectRegion.OnOptionUpdated += regionType => MeStartingInstanceRegion.Value = (Region) regionType;
-        regionButton.OnPress += () => BTKUILib.QuickMenuAPI.OpenMultiSelect(multiSelectRegion);
-        MeStartingInstanceRegion.OnEntryValueChanged.Subscribe((_, newValue) => multiSelectRegion.SelectedOption = (int) newValue);
 
         var configureHistoryLimit = categorySettings.AddButton("Set History Limit", GetName(Icon.History),
             "Define the number of instance to remember, needs to be between 4 and 24.");
@@ -252,11 +214,7 @@ public static class ModConfig {
             var cvrArgs = "@()";
             var envArguments = Environment.GetCommandLineArgs().Skip(1).ToList();
 
-            if (MetaPort.Instance.matureContentAllowed) {
-                envArguments.Add(Instances.InstanceRestartConfigArg);
-            }
-
-            envArguments.Add(Instances.InstanceSkipDeepLink);
+            envArguments.Add(Instances.RestartedWithInstancesMod);
 
             // Handle platform switches
             if (switchPlatform) {

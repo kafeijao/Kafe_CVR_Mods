@@ -147,10 +147,10 @@ public class TheClapper : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.AvatarInstantiated))]
-        private static void After_PuppetMaster_AvatarInstantiated(PuppetMaster __instance, PlayerDescriptor ____playerDescriptor, Animator ____animator) {
-            if (__instance.avatarObject == null) return;
-            ClappableAvatar.Create(__instance, ____playerDescriptor.ownerId, ____playerDescriptor.userName, ____animator);
+        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.OnSetupAvatar))]
+        private static void After_PuppetMaster_AvatarInstantiated(PuppetMaster __instance) {
+            if (__instance.AvatarObject == null) return;
+            ClappableAvatar.Create(__instance, __instance.PlayerId, __instance.CVRPlayerEntity.Username, __instance.Animator);
         }
 
         [HarmonyPostfix]

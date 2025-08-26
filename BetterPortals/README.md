@@ -1,6 +1,10 @@
 # BetterPortals
 
-[![Download Latest BetterPortals.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest BetterPortals.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/BetterPortals.dll)
+![Download Latest BetterPortals.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest BetterPortals.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented into the game as a native feature.
 
 Simple mod that improves portal's usability.
 

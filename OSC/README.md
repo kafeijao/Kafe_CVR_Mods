@@ -5,13 +5,10 @@
 This mod enables interactions with ChilloutVR using OSC. It's very similar to other social VR games OSC Implementation,
 so most external applications should work without many (if any) changes.
 
+The avatar and input module were deprecated since they were implemented natively.
+
 #### Main Features
 
-- Change avatar parameters
-- Control the game inputs (like Gestures, movement, etc)
-- Trigger special game features (like flight, mute, etc)
-- Configurable endpoints (parameters address & type conversion)
-- Change avatar by providing avatar id
 - Spawn and delete props
 - Interact with props (settings/reading their location and synced parameters)
 - Retrieving the tracking data and battery info from `trackers`, `hmd`, `controllers`, `base stations`, and `play space`
@@ -26,8 +23,6 @@ mod. This is a great starting point if you plan developing something in python.
 
 ## Table of Contents
 
-- [OSC Avatar](#OSC-Avatar)
-- [OSC Inputs](#OSC-Inputs)
 - [OSC Props](#OSC-Props)
 - [OSC Tracking](#OSC-Tracking)
 - [Avatar Json Configurations](#Avatar-Json-Configurations)
@@ -36,10 +31,8 @@ mod. This is a great starting point if you plan developing something in python.
 - [Debugging](#Debugging)
 - [Configuration](#General-Configuration)
 
-For now there are 6 categories of endpoints you can use:
+For now there are 4 categories of endpoints you can use:
 
-- [OSC Avatar](#OSC-Avatar) for listening/triggering avatar changes, and also their parameters
-- [OSC Inputs](#OSC-Inputs) for triggering inputs/actions.
 - [OSC Props](#OSC-Props) for interacting with props.
 - [OSC Tracking](#OSC-Tracking) to fetch tracking information (headset, controllers, trackers, play space).
 - [OSC Config](#OSC-Config) configuration/utilities via OSC.
@@ -59,252 +52,8 @@ fun things.
 
 I have encapsulated this API into a [python library](https://github.com/kafeijao/cvr_osc_lib_py) with some examples, and
 you won't need to worry about endpoints, parameters OSC server/client, as everything is done with dataclasses and
-methods to send and receive info. I will maintaining the library updated with the mod! The examples are especially
+methods to send and receive info. I will be maintaining the library updated with the mod! The examples are especially
 interesting.
-
----
-
-## OSC Avatar
-
-The first module is the avatar module, where you are able to interface with avatar related stuff. You can
-change the current avatar you're using via OSC, and also listen to those changes (you'll get the event either way).
-
-Also you're able to change and listen to the avatar parameters. This part part has a lot of customization options
-because you're able to change the addresses and types via a config (not required).
-
----
-
-### OSC Avatar Change
-
-Whenever you load into an avatar the mod will send a message to `/avatar/change` containing as the first and only
-argument a string representing the avatar UUID.
-
-#### Address
-
-```/avatar/change```
-
-**Mod will send:**
-
-#### Arguments
-
-- `arg#1` - Avatar GUID [*string*]
-- `arg#2` - Path to the avatar json config [*string*], this is new to this mod, but as it is an additional param it
-won't break existing osc apps
-
-**Mod will receive:**
-
-#### Arguments
-
-- `arg#1` - Avatar GUID [*string*]
-
-**New:** The mod will also listen to the address `/avatar/change`, so if you send a UUID of an avatar
-(that you have permission to use), it will change your avatar in-game. This is `enabled` by default, but you can go to
-the configurations and disable it.
-
----
-
-## OSC Avatar Parameters
-
-You can listen and trigger parameter changes on your avatar via OSC messages, by default the endpoint to change and
-listen to parameter changes as follow.
-
-#### Address
-
-```/avatar/parameters/<parameter_name>```
-
-Where `<parameter_name>` would be the name of your parameter. *The parameter name is case sensitive!*
-
-#### Arguments [`deprecated`]
-
-- `arg#1` - Parameter value [ *float *|* int *|* bool | null* ], for triggers you can ignore sending a parameter, the
-value will be ignored either way.
-
-These are certain limitations using the endpoint above, because according to the OSC spec you can't have `#` in the
-last member of the OSC address. So some OSC clients will have issues setting local parameters (because in cvr they
-require a `#`). I had to hack my way to force my client to allow `#` on the address ;_;
-
-[//]: # (I marked it as deprecated but will still support it for compatibility reasons. Use the alternative ones bellow if you're)
-
-[//]: # (implementing something new &#40;please&#41;.)
-
-[//]: # ()
-[//]: # (As for sending I'll be sending on both endpoints so just pick one to listen to.)
-
-#### Address [`preferred`]
-
-```/avatar/parameter```
-
-[//]: # (#### Arguments [`preferred`])
-
-[//]: # ()
-[//]: # (- `arg#1` - Parameter value [ *float *|* int *|* bool | null* ], for triggers you can ignore sending a parameter, the)
-
-[//]: # (value will be ignored either way.)
-
-[//]: # (- `arg#2` - Parameter name [ *string* ], *The parameter name is case sensitive!*)
-
-[//]: # ()
-[//]: # (The Parameter value argument should be sent as the same type as the parameter is defined in the animator. But you can)
-
-[//]: # (also send as a `string` or some other type that has a conversion implied.)
-
-[//]: # ()
-[//]: # (**Note:** Sending the correct type will require less code to run, making it more performant.)
-
-[//]: # ()
-[//]: # (We support all animator parameter types, `Float`, `Int`, `Bool`, and `Trigger`&#40;[*]&#40;#Triggers&#41;&#41;)
-
-[//]: # ()
-[//]: # (You can listen for **All** the parameters changes present in the animator!)
-
-[//]: # ()
-[//]: # (As for sending parameter you can send parameter changes for all present in the animator **Except** for the **core)
-
-[//]: # (parameters**. Those are the default parameters CVR modifies for you, Like `GestureRight`, `MovementX`, `Emote`, etc&#41;,)
-
-[//]: # (and since they are set every frame we can't change them in this endpoint.)
-
-[//]: # ()
-[//]: # (If you wish to change those, check the [OSC Inputs]&#40;#OSC-Inputs&#41; section, as)
-
-[//]: # (it allows you to control the input that drives those parameters, for example setting the Input `GestureRight`)
-
-[//]: # (&#40;using [OSC Inputs]&#40;#OSC-Inputs&#41;&#41; to Open Hand will make the game then change the parameter `Gesture Right` to `-1`.)
-[//]: # ()
-[//]: # (### Triggers)
-
-[//]: # ()
-[//]: # (We support the parameter type `Trigger`, but it needs to be enabled in the configuration as it may break some existing)
-
-[//]: # (apps. It uses the same parameter change address, but it sends just the address without any value.)
-
-[//]: # ()
-[//]: # (And when listening)
-
-[//]: # (the same thing, you will receive an OSC message to the parameter address, but there won't be a value.)
-
----
-
-## OSC Inputs
-
-Here is where you can interact with the game in a more generic ways, allow you to send controller inputs or triggering
-actions in the game.
-
-#### Address
-
-```/input/<input_name>```
-
-Where the `<input_name>` is the actual name of the input you're trying to change.
-
-#### Arguments
-
-- `arg#1` - Input value [ *float* | *int* | *bool* ]
-
-There are some inputs that are not present that exist in other VR Social platforms, this is due CVR not having those
-features implemented yet. Like rotating the object you're holding with keyboard inputs. And some others that are new,
-and I'll be making them as [*new*] while listing them.
-
-**Note:** The inputs will stick with the latest value you send, so lets say if you send `/input/Jump` with the value `1`
-will act the same as you holding down the key to Jump, and it will only be released when you send `/input/Jump` with the
-value `0`. So don't forget to reset them in your apps, otherwise you might end up jumping forever.
-
-There are 3 types of Inputs:
-
-- [Axes](#OSC-Inputs-Axes)
-- [Buttons](#OSC-Inputs-Buttons)
-- [Values](#OSC-Inputs-Values)
-
----
-
-### OSC Inputs Axes
-
-Axes expecting a `float` value that ranges between `-1`/`0` and `1`. They are namely used for things that require a
-range of values instead of a on/off, for example the Movement, where `Horizontal` can be set to `-0.5` which would be
-the same as having the thumbstick on your controller to the left (because it's a negative value) but only halfway
-(because it's -0.5, -1 would be all the way to the left).
-
-- `/input/Horizontal` - Move your avatar right `1` or left `-1`
-- `/input/Vertical` - Move your avatar forward `1` or backwards `-1`
-- `/input/LookHorizontal` - Look right `1` or left `-1`
-- `/input/MoveHoldFB` - Move a held object forwards `1` and backwards `-1`
-- `/input/LookVertical` - [*new*] Look up `1` or down `-1`
-- `/input/GripLeftValue` - [*new*] Left hand trigger grip released `0` or pulled to max `1`
-- `/input/GripRightValue` - [*new*] Right hand trigger grip released `0` or pulled to max `1`
-
-### OSC Inputs Buttons
-
-Buttons are expecting `boolean` values, which can be represented by the boolean types `true` for button
-pressed and `false` for released. You can also send `integers` with the values `1` for pressed and `0` for released.
-
-**Note1:** Don't forget to release the buttons, as it will prevent you from sending the press event again.
-
-**Note2:** Some inputs will keep triggering the value to the input (when it says `while true/1`) and others will trigger
-just once (when it says `when true/1`). This is referring to the little description on each input on the next section.
-
-#### Movement and look:
-
-- `/input/MoveForward` - Move forward **while** `true`/`1`
-- `/input/MoveBackward` - Move backwards **while** `true`/`1`
-- `/input/MoveLeft` - Move left **while** `true`/`1`
-- `/input/MoveRight` - Move right **while** `true`/`1`
-- `/input/LookLeft` - Look left **while** `true`/`1`
-- `/input/LookRight` - Look right **while** `true`/`1`
-- `/input/ComfortLeft` - Look left **while** `true`/`1`
-- `/input/ComfortRight` - Look right **while** `true`/`1`
-
-#### Held Objects Interactions:
-
-- `/input/DropRight` - **Drops** currently held object on the right hand **when** `true`/`1`
-- `/input/UseRight` - **Uses** currently held object on the right hand **when** `true`/`1`
-- `/input/GrabRight` - **Grabs** currently object targeted by right hand (or crosshair in desktop) **when** `true`/`1`
-- `/input/DropLeft` - **Drops** currently held object on the left hand **when** `true`/`1`
-- `/input/UseLeft` - **Uses** currently held object on the left hand **when** `true`/`1`
-- `/input/GrabLeft` - **Grabs** currently object targeted by left hand (doesn't work in desktop) **when** `true`/`1`
-
-#### Actions:
-
-- `/input/Jump` - Jump **while** `true`/`1`
-- `/input/Run` - Run **while** `true`/`1`
-- `/input/PanicButton` - Disables all avatars and props **when** `true`/`1` (might require to reloading the instance to revert)
-- `/input/QuickMenuToggleLeft` - Toggles the quick menu **when** `true`/`1`
-- `/input/QuickMenuToggleRight` - Toggles the big menu **when** `true`/`1`
-- `/input/Voice` - Toggles the local mute setting **when** `true`/`1`
-
-#### Special Actions [*new*]:
-
-- `/input/Crouch` - Toggles crouch **when** `true`/`1`
-- `/input/Prone` - Toggles prone **when** `true`/`1`
-- `/input/IndependentHeadTurn` - Enables being able to look around without moving the body **while** `true`/`1`
-- `/input/Zoom` - Enables zoom **while** `true`/`1`
-- `/input/Reload` - Reloads the UI **when** `true`/`1` [*Blacklisted by default*]
-- `/input/ToggleNameplates` - Toggles nameplates **when** `true`/`1`
-- `/input/ToggleHUD` - Toggles the HUD **when** `true`/`1`
-- `/input/ToggleFlightMode` - Toggles flight mode **when** `true`/`1`
-- `/input/Respawn` - Respawns **when** `true`/`1` [*Blacklisted by default*]
-- `/input/ToggleCamera` - Toggles camera **when** `true`/`1`
-- `/input/ToggleSeated` - Toggles seated mode **when** `true`/`1`
-- `/input/QuitGame` - Closes the game **when** `true`/`1` [*Blacklisted by default*]
-
-#### Configuration
-
-You can have certain inputs blacklisted, as some can be very annoying. By default the `Reload`, `Respawn`, and `QuitGame`
-are on the blacklist (`Reload` at the time of writing was bugged and would crash your game (same as spamming `F5`)).
-You can also disable the whole input module on the configuration as well.
-
----
-
-### OSC Inputs Values
-
-Values are similar to `Axes` but removes the restriction of being between `-1` and `1`, they are used to send values to
-certain properties of the game. The values are of the type `float` or `int` and their range is dependent on each entry.
-
-**Note:** Most of these default to the value 0, but there are exceptions. As the other inputs you need to reset to the
-default value otherwise they will remain the last value you sent.
-
-- `/input/Emote` - Sets which emote to play when settings the value. Default: `-1`
-- `/input/GestureLeft` - Sets which gesture to perform on the left hand. Default: `0`
-- `/input/GestureRight` - Sets which gesture to perform on the right hand. Default: `0`
-- `/input/Toggle` - Sets which toggle is active. Default: `0`
 
 ---
 
@@ -314,7 +63,7 @@ This mod module allows to interact with props. I've purposely added limitations 
 check these on bellow. These limitations exist to prevent both abuse and some weird behavior that might happen.  
 
 All props require the Prop GUID in their address (*<prop_guid>*): `1aa10cac-36ba-4e01-b58d-a76dc35f61bb`
-This value can be known before hand, as it's the same guid that gets assigned when you upload something.
+This value can be known beforehand, as it's the same guid that gets assigned when you upload something.
 
 Some props require the Prop instance ID in their address (*<prop_instance_id>*): `8E143EA45EE8`
 This value is a string with 12 characters corresponding to a Hexadecimal value. This value is created when you spawn a
@@ -380,11 +129,11 @@ won't become available for interaction anymore.
 
 ### OSC Props Availability
 
-This address will be called every time a prop has their availability changed. What what I mean by availability is
+This address will be called every time a prop has their availability changed. What I mean by availability is
 where you are able to control or not this prop. The props become available when no remote player is
-*grabbing*, *telegrabbing*, nor has it *attached* to themselves. Also this **only** affects props spawned by yourself!
+*grabbing*, *telegrabbing*, nor has it *attached* to themselves. Also, this **only** affects props spawned by yourself!
 
-The only exception is it will say it is available but you won't be able to set the location if you (the local player)
+The only exception is it will say it is available, but you won't be able to set the location if you (the local player)
 is *grabbing*, *telegrabbing*, or has it *attached*.
 
 Obviously this is an address set by the game, so you can't send osc messages to try to change it.
@@ -697,7 +446,7 @@ you need to enable Triggers parameter type on the mod configuration.
 - `id` - Avatar unique id
 - `name` - Name of the avatar
 - `parameters`
-  - `name` - Name of the parameter, needs to match 1:1 and it is case sensitive
+  - `name` - Name of the parameter, needs to match 1:1 and it is case-sensitive
   - `input` [*Optional*]
     - `address` - Address [*string*] the mod will **listen** for incoming OSC messages [**ignored**]
     - `type` - Expected type of the incoming data: `Int`, `Bool`, `Float`, `Trigger` [**ignored**]
@@ -732,7 +481,7 @@ This is to ensure compatibility with other existent applications.
 
 ## Debugging
 
-Currently there is no easy way to debug. I would recommend using my other mod [CCK.Debugger](../README.md), among other
+Currently, there is no easy way to debug. I would recommend using my other mod [CCK.Debugger](../README.md), among other
 things it allows you to see a menu with all your avatar parameters. Which will update realtime including the changes via
 OSC.
 
@@ -750,20 +499,3 @@ C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR\UserData\MelonPreferenc
 
 You can then edit and look for `[OSC]` line, bellow it there should be all configurations with a little description.
 You **can** edit whether the game is running or not, they should take effect as soon as you save the file.
-
-### Ports
-
-You can configure the ports the mod uses to receive and send the messages. By default it receives on port `9000` and
-sends on port `9001`. So your external program should send to `9000`, and in case you want to listen for messages from
-the mod, your program should listen to `9001`.
-
-You can change these values on steam `Launch Options` (right click cvr and then properties), or on the Melon Loader
-configuration. Note that the `Launch Options` will override your Melon Loader configuration.
-
-#### Launch Option
-
-```commandline
---osc=inPort:senderIP:outPort
-```
-
-*Note:* If you want to replicate the default settings you would use: `--osc=9000:127.0.0.1:9001`

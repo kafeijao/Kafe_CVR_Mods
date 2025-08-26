@@ -86,9 +86,9 @@ public class ProfilesExtended : MelonMod {
         if (!_autoProfileEnabled) yield break;
 
         // Saves current parameters to profile and sets it as the default
-        if (PlayerSetup.Instance._avatar != null && PlayerSetup.Instance._avatarDescriptor != null &&
-            PlayerSetup.Instance._avatarDescriptor.avatarUsesAdvancedSettings) {
-            PlayerSetup.Instance._avatarDescriptor.avatarSettings.SaveCurrentAvatarProfile(_autoProfileName, PlayerSetup.Instance.animatorManager);
+        if (PlayerSetup.Instance.AvatarObject != null && PlayerSetup.Instance.AvatarDescriptor != null &&
+            PlayerSetup.Instance.AvatarDescriptor.avatarUsesAdvancedSettings) {
+            PlayerSetup.Instance.AvatarDescriptor.avatarSettings.SaveCurrentAvatarProfile(_autoProfileName, PlayerSetup.Instance.AnimatorManager);
         }
 
         _coroutineCancellationToken = null;
@@ -143,8 +143,8 @@ public class ProfilesExtended : MelonMod {
                 var removedString = "";
 
                 // Otherwise -> Check if there are tags to be ignored
-                if (PlayerSetup.Instance._avatarDescriptor.avatarUsesAdvancedSettings) {
-                    var settings = PlayerSetup.Instance._avatarDescriptor.avatarSettings.settings;
+                if (PlayerSetup.Instance.AvatarDescriptor.avatarUsesAdvancedSettings) {
+                    var settings = PlayerSetup.Instance.AvatarDescriptor.avatarSettings.settings;
 
                     // Remove all values that are not AAS parameters
                     if (_onlyLoadAASParams) {
@@ -181,12 +181,12 @@ public class ProfilesExtended : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.changeAnimatorParam))]
-        private static void After_PlayerSetup_changeAnimatorParam(PlayerSetup __instance, string name, float value, int source) {
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.ChangeAnimatorParam))]
+        private static void After_PlayerSetup_changeAnimatorParam(PlayerSetup __instance, string parameterName, float value, PlayerSetup.ParameterChangeSource source) {
             // We're detecting the Main Menu change parameter events here -> Save current changes
             try {
                 // Source 1 and 2 are the menus, 0 is automatic stuff that we should ignore
-                if (source != 0) QueueSaveAvatarSettingsProfile();
+                if (source != PlayerSetup.ParameterChangeSource.Default) QueueSaveAvatarSettingsProfile();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(AfterApplyAdvancedSettingsFileProfile)}");

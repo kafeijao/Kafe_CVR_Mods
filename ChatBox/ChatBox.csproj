@@ -20,6 +20,9 @@
         <EmbeddedResource Include="Resources\chatbox.assetbundle">
             <LogicalName>chatbox.assetbundle</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Keyboard_Patches.js">
+          <LogicalName>chatbox.cohtml.keyboard.patches.js</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="Resources\Sounds_Message.wav">
             <LogicalName>chatbox.sound.message.wav</LogicalName>
         </EmbeddedResource>
@@ -28,9 +31,6 @@
         </EmbeddedResource>
         <EmbeddedResource Include="Resources\Sounds_Typing.wav">
             <LogicalName>chatbox.sound.typing.wav</LogicalName>
-        </EmbeddedResource>
-        <EmbeddedResource Include="Resources\CVRTest_ui_Patches.js">
-            <LogicalName>chatbox.cohtml.cvrtest.ui.patches.js</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
 

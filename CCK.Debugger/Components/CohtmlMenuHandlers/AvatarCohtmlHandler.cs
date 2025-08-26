@@ -25,7 +25,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         bool IsValid(CVRPlayerEntity entity) {
             if (entity?.PuppetMaster == null) return false;
-            return entity.PuppetMaster._animator != null;
+            return entity.PuppetMaster.Animator != null;
         }
 
         PlayerEntities = new LooseList<CVRPlayerEntity>(players, IsValid, true);
@@ -61,7 +61,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         bool IsCurrentInspectedAvatar(CVRAvatar avatar) {
             // Local player avatar
             if (PlayerEntities.CurrentObject == null) {
-                if (PlayerSetup.Instance._avatar == avatar.gameObject) {
+                if (PlayerSetup.Instance.AvatarObject == avatar.gameObject) {
                     return true;
                 }
             }
@@ -73,7 +73,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
                 return false;
             }
             // Remote player avatar
-            else if (PlayerEntities.CurrentObject.PuppetMaster.avatarObject == avatar.gameObject) {
+            else if (PlayerEntities.CurrentObject.PuppetMaster.AvatarObject == avatar.gameObject) {
                 return true;
             }
             return false;
@@ -186,13 +186,13 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         isLocal = PlayerEntities.CurrentObject == null;
         currentPlayer = PlayerEntities.CurrentObject;
         if (isLocal) {
-            isAvatarDisabled = PlayerSetup.Instance._isBlocked || PlayerSetup.Instance._isBlockedAlt;
+            isAvatarDisabled = PlayerSetup.Instance.IsAvatarBlocked || PlayerSetup.Instance.IsAvatarBlockedAlt;
             isAnimatorInitialized = true;
         }
         else {
             var puppetMaster = currentPlayer.PuppetMaster;
-            isAvatarDisabled = puppetMaster._isHidden || puppetMaster._isBlocked || puppetMaster._isBlockedAlt;
-            isAnimatorInitialized = puppetMaster._animator != null;
+            isAvatarDisabled = puppetMaster.IsAvatarHidden || puppetMaster.IsAvatarBlocked || puppetMaster.IsAvatarBlockedAlt;
+            isAnimatorInitialized = puppetMaster.AnimatorManager != null;
         }
 
         _core?.UpdateCore(playerCount > 1, $"{PlayerEntities.CurrentObjectIndex+1}/{playerCount}", true);
@@ -207,7 +207,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         attributesSection = _core.AddSection("Attributes");
         attributesSection.AddSection("User Name").AddValueGetter(() => isLocal ? AuthManager.Username : currentPlayer.Username);
         attributesSection.AddSection("User ID").AddValueGetter(() => isLocal ? MetaPort.Instance.ownerId : currentPlayer.Uuid);
-        attributesSection.AddSection("Avatar Name/ID").AddValueGetter(() => GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.AvatarId));
+        attributesSection.AddSection("Avatar Name/ID").AddValueGetter(() => GetAvatarName(isLocal ? MetaPort.Instance.currentAvatarGuid : currentPlayer.ContentMetadata.AssetId));
         attributesSection.AddSection("Loading").Value = ToString(!isLoaded || !isInitialized);
         attributesSection.AddSection("Avatar Hidden").Value = ToString(isAvatarDisabled);
     }
@@ -257,7 +257,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
 
         var mainAnimator = avatarAnimator = isLocal
             ? Events.Avatar.LocalPlayerAvatarAnimatorManager?.Animator
-            : currentPlayer.PuppetMaster._animator;
+            : currentPlayer.PuppetMaster.Animator;
 
         // Check if something borked and there is no animator ;_;
         if (mainAnimator == null || !mainAnimator.isInitialized || mainAnimator.parameters == null) {
@@ -278,7 +278,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         var sectionPointers = _core.AddSection("CVR Pointers", true);
         var sectionTriggers = _core.AddSection("CVR AAS Triggers", true);
 
-        var cvrAvatar = isLocal ? PlayerSetup.Instance._avatarDescriptor : currentPlayer.PuppetMaster._avatar;
+        var cvrAvatar = isLocal ? PlayerSetup.Instance.AvatarDescriptor : currentPlayer.PuppetMaster.AvatarDescriptor;
         attributesSection.AddSection("Uses AAS").Value = ToString(cvrAvatar.avatarUsesAdvancedSettings);
 
         // Restore Main Animator Parameters
@@ -314,19 +314,25 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
             });
         }
 
-        avatarGo = isLocal ? PlayerSetup.Instance._avatar : currentPlayer.PuppetMaster.avatarObject;
+        avatarGo = isLocal ? PlayerSetup.Instance.AvatarObject : currentPlayer.PuppetMaster.AvatarObject;
 
         #region Avatar Tags
 
         // Set up the Tags
-        string avatarTags = isLocal ? PlayerSetup.Instance.AvatarTagsString : currentPlayer.AvatarTags;
-        List<string> tagList = string.IsNullOrWhiteSpace(avatarTags)
-            ? new List<string>()
-            : avatarTags.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
-        bool hasTags = tagList.Count > 0;
-        var sectionTags = attributesSection.AddSection("Tags", hasTags ? tagList.Count.ToString() : "None", true);
-        foreach (string tag in tagList)
-            sectionTags.AddSection(tag);
+        var avatarTags = isLocal ? PlayerSetup.Instance.ContentMetadata.TagsData : currentPlayer.ContentMetadata.TagsData;
+        var sectionTags = attributesSection.AddSection("Tags", "", true);
+        if (avatarTags.AdminBanned) sectionTags.AddSection(nameof(avatarTags.AdminBanned));
+        if (avatarTags.Incompatible) sectionTags.AddSection(nameof(avatarTags.Incompatible));
+        if (avatarTags.Gore) sectionTags.AddSection(nameof(avatarTags.Gore));
+        if (avatarTags.Horror) sectionTags.AddSection(nameof(avatarTags.Horror));
+        if (avatarTags.Jumpscare) sectionTags.AddSection(nameof(avatarTags.Jumpscare));
+        if (avatarTags.Explicit) sectionTags.AddSection(nameof(avatarTags.Explicit));
+        if (avatarTags.Suggestive) sectionTags.AddSection(nameof(avatarTags.Suggestive));
+        if (avatarTags.Violence) sectionTags.AddSection(nameof(avatarTags.Violence));
+        if (avatarTags.FlashingEffects) sectionTags.AddSection(nameof(avatarTags.FlashingEffects));
+        if (avatarTags.LoudAudio) sectionTags.AddSection(nameof(avatarTags.LoudAudio));
+        if (avatarTags.ScreenEffects) sectionTags.AddSection(nameof(avatarTags.ScreenEffects));
+        if (avatarTags.LongRangeAudio) sectionTags.AddSection(nameof(avatarTags.LongRangeAudio));
 
         #endregion Avatar Tags
 
@@ -488,7 +494,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Update button visibility
         triggerButton.IsVisible = CurrentEntityTriggerList.Count > 0;
 
-        var avatarHeight = isLocal ? PlayerSetup.Instance._avatarHeight : currentPlayer.PuppetMaster.netIkController.GetRemoteHeight();
+        var avatarHeight = isLocal ? PlayerSetup.Instance.AvatarHeight : currentPlayer.PuppetMaster.netIkController.GetRemoteHeight();
 
         // Set up the Humanoid Bones
         CurrentEntityBoneList.Clear();

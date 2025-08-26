@@ -1,12 +1,12 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "1.1.17",
-  "gameversion": "2025r179",
+  "modversion": "2.0.0",
+  "gameversion": "2025r180",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "This mod enables interactions with ChilloutVR using OSC. It also focus on compatibility with existing applications. If something is not working create an [issue in github](https://github.com/kafeijao/Kafe_CVR_Mods/issues) and I will fix it asap.\n\n__**Avatar**__\n- Change into new avatars\n- Change/Read parameters\n__**Inputs**__\n- Control your avatar\n- Send actions to the game\n__**Props**__\n- Set/Read prop location\n- Set/Read synced params\n__**Tracking**__\n- Listen to tracking data (location/battery) from `Trackers`, `Controllers`, `HMD`, `Base Stations`, and `Play Space`.\n__**ChatBox**__\n- Send ChaBox messages and typing events\n\n__**New**__ [python library](https://github.com/kafeijao/cvr_osc_lib_py) to abstract this OSC API with examples!\n\nRefer to the [IN-DEPTH](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) documentation for more information.\n\n**Optional Requirements**\n- [ChatBox](https://api.cvrmg.com/v1/mods/download/168)",
+  "description": "This mod adds some extra OSC endpoints to ChilloutVR. If something is not working create an [issue in github](https://github.com/kafeijao/Kafe_CVR_Mods/issues)\n\n__**Props**__\n- Set/Read prop location\n- Set/Read synced params\n__**Tracking**__\n- Listen to tracking data (location/battery) from `Trackers`, `Controllers`, `HMD`, `Base Stations`, and `Play Space`.\n__**ChatBox**__\n- Send ChaBox messages and typing events\n\n__**New**__ [python library](https://github.com/kafeijao/cvr_osc_lib_py) to abstract this OSC API with examples!\n\nRefer to the [IN-DEPTH](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) documentation for more information.\n\n**Optional Requirements**\n- [ChatBox](https://api.cvrmg.com/v1/mods/download/168)",
   "searchtags": [
     "osc",
     "input",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r79/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed for 2025r179",
+  "changelog": "- Fixed for 2025r180\n- Removed the Avatar Module (was added natively)\n- Removed the Input Module (was added natively)\n- Use the game's native OSC Server instead of our own",
   "embedcolor": "16C60C"
 }

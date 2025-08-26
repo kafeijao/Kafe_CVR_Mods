@@ -189,9 +189,9 @@ public class CohtmlMenuController : MonoBehaviour {
         // Menu should not be running if set to the quick menu and the menu is not opened
         var isMenuEnabled = !ModConfig.MeIsHidden.Value
                             // If attached to the quick menu, it needs to be opened
-                            && (_currentMenuParent != MenuTarget.QuickMenu || CVR_MenuManager.Instance.IsQuickMenuOpen)
+                            && (_currentMenuParent != MenuTarget.QuickMenu || CVR_MenuManager.Instance.IsViewShown)
                             // In desktop the if the big menu is opened, we need to close our menu
-                            && (MetaPort.Instance.isUsingVr || !ViewManager.Instance.IsMainMenuOpen);
+                            && (MetaPort.Instance.isUsingVr || !ViewManager.Instance.IsViewShown);
 
         if (!isMenuEnabled) {
             // Clear the highlight when the menu is not enabled
@@ -250,8 +250,8 @@ public class CohtmlMenuController : MonoBehaviour {
         var resolutionX = (int)(_scaleX * 2500);
         var resolutionY = (int)(_scaleY * 2500);
 
-        _cohtmlControlledView.CohtmlUISystem = quickMenu.quickMenu.CohtmlUISystem;
-        _cohtmlControlledView.AudioSource = quickMenu.quickMenu.AudioSource;
+        _cohtmlControlledView.CohtmlUISystem = quickMenu.cohtmlView.CohtmlUISystem;
+        _cohtmlControlledView.AudioSource = quickMenu.cohtmlView.AudioSource;
         // _cohtmlView.AutoFocus = false;
         _cohtmlControlledView.IsTransparent = true;
         _cohtmlControlledView.PixelPerfect = true;
@@ -263,17 +263,17 @@ public class CohtmlMenuController : MonoBehaviour {
     }
 
     public void OnKeyEvent(KeyEvent eventData, InputEventWrapper unityEvent) {
-        if (!CVR_MenuManager.Instance._quickMenuReady || !Initialized || !enabled) return;
+        if (!CVR_MenuManager.Instance.IsReady || !Initialized || !enabled) return;
         eventData.Send(_cohtmlControlledView);
     }
 
     public void OnCharEvent(KeyEvent eventData, char character) {
-        if (!CVR_MenuManager.Instance._quickMenuReady || !Initialized || !enabled) return;
+        if (!CVR_MenuManager.Instance.IsReady || !Initialized || !enabled) return;
         eventData.Send(_cohtmlControlledView);
     }
 
     public void OnTouchEvent(TouchEventCollection touches) {
-        if (!CVR_MenuManager.Instance._quickMenuReady || !Initialized || !enabled) return;
+        if (!CVR_MenuManager.Instance.IsReady || !Initialized || !enabled) return;
         for (uint key = 0; key < touches.Capacity; ++key) {
             if (touches[key].IsActive)
                 touches[key].Send(_cohtmlControlledView);

@@ -1,9 +1,16 @@
-﻿namespace Kafe.OSC.Utils;
+﻿using ABI_RC.Systems.OSC.Jobs;
 
-public static class QueueExtensions {
-    public static IEnumerable<T> DequeueChunk<T>(this Queue<T> queue, int chunkSize) {
-        for (var i = 0; i < chunkSize && queue.Count > 0; i++) {
-            yield return queue.Dequeue();
+namespace Kafe.OSC.Utils;
+
+public static class OSCJobSystemExtensions
+{
+    public static OSCJobQueue<T> RegisterQueue<T>(int capacity, Action<T> handler) where T : unmanaged
+    {
+        lock (OSCJobSystem.Lock)
+        {
+            OSCJobQueue<T> queue = new OSCJobQueue<T>(handler, capacity);
+            OSCJobSystem.Queues.Add(queue);
+            return queue;
         }
     }
 }

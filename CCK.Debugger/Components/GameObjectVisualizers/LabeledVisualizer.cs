@@ -50,7 +50,7 @@ public class LabeledVisualizer : GameObjectVisualizer {
         _labelTMP.text = _label;
         _labelTMP.fontSize = 30f;
 
-        _playerCamera = PlayerSetup.Instance.GetActiveCamera().GetComponent<Camera>();
+        _playerCamera = PlayerSetup.Instance.activeCam;
     }
 
     private void Update() {
@@ -59,8 +59,8 @@ public class LabeledVisualizer : GameObjectVisualizer {
 
         foreach (var visualizer in VisualizersActive.Values) {
             if (visualizer is not LabeledVisualizer otherLabelVis || otherLabelVis == null || otherLabelVis == this) continue;
-            if (Vector3.Distance(_labelTransform.transform.position, otherLabelVis._labelTransform.position) < 0.025f * PlayerSetup.Instance._avatarHeight) {
-                _labelTransform.Translate(0f, 0.025f * PlayerSetup.Instance._avatarHeight, 0f, Space.Self);
+            if (Vector3.Distance(_labelTransform.transform.position, otherLabelVis._labelTransform.position) < 0.025f * PlayerSetup.Instance.AvatarHeight) {
+                _labelTransform.Translate(0f, 0.025f * PlayerSetup.Instance.AvatarHeight, 0f, Space.Self);
             }
         }
 
@@ -68,7 +68,7 @@ public class LabeledVisualizer : GameObjectVisualizer {
         _labelTransform.rotation = Quaternion.LookRotation(_labelTransform.position - cameraPos);
 
         // Keep the scale updated
-        VisualizerGo.transform.localScale = Misc.GetScaleFromAbsolute(transform, 5.0f) * PlayerSetup.Instance._avatarHeight;
+        VisualizerGo.transform.localScale = Misc.GetScaleFromAbsolute(transform, 5.0f) * PlayerSetup.Instance.AvatarHeight;
     }
 
     internal static bool HasLabeledVisualizersActive() {

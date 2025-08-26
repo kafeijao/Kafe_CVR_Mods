@@ -150,7 +150,7 @@ public static class API {
     /// </summary>
     /// <param name="initialMessage">The initial message to be displayed on the keyboard when it is opened. This can be an empty string.</param>
     public static void OpenKeyboard(string initialMessage = "") {
-        ChatBox.OpenKeyboard(initialMessage, false);
+        ChatBox.OpenKeyboard(initialMessage);
     }
 
     internal static readonly HashSet<Func<ChatBoxMessage, InterceptorResult>> ReceivingInterceptors = new();

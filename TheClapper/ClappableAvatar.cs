@@ -17,7 +17,7 @@ public class ClappableAvatar : Clappable {
         if (TheClapper.DisableClappingAvatars.Value) return false;
 
         // When the avatar is hidden bypass the friend check
-        bool avatarIsHidden = _puppetMaster._isBlocked;
+        bool avatarIsHidden = _puppetMaster.IsAvatarBlocked;
         if (TheClapper.AlwaysAllowClappingHiddenAvatars.Value && avatarIsHidden) return true;
 
         if (TheClapper.PreventClappingFriendsAvatars.Value && Friends.FriendsWith(_playerId)) return false;
@@ -27,7 +27,7 @@ public class ClappableAvatar : Clappable {
 
     protected override void OnClapped(Vector3 clappablePosition) {
 
-        var isHidden = _puppetMaster._isBlocked;
+        var isHidden = _puppetMaster.IsAvatarBlocked;
 
         MelonLogger.Msg($"{(isHidden ? "Unclapped" : "Clapped")} {_playerUserName}'s avatar!");
 

@@ -47,7 +47,7 @@ public class GrabbyBones : MelonMod {
 
     internal static string GetPlayerName(PuppetMaster puppetMaster) {
         if (puppetMaster == null) return "Me";
-        if (puppetMaster._playerDescriptor != null) return puppetMaster._playerDescriptor.userName;
+        if (puppetMaster.AvatarDescriptor != null) return puppetMaster.CVRPlayerEntity.Username;
         return "N/A";
     }
 
@@ -220,8 +220,11 @@ public class GrabbyBones : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
-        public static void After_PlayerSetup_LateUpdate(PlayerSetup __instance) {
+        [HarmonyPatch(typeof(PlayerBase), nameof(PlayerBase.LateUpdate))]
+        public static void After_PlayerSetup_LateUpdate(PlayerBase __instance)
+        {
+            if (__instance is not PlayerSetup) return;
+
             // This late update runs after VRIK but before db
             try {
                 if (!ModConfig.MeEnabled.Value) return;
@@ -267,12 +270,12 @@ public class GrabbyBones : MelonMod {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.AvatarDestroyed))]
+        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.OnDestroy))]
         public static void Before_PuppetMaster_AvatarDestroyed(PuppetMaster __instance) {
             // Cleanup the avatar's hand info, this happens before CVRAvatar OnDestroy and sets some fields to null ;_;
             try {
 
-                AvatarHandInfo.Delete(__instance._avatar);
+                AvatarHandInfo.Delete(__instance.AvatarDescriptor);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(Before_PuppetMaster_AvatarDestroyed)}.");
@@ -534,7 +537,7 @@ public class GrabbyBones : MelonMod {
                 if (__instance.gameObject.name.Contains(IgnoreGrabbyBonesTag)) return;
 
                 var puppetMaster = __instance.GetComponentInParent<PuppetMaster>();
-                var animator = puppetMaster == null ? PlayerSetup.Instance._animator : puppetMaster._animator;
+                var animator = puppetMaster == null ? PlayerSetup.Instance.Animator : puppetMaster.Animator;
 
                 GrabbyBoneInfo grabbyBoneInfo = new GrabbyDynamicBoneInfo(avatar, puppetMaster, __instance, __instance.m_Gravity, __instance.m_Force);
 

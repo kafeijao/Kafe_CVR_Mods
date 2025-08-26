@@ -182,8 +182,8 @@ public class FollowerBehaviorControl : FollowerStateMachine {
                 .OrderBy(p => Vector3.Distance(p.PuppetMaster.netIkController.avatarHeadPosition, sourcePos))
                 .FirstOrDefault();
 
-            if (PlayerSetup.Instance._avatar != null && PlayerSetup.Instance._animator != null) {
-                var localHeadBonePos = PlayerSetup.Instance._animator.GetBoneTransform(HumanBodyBones.Head).position;
+            if (PlayerSetup.Instance.AvatarDescriptor != null && PlayerSetup.Instance.Animator != null) {
+                var localHeadBonePos = PlayerSetup.Instance.Animator.GetBoneTransform(HumanBodyBones.Head).position;
                 // There's only local player
                 if (closestRemotePlayer == null) {
                     playerGuid = MetaPort.Instance.ownerId;

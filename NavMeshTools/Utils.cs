@@ -32,7 +32,7 @@ public static class Utils {
         if (adjusted) {
             // Update the bounds with the new size and move the center to the player.
             bounds.size = adjustedSize;
-            var playerCameraTransform = PlayerSetup.Instance.GetActiveCamera().transform;
+            var playerCameraTransform = PlayerSetup.Instance.activeCam.transform;
             bounds.center = playerCameraTransform.position;
         }
 

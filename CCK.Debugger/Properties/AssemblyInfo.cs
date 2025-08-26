@@ -17,7 +17,7 @@ using MelonLoader;
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
 )]
-[assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
+[assembly: MelonGame(null, "ChilloutVR")]
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: VerifyLoaderVersion(0, 6, 1, true)]
@@ -28,7 +28,7 @@ using MelonLoader;
 
 namespace Kafe.CCK.Debugger.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "2.0.14";
+    public const string Version = "2.0.15";
     public const string Author = "kafeijao";
     public const string AstroDoge = "AstroDoge";
     public const string Name = "CCK.Debugger";

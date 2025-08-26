@@ -1,21 +1,21 @@
 ﻿namespace Kafe.OSC.Integrations;
 
-public static class ChatBox {
-
-    internal static void InitializeChatBox() {
-
-        Handlers.OscModules.ChatBox.Available = true;
-
+public static class ChatBox
+{
+    internal static void InitializeChatBox()
+    {
         Events.Integrations.ChatBoxTyping += Kafe.ChatBox.API.SetIsTyping;
 
-        Events.Integrations.ChatBoxMessage += (msg, sendImmediately, notify, displayInChatBox, displayInHistory) => {
-            if (sendImmediately) {
+        Events.Integrations.ChatBoxMessage += (msg, sendImmediately, notify, displayInChatBox, displayInHistory) =>
+        {
+            if (sendImmediately)
+            {
                 Kafe.ChatBox.API.SendMessage(msg, notify, displayInChatBox, displayInHistory);
             }
-            else {
+            else
+            {
                 Kafe.ChatBox.API.OpenKeyboard(msg);
             }
         };
     }
-    
 }

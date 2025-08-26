@@ -25,7 +25,7 @@ public class TrackerVisualizer : GameObjectVisualizer {
         // If it's turning on, enable the current trackers
         if (isOn) {
 
-            var avatarHeight = PlayerSetup.Instance._avatarHeight;
+            var avatarHeight = PlayerSetup.Instance.AvatarHeight;
             var trackers = IKSystem.Instance.TrackingSystem.AllTrackingPoints.FindAll(t => t.isActive && t.isValid && t.suggestedRole != TrackingPoint.TrackingRole.Invalid);
 
             // Iterate the visualizers for the trackers, creating if needed

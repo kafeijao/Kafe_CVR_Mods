@@ -1,12 +1,12 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.21",
-  "gameversion": "2025r178",
+  "modversion": "1.0.22",
+  "gameversion": "2025r180",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "__**Features**__:\n- Rejoin the last instance when restarting the game.\n- When rejoining teleport to the previous location.\n- When starting the game, join on an online Instance of the Home world.\n- Keep the joined Instances History and allow to rejoin them.\n- Restart the game via button.\n\nYou can toggle the joining last instance, or/and starting in an online instance, rejoining last Instance takes priority. Also you can configure the online instance region and privacy type.\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances) for more in-depth info.\n\n**Optional Requirements**\n- [ChatBox](https://api.cvrmg.com/v1/mods/download/168)",
+  "description": "__**Features**__:\n- Rejoin the last instance when restarting the game.\n- When rejoining teleport to the previous location\n- Keep the joined Instances History and allow to rejoin them.\n- Restart the game via button.\n\nYou can toggle the joining last instance\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances) for more in-depth info.\n\n**Optional Requirements**\n- [ChatBox](https://api.cvrmg.com/v1/mods/download/168)",
   "searchtags": [
     "rejoin",
     "history",
@@ -14,8 +14,8 @@
     "BTKUILib"
   ],
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r78/Instances.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r79/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed for 2025r178",
+  "changelog": "- Fixed for 2025r180\n- Removed starting the game in an online instance (this is native in the game now)",
   "embedcolor": "16C60C"
 }

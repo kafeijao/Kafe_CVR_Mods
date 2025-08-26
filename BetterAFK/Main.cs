@@ -92,13 +92,13 @@ public class BetterAFK : MelonMod {
 
             // Set the animator AFK property
             if (ModConfig.MeSetAnimatorParameterAFK.Value) {
-                PlayerSetup.Instance.animatorManager.SetParameter(AFK, _isAFK);
+                PlayerSetup.Instance.AnimatorManager.SetParameter(AFK, _isAFK);
             }
 
             // Set the animator AFKTimer property
             if (ModConfig.MeSetAnimatorParameterAFKTimer.Value) {
                 var afkTimer = _isAFK ? Time.time - _headsetRemoveTime : -1f;
-                PlayerSetup.Instance.animatorManager.SetParameter(AFKTimer, afkTimer);
+                PlayerSetup.Instance.AnimatorManager.SetParameter(AFKTimer, afkTimer);
             }
         }
         catch (Exception e) {
@@ -213,7 +213,7 @@ public class BetterAFK : MelonMod {
                         component2.SetValue(num13);
                         break;
                     case CVRParameterStreamEntry.TargetType.AvatarAnimator:
-                        if (stream.avatar == null || stream.avatar != PlayerSetup.Instance._avatarDescriptor)
+                        if (stream.avatar == null || stream.avatar != PlayerSetup.Instance.AvatarDescriptor)
                             break;
                         PlayerSetup.Instance.ChangeAnimatorParam(__instance.parameterName, num13);
                         break;

@@ -20,8 +20,8 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Assembly-CSharp.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Aura2_Core">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Aura2_Core.dll</HintPath>
+        <Reference Include="AsyncImageLoader.Runtime">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\AsyncImageLoader.Runtime.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="AVProVideo.Extensions.Timeline">
@@ -92,12 +92,20 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Crc32.NET.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="CVRLogger">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\CVRLogger.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="DarkRift.Client">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DarkRift.Client.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="DarkRift">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DarkRift.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="DiscordRPC">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DiscordRPC.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="DTLS.Net">
@@ -116,6 +124,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ECM2.Walkthrough.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="EmbedIO">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\EmbedIO.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="endel.nativewebsocket">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\endel.nativewebsocket.dll</HintPath>
             <Private>False</Private>
@@ -126,6 +138,10 @@
         </Reference>
         <Reference Include="FMODUnityResonance">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\FMODUnityResonance.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Hacks">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Hacks.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ICSharpCode.SharpZipLib">
@@ -140,6 +156,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\LibVLCSharp.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="LucHeart.CoreOSC">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\LucHeart.CoreOSC.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="MagicaCloth">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MagicaCloth.dll</HintPath>
             <Private>False</Private>
@@ -148,12 +168,32 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MagicaClothV2.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="MeaMod.DNS">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MeaMod.DNS.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="MeshBakerCore">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MeshBakerCore.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Meta.XR.BuildingBlocks">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.BuildingBlocks.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Meta.XR.EnvironmentDepth">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.EnvironmentDepth.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Meta.XR.ImmersiveDebugger">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.ImmersiveDebugger.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Meta.XR.ImmersiveDebugger.Interface">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.ImmersiveDebugger.Interface.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Meta.XR.MultiplayerBlocks.Shared">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.MultiplayerBlocks.Shared.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Mono.Security">
@@ -200,6 +240,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Oculus.VR.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="OSCQuery">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\OSCQuery.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="PICO.Platform">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\PICO.Platform.dll</HintPath>
             <Private>False</Private>
@@ -224,10 +268,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\SALSA-LipSync.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="SALSA">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\SALSA.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="ShapesRuntime">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ShapesRuntime.dll</HintPath>
             <Private>False</Private>
@@ -244,8 +284,16 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\SteamVR_Actions.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Swan.Lite">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Swan.Lite.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="System.Buffers">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Buffers.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="System.Collections.Immutable">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Collections.Immutable.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="System.ComponentModel.Composition">
@@ -288,6 +336,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.IO.Compression.FileSystem.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="System.IO.Hashing">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.IO.Hashing.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="System.Memory">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Memory.dll</HintPath>
             <Private>False</Private>
@@ -300,8 +352,8 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Numerics.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="System.Runtime.CompilerServices.Unsafe">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+        <Reference Include="System.Runtime.CompilerServices.Unsafe.OSCQuery">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.CompilerServices.Unsafe.OSCQuery.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="System.Runtime">
@@ -420,6 +472,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Entities.Hybrid.HybridComponents.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Unity.Entities.UI">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Entities.UI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Unity.InputSystem">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.InputSystem.dll</HintPath>
             <Private>False</Private>
@@ -440,10 +496,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.InternalAPIEngineBridge.003.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Unity.InternalAPIEngineBridge.012">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.InternalAPIEngineBridge.012.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Unity.Jobs">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Jobs.dll</HintPath>
             <Private>False</Private>
@@ -458,10 +510,6 @@
         </Reference>
         <Reference Include="Unity.Mathematics.Extensions.Hybrid">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Mathematics.Extensions.Hybrid.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Platforms.Common">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Platforms.Common.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.Polybrush">
@@ -494,18 +542,6 @@
         </Reference>
         <Reference Include="Unity.Profiling.Core">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Profiling.Core.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Properties">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Properties.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Properties.Reflection">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Properties.Reflection.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Properties.UI">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Properties.UI.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.RenderPipelines.Core.Runtime">
@@ -542,6 +578,10 @@
         </Reference>
         <Reference Include="Unity.Services.Core.Analytics">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Analytics.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.Services.Core.Components">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Components.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.Services.Core.Configuration">
@@ -704,6 +744,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.ClusterRendererModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="UnityEngine.ContentLoadModule">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.ContentLoadModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="UnityEngine.CoreModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.CoreModule.dll</HintPath>
             <Private>False</Private>
@@ -788,6 +832,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.ProfilerModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="UnityEngine.PropertiesModule">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.PropertiesModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll</HintPath>
             <Private>False</Private>
@@ -860,20 +908,12 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.UIElementsModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="UnityEngine.UIElementsNativeModule">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.UIElementsNativeModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="UnityEngine.UIModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.UIModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UmbraModule">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.UmbraModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.UNETModule">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\UnityEngine.UNETModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UnityAnalyticsCommonModule">
@@ -950,6 +990,18 @@
         </Reference>
         <Reference Include="Valve.Newtonsoft.Json">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ZLinq">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ZLinq.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ZLinq.Unity">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ZLinq.Unity.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ZLinq.Unity.UnityCollectoins">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ZLinq.Unity.UnityCollectoins.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

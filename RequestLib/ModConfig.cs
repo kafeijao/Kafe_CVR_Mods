@@ -14,12 +14,6 @@ internal static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeOnlyReceiveFromFriends;
     internal static MelonPreferences_Entry<bool> MeHudNotificationOnAutoAccept;
     internal static MelonPreferences_Entry<bool> MeHudNotificationOnAutoDecline;
-
-    // Embed resources
-    internal static string CVRTestJSPatchesContent;
-    private const string CVRTestJSPatches = "cohtml.cvrtest.patches.js";
-    internal static string CVRUIJSPatchesContent;
-    private const string CVRUIJSPatches = "cohtml.cvrui.patches.js";
     
     public static void InitializeMelonPrefs() {
 
@@ -165,39 +159,4 @@ internal static class ModConfig {
 
         BTKUILib.QuickMenuAPI.OnPlayerSelected += PopulatePlayerCategory;
     }
-
-     public static void LoadAssemblyResources(Assembly assembly) {
-
-        try {
-            using var resourceStream = assembly.GetManifestResourceStream(CVRTestJSPatches);
-            if (resourceStream == null) {
-                MelonLogger.Error($"Failed to load {CVRTestJSPatches}!");
-                return;
-            }
-
-            using var streamReader = new StreamReader(resourceStream);
-            CVRTestJSPatchesContent = streamReader.ReadToEnd();
-        }
-        catch (Exception ex) {
-            MelonLogger.Error("Failed to load the assembly resource");
-            MelonLogger.Error(ex);
-        }
-
-        try {
-            using var resourceStream = assembly.GetManifestResourceStream(CVRUIJSPatches);
-            if (resourceStream == null) {
-                MelonLogger.Error($"Failed to load {CVRUIJSPatches}!");
-                return;
-            }
-
-            using var streamReader = new StreamReader(resourceStream);
-            CVRUIJSPatchesContent = streamReader.ReadToEnd();
-        }
-        catch (Exception ex) {
-            MelonLogger.Error("Failed to load the assembly resource");
-            MelonLogger.Error(ex);
-        }
-
-    }
-
 }

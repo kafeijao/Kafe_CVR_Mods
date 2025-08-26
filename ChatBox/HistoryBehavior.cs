@@ -132,8 +132,6 @@ public class HistoryBehavior : MonoBehaviour {
         }
     }
 
-    private static bool _skipNextInteraction;
-
     internal void ParentTo(MenuTarget targetType) {
 
         var menuControllerTransform = (RectTransform) transform;
@@ -179,7 +177,6 @@ public class HistoryBehavior : MonoBehaviour {
         UpdateWhetherMenuIsShown();
         UpdateButtonStates();
         UpdateBackgroundAndTitleVisibility();
-        _skipNextInteraction = true;
     }
 
     private void UpdateButtonStates() {
@@ -205,22 +202,22 @@ public class HistoryBehavior : MonoBehaviour {
     internal static bool IsBTKUIHistoryPageOpened = false;
 
     internal void UpdateWhetherMenuIsShown() {
-        if (!CVR_MenuManager.Instance._quickMenuOpen && _currentMenuParent == MenuTarget.QuickMenu) {
+        if (!CVR_MenuManager.Instance.IsViewShown && _currentMenuParent == MenuTarget.QuickMenu) {
             gameObject.SetActive(false);
-            CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = 10;
+            CVR_MenuManager.Instance._uiRenderer.sortingOrder = 10;
         }
         else {
             if (!ModConfig.MeHistoryWindowOnCenter.Value) {
                 gameObject.SetActive(true);
-                CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = 10;
+                CVR_MenuManager.Instance._uiRenderer.sortingOrder = 10;
             }
             else if (ModConfig.MeHistoryWindowOnCenter.Value && IsBTKUIHistoryPageOpened) {
                 gameObject.SetActive(true);
-                CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = -1;
+                CVR_MenuManager.Instance._uiRenderer.sortingOrder = -1;
             }
             else {
                 gameObject.SetActive(false);
-                CVR_MenuManager.Instance._quickMenuRenderer.sortingOrder = 10;
+                CVR_MenuManager.Instance._uiRenderer.sortingOrder = 10;
             }
         }
     }
@@ -250,7 +247,7 @@ public class HistoryBehavior : MonoBehaviour {
     private void Awake() {
 
         try {
-            _quickMenuGo = CVR_MenuManager.Instance.quickMenu.transform;
+            _quickMenuGo = CVR_MenuManager.Instance.cohtmlView.transform;
 
             // Main
             _rootRectTransform = GetComponent<RectTransform>();
@@ -287,8 +284,8 @@ public class HistoryBehavior : MonoBehaviour {
             // Message Button
             _messageButton = _rootRectTransform.Find("TogglesView/Message").GetComponent<Button>();
             _messageButton.onClick.AddListener(() => {
-                if (CVR_MenuManager.Instance._quickMenuOpen) CVR_MenuManager.Instance.ToggleQuickMenu(false);
-                ChatBox.OpenKeyboard("", true);
+                if (CVR_MenuManager.Instance.IsViewShown) CVR_MenuManager.Instance.ToggleQuickMenu(false);
+                ChatBox.OpenKeyboard("");
             });
 
             // Pin Toggle
@@ -447,7 +444,7 @@ public class HistoryBehavior : MonoBehaviour {
         private static void After_CVR_MenuManager_Start(ref CVR_MenuManager __instance) {
             try {
                 // Instantiate and add the controller script
-                Instantiate(ModConfig.ChatBoxHistoryPrefab, __instance.quickMenu.transform).AddComponent<HistoryBehavior>();
+                Instantiate(ModConfig.ChatBoxHistoryPrefab, __instance.cohtmlView.transform).AddComponent<HistoryBehavior>();
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_Start)}");
@@ -464,167 +461,6 @@ public class HistoryBehavior : MonoBehaviour {
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_ToggleQuickMenu)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ControllerRay), nameof(ControllerRay.LateUpdate))]
-        private static void After_ControllerRay_LateUpdate(ControllerRay __instance) {
-            // Cancer code for Ui events when our Unity UI is on top of the QM
-            try {
-                
-                if (!Instance) return;
-
-                if (!MetaPort.Instance.isUsingVr) return;
-
-                // Only do the events if
-                if (!Instance.gameObject.activeInHierarchy || !ModConfig.MeHistoryWindowOnCenter.Value ||
-                    Instance._currentMenuParent != MenuTarget.QuickMenu) return;
-            
-                var isInteracting = __instance.hand == CVRHand.Left ? CVRInputManager.Instance.interactLeftDown : CVRInputManager.Instance.interactRightDown;
-
-                // Raycast the internal looking for unity UI in the internal UI layer
-                if (!Physics.Raycast(__instance.transform.TransformPoint(__instance.RayDirection * -0.15f),
-                        __instance.transform.TransformDirection(__instance.RayDirection), out var hitInfo1,
-                        float.PositiveInfinity, LayerMask.GetMask("UI Internal"))) return;
-                
-                var hitTransform = hitInfo1.collider.transform;
-
-                // Only do this for our menu
-                if (!hitTransform.IsChildOf(Instance.transform)) return;
-
-                Button component3 = hitTransform.GetComponent<Button>();
-                Toggle component4 = hitTransform.GetComponent<Toggle>();
-                Slider component5 = hitTransform.GetComponent<Slider>();
-                EventTrigger eventTrigger = hitTransform.GetComponent<EventTrigger>();
-                InputField component6 = hitTransform.GetComponent<InputField>();
-                TMP_InputField component7 = hitTransform.GetComponent<TMP_InputField>();
-                Dropdown component8 = hitTransform.GetComponent<Dropdown>();
-                ScrollRect component9 = hitTransform.GetComponent<ScrollRect>();
-
-
-               
-                if (component3 != __instance.lastButton) {
-                  if (component3 != null) component3.OnPointerEnter(null);
-                  if (__instance.lastButton != null) __instance.lastButton.OnPointerExit(null);
-                  __instance.lastButton = component3;
-                }
-                if (component4 != __instance.lastToggle) {
-                  if (component4 != null) component4.OnPointerEnter(null);
-                  if (__instance.lastToggle != null) __instance.lastToggle.OnPointerExit(null);
-                  __instance.lastToggle = component4;
-                }
-                if (component8 != __instance.lastDropdown) {
-                  if (component8 != null) component8.OnPointerEnter(null);
-                  if (__instance.lastDropdown != null) __instance.lastDropdown.OnPointerExit(null);
-                  __instance.lastDropdown = component8;
-                }
-                if (component6 != __instance.lastInputField) {
-                  if (component6 != null) component6.OnPointerEnter(null);
-                  if (__instance.lastInputField != null) __instance.lastInputField.OnPointerExit(null);
-                  __instance.lastInputField = component6;
-                }
-                if (component7 != __instance.lastTMPInputField) {
-                  if (component7 != null) component7.OnPointerEnter(null);
-                  if (__instance.lastTMPInputField != null) __instance.lastTMPInputField.OnPointerExit(null);
-                  __instance.lastTMPInputField = component7;
-                }
-                if (eventTrigger == null && component3 != null) eventTrigger = component3.GetComponentInParent<EventTrigger>();
-                if (eventTrigger == null && component4 != null) eventTrigger = component4.GetComponentInParent<EventTrigger>();
-                if (eventTrigger == null && component5 != null) eventTrigger = component5.GetComponentInParent<EventTrigger>();
-                if (eventTrigger == null && component6 != null) eventTrigger = component6.GetComponentInParent<EventTrigger>();
-                if (eventTrigger == null && component7 != null) eventTrigger = component7.GetComponentInParent<EventTrigger>();
-                if (eventTrigger == null && component9 != null) eventTrigger = component9.GetComponentInParent<EventTrigger>();
-                if (eventTrigger != null && eventTrigger != __instance.lastEventTrigger) {
-                  if (__instance.lastEventTrigger != null) {
-                    foreach (EventTrigger.Entry trigger in __instance.lastEventTrigger.triggers) {
-                      if (trigger.eventID == EventTriggerType.PointerExit) trigger.callback.Invoke(null);
-                    }
-                  }
-                  __instance.lastEventTrigger = eventTrigger;
-                  foreach (EventTrigger.Entry trigger in eventTrigger.triggers) {
-                    if (trigger.eventID == EventTriggerType.PointerEnter) {
-                      if (CVRWorld.Instance.uiHighlightSoundObjects.Contains(eventTrigger.gameObject)) InterfaceAudio.Play(AudioClipField.Hover);
-                      trigger.callback.Invoke(null);
-                    }
-                  }
-                }
-                if (component9) {
-                  if (Mathf.Abs(CVRInputManager.Instance.scrollValue) > 0.0) {
-                    Vector2 anchoredPosition = component9.content.anchoredPosition;
-                    if (component9.vertical) anchoredPosition.y -= CVRInputManager.Instance.scrollValue * 1000f;
-                    else if (component9.horizontal) anchoredPosition.x -= CVRInputManager.Instance.scrollValue * 1000f;
-                    component9.content.anchoredPosition = anchoredPosition;
-                  }
-                }
-                else {
-                  ScrollRect componentInParent4 = __instance.hitTransform.GetComponentInParent<ScrollRect>();
-                  if (componentInParent4 != null && Mathf.Abs(CVRInputManager.Instance.scrollValue) > 0.0) {
-                    Vector2 anchoredPosition = componentInParent4.content.anchoredPosition;
-                    if (componentInParent4.vertical) anchoredPosition.y -= CVRInputManager.Instance.scrollValue * 1000f;
-                    else if (componentInParent4.horizontal) anchoredPosition.x -= CVRInputManager.Instance.scrollValue * 1000f;
-                    componentInParent4.content.anchoredPosition = anchoredPosition;
-                  }
-                }
-
-                if (isInteracting) {
-
-                    // Skip interaction after parenting
-                    if (_skipNextInteraction) {
-                        _skipNextInteraction = false;
-                        return;
-                    }
-
-                    if (component3) {
-                        component3.onClick.Invoke();
-                    }
-                    if (component4) {
-                        component4.isOn = !component4.isOn;
-                    }
-                    if (component5) {
-                        __instance.lastSlider = component5;
-                        __instance.lastSliderRect = component5.GetComponent<RectTransform>();
-                        __instance.SetSliderValueFromRay(component5, hitInfo1, __instance.lastSliderRect);
-                    }
-                    if (component9 != null) {
-                        __instance.lastScrollView = component9;
-                        __instance.scrollStartPositionView = __instance.GetScreenPositionFromRaycastHit(hitInfo1, component9.viewport);
-                        __instance.scrollStartPositionContent = component9.content.anchoredPosition;
-                        __instance.SetScrollViewValueFromRay(component9, hitInfo1);
-                    }
-                    if (component8 != null) {
-                        if (component8.transform.childCount != 3) {
-                            component8.Hide();
-                        }
-                        else {
-                            component8.Show();
-                        }
-                        foreach (Toggle componentsInChild in component8.gameObject.GetComponentsInChildren<Toggle>(true)) {
-                            if (componentsInChild.GetComponent<BoxCollider>() == null) {
-                                BoxCollider boxCollider = componentsInChild.gameObject.AddComponent<BoxCollider>();
-                                boxCollider.isTrigger = true;
-                                RectTransform component10 = componentsInChild.gameObject.GetComponent<RectTransform>();
-                                boxCollider.size = new Vector3(Mathf.Max(component10.sizeDelta.x, component10.rect.width), component10.sizeDelta.y, 0.1f);
-                                boxCollider.center = new Vector3(boxCollider.size.x * (0.5f - component10.pivot.x), boxCollider.size.y * (0.5f - component10.pivot.y), 0.0f);
-                            }
-                        }
-                    }
-                    if (component6) {
-                        component6.Select();
-                        component6.ActivateInputField();
-                        ViewManager.Instance.openMenuKeyboard(component6);
-                    }
-                    if (component7) {
-                        component7.Select();
-                        component7.ActivateInputField();
-                        ViewManager.Instance.openMenuKeyboard(component7);
-                    }
-                }
-                
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_ControllerRay_LateUpdate)}");
                 MelonLogger.Error(e);
             }
         }

@@ -100,7 +100,7 @@ public class ChatBoxBehavior : MonoBehaviour {
             if (ModConfig.MeIgnoreModMessages.Value && chatBoxIsTyping.Source == API.MessageSource.Mod) return;
 
             #if DEBUG
-            MelonLogger.Msg($"Received a Typing message from: {chatBoxIsTyping.SenderGuid} -> {chatBoxIsTyping.IsTyping}");
+            MelonLoader.MelonLogger.Msg($"Received a Typing message from: {chatBoxIsTyping.SenderGuid} -> {chatBoxIsTyping.IsTyping}");
             #endif
             if (ChatBoxes.TryGetValue(chatBoxIsTyping.SenderGuid, out var chatBoxBehavior)) {
                 chatBoxBehavior.OnTyping(chatBoxIsTyping.IsTyping, chatBoxIsTyping.TriggerNotification);
