@@ -3,16 +3,16 @@ using MelonLoader;
 
 namespace Kafe.ChatBox;
 
-public static class API {
-
+public static class API
+{
     private const string OSCModName = "OSC";
 
     /// <summary>
     /// The ChatBoxMessage class encapsulates details about a chat message received by the local player.
     /// This can be triggered by various sources such as Internal, OSC, or external Mods.
     /// </summary>
-    public class ChatBoxMessage {
-
+    public class ChatBoxMessage
+    {
         /// <summary>
         /// The source of the chat message, which can be Internal, OSC, or external Mod.
         /// </summary>
@@ -48,7 +48,15 @@ public static class API {
         /// </summary>
         public readonly string ModName;
 
-        internal ChatBoxMessage(MessageSource source, string senderGuid, string message, bool triggerNotification, bool displayOnChatBox, bool displayOnHistory, string modName) {
+        internal ChatBoxMessage(
+            MessageSource source,
+            string senderGuid,
+            string message,
+            bool triggerNotification,
+            bool displayOnChatBox,
+            bool displayOnHistory,
+            string modName)
+        {
             Source = source;
             SenderGuid = senderGuid;
             Message = message;
@@ -63,8 +71,8 @@ public static class API {
     /// The ChatBoxTyping class encapsulates details about a typing event received by the local player.
     /// This can be triggered by various sources such as Internal, OSC, or external Mods.
     /// </summary>
-    public class ChatBoxTyping {
-
+    public class ChatBoxTyping
+    {
         /// <summary>
         /// The source of the typing event, which can be Internal, OSC, or external Mod.
         /// </summary>
@@ -85,7 +93,8 @@ public static class API {
         /// </summary>
         public readonly bool TriggerNotification;
 
-        internal ChatBoxTyping(MessageSource source, string senderGuid, bool isTyping, bool triggerNotification) {
+        internal ChatBoxTyping(MessageSource source, string senderGuid, bool isTyping, bool triggerNotification)
+        {
             Source = source;
             SenderGuid = senderGuid;
             IsTyping = isTyping;
@@ -117,7 +126,8 @@ public static class API {
     /// <summary>
     /// Where the message was sent from.
     /// </summary>
-    public enum MessageSource : byte {
+    public enum MessageSource : byte
+    {
         Internal,
         OSC,
         Mod,
@@ -130,7 +140,9 @@ public static class API {
     /// <param name="sendSoundNotification">Whether to send a sounds notification or not.</param>
     /// <param name="displayInChatBox">Whether to display the message on the ChatBox or not.</param>
     /// <param name="displayInHistory">Whether to display the message on the History Window or not.</param>
-    public static void SendMessage(string message, bool sendSoundNotification, bool displayInChatBox, bool displayInHistory) {
+    public static void SendMessage(string message, bool sendSoundNotification, bool displayInChatBox,
+        bool displayInHistory)
+    {
         var modName = GetModName();
         var source = modName == OSCModName ? MessageSource.OSC : MessageSource.Mod;
         ModNetwork.SendMessage(source, modName, message, sendSoundNotification, displayInChatBox, displayInHistory);
@@ -141,15 +153,18 @@ public static class API {
     /// </summary>
     /// <param name="isTyping">A boolean value indicating whether the local player is typing. Set to true if the player is typing, and false if the player is not typing.</param>
     /// <param name="sendSoundNotification">Whether to send a sounds notification or not.</param>
-    public static void SetIsTyping(bool isTyping, bool sendSoundNotification) {
-        ChatBox.SetIsTyping(GetModName() == OSCModName ? MessageSource.OSC : MessageSource.Mod, isTyping, sendSoundNotification);
+    public static void SetIsTyping(bool isTyping, bool sendSoundNotification)
+    {
+        ChatBox.SetIsTyping(GetModName() == OSCModName ? MessageSource.OSC : MessageSource.Mod, isTyping,
+            sendSoundNotification);
     }
 
     /// <summary>
     /// Opens the in-game keyboard, with an optional initial message.
     /// </summary>
     /// <param name="initialMessage">The initial message to be displayed on the keyboard when it is opened. This can be an empty string.</param>
-    public static void OpenKeyboard(string initialMessage = "") {
+    public static void OpenKeyboard(string initialMessage = "")
+    {
         ChatBox.OpenKeyboard(initialMessage);
     }
 
@@ -161,14 +176,16 @@ public static class API {
     /// </summary>
     /// <param name="interceptor">The handler that receives a message and is waiting for a result. You need to create one.
     /// For the result you can use `InterceptorResult.Ignore` if you don't want to override the message.</param>
-    public static void AddReceivingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) => ReceivingInterceptors.Add(interceptor);
+    public static void AddReceivingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) =>
+        ReceivingInterceptors.Add(interceptor);
 
 
     /// <summary>
     /// Allows removing a previously added interceptor to RECEIVED messages to override the display of the messages.
     /// </summary>
     /// <param name="interceptor">A reference for the interceptor previously added.</param>
-    public static void RemoveReceivingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) => ReceivingInterceptors.Remove(interceptor);
+    public static void RemoveReceivingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) =>
+        ReceivingInterceptors.Remove(interceptor);
 
 
     /// <summary>
@@ -176,20 +193,22 @@ public static class API {
     /// </summary>
     /// <param name="interceptor">The handler that receives a message and is waiting for a result. You need to create one.
     /// For the result you can use `InterceptorResult.Ignore` if you don't want to override the message.</param>
-    public static void AddSendingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) => SendingInterceptors.Add(interceptor);
+    public static void AddSendingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) =>
+        SendingInterceptors.Add(interceptor);
 
 
     /// <summary>
     /// Allows removing a previously added interceptor to SENT messages to override the display of the messages.
     /// </summary>
     /// <param name="interceptor">A reference for the interceptor previously added.</param>
-    public static void RemoveSendingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) => SendingInterceptors.Remove(interceptor);
+    public static void RemoveSendingInterceptor(Func<ChatBoxMessage, InterceptorResult> interceptor) =>
+        SendingInterceptors.Remove(interceptor);
 
     /// <summary>
     /// Class representing the result of an Interception. Use `InterceptorResult.Ignore` as a result if you don't want to affect the message.
     /// </summary>
-    public class InterceptorResult {
-
+    public class InterceptorResult
+    {
         public readonly string ModName;
         public readonly bool PreventDisplayOnChatBox;
         public readonly bool PreventDisplayOnHistory;
@@ -204,25 +223,30 @@ public static class API {
         /// </summary>
         /// <param name="preventDisplayOnChatBox"></param> Whether it should prevent displaying on ChatBox or not.
         /// <param name="preventDisplayOnHistory"></param> Whether it should prevent displaying on History Window or not.
-        public InterceptorResult(bool preventDisplayOnChatBox, bool preventDisplayOnHistory) {
+        public InterceptorResult(bool preventDisplayOnChatBox, bool preventDisplayOnHistory)
+        {
             PreventDisplayOnChatBox = preventDisplayOnChatBox;
             PreventDisplayOnHistory = preventDisplayOnHistory;
             ModName = GetModName();
         }
     }
 
-    private static string GetModName() {
-        try {
+    private static string GetModName()
+    {
+        try
+        {
             var callingFrame = new StackTrace().GetFrame(2);
             var callingAssembly = callingFrame.GetMethod().Module.Assembly;
-            var callingMelonAttr = callingAssembly.CustomAttributes.FirstOrDefault(
-                attr => attr.AttributeType == typeof(MelonInfoAttribute));
-            return (string) callingMelonAttr!.ConstructorArguments[1].Value;
+            var callingMelonAttr = callingAssembly.CustomAttributes
+                .FirstOrDefault(attr => attr.AttributeType == typeof(MelonInfoAttribute));
+            return (string)callingMelonAttr!.ConstructorArguments[1].Value;
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             MelonLogger.Error("[GetModName] Attempted to get a mod's name...");
             MelonLogger.Error(ex);
         }
+
         return "N/A";
     }
 }

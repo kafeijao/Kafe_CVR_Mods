@@ -21,8 +21,8 @@ using UnityEngine.UI;
 
 namespace Kafe.ChatBox;
 
-public class HistoryBehavior : MonoBehaviour {
-
+public class HistoryBehavior : MonoBehaviour
+{
     internal static HistoryBehavior Instance;
 
     // Colors
@@ -93,20 +93,24 @@ public class HistoryBehavior : MonoBehaviour {
 
     internal static Action MessageVisibilityChanged;
 
-    internal enum MenuTarget {
+    internal enum MenuTarget
+    {
         QuickMenu,
         World,
         HUD,
     }
 
-    private class ChatBoxEntry {
+    private class ChatBoxEntry
+    {
         private readonly string _senderGuid;
         private readonly GameObject _gameObject;
         private readonly TextMeshProUGUI _usernameTmp;
         private readonly TextMeshProUGUI _timestampTmp;
         private readonly TextMeshProUGUI _messageTmp;
 
-        public ChatBoxEntry(string senderGuid, GameObject gameObject, TextMeshProUGUI usernameTmp, TextMeshProUGUI timestampTmp, TextMeshProUGUI messageTmp) {
+        public ChatBoxEntry(string senderGuid, GameObject gameObject, TextMeshProUGUI usernameTmp,
+            TextMeshProUGUI timestampTmp, TextMeshProUGUI messageTmp)
+        {
             _senderGuid = senderGuid;
             _gameObject = gameObject;
             _usernameTmp = usernameTmp;
@@ -114,36 +118,43 @@ public class HistoryBehavior : MonoBehaviour {
             _messageTmp = messageTmp;
         }
 
-        internal void UpdateFontSize(float newValue) {
+        internal void UpdateFontSize(float newValue)
+        {
             _timestampTmp.fontSize = newValue * TimestampFontSizeModifier;
             _usernameTmp.fontSize = newValue * UsernameFontSizeModifier;
             _messageTmp.fontSize = newValue;
         }
 
-        internal void UpdateVisibility() {
+        internal void UpdateVisibility()
+        {
             _gameObject.SetActive(ConfigJson.ShouldShowMessage(_senderGuid));
         }
     }
 
-    private void SetGameLayerRecursive(GameObject go, int layer) {
+    private void SetGameLayerRecursive(GameObject go, int layer)
+    {
         go.layer = layer;
-        foreach (Transform child in go.transform) {
+        foreach (Transform child in go.transform)
+        {
             SetGameLayerRecursive(child.gameObject, layer);
         }
     }
 
-    internal void ParentTo(MenuTarget targetType) {
+    internal void ParentTo(MenuTarget targetType)
+    {
+        var menuControllerTransform = (RectTransform)transform;
 
-        var menuControllerTransform = (RectTransform) transform;
-
-        switch (targetType) {
+        switch (targetType)
+        {
             case MenuTarget.QuickMenu:
                 menuControllerTransform.SetParent(_quickMenuGo.transform, true);
-                if (ModConfig.MeHistoryWindowOnCenter.Value) {
+                if (ModConfig.MeHistoryWindowOnCenter.Value)
+                {
                     menuControllerTransform.localPosition = new Vector3(-0.05f, -0.055f, -0.001f);
                     ModConfig.MeHistoryWindowOpened.Value = true;
                 }
-                else {
+                else
+                {
                     menuControllerTransform.localPosition = new Vector3(0.86f, -0.095f, 0f);
                 }
 
@@ -179,7 +190,8 @@ public class HistoryBehavior : MonoBehaviour {
         UpdateBackgroundAndTitleVisibility();
     }
 
-    private void UpdateButtonStates() {
+    private void UpdateButtonStates()
+    {
         var attachedToBTKUI = _currentMenuParent == MenuTarget.QuickMenu && ModConfig.MeHistoryWindowOnCenter.Value;
         _powerImage.enabled = !attachedToBTKUI;
         _powerToggle.enabled = !attachedToBTKUI;
@@ -201,35 +213,43 @@ public class HistoryBehavior : MonoBehaviour {
 
     internal static bool IsBTKUIHistoryPageOpened = false;
 
-    internal void UpdateWhetherMenuIsShown() {
-        if (!CVR_MenuManager.Instance.IsViewShown && _currentMenuParent == MenuTarget.QuickMenu) {
+    internal void UpdateWhetherMenuIsShown()
+    {
+        if (!CVR_MenuManager.Instance.IsViewShown && _currentMenuParent == MenuTarget.QuickMenu)
+        {
             gameObject.SetActive(false);
             CVR_MenuManager.Instance._uiRenderer.sortingOrder = 10;
         }
-        else {
-            if (!ModConfig.MeHistoryWindowOnCenter.Value) {
+        else
+        {
+            if (!ModConfig.MeHistoryWindowOnCenter.Value)
+            {
                 gameObject.SetActive(true);
                 CVR_MenuManager.Instance._uiRenderer.sortingOrder = 10;
             }
-            else if (ModConfig.MeHistoryWindowOnCenter.Value && IsBTKUIHistoryPageOpened) {
+            else if (ModConfig.MeHistoryWindowOnCenter.Value && IsBTKUIHistoryPageOpened)
+            {
                 gameObject.SetActive(true);
                 CVR_MenuManager.Instance._uiRenderer.sortingOrder = -1;
             }
-            else {
+            else
+            {
                 gameObject.SetActive(false);
                 CVR_MenuManager.Instance._uiRenderer.sortingOrder = 10;
             }
         }
     }
 
-    private void UpdateBackgroundAndTitleVisibility() {
-        var isShown = ModConfig.MeHistoryWindowOpened.Value && (!ModConfig.MeHistoryWindowOnCenter.Value || _currentMenuParent != MenuTarget.QuickMenu);
+    private void UpdateBackgroundAndTitleVisibility()
+    {
+        var isShown = ModConfig.MeHistoryWindowOpened.Value &&
+                      (!ModConfig.MeHistoryWindowOnCenter.Value || _currentMenuParent != MenuTarget.QuickMenu);
         _rootRectImage.enabled = isShown;
         _titleText.alpha = isShown ? 1f : 0f;
     }
 
-    private void ToggleHistoryWindow(bool isOpened) {
-
+    private void ToggleHistoryWindow(bool isOpened)
+    {
         _rootRectPickup.enabled = _grabToggle != null && _grabToggle.isOn;
         _rootRectPickupHighlight.enabled = _rootRectPickup.enabled;
         _rootRectCollider.enabled = isOpened;
@@ -244,16 +264,18 @@ public class HistoryBehavior : MonoBehaviour {
         ParentTo(MenuTarget.QuickMenu);
     }
 
-    private void Awake() {
-
-        try {
+    private void Awake()
+    {
+        try
+        {
             _quickMenuGo = CVR_MenuManager.Instance.cohtmlView.transform;
 
             // Main
             _rootRectTransform = GetComponent<RectTransform>();
             _rootRectTransform.gameObject.layer = LayerMask.NameToLayer("UI Internal");
             _rootRectTransform.gameObject.SetActive(ModConfig.MeShowHistoryWindow.Value);
-            ModConfig.MeShowHistoryWindow.OnEntryValueChanged.Subscribe((_, currentValue) => {
+            ModConfig.MeShowHistoryWindow.OnEntryValueChanged.Subscribe((_, currentValue) =>
+            {
                 _rootRectTransform.gameObject.SetActive(currentValue);
             });
             _rootRectImage = _rootRectTransform.GetComponent<Image>();
@@ -265,10 +287,12 @@ public class HistoryBehavior : MonoBehaviour {
             _header = _rootRectTransform.Find("Header").gameObject;
             _titleText = _rootRectTransform.Find("Header/Title").GetComponent<TextMeshProUGUI>();
             _scrollView = _rootRectTransform.Find("Scroll View").gameObject;
-            if (!MetaPort.Instance.isUsingVr) {
+            if (!MetaPort.Instance.isUsingVr)
+            {
                 // In desktop lets increase the scroll sensitivity
                 _scrollView.GetComponent<ScrollRect>().scrollSensitivity = 100f;
             }
+
             _pickupHighlight = _rootRectTransform.Find("PickupHighlight").gameObject;
 
             // Power Toggle
@@ -276,14 +300,16 @@ public class HistoryBehavior : MonoBehaviour {
             _powerBackground = _powerToggle.transform.Find("Background").GetComponent<Image>();
             _powerImage = _rootRectTransform.Find("PowerToggle/Checkmark").GetComponent<Image>();
             _powerToggle.onValueChanged.AddListener(ToggleHistoryWindow);
-            ModConfig.MeHistoryWindowOpened.OnEntryValueChanged.Subscribe((oldValue, newValue) => {
+            ModConfig.MeHistoryWindowOpened.OnEntryValueChanged.Subscribe((oldValue, newValue) =>
+            {
                 if (oldValue == newValue) return;
                 ToggleHistoryWindow(newValue);
             });
 
             // Message Button
             _messageButton = _rootRectTransform.Find("TogglesView/Message").GetComponent<Button>();
-            _messageButton.onClick.AddListener(() => {
+            _messageButton.onClick.AddListener(() =>
+            {
                 if (CVR_MenuManager.Instance.IsViewShown) CVR_MenuManager.Instance.ToggleQuickMenu(false);
                 ChatBox.OpenKeyboard("");
             });
@@ -306,14 +332,16 @@ public class HistoryBehavior : MonoBehaviour {
             _rootRectPickup.generateTeleTarget = false;
             _rootRectPickupHighlight = _rootRectTransform.Find("PickupHighlight").GetComponent<MeshRenderer>();
             _rootRectPickupHighlight.enabled = false;
-            _grabToggle.onValueChanged.AddListener(isOn => {
+            _grabToggle.onValueChanged.AddListener(isOn =>
+            {
                 _rootRectPickup.enabled = isOn;
                 _rootRectPickupHighlight.enabled = isOn;
                 UpdateButtonStates();
             });
 
             // Content
-            _contentRectTransform = _rootRectTransform.Find("Scroll View/Viewport/Content").GetComponent<RectTransform>();
+            _contentRectTransform =
+                _rootRectTransform.Find("Scroll View/Viewport/Content").GetComponent<RectTransform>();
 
             // Save templates
             _templateChatEntry = _rootRectTransform.Find("Templates/Template_ChatEntry").gameObject;
@@ -322,8 +350,8 @@ public class HistoryBehavior : MonoBehaviour {
             ToggleHistoryWindow(ModConfig.MeHistoryWindowOpened.Value);
 
             // Set the message listeners
-            API.OnMessageReceived += chatBoxMessage => {
-
+            API.OnMessageReceived += chatBoxMessage =>
+            {
                 // Ignore messages that are not supposed to be displayed
                 if (!chatBoxMessage.DisplayOnHistory) return;
 
@@ -333,8 +361,8 @@ public class HistoryBehavior : MonoBehaviour {
 
                 AddMessage(chatBoxMessage);
             };
-            API.OnMessageSent += chatBoxMessage => {
-
+            API.OnMessageSent += chatBoxMessage =>
+            {
                 // Ignore messages that are not supposed to be displayed
                 if (!chatBoxMessage.DisplayOnHistory) return;
 
@@ -346,23 +374,24 @@ public class HistoryBehavior : MonoBehaviour {
             };
 
             // Set font size listener
-            ModConfig.MeHistoryFontSize.OnEntryValueChanged.Subscribe((_, newValue) => {
-                foreach (var entry in ChatBoxEntries) {
+            ModConfig.MeHistoryFontSize.OnEntryValueChanged.Subscribe((_, newValue) =>
+            {
+                foreach (var entry in ChatBoxEntries)
                     entry.UpdateFontSize(newValue);
-                }
             });
 
             // Set message visibility change listener
-            MessageVisibilityChanged += () => {
-                foreach (var entry in ChatBoxEntries) {
+            MessageVisibilityChanged += () =>
+            {
+                foreach (var entry in ChatBoxEntries)
                     entry.UpdateVisibility();
-                }
             };
 
             gameObject.SetActive(false);
             Instance = this;
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             MelonLogger.Error(ex);
         }
     }
@@ -371,57 +400,65 @@ public class HistoryBehavior : MonoBehaviour {
         ? ""
         : input.Replace("<", "&lt;").Replace(">", "&gt;");
 
-    private void AddMessage(API.ChatBoxMessage chatBoxMessage) {
-
+    private void AddMessage(API.ChatBoxMessage chatBoxMessage)
+    {
         var isSelf = MetaPort.Instance.ownerId == chatBoxMessage.SenderGuid;
 
         var chatEntry = Instantiate(_templateChatEntry, _contentRectTransform).transform;
         chatEntry.SetAsFirstSibling();
         var timestampTmp = chatEntry.Find("Header/Timestamp").GetComponent<TextMeshProUGUI>();
-#if UNITY_6
+        #if UNITY_6
         SharedFilter.ProcessTextMeshProUGUI(timestampTmp);
-#endif
+        #endif
         timestampTmp.text = $"[{DateTime.Now.ToString("T", CultureInfo.CurrentCulture)}]";
 
         // Handle OSC/Mod sources
         var modNameTmp = chatEntry.Find("Header/ModName").GetComponent<TextMeshProUGUI>();
-#if UNITY_6
+        #if UNITY_6
         SharedFilter.ProcessTextMeshProUGUI(modNameTmp);
-#endif
-        if (chatBoxMessage.Source == API.MessageSource.OSC) {
+        #endif
+        if (chatBoxMessage.Source == API.MessageSource.OSC)
+        {
             modNameTmp.text = "[OSC]";
             modNameTmp.color = ChatBoxBehavior.TealTransparency;
         }
-        else if (chatBoxMessage.Source == API.MessageSource.Mod) {
+        else if (chatBoxMessage.Source == API.MessageSource.Mod)
+        {
             modNameTmp.text = $"[{CleanTMPString(chatBoxMessage.ModName)}]";
             modNameTmp.color = ChatBoxBehavior.PinkTransparency;
         }
 
         var usernameComponent = chatEntry.Find("Header/Username");
         var usernameButton = usernameComponent.GetComponent<Button>();
-        usernameButton.onClick.AddListener(() => ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
+        usernameButton.onClick.AddListener(() =>
+            ViewManager.Instance.RequestUserDetailsPage(chatBoxMessage.SenderGuid));
         var usernameTmp = usernameComponent.GetComponent<TextMeshProUGUI>();
-#if UNITY_6
+        #if UNITY_6
         SharedFilter.ProcessTextMeshProUGUI(usernameTmp);
-#endif
-        if (isSelf) {
+        #endif
+        if (isSelf)
+        {
             usernameTmp.text = CleanTMPString(AuthManager.Username);
             usernameTmp.color = ColorBlue;
         }
-        else {
+        else
+        {
             usernameTmp.text = CleanTMPString(CVRPlayerManager.Instance.TryGetPlayerName(chatBoxMessage.SenderGuid));
             usernameTmp.color = Friends.FriendsWith(chatBoxMessage.SenderGuid) ? ColorGreen : Color.white;
         }
 
         var msg = chatBoxMessage.Message;
         // Check for profanity and replace if needed
-        if (ModConfig.MeProfanityFilter.Value) {
-            msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
+        if (ModConfig.MeProfanityFilter.Value)
+        {
+            msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length),
+                RegexOptions.IgnoreCase);
         }
+
         var messageTmp = chatEntry.Find("Message").GetComponent<TextMeshProUGUI>();
-#if UNITY_6
+        #if UNITY_6
         SharedFilter.ProcessTextMeshProUGUI(messageTmp);
-#endif
+        #endif
 
         // // Color our own username in messages (I disabled formatting so this won't work ;_;
         // var coloredUsername = $"<color=#{ColorUtility.ToHtmlStringRGB(ColorBlue)}>@{AuthManager.Username}</color>";
@@ -429,7 +466,8 @@ public class HistoryBehavior : MonoBehaviour {
         messageTmp.richText = false;
         messageTmp.text = msg;
 
-        var entry = new ChatBoxEntry(chatBoxMessage.SenderGuid, chatEntry.gameObject, usernameTmp, timestampTmp, messageTmp);
+        var entry = new ChatBoxEntry(chatBoxMessage.SenderGuid, chatEntry.gameObject, usernameTmp, timestampTmp,
+            messageTmp);
         entry.UpdateVisibility();
         entry.UpdateFontSize(ModConfig.MeHistoryFontSize.Value);
         ChatBoxEntries.Add(entry);
@@ -437,16 +475,20 @@ public class HistoryBehavior : MonoBehaviour {
 
 
     [HarmonyPatch]
-    internal class HarmonyPatches {
-
+    internal class HarmonyPatches
+    {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.Start))]
-        private static void After_CVR_MenuManager_Start(ref CVR_MenuManager __instance) {
-            try {
+        private static void After_CVR_MenuManager_Start(ref CVR_MenuManager __instance)
+        {
+            try
+            {
                 // Instantiate and add the controller script
-                Instantiate(ModConfig.ChatBoxHistoryPrefab, __instance.cohtmlView.transform).AddComponent<HistoryBehavior>();
+                Instantiate(ModConfig.ChatBoxHistoryPrefab, __instance.cohtmlView.transform)
+                    .AddComponent<HistoryBehavior>();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_Start)}");
                 MelonLogger.Error(e);
             }
@@ -454,12 +496,15 @@ public class HistoryBehavior : MonoBehaviour {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVR_MenuManager), nameof(CVR_MenuManager.ToggleQuickMenu))]
-        private static void After_CVR_MenuManager_ToggleQuickMenu() {
-            try {
+        private static void After_CVR_MenuManager_ToggleQuickMenu()
+        {
+            try
+            {
                 if (!Instance) return;
                 Instance.UpdateWhetherMenuIsShown();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_ToggleQuickMenu)}");
                 MelonLogger.Error(e);
             }

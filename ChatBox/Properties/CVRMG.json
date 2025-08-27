@@ -1,7 +1,7 @@
 {
   "_id": 168,
   "name": "ChatBox",
-  "modversion": "1.0.20",
+  "modversion": "1.0.21",
   "gameversion": "2025r180",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -17,6 +17,6 @@
   "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r79/ChatBox.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/ChatBox",
-  "changelog": "- Fixed for 2025r180",
+  "changelog": "- Fixed `ChatBox/Typing` parameter never being set to false\n- Send stopped typing event over the network when either a message is sent, or the chatbox keyboard is closed. This also sets the `ChatBox/Typing` parameter to false",
   "embedcolor": "16C60C"
 }

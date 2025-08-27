@@ -12,8 +12,8 @@ using UnityEngine.UI;
 
 namespace Kafe.ChatBox;
 
-public class ChatBoxBehavior : MonoBehaviour {
-
+public class ChatBoxBehavior : MonoBehaviour
+{
     private const string ChildTypingName = "Typing";
     private const string ChildTextBubbleName = "Text Bubble";
     private const string ChildTextBubbleOutputName = "Output";
@@ -22,13 +22,18 @@ public class ChatBoxBehavior : MonoBehaviour {
 
     // Normal
     private readonly Color Green = new Color(0.2235294f, 0.7490196f, 0f);
+
     private readonly Color GreenTransparency = new Color(0.2235294f, 0.7490196f, 0f, 0.75f);
+
     // Whisper
     private readonly Color BlueTransparency = new Color(0f, 0.6122726f, 0.7490196f, 0.75f);
+
     // OSC
     internal static readonly Color TealTransparency = new Color(0.2494215f, 0.8962264f, 0.8223274f, 0.75f);
+
     // Mod
     internal static readonly Color PinkTransparency = new Color(1f, 0.4009434f, 0.9096327f, 0.75f);
+
     // Astro - Official InuCast Salmon Colour^tm - Shiba Inu Shaped Bubble
     private readonly Color AstroTransparency = new Color(1f, 0.4980392f, 0.4980392f, 0.75f);
 
@@ -83,12 +88,12 @@ public class ChatBoxBehavior : MonoBehaviour {
     private static float _chatBoxOpacity;
     private static float _notificationSoundMaxDistance;
 
-    static ChatBoxBehavior() {
-
+    static ChatBoxBehavior()
+    {
         ChatBoxes = new Dictionary<string, ChatBoxBehavior>();
 
-        API.OnIsTypingReceived += chatBoxIsTyping => {
-
+        API.OnIsTypingReceived += chatBoxIsTyping =>
+        {
             // Ignore our own messages
             if (chatBoxIsTyping.SenderGuid == MetaPort.Instance.ownerId) return;
 
@@ -102,13 +107,14 @@ public class ChatBoxBehavior : MonoBehaviour {
             #if DEBUG
             MelonLoader.MelonLogger.Msg($"Received a Typing message from: {chatBoxIsTyping.SenderGuid} -> {chatBoxIsTyping.IsTyping}");
             #endif
-            if (ChatBoxes.TryGetValue(chatBoxIsTyping.SenderGuid, out var chatBoxBehavior)) {
+            if (ChatBoxes.TryGetValue(chatBoxIsTyping.SenderGuid, out var chatBoxBehavior))
+            {
                 chatBoxBehavior.OnTyping(chatBoxIsTyping.IsTyping, chatBoxIsTyping.TriggerNotification);
             }
         };
 
-        API.OnMessageReceived += chatBoxMessage => {
-
+        API.OnMessageReceived += chatBoxMessage =>
+        {
             // Ignore messages that are not supposed to be displayed
             if (!chatBoxMessage.DisplayOnChatBox) return;
 
@@ -125,54 +131,66 @@ public class ChatBoxBehavior : MonoBehaviour {
             var msg = chatBoxMessage.Message;
 
             // Check for profanity and replace if needed
-            if (ModConfig.MeProfanityFilter.Value) {
-                msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length), RegexOptions.IgnoreCase);
+            if (ModConfig.MeProfanityFilter.Value)
+            {
+                msg = Regex.Replace(msg, ConfigJson.GetProfanityPattern(), m => new string('*', m.Length),
+                    RegexOptions.IgnoreCase);
             }
 
             #if DEBUG
             MelonLogger.Msg($"Received a Message message from: {chatBoxMessage.SenderGuid} -> {msg}");
             #endif
-            if (ChatBoxes.TryGetValue(chatBoxMessage.SenderGuid, out var chatBoxBehavior)) {
+            if (ChatBoxes.TryGetValue(chatBoxMessage.SenderGuid, out var chatBoxBehavior))
+            {
                 chatBoxBehavior.OnMessage(chatBoxMessage.Source, msg, chatBoxMessage.TriggerNotification);
             }
         };
 
         // Config Listeners
         _volume = ModConfig.MeSoundsVolume.Value;
-        ModConfig.MeSoundsVolume.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeSoundsVolume.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             _volume = newValue;
             UpdateChatBoxes();
         });
         _chatBoxSize = ModConfig.MeChatBoxSize.Value;
-        ModConfig.MeChatBoxSize.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeChatBoxSize.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             _chatBoxSize = newValue;
             UpdateChatBoxes();
         });
         _chatBoxOpacity = ModConfig.MeChatBoxOpacity.Value;
-        ModConfig.MeChatBoxOpacity.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeChatBoxOpacity.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             _chatBoxOpacity = newValue;
             UpdateChatBoxes();
         });
         _notificationSoundMaxDistance = ModConfig.MeNotificationSoundMaxDistance.Value;
-        ModConfig.MeNotificationSoundMaxDistance.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeNotificationSoundMaxDistance.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             _notificationSoundMaxDistance = newValue;
             UpdateChatBoxes();
         });
     }
 
-    private static void UpdateChatBoxes() {
-        foreach (var chatBox in ChatBoxes.Select(chatBoxKeyValue => chatBoxKeyValue.Value).Where(chatBox => chatBox != null)) {
+    private static void UpdateChatBoxes()
+    {
+        foreach (var chatBox in ChatBoxes.Select(chatBoxKeyValue => chatBoxKeyValue.Value)
+                     .Where(chatBox => chatBox != null))
+        {
             chatBox.UpdateChatBox();
         }
     }
 
-    private void UpdateChatBox() {
+    private void UpdateChatBox()
+    {
         _canvasGroup.alpha = _chatBoxOpacity;
         _textBubbleAudioSource.volume = _volume;
         _typingAudioSource.volume = _volume;
         _textBubbleMentionAudioSource.volume = _volume;
 
-        _textBubbleTransform.localPosition = new Vector3(0, NameplateOffsetBubble + NameplateOffsetBubbleMultiplier * (_chatBoxSize - 1), 0);
+        _textBubbleTransform.localPosition = new Vector3(0,
+            NameplateOffsetBubble + NameplateOffsetBubbleMultiplier * (_chatBoxSize - 1), 0);
         _textBubbleTransform.localScale = Vector3.one * _chatBoxSize;
 
         // Resizing the typing thing is stupid ?
@@ -182,20 +200,24 @@ public class ChatBoxBehavior : MonoBehaviour {
         _typingAudioSource.maxDistance = _notificationSoundMaxDistance;
         _textBubbleAudioSource.maxDistance = _notificationSoundMaxDistance;
 
-        void SetCustomRolloff(bool isGlobal) {
+        void SetCustomRolloff(bool isGlobal)
+        {
             var customRolloff = new AnimationCurve();
             customRolloff.AddKey(0.0f, 1.0f);
             customRolloff.AddKey(_notificationSoundMaxDistance, isGlobal ? 1.0f : 0f);
             _textBubbleMentionAudioSource.maxDistance = _notificationSoundMaxDistance;
             _textBubbleMentionAudioSource.SetCustomCurve(AudioSourceCurveType.CustomRolloff, customRolloff);
         }
+
         SetCustomRolloff(ModConfig.MeMessageMentionGlobalAudio.Value);
-        ModConfig.MeMessageMentionGlobalAudio.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeMessageMentionGlobalAudio.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             SetCustomRolloff(newValue);
         });
     }
 
-    private void ApplyNameplateMaterial(Image img, Material sourceMaterial) {
+    private void ApplyNameplateMaterial(Image img, Material sourceMaterial)
+    {
         var newMat = new Material(sourceMaterial);
         // MelonLogger.Msg($"src: {sourceMaterial.name}, new: {newMat.name}");
         _materialsToCleanup.Add(newMat);
@@ -205,8 +227,8 @@ public class ChatBoxBehavior : MonoBehaviour {
         img.material = newMat;
     }
 
-    private void ApplyNameplateMaterial(TextMeshProUGUI tmpTrg, TMP_Text tmpSrc) {
-
+    private void ApplyNameplateMaterial(TextMeshProUGUI tmpTrg, TMP_Text tmpSrc)
+    {
         var newMat = new Material(tmpTrg.m_sharedMaterial);
         _materialsToCleanup.Add(newMat);
         newMat.shader = tmpSrc.m_sharedMaterial.shader;
@@ -219,8 +241,8 @@ public class ChatBoxBehavior : MonoBehaviour {
         tmpTrg.fontSharedMaterial = newMat;
     }
 
-    private void Start() {
-
+    private void Start()
+    {
         _nameplate = transform.GetComponent<PlayerNameplate>();
         _playerGuid = _nameplate.player.ownerId;
 
@@ -254,7 +276,8 @@ public class ChatBoxBehavior : MonoBehaviour {
         _typingBackground = _typingGo.transform.GetChild(0).GetComponent<Image>();
         _typingBackground.color = Green;
         ApplyNameplateMaterial(_typingBackground, nameplateBackgroundMaterial);
-        for (var i = 0; i < _typingBackground.transform.childCount; i++) {
+        for (var i = 0; i < _typingBackground.transform.childCount; i++)
+        {
             var typingGoChild = _typingBackground.transform.GetChild(i).gameObject;
             _typingGoChildren.Add(typingGoChild);
             ApplyNameplateMaterial(typingGoChild.GetComponent<Image>(), nameplateBackgroundMaterial);
@@ -272,9 +295,9 @@ public class ChatBoxBehavior : MonoBehaviour {
         ApplyNameplateMaterial(_textBubbleRoundImg, nameplateBackgroundMaterial);
 
         _textBubbleOutputTMP = tmpGo.GetComponent<TextMeshProUGUI>();
-#if UNITY_6
+        #if UNITY_6
         SharedFilter.ProcessTextMeshProUGUI(_textBubbleOutputTMP);
-#endif
+        #endif
         ApplyNameplateMaterial(_textBubbleOutputTMP, _nameplate.usrNameText);
 
         // Needed to prevent funny crashes :c
@@ -313,25 +336,30 @@ public class ChatBoxBehavior : MonoBehaviour {
         ChatBoxes[_playerGuid] = this;
     }
 
-    private void OnDestroy() {
+    private void OnDestroy()
+    {
         if (ChatBoxes.ContainsKey(_playerGuid)) ChatBoxes.Remove(_playerGuid);
 
         // Clean the materials we instantiated
-        foreach (var material in _materialsToCleanup.Where(material => material != null)) {
+        foreach (var material in _materialsToCleanup.Where(material => material != null))
+        {
             Destroy(material);
         }
+
         _materialsToCleanup.Clear();
     }
 
-    private void StopTyping() {
+    private void StopTyping()
+    {
         if (_resetTypingAfterDelayCoroutine != null) StopCoroutine(_resetTypingAfterDelayCoroutine);
         _typingGo.SetActive(false);
         _lastTypingIndex = 0;
     }
 
-    private void OnTyping(bool isTyping, bool notify) {
-
-        if (!isTyping) {
+    private void OnTyping(bool isTyping, bool notify)
+    {
+        if (!isTyping)
+        {
             StopTyping();
             return;
         }
@@ -347,10 +375,11 @@ public class ChatBoxBehavior : MonoBehaviour {
         if (!wasOn && notify && ModConfig.MeSoundOnStartedTyping.Value) _typingAudioSource.Play();
     }
 
-    private IEnumerator ResetIsTypingAfterDelay() {
-
+    private IEnumerator ResetIsTypingAfterDelay()
+    {
         // Timeout after 5 seconds without writing...
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < 10; i++)
+        {
             _typingGoChildren[_lastTypingIndex].SetActive(false);
             _lastTypingIndex = (_lastTypingIndex + 1) % _typingGoChildren.Count;
             _typingGoChildren[_lastTypingIndex].SetActive(true);
@@ -362,9 +391,11 @@ public class ChatBoxBehavior : MonoBehaviour {
         _resetTypingAfterDelayCoroutine = null;
     }
 
-    private void SetColor(API.MessageSource source) {
+    private void SetColor(API.MessageSource source)
+    {
         var color = Green;
-        switch (source) {
+        switch (source)
+        {
             case API.MessageSource.Internal:
                 color = GreenTransparency;
                 break;
@@ -375,24 +406,29 @@ public class ChatBoxBehavior : MonoBehaviour {
                 color = BlueTransparency;
                 break;
         }
+
         _textBubbleHexagonImg.color = color;
         _textBubbleRoundImg.color = color;
     }
 
     private API.MessageSource _previousSource = API.MessageSource.Internal;
 
-    private void OnMessage(API.MessageSource source, string msg, bool notify) {
+    private void OnMessage(API.MessageSource source, string msg, bool notify)
+    {
         StopTyping();
 
         // Ignore non-internal msg if currently displaying an internal one, and Cancel the bubble reset
-        if (_textBubbleGo.activeSelf) {
+        if (_textBubbleGo.activeSelf)
+        {
             if (_previousSource == API.MessageSource.Internal && source != API.MessageSource.Internal) return;
             if (_resetTextAfterDelayCoroutine != null) StopCoroutine(_resetTextAfterDelayCoroutine);
         }
+
         _previousSource = source;
 
         // Update the text
-        if (_textBubbleOutputTMP.text != msg) {
+        if (_textBubbleOutputTMP.text != msg)
+        {
             _textBubbleOutputTMP.text = msg;
         }
 
@@ -401,15 +437,18 @@ public class ChatBoxBehavior : MonoBehaviour {
         _textBubbleHexagonImg.gameObject.SetActive(notify);
         _textBubbleRoundImg.gameObject.SetActive(!notify);
         SetColor(source);
-        if (notify && ModConfig.MeSoundOnMessage.Value) {
+        if (notify && ModConfig.MeSoundOnMessage.Value)
+        {
             _textBubbleAudioSource.Play();
-            if (msg.IndexOf($"@{AuthManager.Username}", StringComparison.OrdinalIgnoreCase) >= 0) {
+            if (msg.IndexOf($"@{AuthManager.Username}", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
                 _textBubbleMentionAudioSource.PlayDelayed(0.5f);
             }
         }
     }
 
-    private IEnumerator ResetTextAfterDelay(int msgLength) {
+    private IEnumerator ResetTextAfterDelay(int msgLength)
+    {
         var timeout = ModConfig.MeMessageTimeoutDependsLength.Value
             ? Mathf.Clamp(msgLength / 10f, ModConfig.MessageTimeoutMin, ModConfig.MeMessageTimeoutSeconds.Value)
             : ModConfig.MeMessageTimeoutSeconds.Value;

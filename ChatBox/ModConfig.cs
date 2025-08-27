@@ -7,8 +7,8 @@ using UnityEngine.Networking;
 
 namespace Kafe.ChatBox;
 
-public static class ModConfig {
-
+public static class ModConfig
+{
     public const float MessageTimeoutMin = 5f;
     private const float MessageTimeoutMax = 90f;
 
@@ -48,7 +48,8 @@ public static class ModConfig {
     private const string ChatBoxJsPatches = "chatbox.cohtml.keyboard.patches.js";
 
     // Files
-    internal enum Sound {
+    internal enum Sound
+    {
         Typing,
         Message,
         MessageMention,
@@ -58,16 +59,17 @@ public static class ModConfig {
     private const string ChatBoxSoundMessage = "chatbox.sound.message.wav";
     private const string ChatBoxSoundMessageMention = "chatbox.sound.message.mention.wav";
 
-    private static readonly Dictionary<Sound, string> AudioClipResourceNames = new() {
-        {Sound.Typing, ChatBoxSoundTyping},
-        {Sound.Message, ChatBoxSoundMessage},
-        {Sound.MessageMention, ChatBoxSoundMessageMention},
+    private static readonly Dictionary<Sound, string> AudioClipResourceNames = new()
+    {
+        { Sound.Typing, ChatBoxSoundTyping },
+        { Sound.Message, ChatBoxSoundMessage },
+        { Sound.MessageMention, ChatBoxSoundMessageMention },
     };
 
     internal static readonly Dictionary<Sound, AudioClip> AudioClips = new();
 
-    public static void InitializeMelonPrefs() {
-
+    public static void InitializeMelonPrefs()
+    {
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(ChatBox));
 
@@ -126,16 +128,18 @@ public static class ModConfig {
             description: "Whether to also send msgs to TTS or not.");
     }
 
-    public static void LoadAssemblyResources(Assembly assembly) {
-
-        try {
-
+    public static void LoadAssemblyResources(Assembly assembly)
+    {
+        try
+        {
             using var resourceStream = assembly.GetManifestResourceStream(ChatBoxAssetBundleName);
             using var memoryStream = new MemoryStream();
-            if (resourceStream == null) {
+            if (resourceStream == null)
+            {
                 MelonLogger.Error($"Failed to load {ChatBoxAssetBundleName}!");
                 return;
             }
+
             resourceStream.CopyTo(memoryStream);
             var assetBundle = AssetBundle.LoadFromMemory(memoryStream.ToArray());
 
@@ -145,24 +149,28 @@ public static class ModConfig {
             ChatBoxHistoryPrefab = assetBundle.LoadAsset<GameObject>(ChatBoxHistoryPrefabAssetPath);
             ChatBoxHistoryPrefab.hideFlags |= HideFlags.DontUnloadUnusedAsset;
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             MelonLogger.Error("Failed to Load resources from the asset bundle");
             MelonLogger.Error(ex);
         }
 
         // Load/Create the sound files
-        foreach (var audioClipResourceName in AudioClipResourceNames) {
-            try {
-
+        foreach (var audioClipResourceName in AudioClipResourceNames)
+        {
+            try
+            {
                 using var resourceStream = assembly.GetManifestResourceStream(audioClipResourceName.Value);
 
                 // Create the directory if non-existent
-                var audioPath = Path.GetFullPath(Path.Combine("UserData", nameof(ChatBox), audioClipResourceName.Value));
+                var audioPath =
+                    Path.GetFullPath(Path.Combine("UserData", nameof(ChatBox), audioClipResourceName.Value));
                 var audioFile = new FileInfo(audioPath);
                 audioFile.Directory?.Create();
 
                 // If there is no audio file, write the default
-                if (!audioFile.Exists) {
+                if (!audioFile.Exists)
+                {
                     MelonLogger.Msg($"Saving default sound file to {audioFile.FullName}...");
                     using var fileStream = File.Open(audioPath, FileMode.Create, FileAccess.Write);
                     resourceStream!.CopyTo(fileStream);
@@ -174,23 +182,32 @@ public static class ModConfig {
                 uwr.SendWebRequest();
 
                 // I want this sync, should be fast since we're loading from the disk and not the webs
-                while (!uwr.isDone) {}
-                if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError or UnityWebRequest.Result.DataProcessingError) {
+                while (!uwr.isDone)
+                {
+                }
+
+                if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError
+                    or UnityWebRequest.Result.DataProcessingError)
+                {
                     MelonLogger.Error($"{uwr.error}");
                 }
-                else {
+                else
+                {
                     AudioClips[audioClipResourceName.Key] = DownloadHandlerAudioClip.GetContent(uwr);
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 MelonLogger.Error($"Failed to Load the Audio Clips assembly resources");
                 MelonLogger.Error(ex);
             }
         }
 
-        try {
+        try
+        {
             using var resourceStream = assembly.GetManifestResourceStream(ChatBoxJsPatches);
-            if (resourceStream == null) {
+            if (resourceStream == null)
+            {
                 MelonLogger.Error($"Failed to load {ChatBoxJsPatches}!");
                 return;
             }
@@ -198,39 +215,50 @@ public static class ModConfig {
             using var streamReader = new StreamReader(resourceStream);
             JavascriptPatchesContent = streamReader.ReadToEnd();
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             MelonLogger.Error("Failed to load the assembly resource");
             MelonLogger.Error(ex);
         }
-
     }
 
-    internal static void InitializeBTKUI() {
+    internal static void InitializeBTKUI()
+    {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static BTKUILib.UIObjects.Components.ToggleButton AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry, string overrideName = null) {
+    private static BTKUILib.UIObjects.Components.ToggleButton AddMelonToggle(BTKUILib.UIObjects.Category category,
+        MelonPreferences_Entry<bool> entry, string overrideName = null)
+    {
         var toggle = category.AddToggle(overrideName ?? entry.DisplayName, entry.Description, entry.Value);
-        toggle.OnValueUpdated += b => {
+        toggle.OnValueUpdated += b =>
+        {
             if (b != entry.Value) entry.Value = b;
         };
-        entry.OnEntryValueChanged.Subscribe((_, newValue) => {
+        entry.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             if (newValue != toggle.ToggleValue) toggle.ToggleValue = newValue;
         });
         return toggle;
     }
 
-    private static void AddMelonSlider(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces, string overrideName = null) {
-        var slider = category.AddSlider(overrideName ?? entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
-        slider.OnValueUpdated += f => {
+    private static void AddMelonSlider(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<float> entry,
+        float min, float max, int decimalPlaces, string overrideName = null)
+    {
+        var slider = category.AddSlider(overrideName ?? entry.DisplayName, entry.Description, entry.Value, min, max,
+            decimalPlaces);
+        slider.OnValueUpdated += f =>
+        {
             if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
         };
-        entry.OnEntryValueChanged.Subscribe((_, newValue) => {
+        entry.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             if (!Mathf.Approximately(newValue, slider.SliderValue)) slider.SetSliderValue(newValue);
         });
     }
 
-    private static void SetupBTKUI(CVR_MenuManager manager) {
+    private static void SetupBTKUI(CVR_MenuManager manager)
+    {
         BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
         // Load icons
@@ -273,12 +301,15 @@ public static class ModConfig {
         var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
         var miscCategory = miscPage.AddCategory(nameof(ChatBox), nameof(ChatBox));
 
-        miscCategory.AddButton("Send Message", iconMsg, "Opens the keyboard to send a message via the ChatBox").OnPress += () => {
+        miscCategory.AddButton("Send Message", iconMsg, "Opens the keyboard to send a message via the ChatBox")
+            .OnPress += () =>
+        {
             manager.ToggleQuickMenu(false);
             ChatBox.OpenKeyboard("");
         };
 
-        var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", iconMsgSettings, $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));
+        var modPage = miscCategory.AddPage($"{nameof(ChatBox)} Settings", iconMsgSettings,
+            $"Configure the settings for {nameof(ChatBox)}.", nameof(ChatBox));
         modPage.MenuTitle = $"{nameof(ChatBox)} Settings";
 
         var modSettingsCategory = modPage.AddCategory("Settings");
@@ -286,29 +317,37 @@ public static class ModConfig {
         var historyOnCenter = AddMelonToggle(miscCategory, MeHistoryWindowOnCenter, "History Window on Center");
 
         BTKUILib.UIObjects.Page historyPage = null;
-        if (historyOnCenter.ToggleValue) {
+        if (historyOnCenter.ToggleValue)
+        {
             historyPage = miscCategory.AddPage($"{nameof(ChatBox)} History", iconMsgWindow, "", nameof(ChatBox));
         }
-        historyOnCenter.OnValueUpdated += isOn => {
+
+        historyOnCenter.OnValueUpdated += isOn =>
+        {
             historyPage?.SubpageButton.Delete();
             historyPage?.Delete();
-            if (isOn) {
+            if (isOn)
+            {
                 historyPage = miscCategory.AddPage($"{nameof(ChatBox)} History", iconMsgWindow, "", nameof(ChatBox));
             }
+
             HistoryBehavior.IsBTKUIHistoryPageOpened = false;
             HistoryBehavior.Instance.ParentTo(HistoryBehavior.MenuTarget.QuickMenu);
         };
-        BTKUILib.QuickMenuAPI.OnOpenedPage += (targetPage, _) => {
+        BTKUILib.QuickMenuAPI.OnOpenedPage += (targetPage, _) =>
+        {
             if (!historyOnCenter.ToggleValue) return;
             HistoryBehavior.IsBTKUIHistoryPageOpened = targetPage == "btkUI-ChatBox-ChatBoxHistory";
             HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
         };
-        BTKUILib.QuickMenuAPI.OnTabChange += (_, _) => {
+        BTKUILib.QuickMenuAPI.OnTabChange += (_, _) =>
+        {
             if (!historyOnCenter.ToggleValue) return;
             HistoryBehavior.IsBTKUIHistoryPageOpened = false;
             HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
         };
-        BTKUILib.QuickMenuAPI.OnBackAction += (_, _) => {
+        BTKUILib.QuickMenuAPI.OnBackAction += (_, _) =>
+        {
             if (!historyOnCenter.ToggleValue) return;
             HistoryBehavior.IsBTKUIHistoryPageOpened = false;
             HistoryBehavior.Instance.UpdateWhetherMenuIsShown();
@@ -324,7 +363,8 @@ public static class ModConfig {
         AddMelonToggle(modSettingsCategory, MeIgnoreModMessages, "Hide Mod Msgs");
         AddMelonToggle(modSettingsCategory, MeAlsoSendMsgsToTTS, "Also send via TTS");
 
-        var profanityPage = modSettingsCategory.AddPage("Manage Profanity", iconProfanity, "Manage the profanity filter.", nameof(ChatBox));
+        var profanityPage = modSettingsCategory.AddPage("Manage Profanity", iconProfanity,
+            "Manage the profanity filter.", nameof(ChatBox));
         var profanityCat = profanityPage.AddCategory("");
         var profanityListCat = profanityPage.AddCategory("ProfanityList");
         var profanityToggle = AddMelonToggle(profanityCat, MeProfanityFilter, "Use Profanity Filter");
@@ -332,27 +372,40 @@ public static class ModConfig {
         Button removeProfanity = null;
         PopulateProfanity(MeProfanityFilter.Value);
         profanityToggle.OnValueUpdated += PopulateProfanity;
-        void PopulateProfanityList() {
+
+        void PopulateProfanityList()
+        {
             profanityListCat.ClearChildren();
-            foreach (var profanityWord in ConfigJson.GetProfanityList()) {
-                profanityListCat.AddButton(profanityWord, iconDelete, $"Removes the word {profanityWord} from the list.").OnPress += () => {
-                    ConfigJson.RemoveProfanity(profanityWord);
-                    PopulateProfanityList();
-                };
+            foreach (var profanityWord in ConfigJson.GetProfanityList())
+            {
+                profanityListCat
+                        .AddButton(profanityWord, iconDelete, $"Removes the word {profanityWord} from the list.")
+                        .OnPress +=
+                    () =>
+                    {
+                        ConfigJson.RemoveProfanity(profanityWord);
+                        PopulateProfanityList();
+                    };
             }
         }
-        void PopulateProfanity(bool isFilterOn) {
+
+        void PopulateProfanity(bool isFilterOn)
+        {
             addProfanity?.Delete();
             removeProfanity?.Delete();
             PopulateProfanityList();
             if (!isFilterOn) return;
-            addProfanity = profanityCat.AddButton("Add Profanity", iconAdd, "Add a profanity word to the list (it's case insensitive).");
-            addProfanity.OnPress += () => BTKUILib.QuickMenuAPI.OpenKeyboard("", word => {
+            addProfanity = profanityCat.AddButton("Add Profanity", iconAdd,
+                "Add a profanity word to the list (it's case insensitive).");
+            addProfanity.OnPress += () => BTKUILib.QuickMenuAPI.OpenKeyboard("", word =>
+            {
                 ConfigJson.AddProfanity(word);
                 PopulateProfanityList();
             });
-            removeProfanity = profanityCat.AddButton("Remove Profanity", iconRemove, "Remove a profanity word from the list.");
-            removeProfanity.OnPress += () => BTKUILib.QuickMenuAPI.OpenKeyboard("", word => {
+            removeProfanity =
+                profanityCat.AddButton("Remove Profanity", iconRemove, "Remove a profanity word from the list.");
+            removeProfanity.OnPress += () => BTKUILib.QuickMenuAPI.OpenKeyboard("", word =>
+            {
                 ConfigJson.RemoveProfanity(word);
                 PopulateProfanityList();
             });
@@ -364,29 +417,36 @@ public static class ModConfig {
 
         AddMelonSlider(modSettingsCategory, MeSoundsVolume, 0f, 1f, 1);
         AddMelonSlider(modSettingsCategory, MeNotificationSoundMaxDistance, 1f, 25f, 1, "Sound Distance");
-        AddMelonSlider(modSettingsCategory, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0, "Timeout (secs)");
+        AddMelonSlider(modSettingsCategory, MeMessageTimeoutSeconds, MessageTimeoutMin, MessageTimeoutMax, 0,
+            "Timeout (secs)");
         AddMelonSlider(modSettingsCategory, MeChatBoxOpacity, 0.1f, 1f, 2);
         AddMelonSlider(modSettingsCategory, MeChatBoxSize, 0f, 2f, 2);
         AddMelonSlider(modSettingsCategory, MeHistoryFontSize, 25f, 50f, 0);
 
         // Player visibility overrides
         var playerCat = BTKUILib.QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(ChatBox), nameof(ChatBox));
-        void UpdateOverrideButton(string playerName, string playerID) {
+
+        void UpdateOverrideButton(string playerName, string playerID)
+        {
             playerCat.ClearChildren();
             var playerOverride = ConfigJson.GetUserOverride(playerID);
-            var buttonTooltip = playerOverride switch {
+            var buttonTooltip = playerOverride switch
+            {
                 ConfigJson.UserOverride.Default => "Default - It will respect the setting to only show from friends.",
-                ConfigJson.UserOverride.Show => "Show - Messages will be shown regardless the only show from friends setting.",
+                ConfigJson.UserOverride.Show =>
+                    "Show - Messages will be shown regardless the only show from friends setting.",
                 ConfigJson.UserOverride.Hide => "Hide - Messages will not be displayed for this user.",
                 _ => "N/A"
             };
-            var buttonIcon = playerOverride switch {
+            var buttonIcon = playerOverride switch
+            {
                 ConfigJson.UserOverride.Default => iconVisDefault,
                 ConfigJson.UserOverride.Show => iconVisShow,
                 ConfigJson.UserOverride.Hide => iconVisHide,
                 _ => "N/A"
             };
-            playerCat.AddButton("Visibility", buttonIcon, buttonTooltip).OnPress += () => {
+            playerCat.AddButton("Visibility", buttonIcon, buttonTooltip).OnPress += () =>
+            {
                 var values = Enum.GetValues(typeof(ConfigJson.UserOverride)).Cast<ConfigJson.UserOverride>().ToArray();
                 var currentIndex = Array.IndexOf(values, playerOverride);
                 var nextOverride = values[(currentIndex + 1) % values.Length];
@@ -395,7 +455,7 @@ public static class ModConfig {
                 HistoryBehavior.MessageVisibilityChanged?.Invoke();
             };
         }
+
         BTKUILib.QuickMenuAPI.OnPlayerSelected += UpdateOverrideButton;
     }
-
 }
