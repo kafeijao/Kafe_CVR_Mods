@@ -8,6 +8,7 @@ To load CSS files simply place them on the following folders:
 
 - `ChilloutVR\UserData\MenuCSSLoader\Default\MainMenu\`
 - `ChilloutVR\UserData\MenuCSSLoader\Default\QuickMenu\`
+- `ChilloutVR\UserData\MenuCSSLoader\Default\Keyboard\`
 
 Theme Repositories:
 
@@ -18,12 +19,13 @@ To create a theme:
 - Create a folder in `ChilloutVR\UserData\MenuCSSLoader\` with your theme name.
 - Put CSS files for the main menu in `<theme-name>\MainMenu`
 - Put CSS files for the quick menu in `<theme-name>\QuickMenu`
+- Put CSS files for the keyboard view in `<theme-name>\Keyboard`
 
 ### Notes
 
 - You can add as many files as you want
-- If you edit the files, close the menus and press F5, the new css will be loaded
-- You can press `Shift + F5` to reload the list of files (__only needed__ if you add/remove files or change themes)
+- If you edit the files, close the menus and press `F5`, the new css will be loaded
+- You can press `Shift` + `F5` to reload the list of files (__only needed__ if you add/remove files or change themes)
 - The default theme "Default" is automatically created
 - You can select themes in the BTKUI Misc Menu
 

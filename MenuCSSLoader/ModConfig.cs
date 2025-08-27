@@ -10,10 +10,11 @@ public static class ModConfig {
     private const string MenuJsPatches = "MenuCSSLoader.MenuPatches.js";
     internal static string MenuJsPatchesContent;
 
-    private static MelonPreferences_Entry<string> CurentTheme = MelonPreferences.GetEntry<string>("MenuCSSLoader", "CurrentTheme");
+    private static readonly MelonPreferences_Entry<string> CurrentTheme = MelonPreferences.GetEntry<string>("MenuCSSLoader", "CurrentTheme");
 
     private const string MainMenuCSSFolder = "MainMenu";
     private const string QuickMenuCSSFolder = "QuickMenu";
+    private const string KeyboardViewCSSFolder = "Keyboard";
 
     public static void LoadAssemblyResources(Assembly assembly) {
 
@@ -40,11 +41,10 @@ public static class ModConfig {
             // Clear current css file paths
             MenuCSSLoader.MainMenuCSSFilePaths.Clear();
             MenuCSSLoader.QuickMenuCSSFilePaths.Clear();
-
-            
+            MenuCSSLoader.KeyboardViewCSSFilePaths.Clear();
 
             // Create MainMenu directory if it doesn't exist
-            var mainMenuCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurentTheme.Value), MainMenuCSSFolder));
+            var mainMenuCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurrentTheme.Value), MainMenuCSSFolder));
             if (!Directory.Exists(mainMenuCSSFolderPath))
             {
                 Directory.CreateDirectory(mainMenuCSSFolderPath);
@@ -52,11 +52,19 @@ public static class ModConfig {
             }
 
             // Create QuickMenu directory if it doesn't exist
-            var quickMenuCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurentTheme.Value), QuickMenuCSSFolder));
+            var quickMenuCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurrentTheme.Value), QuickMenuCSSFolder));
             if (!Directory.Exists(quickMenuCSSFolderPath))
             {
                 Directory.CreateDirectory(quickMenuCSSFolderPath);
                 MelonLogger.Msg($"Created directory: {quickMenuCSSFolderPath}");
+            }
+
+            // Create Keyboard directory if it doesn't exist
+            var keyboardViewCSSFolderPath = Path.GetFullPath(Path.Combine(Path.Combine(ModDataFolder, CurrentTheme.Value), KeyboardViewCSSFolder));
+            if (!Directory.Exists(keyboardViewCSSFolderPath))
+            {
+                Directory.CreateDirectory(keyboardViewCSSFolderPath);
+                MelonLogger.Msg($"Created directory: {keyboardViewCSSFolderPath}");
             }
 
             // Load all CSS files in the main menu folder
@@ -75,7 +83,15 @@ public static class ModConfig {
                 MelonLogger.Msg($"Loaded {QuickMenuCSSFolder} CSS file: {cssFile}");
             }
 
-            MelonLogger.Msg("Loaded the Menu CSS file paths to use.");
+            // Load all CSS files in the keyboard view folder
+            var keyboardViewCSSFiles = Directory.GetFiles(keyboardViewCSSFolderPath, "*.css");
+            foreach (var cssFile in keyboardViewCSSFiles)
+            {
+                MenuCSSLoader.KeyboardViewCSSFilePaths.Add(cssFile);
+                MelonLogger.Msg($"Loaded {KeyboardViewCSSFolder} CSS file: {cssFile}");
+            }
+
+            MelonLogger.Msg("Loaded the Menus and Keyboard CSS file paths to use.");
         }
         catch (Exception ex) {
             MelonLogger.Error($"Failed to Load the CSS files from the folders in: {ModDataFolder}");

@@ -9,12 +9,12 @@ namespace MenuCSSLoader
 {
     internal static class BTKUIIntegration
     {
-        private static readonly string ModName = "MenuCSSLoader";
+        private const string ModName = "MenuCSSLoader";
         private static readonly string ModDataFolder = Path.GetFullPath(Path.Combine("UserData", nameof(MenuCSSLoader)));
-        private static MelonPreferences_Entry<string> CurentTheme = MelonPreferences.GetEntry<string>(ModName, "CurrentTheme");
 
-        private static List<string> AvailableThemes = new List<string>();
-        //private static MultiSelection ThemeSelector;
+        private static readonly MelonPreferences_Entry<string> CurrentTheme = MelonPreferences.GetEntry<string>(ModName, "CurrentTheme");
+
+        private static readonly List<string> AvailableThemes = new List<string>();
 
         public static void CreateIcons(Assembly assembly)
         {
@@ -32,23 +32,23 @@ namespace MenuCSSLoader
             
         }
 
-        public static void OpenThemeSelector()
+        private static void OpenThemeSelector()
         {
             AvailableThemes.Clear();
             foreach (string themePath in Directory.GetDirectories(ModDataFolder))
             {
                 AvailableThemes.Add(themePath.Split("\\").Last());
             }
-            MultiSelection ThemeSelector = new MultiSelection("Select a theme.",
+            MultiSelection themeSelector = new MultiSelection("Select a theme.",
                                                AvailableThemes.ToArray<string>(),
-                                               AvailableThemes.FindIndex(a => a.Equals(CurentTheme.Value)));
-            ThemeSelector.OnOptionUpdated += SelectTheme;
-            QuickMenuAPI.OpenMultiSelect(ThemeSelector);
+                                               AvailableThemes.FindIndex(a => a.Equals(CurrentTheme.Value)));
+            themeSelector.OnOptionUpdated += SelectTheme;
+            QuickMenuAPI.OpenMultiSelect(themeSelector);
         }
 
-        public static void SelectTheme(int themeIndex)
+        private static void SelectTheme(int themeIndex)
         {
-            CurentTheme.Value = AvailableThemes[themeIndex];
+            CurrentTheme.Value = AvailableThemes[themeIndex];
             ModConfig.LoadCSSFilePaths();
             QuickMenuAPI.ShowConfirm("Reload UI?", "Would you like to reload the UI now?", MenuCSSLoader.ReloadUI);
         }

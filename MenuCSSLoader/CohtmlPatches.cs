@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.UI.UIRework.Managers;
 using HarmonyLib;
 using MelonLoader;
 
@@ -12,6 +13,7 @@ internal static class CohtmlPatches {
 
     public static Action MainMenuInitialized;
     public static Action QuickMenuInitialized;
+    public static Action KeyboardViewInitialized;
 
     internal static void LoadCSSFileMM(string cssFilePath)
     {
@@ -23,6 +25,11 @@ internal static class CohtmlPatches {
         CVR_MenuManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSFileFunctionName, cssFilePath);
     }
 
+    internal static void LoadCSSFileKeyboard(string cssFilePath)
+    {
+        KeyboardManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSFileFunctionName, cssFilePath);
+    }
+
     internal static void LoadCSSTextMM(string cssText)
     {
         ViewManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
@@ -31,6 +38,11 @@ internal static class CohtmlPatches {
     internal static void LoadCSSTextQM(string cssText)
     {
         CVR_MenuManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
+    }
+
+    internal static void LoadCSSTextKeyboard(string cssText)
+    {
+        KeyboardManager.Instance.cohtmlView.View.TriggerEvent(LoadCSSTextFunctionName, cssText);
     }
 
     [HarmonyPatch]
@@ -80,6 +92,30 @@ internal static class CohtmlPatches {
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_CVR_MenuManager_Start)}");
+                MelonLogger.Error(e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(KeyboardManager), nameof(KeyboardManager.Start))]
+        public static void After_KeyboardManager_Start(KeyboardManager __instance) {
+            // Load and inject our custom quick menu behaviour
+            try {
+
+                // Load the bindings
+                __instance.cohtmlView.Listener.ReadyForBindings += () =>
+                {
+                    __instance.cohtmlView.View.RegisterForEvent(InitializedFunctionName, KeyboardViewInitialized);
+                };
+
+                // Inject our Cohtml
+                __instance.cohtmlView.Listener.FinishLoad += _ => {
+                    __instance.cohtmlView.View._view.ExecuteScript(ModConfig.MenuJsPatchesContent);
+                };
+
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the patched function {nameof(After_KeyboardManager_Start)}");
                 MelonLogger.Error(e);
             }
         }
