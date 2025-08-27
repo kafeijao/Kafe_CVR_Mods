@@ -46,8 +46,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompanionProp", "CompanionP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostProcessingOverrides", "PostProcessingOverrides\PostProcessingOverrides.csproj", "{73C2DDD7-EB95-4454-8723-0B15594DDB9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AMDQuestWirelessStutterFix", "AMDQuestWirelessStutterFix\AMDQuestWirelessStutterFix.csproj", "{8C9A96B6-5115-4D4B-A000-0EC51D174C72}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MenuCSSLoader", "MenuCSSLoader\MenuCSSLoader.csproj", "{1575A44A-B925-4345-BD59-3E01EC79F098}"
 EndProject
 Global
@@ -148,10 +146,6 @@ Global
 		{73C2DDD7-EB95-4454-8723-0B15594DDB9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73C2DDD7-EB95-4454-8723-0B15594DDB9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73C2DDD7-EB95-4454-8723-0B15594DDB9E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8C9A96B6-5115-4D4B-A000-0EC51D174C72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C9A96B6-5115-4D4B-A000-0EC51D174C72}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8C9A96B6-5115-4D4B-A000-0EC51D174C72}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8C9A96B6-5115-4D4B-A000-0EC51D174C72}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1575A44A-B925-4345-BD59-3E01EC79F098}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1575A44A-B925-4345-BD59-3E01EC79F098}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1575A44A-B925-4345-BD59-3E01EC79F098}.Release|Any CPU.ActiveCfg = Release|Any CPU
