@@ -40,7 +40,7 @@ public static class Spawnable
     {
         PropAvailabilityCache.Clear();
         SpawnableParametersCacheOutFloat.Clear();
-        foreach (var prop in PropCache.Values)
+        foreach (var prop in PropCache.Values.ToList())
         {
             if (prop.Spawnable == null) return;
             OnSpawnableCreated(prop);
@@ -72,18 +72,11 @@ public static class Spawnable
 
     internal static void OnSpawnableDestroyed(CVRSpawnable spawnable)
     {
-        if (spawnable == null || !PropCache.ContainsKey(spawnable.instanceId)) return;
+        if (spawnable == null || !PropCache.Remove(spawnable.instanceId)) return;
 
         // Remove spawnable from caches
-        if (PropCache.ContainsKey(spawnable.instanceId))
-        {
-            PropCache.Remove(spawnable.instanceId);
-        }
 
-        if (SpawnableParametersCacheOutFloat.ContainsKey(spawnable.instanceId))
-        {
-            SpawnableParametersCacheOutFloat.Remove(spawnable.instanceId);
-        }
+        SpawnableParametersCacheOutFloat.Remove(spawnable.instanceId);
 
         SpawnableDeleted?.Invoke(spawnable);
     }
@@ -91,9 +84,7 @@ public static class Spawnable
     internal static void OnSpawnableParameterChanged(CVRSpawnable spawnable, CVRSpawnableValue spawnableValue)
     {
         if (spawnable == null || spawnableValue == null || !spawnable.IsMine() ||
-            !SpawnableParametersCacheOutFloat.ContainsKey(spawnable.instanceId)) return;
-
-        var cache = SpawnableParametersCacheOutFloat[spawnable.instanceId];
+            !SpawnableParametersCacheOutFloat.TryGetValue(spawnable.instanceId, out Dictionary<string, float> cache)) return;
 
         // Value already exists and it's updated
         if (cache.ContainsKey(spawnableValue.name) &&
@@ -113,10 +104,8 @@ public static class Spawnable
         var shouldControl = ShouldControl(spawnable);
 
         // Check if the state changed and ignore if it didn't
-        if (PropAvailabilityCache.ContainsKey(propData))
-        {
-            if (PropAvailabilityCache[propData] == shouldControl) return;
-        }
+        if (PropAvailabilityCache.TryGetValue(propData, out bool value))
+            if (value == shouldControl) return;
 
         PropAvailabilityCache[propData] = shouldControl;
 

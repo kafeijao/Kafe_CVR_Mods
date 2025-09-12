@@ -94,6 +94,7 @@ public class OSC : MelonMod
 
         OSCServer.Modules[OSCTrackingModule.ModulePrefix] = new OSCTrackingModule();
         OSCServer.Modules[OSCSpawnableModule.ModulePrefix] = new OSCSpawnableModule();
+        OSCServer.Modules[OSCConfigModule.ModulePrefix] = new OSCConfigModule();
 
         // Check for ChatBox
         if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null)
