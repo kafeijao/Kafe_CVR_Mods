@@ -1,5 +1,5 @@
-#define DEBUG_ROOT_GEN
-#define DEBUG_BONE_GEN
+//#define DEBUG_ROOT_GEN
+//#define DEBUG_BONE_GEN
 
 using ABI.CCK.Components;
 using ABI_RC.Core.Networking;
@@ -73,8 +73,8 @@ public class GrabbyBones : MelonMod {
         public bool IsLeft;
         public Vector3 PositionOffset;
         public string NetworkPath;
-        public string RootName;
-        public string ChildName;
+        public string RootIndex;
+        public string ChildIndex;
 
         public static GrabMessage Deserialize(ModNetworkMessage e)
         {
@@ -82,8 +82,8 @@ public class GrabbyBones : MelonMod {
             e.Read(out msg.IsLeft);
             e.Read(out msg.PositionOffset);
             e.Read(out msg.NetworkPath);
-            e.Read(out msg.RootName);
-            e.Read(out msg.ChildName);
+            e.Read(out msg.RootIndex);
+            e.Read(out msg.ChildIndex);
             return msg;
         }
 
@@ -92,8 +92,8 @@ public class GrabbyBones : MelonMod {
             e.Write(msg.IsLeft);
             e.Write(msg.PositionOffset);
             e.Write(msg.NetworkPath);
-            e.Write(msg.RootName);
-            e.Write(msg.ChildName);
+            e.Write(msg.RootIndex);
+            e.Write(msg.ChildIndex);
         }
     }
 
@@ -107,36 +107,47 @@ public class GrabbyBones : MelonMod {
             var foundBones = GrabbyBonesCache.Where(x => x.NetworkPath == path);
             var foundBonesCount = foundBones.Count();
             var firstBone = foundBones.FirstOrDefault();
+            #if DEBUG
             MelonLogger.Msg(
-                $"data [grab]: \n\t{grabMessage.NetworkPath}\n\t{grabMessage.RootName}\n\t{grabMessage.ChildName}\nfound {foundBonesCount} matching bones  (Sent by {msg.Sender})"
+                $"""
+                Received Grab Message (Sent by {msg.Sender})
+                NetworkPath: {grabMessage.NetworkPath}
+                Root Index: {grabMessage.RootIndex}
+                Child Index: {grabMessage.ChildIndex}
+                """
             );
+            #endif
             var suffix = grabMessage.IsLeft ? "_L" : "_R";
-            var playerId = msg.Sender + suffix;
+            var playerHandId = msg.Sender + suffix;
 
             if (firstBone != null)
-            {
-                MelonLogger.Msg($"  first name: {firstBone.GetName()}");
-                var roots = firstBone.Roots.Where(x => x.NetworkPath == grabMessage.RootName);
+            {            
+                #if DEBUG
+                MelonLogger.Msg($"  Found Bone: {firstBone.GetName()}");
+                #endif
+                var roots = firstBone.Roots.Where(x => x.NetworkPath == grabMessage.RootIndex);
                 var firstRoot = roots.FirstOrDefault();
-                MelonLogger.Msg($"  Roots: {roots.Count()}");
                 if(firstRoot != null)
                 {
-                    MelonLogger.Msg($"  root name: {firstRoot.NetworkPath}");
-                    var childs = firstRoot.ChildTransforms.Where(x => x.NetworkPath == grabMessage.ChildName);
+                    #if DEBUG
+                    MelonLogger.Msg($"  Found Root: {firstRoot.RootTransform.name}");
+                    #endif
+                    var childs = firstRoot.ChildTransforms.Where(x => x.NetworkPath == grabMessage.ChildIndex);
                     var firstChild = childs.FirstOrDefault();
-                    MelonLogger.Msg($"  Childs: {childs.Count()}");
+                    #if DEBUG
                     if(firstChild != null)
                     {
-                        MelonLogger.Msg("  FirstChild: " + firstChild.NetworkPath);
+                        MelonLogger.Msg("  Found Child: " + firstChild.Transform.name);
                     }
-                    if (AvatarHandInfo.Hands.TryGetValue(playerId, out var handInfo))
+                    #endif
+                    if (AvatarHandInfo.Hands.TryGetValue(playerHandId, out var handInfo))
                     {
                         handInfo.GrabbingOffset.localPosition = grabMessage.PositionOffset;
                         handInfo.Grab(new GrabbedInfo(handInfo, firstBone, firstRoot, firstChild));
                     }
                     else
                     {
-                        MelonLogger.Msg($"  [Grab] No hand info found for playerId {playerId}");
+                        MelonLogger.Warning($"[GrabMessage] No hand info found for ID: {playerHandId}");
                         return;
                     }
                 }
@@ -145,24 +156,26 @@ public class GrabbyBones : MelonMod {
         else if (msgId == ReleaseBonePacketId)
         {
             msg.Read(out ReleaseMessage releaseMessage);
-            MelonLogger.Msg($"data [release]: {releaseMessage.IsLeft} (Sent by {msg.Sender})");
-
+            #if DEBUG
+            var handName = releaseMessage.IsLeft ? "reft" : "right";
+            MelonLogger.Msg($"Received Release Message for {handName} hand. (Sent by {msg.Sender})");
+            #endif
             var suffix = releaseMessage.IsLeft ? "_L" : "_R";
-            var playerId = msg.Sender + suffix;
+            var playerHandId = msg.Sender + suffix;
 
-            if (AvatarHandInfo.Hands.TryGetValue(playerId, out var handInfo))
+            if (AvatarHandInfo.Hands.TryGetValue(playerHandId, out var handInfo))
             {
                 handInfo.Release();
             }
             else
             {
-                MelonLogger.Msg($"  [Release] No hand info found for playerId {playerId}");
+                MelonLogger.Warning($"[ReleaseMessage] No hand info found for ID: {playerHandId}");
                 return;
             }
         }
         else
         {
-            MelonLogger.Warning($"Received unknown message id {msgId} from GrabbyBones network channel. (Sent by {msg.Sender})");
+            MelonLogger.Warning($"Received unknown message id {msgId} from {nameof(GrabbyBones)} network channel. (Sent by {msg.Sender})");
             return;
         }
     }
@@ -190,18 +203,12 @@ public class GrabbyBones : MelonMod {
     private static void OnVeryLateUpdate() {
         if (!_initialize) return;
 
-        // ARTI: this is where the grab check happens, replace this with only checking local user, and receiving networked hands from others here!
         if (AvatarHandInfo.Hands.TryGetValue(AvatarHandInfo.LocalPlayerId + "_L", out var leftInfo)) {
             CheckState(leftInfo);
         }
         if (AvatarHandInfo.Hands.TryGetValue(AvatarHandInfo.LocalPlayerId + "_R", out var rightInfo)) {
             CheckState(rightInfo);
         }
-
-        //foreach (var (k, handInfo) in AvatarHandInfo.RemoteHands) {
-        //    if (!handInfo.IsAllowed()) continue;
-        //    CheckState(handInfo);
-        //}
 
         AvatarHandInfo.CheckGrabbedBones();
     }
@@ -302,8 +309,8 @@ public class GrabbyBones : MelonMod {
             y.IsLeft = handInfo.IsLeftHand;
             y.PositionOffset = handInfo.GrabbingOffset.localPosition;
             y.NetworkPath = closestGrabbyBoneInfo.NetworkPath;
-            y.RootName = closestGrabbyBoneRoot.NetworkPath;
-            y.ChildName = closestChildTransform.NetworkPath;
+            y.RootIndex = closestGrabbyBoneRoot.NetworkPath;
+            y.ChildIndex = closestChildTransform.NetworkPath;
             modMsg.Write(y);
             modMsg.Send();
         }
