@@ -1,10 +1,10 @@
 // #define DEBUG_ROOT_GEN
 
-using System.Reflection;
+using ABI.CCK.Components;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
-using ABI.CCK.Components;
+using ABI_RC.Systems.ModNetwork;
 using HarmonyLib;
 using MagicaCloth;
 using MagicaCloth2;
@@ -26,6 +26,10 @@ public class GrabbyBones : MelonMod {
     private const string IgnoreGrabbyBonesTag = "[NGB]";
     private const string IgnoreGrabbyBonesBoneTag = "[NGBB]";
 
+    private static readonly Guid NetworkGuid = Guid.Parse("a06737f7-8037-4223-9a92-6554f1405f0f");
+    private const byte GrabBonePacketId = 1;
+    private const byte ReleaseBonePacketId = 2;
+
     public override void OnInitializeMelon() {
         ModConfig.InitializeMelonPrefs();
         ModConfig.InitializeBTKUI();
@@ -41,6 +45,125 @@ public class GrabbyBones : MelonMod {
         #if DEBUG_ROOT_GEN
         MelonLogger.Warning("This mod was compiled with the DEBUG_ROOT_GEN mode on. There might be an excess of logging and performance overhead...");
         #endif
+
+        ModNetworkMessage.AddConverter(ReleaseMessage.Deserialize, ReleaseMessage.Serialize);
+        ModNetworkMessage.AddConverter(GrabMessage.Deserialize, GrabMessage.Serialize);
+        ModNetworkManager.Subscribe(NetworkGuid, OnMessage);
+    }
+
+    public class ReleaseMessage
+    {
+        public bool IsLeft;
+
+        public static ReleaseMessage Deserialize(ModNetworkMessage e)
+        {
+            var msg = new ReleaseMessage();
+            e.Read(out msg.IsLeft);
+            return msg;
+        }
+
+        public static void Serialize(ModNetworkMessage e, ReleaseMessage msg)
+        {
+            e.Write(msg.IsLeft);
+        }
+    }
+    public class GrabMessage
+    {
+        public bool IsLeft;
+        public Vector3 PositionOffset;
+        public string NetworkPath;
+        public string RootName;
+        public string ChildName;
+
+        public static GrabMessage Deserialize(ModNetworkMessage e)
+        {
+            var msg = new GrabMessage();
+            e.Read(out msg.IsLeft);
+            e.Read(out msg.PositionOffset);
+            e.Read(out msg.NetworkPath);
+            e.Read(out msg.RootName);
+            e.Read(out msg.ChildName);
+            return msg;
+        }
+
+        public static void Serialize(ModNetworkMessage e, GrabMessage msg)
+        {
+            e.Write(msg.IsLeft);
+            e.Write(msg.PositionOffset);
+            e.Write(msg.NetworkPath);
+            e.Write(msg.RootName);
+            e.Write(msg.ChildName);
+        }
+    }
+
+    private static void OnMessage(ModNetworkMessage msg)
+    {
+        msg.Read(out byte msgId);
+        if (msgId == GrabBonePacketId)
+        {
+            msg.Read(out GrabMessage grabMessage);
+            var path = grabMessage.NetworkPath;
+            var foundBones = GrabbyBonesCache.Where(x => x.NetworkPath == path);
+            var foundBonesCount = foundBones.Count();
+            var firstBone = foundBones.FirstOrDefault();
+            MelonLogger.Msg(
+                $"data [grab]: {grabMessage.NetworkPath}, found {foundBonesCount} matching bones  (Sent by {msg.Sender})"
+            );
+            var suffix = grabMessage.IsLeft ? "_L" : "_R";
+            var playerId = msg.Sender + suffix;
+
+            if (firstBone != null)
+            {
+                MelonLogger.Msg($"  first name: {firstBone.GetName()}");
+                var roots = firstBone.Roots.Where(x => x.RootTransform.name == grabMessage.RootName);
+                var firstRoot = roots.FirstOrDefault();
+                MelonLogger.Msg($"  Roots: {roots.Count()}");
+                if(firstRoot != null)
+                {
+                    MelonLogger.Msg($"  root name: {firstRoot.RootTransform.name}");
+                    var childs = firstRoot.ChildTransforms.Where(x => x.name == grabMessage.ChildName);
+                    var firstChild = childs.FirstOrDefault();
+                    MelonLogger.Msg($"  Childs: {childs.Count()}");
+                    if(firstChild != null)
+                    {
+                        MelonLogger.Msg("  FirstChild: " + firstChild.name);
+                    }
+                    if (AvatarHandInfo.Hands.TryGetValue(playerId, out var handInfo))
+                    {
+                        handInfo.GrabbingOffset.localPosition = grabMessage.PositionOffset;
+                        handInfo.Grab(new GrabbedInfo(handInfo, firstBone, firstRoot, firstChild));
+                    }
+                    else
+                    {
+                        MelonLogger.Msg($"  [Grab] No hand info found for playerId {playerId}");
+                        return;
+                    }
+                }
+            }
+        }
+        else if (msgId == ReleaseBonePacketId)
+        {
+            msg.Read(out ReleaseMessage releaseMessage);
+            MelonLogger.Msg($"data [release]: {releaseMessage.IsLeft} (Sent by {msg.Sender})");
+
+            var suffix = releaseMessage.IsLeft ? "_L" : "_R";
+            var playerId = msg.Sender + suffix;
+
+            if (AvatarHandInfo.Hands.TryGetValue(playerId, out var handInfo))
+            {
+                handInfo.Release();
+            }
+            else
+            {
+                MelonLogger.Msg($"  [Release] No hand info found for playerId {playerId}");
+                return;
+            }
+        }
+        else
+        {
+            MelonLogger.Warning($"Received unknown message id {msgId} from GrabbyBones network channel. (Sent by {msg.Sender})");
+            return;
+        }
     }
 
     private static readonly HashSet<GrabbyBoneInfo> GrabbyBonesCache = new();
@@ -66,10 +189,18 @@ public class GrabbyBones : MelonMod {
     private static void OnVeryLateUpdate() {
         if (!_initialize) return;
 
-        foreach (var handInfo in AvatarHandInfo.Hands) {
-            if (!handInfo.IsAllowed()) continue;
-            CheckState(handInfo);
+        // ARTI: this is where the grab check happens, replace this with only checking local user, and receiving networked hands from others here!
+        if (AvatarHandInfo.Hands.TryGetValue(AvatarHandInfo.LocalPlayerId + "_L", out var leftInfo)) {
+            CheckState(leftInfo);
         }
+        if (AvatarHandInfo.Hands.TryGetValue(AvatarHandInfo.LocalPlayerId + "_R", out var rightInfo)) {
+            CheckState(rightInfo);
+        }
+
+        //foreach (var (k, handInfo) in AvatarHandInfo.RemoteHands) {
+        //    if (!handInfo.IsAllowed()) continue;
+        //    CheckState(handInfo);
+        //}
 
         AvatarHandInfo.CheckGrabbedBones();
     }
@@ -161,6 +292,20 @@ public class GrabbyBones : MelonMod {
         handInfo.GrabbingOffset.position = closestChildTransform.position;
 
         handInfo.Grab(new GrabbedInfo(handInfo, closestGrabbyBoneInfo, closestGrabbyBoneRoot, closestChildTransform));
+
+        if(handInfo.IsLocalPlayerHand)
+        {
+            using var modMsg = new ModNetworkMessage(NetworkGuid);
+            modMsg.Write(GrabBonePacketId);
+            var y = new GrabMessage();
+            y.IsLeft = handInfo.IsLeftHand;
+            y.PositionOffset = handInfo.GrabbingOffset.localPosition;
+            y.NetworkPath = closestGrabbyBoneInfo.NetworkPath;
+            y.RootName = closestGrabbyBoneRoot.RootTransform.name;
+            y.ChildName = closestChildTransform.name;
+            modMsg.Write(y);
+            modMsg.Send();
+        }
     }
 
     private static void Release(AvatarHandInfo handInfo) {
@@ -169,6 +314,16 @@ public class GrabbyBones : MelonMod {
         MelonLogger.Msg($"[{GetPlayerName(handInfo.PuppetMaster)}] Released {handInfo.GrabbedBoneInfo.Root.RootTransform.name}");
         #endif
         handInfo.Release();
+
+        if(handInfo.IsLocalPlayerHand)
+        {
+            using var modMsg = new ModNetworkMessage(NetworkGuid);
+            var x = new ReleaseMessage();
+            x.IsLeft = handInfo.IsLeftHand;
+            modMsg.Write(ReleaseBonePacketId);
+            modMsg.Write(x);
+            modMsg.Send();
+        }
     }
 
     [DefaultExecutionOrder(9999999)]
