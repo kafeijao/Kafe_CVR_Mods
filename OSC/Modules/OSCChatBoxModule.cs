@@ -69,7 +69,7 @@ public class OSCChatBoxModule : OSCModule
         {
             MelonLogger.Msg($"Attempted to interact with the ChatBox but the address is invalid." +
                             $"\n\t\t\tAddress attempted: \"{packet.Address}\"" +
-                            $"\n\t\t\tThe correct format should be: \"{Prefix}<op>\"" +
+                            $"\n\t\t\tThe correct format should be: \"{Prefix}/<op>\"" +
                             $"\n\t\t\tAnd the allowed ops are: {string.Join(", ", Enum.GetNames(typeof(ChatBoxOperation)))}");
             return false;
         }
@@ -86,7 +86,7 @@ public class OSCChatBoxModule : OSCModule
                 MelonLogger.Msg(
                     "[Error] Attempted to interact with the ChatBox but the address is invalid." +
                     $"\n\t\t\tAddress attempted: \"{packet.Address}\"" +
-                    $"\n\t\t\tThe correct format should be: \"{Prefix}<op>\"" +
+                    $"\n\t\t\tThe correct format should be: \"{Prefix}/<op>\"" +
                     $"\n\t\t\tAnd the allowed ops are: {string.Join(", ", Enum.GetNames(typeof(ChatBoxOperation))).ToLowerInvariant()}"
                 );
                 break;
