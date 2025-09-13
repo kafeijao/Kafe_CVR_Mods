@@ -1,4 +1,5 @@
-// #define DEBUG_ROOT_GEN
+#define DEBUG_ROOT_GEN
+#define DEBUG_BONE_GEN
 
 using ABI.CCK.Components;
 using ABI_RC.Core.Networking;
@@ -107,7 +108,7 @@ public class GrabbyBones : MelonMod {
             var foundBonesCount = foundBones.Count();
             var firstBone = foundBones.FirstOrDefault();
             MelonLogger.Msg(
-                $"data [grab]: {grabMessage.NetworkPath}, found {foundBonesCount} matching bones  (Sent by {msg.Sender})"
+                $"data [grab]: \n\t{grabMessage.NetworkPath}\n\t{grabMessage.RootName}\n\t{grabMessage.ChildName}\nfound {foundBonesCount} matching bones  (Sent by {msg.Sender})"
             );
             var suffix = grabMessage.IsLeft ? "_L" : "_R";
             var playerId = msg.Sender + suffix;
@@ -115,18 +116,18 @@ public class GrabbyBones : MelonMod {
             if (firstBone != null)
             {
                 MelonLogger.Msg($"  first name: {firstBone.GetName()}");
-                var roots = firstBone.Roots.Where(x => x.RootTransform.name == grabMessage.RootName);
+                var roots = firstBone.Roots.Where(x => x.NetworkPath == grabMessage.RootName);
                 var firstRoot = roots.FirstOrDefault();
                 MelonLogger.Msg($"  Roots: {roots.Count()}");
                 if(firstRoot != null)
                 {
-                    MelonLogger.Msg($"  root name: {firstRoot.RootTransform.name}");
-                    var childs = firstRoot.ChildTransforms.Where(x => x.name == grabMessage.ChildName);
+                    MelonLogger.Msg($"  root name: {firstRoot.NetworkPath}");
+                    var childs = firstRoot.ChildTransforms.Where(x => x.NetworkPath == grabMessage.ChildName);
                     var firstChild = childs.FirstOrDefault();
                     MelonLogger.Msg($"  Childs: {childs.Count()}");
                     if(firstChild != null)
                     {
-                        MelonLogger.Msg("  FirstChild: " + firstChild.name);
+                        MelonLogger.Msg("  FirstChild: " + firstChild.NetworkPath);
                     }
                     if (AvatarHandInfo.Hands.TryGetValue(playerId, out var handInfo))
                     {
@@ -211,7 +212,7 @@ public class GrabbyBones : MelonMod {
 
         GrabbyBoneInfo closestGrabbyBoneInfo = null;
         GrabbyBoneInfo.Root closestGrabbyBoneRoot = null;
-        Transform closestChildTransform = null;
+        GrabbyBoneInfo.ChildTransform closestChildTransform = null;
         var closestDistance = float.PositiveInfinity;
 
         GrabbyBoneInfo erroredGrabbyBoneInfo = null;
@@ -246,17 +247,17 @@ public class GrabbyBones : MelonMod {
                 foreach (var childTransform in root.ChildTransforms) {
 
                     // Ignore bones with the ignore bone tag
-                    if (childTransform.name.Contains(IgnoreGrabbyBonesBoneTag)) continue;
+                    if (childTransform.Transform.name.Contains(IgnoreGrabbyBonesBoneTag)) continue;
 
                     var radius = grabbyBone.GetRadius(childTransform);
-                    var currentDistance = Vector3.Distance(handInfo.GrabbingPoint.position, childTransform.position);
+                    var currentDistance = Vector3.Distance(handInfo.GrabbingPoint.position, childTransform.Transform.position);
                     // MelonLogger.Msg($"\tPicked closest! radius: {radius}, currentDistance: {currentDistance}, maxDistance: {radius + avatarHeight * AvatarSizeToHandProportions}");
 
                     // Ignore if we're grabbing outside of the bone radius
                     if (currentDistance > radius + avatarHeight * AvatarSizeToHandProportions) continue;
 
                     // Don't allow to grab this root if is parent/child of the hand grabbing
-                    if (handInfo.GrabbingPoint.IsChildOf(childTransform) || childTransform.IsChildOf(handInfo.GrabbingPoint)) break;
+                    if (handInfo.GrabbingPoint.IsChildOf(childTransform) || childTransform.Transform.IsChildOf(handInfo.GrabbingPoint)) break;
 
                     // Pick the bone closest to our hand
                     if (currentDistance < closestDistance) {
@@ -285,15 +286,15 @@ public class GrabbyBones : MelonMod {
         if (closestChildTransform == null) return;
 
         #if DEBUG
-        MelonLogger.Msg($"[{GetPlayerName(handInfo.PuppetMaster)}] Grabbed: distance: {closestDistance}, bone: {(closestChildTransform == null ? "N/A" : closestChildTransform.name)}");
+        MelonLogger.Msg($"[{GetPlayerName(handInfo.PuppetMaster)}] Grabbed: distance: {closestDistance}, bone: {(closestChildTransform == null ? "N/A" : closestChildTransform.Transform.name)}");
         #endif
 
         // Set the offset position
-        handInfo.GrabbingOffset.position = closestChildTransform.position;
+        handInfo.GrabbingOffset.position = closestChildTransform.Transform.position;
 
         handInfo.Grab(new GrabbedInfo(handInfo, closestGrabbyBoneInfo, closestGrabbyBoneRoot, closestChildTransform));
 
-        if(handInfo.IsLocalPlayerHand)
+        if (handInfo.IsLocalPlayerHand)
         {
             using var modMsg = new ModNetworkMessage(NetworkGuid);
             modMsg.Write(GrabBonePacketId);
@@ -301,8 +302,8 @@ public class GrabbyBones : MelonMod {
             y.IsLeft = handInfo.IsLeftHand;
             y.PositionOffset = handInfo.GrabbingOffset.localPosition;
             y.NetworkPath = closestGrabbyBoneInfo.NetworkPath;
-            y.RootName = closestGrabbyBoneRoot.RootTransform.name;
-            y.ChildName = closestChildTransform.name;
+            y.RootName = closestGrabbyBoneRoot.NetworkPath;
+            y.ChildName = closestChildTransform.NetworkPath;
             modMsg.Write(y);
             modMsg.Send();
         }
@@ -440,13 +441,14 @@ public class GrabbyBones : MelonMod {
 
         #region Magica
 
-        private static void CreateMagicaRoot(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
+        private static void CreateMagicaRoot(List<Tuple<Transform, List<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
             var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
-            results.Add(new Tuple<Transform, HashSet<Transform>>(root, actualChildren.ToHashSet()));
+            var newTuple = new Tuple<Transform, List<Transform>>(root, actualChildren.Distinct().ToList());
+            if (!results.Contains(newTuple)) results.Add(newTuple);
         }
 
         private static void PopulateMagicaRoots(
-            ref HashSet<Tuple<Transform, HashSet<Transform>>> results,
+            ref List<Tuple<Transform, List<Transform>>> results,
             Transform root,
             List<Transform> useTransformList,
             List<int> selectData,
@@ -557,7 +559,7 @@ public class GrabbyBones : MelonMod {
                     var root = __instance.ClothTarget.GetRoot(i);
                     if (root == null) continue;
 
-                    var innerRoots = new HashSet<Tuple<Transform, HashSet<Transform>>>();
+                    var innerRoots = new List<Tuple<Transform, List<Transform>>>();
 
                     // Create our own roots, because magica is funny and roots are not really roots ;_;
                     PopulateMagicaRoots(ref innerRoots, root, __instance.useTransformList, selectionList, canFixedRotate, false, 0);
@@ -609,9 +611,9 @@ public class GrabbyBones : MelonMod {
 
         #region DynamicBone
 
-        private static Dictionary<Transform, HashSet<Transform>> GetDynBoneRoots(Animator animator, DynamicBone dynamicBone, Transform root, IEnumerable<Transform> childNodes, int it = 0) {
+        private static List<(Transform, List<Transform>)> GetDynBoneRoots(Animator animator, DynamicBone dynamicBone, Transform root, IEnumerable<Transform> childNodes, int it = 0) {
 
-            var result = new Dictionary<Transform, HashSet<Transform>>();
+            var result = new List<(Transform, List<Transform>)>();
 
             // Ignore if current node is on the ignore
             if (dynamicBone.m_Exclusions.Contains(root)) {
@@ -619,7 +621,7 @@ public class GrabbyBones : MelonMod {
                 return result;
             }
 
-            var currentChildren = childNodes.Where(ct => ct != null && ct != root && !dynamicBone.m_Exclusions.Contains(ct) && ct.IsChildOf(root)).ToHashSet();
+            var currentChildren = childNodes.Where(ct => ct != null && ct != root && !dynamicBone.m_Exclusions.Contains(ct) && ct.IsChildOf(root)).Distinct().ToList();
 
             #if DEBUG_ROOT_GEN
             MelonLogger.Msg($"{(it == 0 ? "[DynamicBone] Creating Root" : $"{new string('\t', it)}Creating Sub-Root")}: {root.name}... Children: ({currentChildren.Count}) {currentChildren.Join(t => t.name)}");
@@ -648,7 +650,11 @@ public class GrabbyBones : MelonMod {
 
                 foreach (var directChild in currentChildren.Where(c => c.parent == root)) {
                     foreach (var directChildResult in GetDynBoneRoots(animator, dynamicBone, directChild, currentChildren, it+1)) {
-                        result[directChildResult.Key] = directChildResult.Value;
+                        var id = result.FindIndex(x => x.Item1 == directChildResult.Item1);
+                        if(id != -1)
+                            result[id] = directChildResult;
+                        else
+                            result.Add(directChildResult);
                     }
                 }
                 return result;
@@ -656,7 +662,7 @@ public class GrabbyBones : MelonMod {
 
             // Found a valid root! Add to the results
             if (currentChildren.Count > 0) {
-                result.Add(root, currentChildren);
+                result.Add((root, currentChildren));
             }
 
             // Roots needs children...
@@ -705,16 +711,16 @@ public class GrabbyBones : MelonMod {
                 foreach (var innerRoot in innerRoots) {
 
                     // Remove transforms that are children of (or themselves) exclusions
-                    innerRoot.Value.RemoveWhere(t => __instance.m_Exclusions.Exists(t.IsChildOf));
+                    innerRoot.Item2.RemoveAll(t => __instance.m_Exclusions.Exists(t.IsChildOf));
 
-                    if (innerRoot.Value.Count == 0) continue;
+                    if (innerRoot.Item2.Count == 0) continue;
 
-                    var fabrik = innerRoot.Key.gameObject.AddComponent<FABRIK>();
+                    var fabrik = innerRoot.Item1.gameObject.AddComponent<FABRIK>();
                     fabrik.solver.useRotationLimits = true;
                     fabrik.fixTransforms = true;
                     fabrik.enabled = false;
 
-                    grabbyBoneInfo.AddRoot(fabrik, innerRoot.Key, innerRoot.Value, new HashSet<RotationLimitAngle>());
+                    grabbyBoneInfo.AddRoot(fabrik, innerRoot.Item1, innerRoot.Item2, new HashSet<RotationLimitAngle>());
                 }
 
                 GrabbyBonesCache.Add(grabbyBoneInfo);
@@ -747,13 +753,15 @@ public class GrabbyBones : MelonMod {
 
 
 
-        private static void CreateMagica2Root(HashSet<Tuple<Transform, HashSet<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
+        private static void CreateMagica2Root(List<Tuple<Transform, List<Transform>>> results, Transform root, List<Transform> childNodes, Transform transformToPivot) {
             var actualChildren = childNodes.Where(ct => ct != null && ct != root && ct.IsChildOf(transformToPivot));
-            results.Add(new Tuple<Transform, HashSet<Transform>>(root, actualChildren.ToHashSet()));
+            var newTuple = new Tuple<Transform, List<Transform>>(root, actualChildren.Distinct().ToList());
+            if(results.Contains(newTuple)) return;
+            results.Add(newTuple);
         }
 
         private static void PopulateMagica2Roots(
-            ref HashSet<Tuple<Transform, HashSet<Transform>>> results,
+            ref List<Tuple<Transform, List<Transform>>> results,
             Transform root,
             List<Transform> useTransformList,
             ExSimpleNativeArray<VertexAttribute> attributesMapping,
@@ -924,7 +932,7 @@ public class GrabbyBones : MelonMod {
                             const bool canFixedRotate = true;
                             if (root == null) continue;
 
-                            var innerRoots = new HashSet<Tuple<Transform, HashSet<Transform>>>();
+                            var innerRoots = new List<Tuple<Transform, List<Transform>>>();
 
                             // Create our own roots, because magica is funny and roots are not really roots ;_;
                             PopulateMagica2Roots(

@@ -9,15 +9,18 @@ using UnityEngine;
 
 namespace Kafe.GrabbyBones;
 
-internal static class Data {
+internal static class Data
+{
 
-    internal enum GrabState {
+    internal enum GrabState
+    {
         None = 0,
         Grab,
         // Pose,
     }
 
-    internal class AvatarHandInfo {
+    internal class AvatarHandInfo
+    {
 
         private const string HandName = $"[{nameof(GrabbyBones)} Mod] GrabbingPoint";
         private const string HandOffsetName = "GrabbedOffset";
@@ -41,15 +44,18 @@ internal static class Data {
 
         private static readonly Dictionary<GrabbedInfo, AvatarHandInfo> GrabbedBones = new();
 
-        internal static void SetSkipIKSolver() {
+        internal static void SetSkipIKSolver()
+        {
             foreach (var grabbedInfo in GrabbedBones.Keys) grabbedInfo.Root.IK.skipSolverUpdate = true;
         }
 
-        internal static void ExecuteIKSolver() {
+        internal static void ExecuteIKSolver()
+        {
             foreach (var grabbedInfo in GrabbedBones.Keys) grabbedInfo.Root.IK.UpdateSolverExternal();
         }
 
-        internal void Grab(GrabbedInfo grabbedInfo) {
+        internal void Grab(GrabbedInfo grabbedInfo)
+        {
 
             grabbedInfo.SetGrabbed(GrabbingOffset);
 
@@ -60,7 +66,8 @@ internal static class Data {
             GrabbedBoneInfo = grabbedInfo;
         }
 
-        internal void Release() {
+        internal void Release()
+        {
             if (!IsGrabbing) return;
 
             GrabbedBoneInfo.SetReleased();
@@ -72,29 +79,36 @@ internal static class Data {
             GrabbedBoneInfo = null;
         }
 
-        internal static void ReleaseAll() {
-            foreach (var grabbingHand in GrabbedBones.Values.ToList()) {
+        internal static void ReleaseAll()
+        {
+            foreach (var grabbingHand in GrabbedBones.Values.ToList())
+            {
                 grabbingHand.Release();
             }
         }
 
-        internal static void ReleaseAllWithBehavior(MonoBehaviour instance) {
-            foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.Info.HasInstance(instance)).ToList()) {
+        internal static void ReleaseAllWithBehavior(MonoBehaviour instance)
+        {
+            foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.Info.HasInstance(instance)).ToList())
+            {
                 grabbingInfo.Value.Release();
             }
         }
 
         private static readonly HashSet<AvatarHandInfo> HandsToRelease = new();
 
-        internal static void CheckGrabbedBones() {
+        internal static void CheckGrabbedBones()
+        {
 
             HandsToRelease.Clear();
 
             // Look for hands that should release the bones they're holding
-            foreach (var grabbedInfo in GrabbedBones) {
+            foreach (var grabbedInfo in GrabbedBones)
+            {
 
                 // Look for remote player bones being grabbed
-                if (!grabbedInfo.Key.IsGrabbedByLocalPlayer) {
+                if (!grabbedInfo.Key.IsGrabbedByLocalPlayer)
+                {
                     var puppetMaster = grabbedInfo.Key.GrabberHandPuppetMaster;
 
                     // // Handle player's avatar being hidden/blocked/blocked_alt
@@ -108,39 +122,46 @@ internal static class Data {
                     // }
 
                     // Handle player being too far
-                    if (ModConfig.MeMaxPlayerDistance.Value > 0 && Vector3.Distance(puppetMaster.transform.position, PlayerSetup.Instance.transform.position) > ModConfig.MeMaxPlayerDistance.Value) {
-                        #if DEBUG
+                    if (ModConfig.MeMaxPlayerDistance.Value > 0 && Vector3.Distance(puppetMaster.transform.position, PlayerSetup.Instance.transform.position) > ModConfig.MeMaxPlayerDistance.Value)
+                    {
+#if DEBUG
                         MelonLogger.Msg($"[{GrabbyBones.GetPlayerName(puppetMaster)}] Broken by grabbing player being too far: {grabbedInfo.Key.Root.RootTransform.name}.");
-                        #endif
+#endif
                         HandsToRelease.Add(grabbedInfo.Value);
                         continue;
                     }
                 }
 
                 // Handle grabbing hand being too far
-                if (grabbedInfo.Key.ShouldBreak()) {
+                if (grabbedInfo.Key.ShouldBreak())
+                {
                     HandsToRelease.Add(grabbedInfo.Value);
                     continue;
                 }
             }
 
-            foreach (var handInfo in HandsToRelease) {
+            foreach (var handInfo in HandsToRelease)
+            {
                 handInfo.Release();
             }
         }
 
-        internal static void UpdateAngleParameters() {
-            foreach (var grabbedBone in GrabbedBones.Keys) {
+        internal static void UpdateAngleParameters()
+        {
+            foreach (var grabbedBone in GrabbedBones.Keys)
+            {
                 grabbedBone.UpdateCurrentAngle();
             }
         }
 
-        internal static void Create(CVRAvatar avatar, PuppetMaster puppetMaster) {
+        internal static void Create(CVRAvatar avatar, PuppetMaster puppetMaster)
+        {
             var animator = avatar.GetComponent<Animator>();
-            if (!animator.isHuman) {
-                #if DEBUG
+            if (!animator.isHuman)
+            {
+#if DEBUG
                 MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Avatar is not Human...");
-                #endif
+#endif
                 return;
             }
 
@@ -178,24 +199,28 @@ internal static class Data {
 #endif
         }
 
-        internal static void Delete(CVRAvatar avatar) {
+        internal static void Delete(CVRAvatar avatar)
+        {
             // Release all bones this avatar is grabbing
-            var removeHands = Hands.Where(x => {
+            var removeHands = Hands.Where(x =>
+            {
                 if (x.Value.Avatar != avatar) return false;
                 x.Value.Release();
                 return true;
-            }).Select(x=>x.Key).ToArray();
+            }).Select(x => x.Key).ToArray();
             foreach (var k in removeHands)
             {
                 Hands.Remove(k);
             }
             // Release all bones that are being grabbed on this avatar
-            foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.BoneOwnerAvatar == avatar).ToList()) {
+            foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.BoneOwnerAvatar == avatar).ToList())
+            {
                 grabbingInfo.Value.Release();
             }
         }
 
-        private AvatarHandInfo(CVRAvatar avatar, PuppetMaster puppetMaster, bool isLeftHand, Transform handTransform, Transform indexTransform) {
+        private AvatarHandInfo(CVRAvatar avatar, PuppetMaster puppetMaster, bool isLeftHand, Transform handTransform, Transform indexTransform)
+        {
             Avatar = avatar;
             PuppetMaster = puppetMaster;
             IsLeftHand = isLeftHand;
@@ -211,11 +236,14 @@ internal static class Data {
             GrabbingOffset.SetParent(GrabbingPoint);
         }
 
-        private PlayerAvatarMovementData GetMovementData() {
-            if (IsLocalPlayerHand) {
+        private PlayerAvatarMovementData GetMovementData()
+        {
+            if (IsLocalPlayerHand)
+            {
                 return PlayerSetup.Instance._playerAvatarMovementData;
             }
-            else {
+            else
+            {
                 return PuppetMaster._playerAvatarMovementDataCurrent;
             }
         }
@@ -225,7 +253,8 @@ internal static class Data {
         private const float OpenCurlThumb = 0.85f;
         private const float CloseCurlThumb = -0.85f;
 
-        private GrabState GetGrabStateHand(int gesture, float thumb, float index, float middle, float ring, float pinky) {
+        private GrabState GetGrabStateHand(int gesture, float thumb, float index, float middle, float ring, float pinky)
+        {
 
             // Check for the grabbing gesture
             var isGrabbingWithGesture = ModConfig.MeUseFistGestureToGrab.Value && Mathf.Approximately(gesture, 1);
@@ -244,18 +273,19 @@ internal static class Data {
             return GrabState.None;
         }
 
-        internal GrabState GetGrabState() {
+        internal GrabState GetGrabState()
+        {
             var data = GetMovementData();
             return IsLeftHand
                 ? GetGrabStateHand(
-                    (int)data.AnimatorGestureLeft,
+                    (int) data.AnimatorGestureLeft,
                     data.MuscleValues[MuscleIndex.LeftThumb1Stretched],
                     data.MuscleValues[MuscleIndex.LeftIndex1Stretched],
                     data.MuscleValues[MuscleIndex.LeftMiddle1Stretched],
                     data.MuscleValues[MuscleIndex.LeftRing1Stretched],
                     data.MuscleValues[MuscleIndex.LeftLittle1Stretched])
                 : GetGrabStateHand(
-                    (int)data.AnimatorGestureRight,
+                    (int) data.AnimatorGestureRight,
                     data.MuscleValues[MuscleIndex.RightThumb1Stretched],
                     data.MuscleValues[MuscleIndex.RightIndex1Stretched],
                     data.MuscleValues[MuscleIndex.RightMiddle1Stretched],
@@ -263,7 +293,8 @@ internal static class Data {
                     data.MuscleValues[MuscleIndex.RightLittle1Stretched]);
         }
 
-        internal bool IsAllowed() {
+        internal bool IsAllowed()
+        {
             if (IsLocalPlayerHand) return true;
             if (PuppetMaster.IsAvatarHidden || PuppetMaster.IsAvatarBlocked || PuppetMaster.IsAvatarBlockedAlt) return false;
             if (ModConfig.MeOnlyFriends.Value && !Friends.FriendsWith(_playerGuid)) return false;
@@ -273,16 +304,19 @@ internal static class Data {
             return true;
         }
 
-        internal float GetAvatarHeight() {
+        internal float GetAvatarHeight()
+        {
             return IsLocalPlayerHand ? PlayerSetup.Instance.AvatarHeight : PuppetMaster.netIkController.GetRemoteHeight();
         }
 
-        internal static bool IsRootGrabbed(GrabbyBoneInfo.Root root) {
+        internal static bool IsRootGrabbed(GrabbyBoneInfo.Root root)
+        {
             return GrabbedBones.Any(gb => gb.Key.Root == root);
         }
     }
 
-    internal class GrabbedInfo {
+    internal class GrabbedInfo
+    {
 
         private const float AvatarSizeToBreakDistance = 2f;
 
@@ -298,7 +332,8 @@ internal static class Data {
         internal readonly GrabbyBoneInfo.Root Root;
         internal readonly Transform TargetChildBone;
 
-        public GrabbedInfo(AvatarHandInfo handInfo, GrabbyBoneInfo info, GrabbyBoneInfo.Root root, Transform targetChildBone) {
+        public GrabbedInfo(AvatarHandInfo handInfo, GrabbyBoneInfo info, GrabbyBoneInfo.Root root, Transform targetChildBone)
+        {
             IsGrabbedByLocalPlayer = handInfo.IsLocalPlayerHand;
             GrabberHandPuppetMaster = handInfo.PuppetMaster;
             IsBoneFromLocalPlayer = info.PuppetMaster == null;
@@ -310,16 +345,18 @@ internal static class Data {
             TargetChildBone = targetChildBone;
         }
 
-        internal bool ShouldBreak() {
+        internal bool ShouldBreak()
+        {
             var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance.AvatarHeight : BoneOwnerPuppetMaster.netIkController.GetRemoteHeight();
             var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance.AvatarHeight : GrabberHandPuppetMaster.netIkController.GetRemoteHeight();
             var breakDistance = (boneOwnerAvatarHeight + grabbedAvatarHeight) * AvatarSizeToBreakDistance;
             var currentDistance = Vector3.Distance(HandInfo.GrabbingOffset.position, TargetChildBone.position);
-            if (currentDistance > breakDistance) {
-                #if DEBUG
+            if (currentDistance > breakDistance)
+            {
+#if DEBUG
                 MelonLogger.Msg($"[{GrabbyBones.GetPlayerName(BoneOwnerPuppetMaster)}] Broken by distance: {Root.RootTransform.name}. " +
                                 $"Current Distance: {currentDistance}, Breaking Distance: {breakDistance}");
-                #endif
+#endif
                 return true;
             }
             return false;
@@ -333,19 +370,22 @@ internal static class Data {
         private Quaternion _initialRotation;
         private float _oldAngle;
 
-        internal void SetGrabbed(Transform grabbingOffset) {
+        internal void SetGrabbed(Transform grabbingOffset)
+        {
 
             // Component setup
             Info.DisablePhysics();
             Root.SetupIKChain(TargetChildBone, grabbingOffset);
 
             // Animator parameters
-            if (IsBoneFromLocalPlayer) {
+            if (IsBoneFromLocalPlayer)
+            {
                 // Set Grabbed parameter to true (both synced and local params)
                 PlayerSetup.Instance.AnimatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 1.0f);
                 PlayerSetup.Instance.AnimatorManager.SetParameter("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
-            else {
+            else
+            {
                 // Set Grabbed parameter on remotes to true (local params only)
                 BoneOwnerPuppetMaster.Animator.SetFloat("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
@@ -356,26 +396,31 @@ internal static class Data {
             _oldAngle = -1;
         }
 
-        internal void SetReleased() {
+        internal void SetReleased()
+        {
 
             // Component setup
             Root.DisableIKChain();
             Info.RestorePhysics();
 
             // Animator parameters
-            if (IsBoneFromLocalPlayer) {
+            if (IsBoneFromLocalPlayer)
+            {
                 // Set Grabbed parameter to false (both synced and local params)
                 PlayerSetup.Instance.AnimatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 0.0f);
                 // Reset the Angle parameter to 0 (both synced and local params)
                 PlayerSetup.Instance.AnimatorManager.SetParameter(_currentAngleParameterName, 0.0f);
                 // Do the same for the local parameters
-                if (PlayerSetup.Instance.Animator != null) {
+                if (PlayerSetup.Instance.Animator != null)
+                {
                     PlayerSetup.Instance.Animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
                     PlayerSetup.Instance.Animator.SetFloat(_currentAngleParameterNameLocal, 0.0f);
                 }
             }
-            else {
-                if (BoneOwnerPuppetMaster != null && BoneOwnerPuppetMaster.Animator != null) {
+            else
+            {
+                if (BoneOwnerPuppetMaster != null && BoneOwnerPuppetMaster.Animator != null)
+                {
                     // Set Grabbed and Angle parameter on remotes (local params only)
                     BoneOwnerPuppetMaster.Animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
                     BoneOwnerPuppetMaster.Animator.SetFloat(_currentAngleParameterNameLocal, 0f);
@@ -383,30 +428,35 @@ internal static class Data {
             }
         }
 
-        internal void UpdateCurrentAngle() {
+        internal void UpdateCurrentAngle()
+        {
             var newAngle = Mathf.Clamp01(Quaternion.Angle(_initialRotation, TargetChildBone.parent.localRotation) / 180f);
             // MelonLogger.Msg($"Angle: {Quaternion.Angle(_initialRotation, TargetChildBone.parent.localRotation)} / 180 = {newAngle} | {TargetChildBone.parent.localRotation.ToString("F3")}");
             if (Mathf.Approximately(newAngle, _oldAngle)) return;
             _oldAngle = newAngle;
-            if (IsBoneFromLocalPlayer) {
+            if (IsBoneFromLocalPlayer)
+            {
                 PlayerSetup.Instance.AnimatorManager.SetParameter(_currentAngleParameterName, newAngle);
                 PlayerSetup.Instance.Animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
-            else {
+            else
+            {
                 BoneOwnerPuppetMaster.Animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
         }
     }
 
-    internal class GrabbyMagicaBoneInfo : GrabbyBoneInfo {
+    internal class GrabbyMagicaBoneInfo : GrabbyBoneInfo
+    {
 
         private readonly MagicaBoneCloth _magicaBoneCloth;
         private readonly Vector3 _gravityDirection;
 
-        public GrabbyMagicaBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) : base(puppetMaster, avatar) {
+        public GrabbyMagicaBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) : base(puppetMaster, avatar)
+        {
             _magicaBoneCloth = magicaBoneCloth;
             _gravityDirection = gravityDirection;
-            _networkPath = GetHierarchyPath(magicaBoneCloth, avatar.transform);
+            _networkPath = GetHierarchyIndexPath(magicaBoneCloth, avatar.transform);
         }
 
         string _networkPath;
@@ -414,11 +464,13 @@ internal static class Data {
 
         internal override bool IsEnabled() => _magicaBoneCloth.isActiveAndEnabled && !Mathf.Approximately(_magicaBoneCloth.BlendWeight, 0f);
 
-        internal override void DisablePhysics() {
+        internal override void DisablePhysics()
+        {
             MagicaPhysicsManager.Instance.Team.SetGravityDirection(_magicaBoneCloth.TeamId, Vector3.zero);
         }
 
-        internal override void RestorePhysics() {
+        internal override void RestorePhysics()
+        {
             MagicaPhysicsManager.Instance.Team.SetGravityDirection(_magicaBoneCloth.TeamId, _gravityDirection);
         }
 
@@ -428,7 +480,8 @@ internal static class Data {
 
         internal override float GetLength(Transform childNode) => GetLength(_magicaBoneCloth, childNode);
 
-        internal static float GetRadius(MagicaBoneCloth magicaBone, Transform childNode) {
+        internal static float GetRadius(MagicaBoneCloth magicaBone, Transform childNode)
+        {
             var transformIndex = magicaBone.useTransformList.IndexOf(childNode);
             var clothDataIndex = magicaBone.clothData.useVertexList.IndexOf(transformIndex);
 
@@ -439,15 +492,18 @@ internal static class Data {
             return magicaBone.Params.GetRadius(depth);
         }
 
-        internal static float GetLength(MagicaBoneCloth magicaBone, Transform childNode) {
+        internal static float GetLength(MagicaBoneCloth magicaBone, Transform childNode)
+        {
             // Unfortunately magica doesn't have a total length property (that I could find)
             var totalLength = 0f;
             var currentBone = childNode;
-            while (currentBone.parent != null) {
+            while (currentBone.parent != null)
+            {
                 var nextBone = currentBone.parent;
                 totalLength += Vector3.Distance(currentBone.position, nextBone.position);
                 currentBone = nextBone;
-                if (magicaBone.clothTarget.rootList.Contains(currentBone)) {
+                if (magicaBone.clothTarget.rootList.Contains(currentBone))
+                {
                     return totalLength;
                 }
             }
@@ -457,15 +513,17 @@ internal static class Data {
         internal override bool HasInstance(MonoBehaviour script) => script == _magicaBoneCloth;
     }
 
-    internal class GrabbyMagica2BoneInfo : GrabbyBoneInfo {
+    internal class GrabbyMagica2BoneInfo : GrabbyBoneInfo
+    {
 
         private readonly MagicaCloth2.MagicaCloth _magicaBoneCloth;
         private readonly float _originalGravity;
 
-        public GrabbyMagica2BoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaCloth2.MagicaCloth magicaBoneCloth) : base(puppetMaster, avatar) {
+        public GrabbyMagica2BoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaCloth2.MagicaCloth magicaBoneCloth) : base(puppetMaster, avatar)
+        {
             _magicaBoneCloth = magicaBoneCloth;
             _originalGravity = _magicaBoneCloth.process.cloth.SerializeData.gravity;
-            _networkPath = GetHierarchyPath(magicaBoneCloth, avatar.transform);
+            _networkPath = GetHierarchyIndexPath(magicaBoneCloth, avatar.transform);
         }
 
         string _networkPath;
@@ -473,12 +531,14 @@ internal static class Data {
 
         internal override bool IsEnabled() => _magicaBoneCloth.isActiveAndEnabled && !Mathf.Approximately(_magicaBoneCloth.serializeData.blendWeight, 0);
 
-        internal override void DisablePhysics() {
+        internal override void DisablePhysics()
+        {
             _magicaBoneCloth.SerializeData.gravity = 0f;
             _magicaBoneCloth.process.SyncParameters();
         }
 
-        internal override void RestorePhysics() {
+        internal override void RestorePhysics()
+        {
             _magicaBoneCloth.SerializeData.gravity = _originalGravity;
             _magicaBoneCloth.process.SyncParameters();
         }
@@ -505,15 +565,18 @@ internal static class Data {
             return radius;
         }
 
-        internal static float GetLength(MagicaCloth2.MagicaCloth magicaBone, Transform childNode) {
+        internal static float GetLength(MagicaCloth2.MagicaCloth magicaBone, Transform childNode)
+        {
             // Unfortunately magica doesn't have a total length property (that I could find)
             var totalLength = 0f;
             var currentBone = childNode;
-            while (currentBone.parent != null) {
+            while (currentBone.parent != null)
+            {
                 var nextBone = currentBone.parent;
                 totalLength += Vector3.Distance(currentBone.position, nextBone.position);
                 currentBone = nextBone;
-                if (magicaBone.SerializeData.rootBones.Contains(currentBone)) {
+                if (magicaBone.SerializeData.rootBones.Contains(currentBone))
+                {
                     return totalLength;
                 }
             }
@@ -523,30 +586,34 @@ internal static class Data {
         internal override bool HasInstance(MonoBehaviour script) => script == _magicaBoneCloth;
     }
 
-    internal class GrabbyDynamicBoneInfo : GrabbyBoneInfo {
+    internal class GrabbyDynamicBoneInfo : GrabbyBoneInfo
+    {
 
         private readonly DynamicBone _dynamicBone;
         private readonly Vector3 _gravityDirection;
         private readonly Vector3 _forceDirection;
 
-        public GrabbyDynamicBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, DynamicBone dynamicBone, Vector3 gravityDirection, Vector3 forceDirection) : base(puppetMaster, avatar) {
+        public GrabbyDynamicBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, DynamicBone dynamicBone, Vector3 gravityDirection, Vector3 forceDirection) : base(puppetMaster, avatar)
+        {
             _dynamicBone = dynamicBone;
             _gravityDirection = gravityDirection;
             _forceDirection = forceDirection;
-            _networkPath = GetHierarchyPath(dynamicBone, avatar.transform);
+            _networkPath = GetHierarchyIndexPath(dynamicBone, avatar.transform);
         }
 
         string _networkPath;
         internal override string NetworkPath => _networkPath;
         internal override bool IsEnabled() => _dynamicBone.isActiveAndEnabled;
 
-        internal override void DisablePhysics() {
+        internal override void DisablePhysics()
+        {
             _dynamicBone.m_Gravity = Vector3.zero;
             _dynamicBone.m_Force = Vector3.zero;
             _dynamicBone.OnDidApplyAnimationProperties();
         }
 
-        internal override void RestorePhysics() {
+        internal override void RestorePhysics()
+        {
             _dynamicBone.m_Gravity = _gravityDirection;
             _dynamicBone.m_Force = _forceDirection;
             _dynamicBone.OnDidApplyAnimationProperties();
@@ -558,13 +625,15 @@ internal static class Data {
 
         internal override string GetName() => _dynamicBone.name;
 
-        internal static float GetRadius(DynamicBone dynamicBone, Transform childNode) {
+        internal static float GetRadius(DynamicBone dynamicBone, Transform childNode)
+        {
             var index = dynamicBone.transformsList.IndexOf(childNode);
             var radiusCurve = dynamicBone.ParticlesList[index].m_Radius_curve;
             return radiusCurve * dynamicBone.m_Radius * dynamicBone.transform.lossyScale.x;
         }
 
-        internal static float GetStiffness(DynamicBone dynamicBone, Transform childNode) {
+        internal static float GetStiffness(DynamicBone dynamicBone, Transform childNode)
+        {
             var index = dynamicBone.transformsList.IndexOf(childNode);
             var curve = dynamicBone.ParticlesList[index].m_Stiffness_curve;
             return curve * dynamicBone.m_Stiffness;
@@ -573,12 +642,15 @@ internal static class Data {
         internal override bool HasInstance(MonoBehaviour script) => script == _dynamicBone;
     }
 
-    private static Transform[] GetIkBones(Transform root, Transform child) {
+    private static Transform[] GetIkBones(Transform root, Transform child)
+    {
         var path = new Stack<Transform>();
         var current = child;
-        while (current != null) {
+        while (current != null)
+        {
             path.Push(current);
-            if (current == root) {
+            if (current == root)
+            {
                 break;
             }
             current = current.parent;
@@ -589,7 +661,7 @@ internal static class Data {
     // Returns the hierarchy path of a component
     // based on indices relative to avatar root
     // last index is component index (e.g. "0/1/2/3/1/0")
-    public static string GetHierarchyPath(Component c, Transform root)
+    public static string GetHierarchyIndexPath(Component c, Transform root)
     {
         var path = c.GetComponentIndex().ToString();
         var parent = c.transform;
@@ -600,24 +672,55 @@ internal static class Data {
         }
         return path;
     }
+    // Returns the hierarchy path of a component's transform (e.g. "Hips/Spine/Chest")
+    public static string GetHierarchyNamePath(Component c, Transform root)
+    {
+        var path = c.transform.name;
+        var parent = c.transform.parent;
+        while (parent != root && parent != null)
+        {
+            path = parent.name + "/" + path;
+            parent = parent.parent;
+        }
+        return path;
+    }
 
-    internal abstract class GrabbyBoneInfo {
+    internal abstract class GrabbyBoneInfo
+    {
+        internal class ChildTransform
+        {
+            public string NetworkPath;
+            public Transform Transform;
 
-        internal class Root {
+            public ChildTransform(Transform trs, int idx)
+            {
+                Transform = trs;
+                NetworkPath = idx.ToString();
+            }
+
+            public static implicit operator Transform(ChildTransform ct) => ct.Transform;
+        }
+        internal class Root
+        {
             internal readonly FABRIK IK;
             internal readonly Transform RootTransform;
-            internal readonly HashSet<Transform> ChildTransforms;
+            internal readonly List<ChildTransform> ChildTransforms;
             internal readonly HashSet<RotationLimitAngle> RotationLimits;
+            public readonly string NetworkPath;
 
-            internal Root(FABRIK ik, Transform rootTransform, HashSet<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
+            internal Root(FABRIK ik, Transform rootTransform, List<ChildTransform> childTransforms, HashSet<RotationLimitAngle> rotationLimits, string networkPath)
+            {
                 IK = ik;
                 RootTransform = rootTransform;
                 ChildTransforms = childTransforms;
                 RotationLimits = rotationLimits;
+                NetworkPath = networkPath;
             }
 
-            internal void SetupIKChain(Transform closestChildTransform, Transform sourceTransformOffset) {
-                foreach (var rotationLimitAngle in RotationLimits) {
+            internal void SetupIKChain(Transform closestChildTransform, Transform sourceTransformOffset)
+            {
+                foreach (var rotationLimitAngle in RotationLimits)
+                {
                     if (rotationLimitAngle == null) continue;
                     rotationLimitAngle.enabled = true;
                 }
@@ -627,23 +730,27 @@ internal static class Data {
                 IK.enabled = true;
             }
 
-            internal void DisableIKChain() {
+            internal void DisableIKChain()
+            {
                 if (IK == null) return;
                 IK.enabled = false;
-                foreach (var rotationLimitAngle in RotationLimits) {
+                foreach (var rotationLimitAngle in RotationLimits)
+                {
                     if (rotationLimitAngle == null) continue;
                     rotationLimitAngle.enabled = false;
                 }
             }
         }
 
-        internal void AddRoot(FABRIK fabrik, Transform rootTransform, HashSet<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
-            Roots.Add(new Root(fabrik, rootTransform, childTransforms, rotationLimits));
+        internal void AddRoot(FABRIK fabrik, Transform rootTransform, List<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits)
+        {
+            Roots.Add(new Root(fabrik, rootTransform, childTransforms.Select((x,i) => new ChildTransform(x,i)).ToList(), rotationLimits, Roots.Count.ToString()));
         }
 
-        internal readonly HashSet<Root> Roots = new();
+        internal readonly List<Root> Roots = new();
 
-        internal GrabbyBoneInfo(PuppetMaster puppetMaster, CVRAvatar avatar) {
+        internal GrabbyBoneInfo(PuppetMaster puppetMaster, CVRAvatar avatar)
+        {
             PlayerGuid = puppetMaster == null ? MetaPort.Instance.ownerId : puppetMaster.PlayerId;
             PuppetMaster = puppetMaster;
             AvatarGuid = avatar.GetComponent<CVRAssetInfo>()?.objectId;
