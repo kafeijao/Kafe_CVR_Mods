@@ -301,7 +301,7 @@ public class GrabbyBones : MelonMod {
 
         handInfo.Grab(new GrabbedInfo(handInfo, closestGrabbyBoneInfo, closestGrabbyBoneRoot, closestChildTransform));
 
-        if (handInfo.IsLocalPlayerHand)
+        if (handInfo.IsLocalPlayerHand && NetworkManager.Instance.IsConnectedToGameNetwork())
         {
             using var modMsg = new ModNetworkMessage(NetworkGuid);
             modMsg.Write(GrabBonePacketId);
@@ -323,7 +323,7 @@ public class GrabbyBones : MelonMod {
         #endif
         handInfo.Release();
 
-        if(handInfo.IsLocalPlayerHand)
+        if(handInfo.IsLocalPlayerHand && NetworkManager.Instance.IsConnectedToGameNetwork())
         {
             using var modMsg = new ModNetworkMessage(NetworkGuid);
             var x = new ReleaseMessage();
