@@ -3,7 +3,6 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI.CCK.Components;
 using MagicaCloth;
-using MagicaCloth2;
 using MelonLoader;
 using RootMotion.FinalIK;
 using UnityEngine;
@@ -22,13 +21,14 @@ internal static class Data {
 
         private const string HandName = $"[{nameof(GrabbyBones)} Mod] GrabbingPoint";
         private const string HandOffsetName = "GrabbedOffset";
+        public const string LocalPlayerId = "[LocalPlayer]";
 
-        internal static readonly HashSet<AvatarHandInfo> Hands = new();
+        internal static readonly Dictionary<string, AvatarHandInfo> Hands = new();
 
         internal readonly bool IsLocalPlayerHand;
         private readonly string _playerGuid;
         internal readonly CVRAvatar Avatar;
-        private readonly bool _isLeftHand;
+        public readonly bool IsLeftHand;
         internal readonly PuppetMaster PuppetMaster;
 
         internal readonly Transform GrabbingPoint;
@@ -145,34 +145,46 @@ internal static class Data {
             }
 
             var leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
-            if (leftHand != null) {
-                Hands.Add(new AvatarHandInfo(avatar, puppetMaster, true, leftHand, animator.GetBoneTransform(HumanBodyBones.LeftIndexProximal)));
-            }
-            else {
-                #if DEBUG
-                MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Avatar doesn't have a LeftHand...");
-                #endif
-            }
-
             var rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-            if (rightHand != null) {
-                Hands.Add(new AvatarHandInfo(avatar, puppetMaster, false, rightHand, animator.GetBoneTransform(HumanBodyBones.RightIndexProximal)));
+            var leftHandInfo = leftHand != null ? new AvatarHandInfo(avatar, puppetMaster, true, leftHand, animator.GetBoneTransform(HumanBodyBones.LeftIndexProximal)) : null;
+            var rightHandInfo = rightHand != null ? new AvatarHandInfo(avatar, puppetMaster, false, rightHand, animator.GetBoneTransform(HumanBodyBones.RightIndexProximal)) : null;
+
+            string handId = null;
+            if (puppetMaster == null) {
+                handId = LocalPlayerId;
             }
-            else {
-                #if DEBUG
-                MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Avatar doesn't have a RightHand...");
-                #endif
+            else if (puppetMaster.AvatarDescriptor != null) {
+                handId = puppetMaster.PlayerId;
             }
 
+            if (handId != null) {
+                if (leftHandInfo != null) Hands[$"{handId}_L"] = leftHandInfo;
+                #if DEBUG
+                else MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Avatar doesn't have a LeftHand...");
+                #endif
+                if (rightHandInfo != null) Hands[$"{handId}_R"] = rightHandInfo;
+                #if DEBUG
+                else MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Avatar doesn't have a RightHand...");
+                #endif
+            }
+            #if DEBUG
+            else {
+                MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Couldn't determine a valid guid for the avatar...");
+            }
+            #endif
         }
 
         internal static void Delete(CVRAvatar avatar) {
             // Release all bones this avatar is grabbing
-            Hands.RemoveWhere(h => {
-                if (h.Avatar != avatar) return false;
-                h.Release();
+            var removeHands = Hands.Where(x =>
+            {
+                if (x.Value.Avatar != avatar) return false;
+                x.Value.Release();
                 return true;
-            });
+            }).Select(x => x.Key).ToArray();
+            foreach (var k in removeHands) {
+                Hands.Remove(k);
+            }
             // Release all bones that are being grabbed on this avatar
             foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.BoneOwnerAvatar == avatar).ToList()) {
                 grabbingInfo.Value.Release();
@@ -182,12 +194,12 @@ internal static class Data {
         private AvatarHandInfo(CVRAvatar avatar, PuppetMaster puppetMaster, bool isLeftHand, Transform handTransform, Transform indexTransform) {
             Avatar = avatar;
             PuppetMaster = puppetMaster;
-            _isLeftHand = isLeftHand;
+            IsLeftHand = isLeftHand;
             IsLocalPlayerHand = PuppetMaster == null;
             _playerGuid = IsLocalPlayerHand ? PlayerSetup.Instance.PlayerId : puppetMaster.PlayerId;
 
             GrabbingPoint = new GameObject(HandName).transform;
-            GrabbingPoint.SetParent(handTransform);
+            GrabbingPoint.SetParent(handTransform, false);
             // If we got an index transform, set the grabbing point between the wrist and the index
             GrabbingPoint.position = indexTransform == null ? handTransform.position : (handTransform.position + indexTransform.position) / 2;
 
@@ -230,16 +242,16 @@ internal static class Data {
 
         internal GrabState GetGrabState() {
             var data = GetMovementData();
-            return _isLeftHand
+            return IsLeftHand
                 ? GetGrabStateHand(
-                    (int)data.AnimatorGestureLeft,
+                    (int) data.AnimatorGestureLeft,
                     data.MuscleValues[MuscleIndex.LeftThumb1Stretched],
                     data.MuscleValues[MuscleIndex.LeftIndex1Stretched],
                     data.MuscleValues[MuscleIndex.LeftMiddle1Stretched],
                     data.MuscleValues[MuscleIndex.LeftRing1Stretched],
                     data.MuscleValues[MuscleIndex.LeftLittle1Stretched])
                 : GetGrabStateHand(
-                    (int)data.AnimatorGestureRight,
+                    (int) data.AnimatorGestureRight,
                     data.MuscleValues[MuscleIndex.RightThumb1Stretched],
                     data.MuscleValues[MuscleIndex.RightIndex1Stretched],
                     data.MuscleValues[MuscleIndex.RightMiddle1Stretched],
@@ -390,7 +402,11 @@ internal static class Data {
         public GrabbyMagicaBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) : base(puppetMaster, avatar) {
             _magicaBoneCloth = magicaBoneCloth;
             _gravityDirection = gravityDirection;
+            _networkPath = GetHierarchyIndexPath(magicaBoneCloth, avatar.transform);
         }
+
+        string _networkPath;
+        internal override string NetworkPath => _networkPath;
 
         internal override bool IsEnabled() => _magicaBoneCloth.isActiveAndEnabled && !Mathf.Approximately(_magicaBoneCloth.BlendWeight, 0f);
 
@@ -445,7 +461,11 @@ internal static class Data {
         public GrabbyMagica2BoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaCloth2.MagicaCloth magicaBoneCloth) : base(puppetMaster, avatar) {
             _magicaBoneCloth = magicaBoneCloth;
             _originalGravity = _magicaBoneCloth.process.cloth.SerializeData.gravity;
+            _networkPath = GetHierarchyIndexPath(magicaBoneCloth, avatar.transform);
         }
+
+        string _networkPath;
+        internal override string NetworkPath => _networkPath;
 
         internal override bool IsEnabled() => _magicaBoneCloth.isActiveAndEnabled && !Mathf.Approximately(_magicaBoneCloth.serializeData.blendWeight, 0);
 
@@ -465,13 +485,11 @@ internal static class Data {
 
         internal override float GetLength(Transform childNode) => GetLength(_magicaBoneCloth, childNode);
 
-        internal static float GetRadius(MagicaCloth2.MagicaCloth magicaBone, Transform childNode)
-        {
+        internal static float GetRadius(MagicaCloth2.MagicaCloth magicaBone, Transform childNode) {
             float depth = 0.5f;
             // If the bone was pre-build magicaBone.process.boneClothSetupData doesn't exist
             // Todo: Find a way to get the depth of a transform for pre-built data
-            if (magicaBone.process.boneClothSetupData != null)
-            {
+            if (magicaBone.process.boneClothSetupData != null) {
                 var idx = magicaBone.process.boneClothSetupData.GetTransformIndexFromId(childNode.GetInstanceID());
                 // var depth = magicaBone.process.HasProxyMesh.vertexDepths[idx];
                 // var depth = magicaBone.process.ProxyMesh.vertexDepths[idx];
@@ -509,8 +527,11 @@ internal static class Data {
             _dynamicBone = dynamicBone;
             _gravityDirection = gravityDirection;
             _forceDirection = forceDirection;
+            _networkPath = GetHierarchyIndexPath(dynamicBone, avatar.transform);
         }
 
+        string _networkPath;
+        internal override string NetworkPath => _networkPath;
         internal override bool IsEnabled() => _dynamicBone.isActiveAndEnabled;
 
         internal override void DisablePhysics() {
@@ -559,19 +580,44 @@ internal static class Data {
         return path.ToArray();
     }
 
-    internal abstract class GrabbyBoneInfo {
+    // Returns the hierarchy path of a component
+    // based on indices relative to avatar root
+    // last index is component index (e.g. "0/1/2/3/1/0")
+    public static string GetHierarchyIndexPath(Component c, Transform root) {
+        var path = c.GetComponentIndex().ToString();
+        var parent = c.transform;
+        while (parent != root && parent != null) {
+            path = parent.GetSiblingIndex() + "/" + path;
+            parent = parent.parent;
+        }
+        return path;
+    }
 
+    internal abstract class GrabbyBoneInfo {
+        internal class ChildTransform {
+            public string NetworkPath;
+            public Transform Transform;
+
+            public ChildTransform(Transform trs, int idx) {
+                Transform = trs;
+                NetworkPath = idx.ToString();
+            }
+
+            public static implicit operator Transform(ChildTransform ct) => ct.Transform;
+        }
         internal class Root {
             internal readonly FABRIK IK;
             internal readonly Transform RootTransform;
-            internal readonly HashSet<Transform> ChildTransforms;
+            internal readonly List<ChildTransform> ChildTransforms;
             internal readonly HashSet<RotationLimitAngle> RotationLimits;
+            public readonly string NetworkPath;
 
-            internal Root(FABRIK ik, Transform rootTransform, HashSet<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
+            internal Root(FABRIK ik, Transform rootTransform, List<ChildTransform> childTransforms, HashSet<RotationLimitAngle> rotationLimits, string networkPath) {
                 IK = ik;
                 RootTransform = rootTransform;
                 ChildTransforms = childTransforms;
                 RotationLimits = rotationLimits;
+                NetworkPath = networkPath;
             }
 
             internal void SetupIKChain(Transform closestChildTransform, Transform sourceTransformOffset) {
@@ -595,11 +641,11 @@ internal static class Data {
             }
         }
 
-        internal void AddRoot(FABRIK fabrik, Transform rootTransform, HashSet<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
-            Roots.Add(new Root(fabrik, rootTransform, childTransforms, rotationLimits));
+        internal void AddRoot(FABRIK fabrik, Transform rootTransform, List<Transform> childTransforms, HashSet<RotationLimitAngle> rotationLimits) {
+            Roots.Add(new Root(fabrik, rootTransform, childTransforms.Select((x, i) => new ChildTransform(x, i)).ToList(), rotationLimits, Roots.Count.ToString()));
         }
 
-        internal readonly HashSet<Root> Roots = new();
+        internal readonly List<Root> Roots = new();
 
         internal GrabbyBoneInfo(PuppetMaster puppetMaster, CVRAvatar avatar) {
             PlayerGuid = puppetMaster == null ? MetaPort.Instance.ownerId : puppetMaster.PlayerId;
@@ -613,6 +659,7 @@ internal static class Data {
         internal readonly string PlayerGuid;
         internal readonly string AvatarGuid;
 
+        internal abstract string NetworkPath { get; }
         internal abstract bool IsEnabled();
         internal abstract void DisablePhysics();
         internal abstract void RestorePhysics();
