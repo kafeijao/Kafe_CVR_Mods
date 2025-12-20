@@ -6,11 +6,9 @@
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "This mod adds some extra OSC endpoints to ChilloutVR. If something is not working create an [issue in github](https://github.com/kafeijao/Kafe_CVR_Mods/issues)\n\n__**Props**__\n- Set/Read prop location\n- Set/Read synced params\n__**Tracking**__\n- Listen to tracking data (location/battery) from `Trackers`, `Controllers`, `HMD`, `Base Stations`, and `Play Space`.\n__**ChatBox**__\n- Send ChaBox messages and typing events\n\n__**New**__ [python library](https://github.com/kafeijao/cvr_osc_lib_py) to abstract this OSC API with examples!\n\nRefer to the [IN-DEPTH](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) documentation for more information.\n\n**Optional Requirements**\n- [ChatBox](https://api.cvrmg.com/v1/mods/download/168)",
+  "description": "This mod adds some extra OSC endpoints to ChilloutVR. If something is not working create an [issue in github](https://github.com/kafeijao/Kafe_CVR_Mods/issues)\n\n__**Props**__\n- Set/Read prop location\n- Set/Read synced params\n__**Tracking**__\n- Listen to tracking data (location/battery) from `Trackers`, `Controllers`, `HMD`, `Base Stations`, and `Play Space`.\n\n__**New**__ [python library](https://github.com/kafeijao/cvr_osc_lib_py) to abstract this OSC API with examples!\n\nRefer to the [IN-DEPTH](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC) documentation for more information.",
   "searchtags": [
     "osc",
-    "input",
-    "parameter",
     "props",
     "tracking"
   ],
