@@ -27,7 +27,7 @@ public class MarioCameraModFreeCam : ICameraVisualMod {
 
     public void Setup(PortableCamera camera, Camera cameraComponent) {
         _image = CVRSuperMario64.GetMarioArrowsSprite();
-        camera.@interface.AddAndGetHeader(this, typeof(MarioCameraModFreeCam));
+        camera.@interface.AddAndGetHeader(this, nameof(MarioCameraModFreeCam));
         Disable();
     }
 
@@ -37,5 +37,10 @@ public class MarioCameraModFreeCam : ICameraVisualMod {
 
     public void Disable() {
         _isEnabled = false;
+    }
+
+    public PortableCamera.CaptureMode GetSupportedCaptureModes()
+    {
+        return PortableCamera.CaptureMode.Picture;
     }
 }

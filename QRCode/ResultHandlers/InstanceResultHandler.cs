@@ -19,7 +19,7 @@ public class InstanceResultHandler : ResultHandler {
         if (!match.Success) return false;
 
         var id = match.Value;
-        result = new Result(Name, ModConfig.ImageSprites[ModConfig.ImageType.Instance], text, () => ViewManager.Instance.RequestInstanceDetailsPage("i+" + id));
+        result = new Result(Name, ModConfig.ImageSprites[ModConfig.ImageType.Instance], text, () => ViewManager.Instance.OpenInstanceDetails("i+" + id));
         return true;
     }
 

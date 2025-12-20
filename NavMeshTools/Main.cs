@@ -116,7 +116,7 @@ internal class NavMeshTools : MelonMod {
         }
 
         MelonLogger.Msg($"Queuing Nav Mesh Bake for Agent id {agent.AgentTypeID}...");
-        NavMeshBakePipeline.QueueBakeWorkload(agent, OnFinishBake, MetaPort.Instance.CurrentWorldId, filteredSources, allowedColliders.bounds);
+        NavMeshBakePipeline.QueueBakeWorkload(agent, OnFinishBake, ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId, filteredSources, allowedColliders.bounds);
     }
 
     private static (HashSet<GameObject> gameObjectsToUse, Bounds bounds) FixAndGetColliders() {

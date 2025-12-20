@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Networking.API;
 using ABI_RC.Core.Networking.API.Responses;
+using ABI_RC.Core.Networking.API.Responses.DetailsV2;
 using MelonLoader;
 
 namespace Kafe.OSC.Utils;
@@ -9,11 +10,11 @@ internal static class ApiRequests
     internal static async Task<string> RequestAvatarDetailsPageTask(string guid)
     {
         MelonLogger.Msg($"[API] Fetching avatar {guid} name...");
-        BaseResponse<AvatarDetailsResponse> response;
+        BaseResponse<ContentAvatarResponse> response;
         try
         {
             var payload = new { avatarID = guid };
-            response = await ApiConnection.MakeRequest<AvatarDetailsResponse>(ApiConnection.ApiOperation.AvatarDetail, payload);
+            response = await ApiConnection.MakeRequest<ContentAvatarResponse>(ApiConnection.ApiOperation.AvatarDetail, payload, "2");
         }
         catch (Exception ex)
         {

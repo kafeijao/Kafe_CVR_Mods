@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Networking.IO.Instancing;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util;
@@ -53,8 +54,8 @@ public class CompanionProp : MelonMod {
         if (!ShouldSpawnProp) yield break;
 
         // Ensure we're still on the same instance
-        if (instanceIdToSpawn != MetaPort.Instance.CurrentInstanceId) {
-            MelonLogger.Warning($"Prop started spawning when we were on the instance {instanceIdToSpawn}, but now we're on {MetaPort.Instance.CurrentInstanceId}. Ignoring...");
+        if (instanceIdToSpawn != Instances.CurrentInstanceId) {
+            MelonLogger.Warning($"Prop started spawning when we were on the instance {instanceIdToSpawn}, but now we're on {Instances.CurrentInstanceId}. Ignoring...");
             yield break;
         }
 

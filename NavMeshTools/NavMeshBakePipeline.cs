@@ -94,7 +94,7 @@ public static class NavMeshBakePipeline {
         #endif
 
         // If we changed worlds, the bake is irrelevant...
-        if (payload.WorldGuid != MetaPort.Instance.CurrentWorldId || payload.NavMeshData == null) {
+        if (payload.WorldGuid != ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId || payload.NavMeshData == null) {
             MelonLogger.Warning($"[Thread {Thread.CurrentThread.ManagedThreadId}] [{nameof(ApplyNavMesh)}] [{payload.Agent.AgentTypeID}] Done! (Changed world)");
             throw new Exception("Changed worlds while baking the Nav Mesh or payload.NavMeshData == null, interrupting and discarding current task!");
         }
@@ -141,7 +141,7 @@ public static class NavMeshBakePipeline {
         #endif
 
         // If we changed worlds, the nav mesh links are irrelevant...
-        if (payload.WorldGuid != MetaPort.Instance.CurrentWorldId) {
+        if (payload.WorldGuid != ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId) {
             MelonLogger.Warning($"Thread {Thread.CurrentThread.ManagedThreadId}] [{nameof(GenerateAndPlaceMeshLinks)}] [{payload.Agent.AgentTypeID}] Done! (changed world)");
             throw new Exception("Changed worlds while generating the nav mesh links, interrupting and discarding current task!");
         }

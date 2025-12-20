@@ -1,10 +1,10 @@
 ﻿using ABI_RC.Core;
+using ABI_RC.Core.Networking.IO.Instancing;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.Camera;
 using ABI.CCK.Components;
 using HarmonyLib;
-using Kafe.PostProcessingOverrides.Properties;
 using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -81,14 +81,7 @@ public class PostProcessingOverrides : MelonMod {
         }
 
         // Check for BTKUILib
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.BTKUILibName) != null) {
-            MelonLogger.Msg($"Initializing BTKUI integration...");
-            ModConfig.InitializeBTKUI();
-        }
-        else {
-            MelonLogger.Error($"Failed to find BTKUILib mod. Make sure you have it installed...");
-            return;
-        }
+        ModConfig.InitializeBTKUI();
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
@@ -204,14 +197,14 @@ public class PostProcessingOverrides : MelonMod {
             case OverrideType.Original:
                 _currentWorldModVolume.enabled = false;
                 _currentWorldLayer.enabled = _originalEnabled;
-                PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
+                PortableCamera.Instance.CopyRefCamValues(_currentWorldCamera);
                 // We're done here, the original behavior was loaded by CVR before this was called
                 return;
 
             case OverrideType.Off:
                 _currentWorldModVolume.enabled = false;
                 _currentWorldLayer.enabled = false;
-                PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
+                PortableCamera.Instance.CopyRefCamValues(_currentWorldCamera);
                 // We're done here, we disabled everything
                 return;
 
@@ -227,7 +220,7 @@ public class PostProcessingOverrides : MelonMod {
         // Set the PP overrides state
         _currentWorldModVolume.enabled = true;
         _currentWorldLayer.enabled = true;
-        PortableCamera.Instance.OnWorldLoaded(_currentWorldCamera);
+        PortableCamera.Instance.CopyRefCamValues(_currentWorldCamera);
 
         // Configure our global override profile
 
@@ -303,7 +296,7 @@ public class PostProcessingOverrides : MelonMod {
 
             // Save current world info
             _currentWorld = world;
-            _currentWorldGuid = MetaPort.Instance.CurrentWorldId;
+            _currentWorldGuid = Instances.CurrentWorldId;
             _currentWorldInitialized = false;
 
             _currentWorldCamera = PlayerSetup.Instance.activeCam;
@@ -343,27 +336,14 @@ public class PostProcessingOverrides : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.SetDefaultCamValues))]
-        public static void After_CVRWorld_SetDefaultCamValues(CVRWorld __instance) {
+        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
+        public static void After_CVRWorld_Start(CVRWorld __instance) {
             try {
-                // Setup when there is no reference camera
+                // Set up our PP setup (regardless there is a ref cam or not)
                 SetupPostProcessing(__instance);
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_CopyRefCamValues)}");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.CopyRefCamValues))]
-        public static void After_CVRWorld_CopyRefCamValues(CVRWorld __instance) {
-            try {
-                // Setup when there is a reference camera
-                SetupPostProcessing(__instance);
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_CopyRefCamValues)}");
+                MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_Start)}");
                 MelonLogger.Error(e);
             }
         }
@@ -373,7 +353,7 @@ public class PostProcessingOverrides : MelonMod {
         public static void After_CVRWorld_UpdatePostProcessing(CVRWorld __instance) {
             try {
 
-                // The first update of post processing, we should grab the world defaults here!
+                // The first update of post-processing, we should grab the world defaults here!
                 if (!_currentWorldInitialized) {
 
                     // Initialize the config if missing

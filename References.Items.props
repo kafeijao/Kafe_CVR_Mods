@@ -108,6 +108,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DiscordRPC.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="dotmore">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\dotmore.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="DTLS.Net">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DTLS.Net.dll</HintPath>
             <Private>False</Private>
@@ -352,10 +356,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Numerics.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="System.Runtime.CompilerServices.Unsafe.OSCQuery">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.CompilerServices.Unsafe.OSCQuery.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="System.Runtime">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\System.Runtime.dll</HintPath>
             <Private>False</Private>
@@ -434,10 +434,6 @@
         </Reference>
         <Reference Include="Unity.AI.Navigation">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.AI.Navigation.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Analytics.DataPrivacy">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Analytics.DataPrivacy.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.Burst">
@@ -568,66 +564,6 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Serialization.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Unity.Services.Analytics">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Analytics.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Authentication">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Authentication.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Analytics">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Analytics.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Components">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Components.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Configuration">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Configuration.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Device">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Device.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Environments">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Environments.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Environments.Internal">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Environments.Internal.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Internal">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Internal.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Networking">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Networking.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Registration">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Registration.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Scheduler">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Scheduler.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Telemetry">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Telemetry.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Threading">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.Services.Core.Threading.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.TextMeshPro.dll</HintPath>
             <Private>False</Private>
@@ -666,6 +602,10 @@
         </Reference>
         <Reference Include="Unity.XR.Management">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.Management.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Unity.XR.MockHMD">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.MockHMD.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.XR.Oculus">
@@ -990,6 +930,14 @@
         </Reference>
         <Reference Include="Valve.Newtonsoft.Json">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="WasmScripting.UnsafeUtils">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\WasmScripting.UnsafeUtils.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Wasmtime.Dotnet">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Wasmtime.Dotnet.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ZLinq">

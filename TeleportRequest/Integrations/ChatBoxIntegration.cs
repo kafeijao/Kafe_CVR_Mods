@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.ChatBox;
 using HarmonyLib;
 using Kafe.RequestLib;
 using MelonLoader;
@@ -9,10 +10,10 @@ namespace Kafe.TeleportRequest.Integrations;
 
 public static class ChatBoxIntegration {
 
-    private static ChatBox.API.InterceptorResult CreateInterceptor(ChatBox.API.ChatBoxMessage chatBoxMessage) {
+    private static ChatBoxAPI.InterceptorResult CreateInterceptor(ChatBoxAPI.ChatBoxMessage chatBoxMessage) {
 
         // We only want the messages we sent
-        if (chatBoxMessage.SenderGuid != MetaPort.Instance.ownerId) return Kafe.ChatBox.API.InterceptorResult.Ignore;
+        if (chatBoxMessage.SenderGuid != MetaPort.Instance.ownerId) return ChatBoxAPI.InterceptorResult.Ignore;
 
         var isOurCommand = false;
 
@@ -35,10 +36,10 @@ public static class ChatBoxIntegration {
         }
 
         // We received a Command, let's prevent the ChatBox from displaying the message
-        if (isOurCommand && !ModConfig.MeShowCommandsOnChatBox.Value) return new Kafe.ChatBox.API.InterceptorResult(true, true);
+        if (isOurCommand && !ModConfig.MeShowCommandsOnChatBox.Value) return new ChatBoxAPI.InterceptorResult(true, true);
 
         // Ignore everything else
-        return Kafe.ChatBox.API.InterceptorResult.Ignore;
+        return ChatBoxAPI.InterceptorResult.Ignore;
     }
 
     internal static void InitializeChatBox() {
@@ -47,8 +48,8 @@ public static class ChatBoxIntegration {
             ModConfig.HasChatBoxMod = true;
             // Get the reference to the CreateInterceptor without it being declared in the global scope...
             var methodInfo = AccessTools.Method(typeof(ChatBoxIntegration), nameof(CreateInterceptor));
-            var delegateFunc = Delegate.CreateDelegate(typeof(Func<Kafe.ChatBox.API.ChatBoxMessage, Kafe.ChatBox.API.InterceptorResult>), methodInfo);
-            ChatBox.API.AddSendingInterceptor((Func<Kafe.ChatBox.API.ChatBoxMessage, Kafe.ChatBox.API.InterceptorResult>)delegateFunc);
+            var delegateFunc = Delegate.CreateDelegate(typeof(Func<ChatBoxAPI.ChatBoxMessage, ChatBoxAPI.InterceptorResult>), methodInfo);
+            ChatBoxAPI.AddSendingInterceptor((Func<ChatBoxAPI.ChatBoxMessage, ChatBoxAPI.InterceptorResult>)delegateFunc);
         }
         catch (Exception ex) {
             MelonLogger.Error("Error during the interaction with ChatBox (InitializeChatBox)");

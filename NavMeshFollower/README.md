@@ -10,9 +10,6 @@ prop. If you search for `NMF` or `NavMeshFollower` in CVR you might find some pu
 
 - [NavMeshTools](../NavMeshTools/README.md)
 - [RequestLib](../RequestLib/README.md)
-- **BTKUILib** - You need to get it
-  with [Melon Assistant](https://github.com/knah/CVRMelonAssistant/releases/latest/download/CVRMelonAssistant.exe)
-  or [CVR Modding Group Discord](https://discord.gg/dndGPM3bxu)
 
 ## Custom Followers
 

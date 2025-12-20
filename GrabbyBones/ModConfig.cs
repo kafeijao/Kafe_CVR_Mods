@@ -1,4 +1,6 @@
 ﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Systems.UI.UILib;
+using ABI_RC.Systems.UI.UILib.UIObjects;
 using MelonLoader;
 using UnityEngine;
 
@@ -67,10 +69,10 @@ public static class ModConfig {
     }
 
     public static void InitializeBTKUI() {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry) {
+    private static void AddMelonToggle(Category category, MelonPreferences_Entry<bool> entry) {
         var toggle = category.AddToggle(entry.DisplayName, entry.Description, entry.Value);
         toggle.OnValueUpdated += b => {
             if (b != entry.Value) entry.Value = b;
@@ -80,7 +82,7 @@ public static class ModConfig {
         });
     }
 
-    private static void AddMelonSlider(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
+    private static void AddMelonSlider(Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
         var slider = category.AddSlider(entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
         slider.OnValueUpdated += f => {
             if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
@@ -91,9 +93,9 @@ public static class ModConfig {
     }
 
     private static void SetupBTKUI(CVR_MenuManager manager) {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
-        var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
+        var miscPage = QuickMenuAPI.MiscTabPage;
         var miscCategory = miscPage.AddCategory(nameof(GrabbyBones));
 
         AddMelonToggle(miscCategory, MeEnabled);

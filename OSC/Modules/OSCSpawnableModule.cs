@@ -113,7 +113,10 @@ public class OSCSpawnableModule : OSCModule
         OSC.Instance.meOSCDebugConfigWarnings.OnEntryValueChanged.Subscribe((_, enabled) => _debugConfigWarnings = enabled);
     }
 
-    private void Enable() {
+    private void Enable()
+    {
+        if (_enabled || !OSCServer.IsRunning || !OSC.Instance.meOSCSpawnableModule.Value) return;
+
         Events.Spawnable.SpawnableCreated += _spawnableCreated;
         Events.Spawnable.SpawnableDeleted += _spawnableDeleted;
         Events.Spawnable.SpawnableAvailable += _spawnableAvailabilityChanged;
@@ -122,7 +125,10 @@ public class OSCSpawnableModule : OSCModule
         _enabled = true;
     }
 
-    private void Disable() {
+    private void Disable()
+    {
+        if (!_enabled) return;
+
         Events.Spawnable.SpawnableCreated -= _spawnableCreated;
         Events.Spawnable.SpawnableDeleted -= _spawnableDeleted;
         Events.Spawnable.SpawnableAvailable -= _spawnableAvailabilityChanged;
@@ -135,11 +141,13 @@ public class OSCSpawnableModule : OSCModule
 
     public override void Initialize()
     {
+        Enable();
         RegisterQueues();
     }
 
     public override void Cleanup()
     {
+        Disable();
         FreeQueues();
     }
 

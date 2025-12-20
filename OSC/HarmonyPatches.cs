@@ -22,18 +22,29 @@ internal class HarmonyPatches
         OSC.Instance.meOSCPerformanceMode.OnEntryValueChanged.Subscribe((_, enabled) => _performanceMode = enabled);
     }
 
-    // Avatar
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(AvatarDetails_t), nameof(AvatarDetails_t.Recycle))]
-    internal static void Before_AvatarDetails_t_Recycle(AvatarDetails_t __instance)
-    {
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(Avatar_t), MethodType.Constructor)]
+    static void After_Avatar_t_Constructor(Avatar_t __instance) {
         try
         {
             Events.Avatar.OnAvatarDetailsReceived(__instance.AvatarId, __instance.AvatarName);
         }
         catch (Exception e)
         {
-            MelonLogger.Error($"Error during {nameof(Before_AvatarDetails_t_Recycle)} patch", e);
+            MelonLogger.Error($"Error during {nameof(After_Avatar_t_Constructor)} patch", e);
+        }
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(AvatarDetails_t), nameof(AvatarDetails_t.PopulateFromApiResponse))]
+    static void After_AvatarDetails_t_PopulateFromApiResponse(AvatarDetails_t __instance) {
+        try
+        {
+            Events.Avatar.OnAvatarDetailsReceived(__instance.AvatarId, __instance.AvatarName);
+        }
+        catch (Exception e)
+        {
+            MelonLogger.Error($"Error during {nameof(After_AvatarDetails_t_PopulateFromApiResponse)} patch", e);
         }
     }
 

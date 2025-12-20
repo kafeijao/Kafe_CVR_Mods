@@ -138,7 +138,7 @@ public class ChatBoxBehavior : MonoBehaviour
             }
 
             #if DEBUG
-            MelonLogger.Msg($"Received a Message message from: {chatBoxMessage.SenderGuid} -> {msg}");
+            MelonLoader.MelonLogger.Msg($"Received a Message message from: {chatBoxMessage.SenderGuid} -> {msg}");
             #endif
             if (ChatBoxes.TryGetValue(chatBoxMessage.SenderGuid, out var chatBoxBehavior))
             {
@@ -189,8 +189,7 @@ public class ChatBoxBehavior : MonoBehaviour
         _typingAudioSource.volume = _volume;
         _textBubbleMentionAudioSource.volume = _volume;
 
-        _textBubbleTransform.localPosition = new Vector3(0,
-            NameplateOffsetBubble + NameplateOffsetBubbleMultiplier * (_chatBoxSize - 1), 0);
+        _textBubbleTransform.localPosition = new Vector3(0, NameplateOffsetBubble + NameplateOffsetBubbleMultiplier * (_chatBoxSize - 1), 0);
         _textBubbleTransform.localScale = Vector3.one * _chatBoxSize;
 
         // Resizing the typing thing is stupid ?

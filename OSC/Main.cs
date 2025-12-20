@@ -1,6 +1,5 @@
 ﻿using ABI_RC.Systems.OSC;
 using Kafe.OSC.Modules;
-using Kafe.OSC.Properties;
 using MelonLoader;
 
 namespace Kafe.OSC;
@@ -95,13 +94,5 @@ public class OSC : MelonMod
         OSCServer.Modules[OSCTrackingModule.ModulePrefix] = new OSCTrackingModule();
         OSCServer.Modules[OSCSpawnableModule.ModulePrefix] = new OSCSpawnableModule();
         OSCServer.Modules[OSCConfigModule.ModulePrefix] = new OSCConfigModule();
-
-        // Check for ChatBox
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null)
-        {
-            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration and adding the module!");
-            Integrations.ChatBox.InitializeChatBox();
-            OSCServer.Modules[OSCChatBoxModule.ModulePrefix] = new OSCChatBoxModule();
-        }
     }
 }

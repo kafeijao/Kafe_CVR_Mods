@@ -228,7 +228,7 @@ public class GrabbyBones : MelonMod {
         // Find the closest child transform
         foreach (var grabbyBone in GrabbyBonesCache) {
 
-            // Make sure the magica/dynamic bone bone is active
+            // Make sure the magica/dynamic bone is active
             try {
                 if (!grabbyBone.IsEnabled()) continue;
             }

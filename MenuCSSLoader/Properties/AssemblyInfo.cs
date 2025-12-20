@@ -21,15 +21,13 @@ using MelonLoader;
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
 [assembly: VerifyLoaderVersion(0, 6, 1, true)]
-[assembly: MelonAdditionalDependencies(AssemblyInfoParams.BTKUILibName)]
 [assembly: MelonColor(255, 0, 255, 0)]
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 [assembly: MelonAdditionalCredits(AssemblyInfoParams.JillTheSomething)]
 
 namespace Kafe.Test.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.1.0";
+    public const string Version = "1.1.1";
     public const string Author = "kafeijao";
     public const string JillTheSomething = "JillTheSomething";
-    public const string BTKUILibName = "BTKUILib";
 }

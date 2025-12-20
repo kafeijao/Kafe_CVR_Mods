@@ -18,7 +18,6 @@ using ABI_RC.Systems.Movement;
 using ABI_RC.Systems.Safety.AdvancedSafety;
 using ABI.CCK.Components;
 using HarmonyLib;
-using Kafe.Instances.Properties;
 using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -52,6 +51,7 @@ public class Instances : MelonMod {
     private static readonly BlockingCollection<string> JsonContentQueue = new(new ConcurrentQueue<string>());
     private static Thread _saveConfigThread;
     private static bool _startedJob;
+    private static ScheduledJob _startedJobInstance = null;
 
     internal static void OnInstanceSelected(string instanceId, bool isInitial = false) {
         InstanceSelected?.Invoke(instanceId, isInitial);
@@ -63,7 +63,8 @@ public class Instances : MelonMod {
         CVRGameEventSystem.Authentication.OnLogout.AddListener(() => {
             if (_startedJob) {
                 // Stop the job that updates the rejoin location
-                SchedulerSystem.RemoveJob(UpdateRejoinLocation);
+                BetterScheduleSystem.RemoveJob(_startedJobInstance);
+                _startedJobInstance = null;
                 _startedJob = false;
             }
             _skipInitialLoad = false;
@@ -71,25 +72,16 @@ public class Instances : MelonMod {
             PlayerConfig = null;
         });
 
-        // Initialize BTKUI
         ModConfig.InitializeBTKUI();
 
         // Start Saving Config Thread
         _saveConfigThread = new Thread(SaveJsonConfigsThread);
         _saveConfigThread.Start();
 
-        // Check for ChatBox
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.ChatBoxName) != null) {
-            MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration! You can use " +
-                            $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and " +
-                            $"{Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
-            Integrations.ChatBoxIntegration.InitializeChatBox();
-        }
-        else {
-            MelonLogger.Msg($"You can optionally install ChatBox mod to enable " +
-                            $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and " +
-                            $"{Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
-        }
+        MelonLogger.Msg($"Detected ChatBox mod, we're adding the integration! You can use " +
+                        $"{Integrations.ChatBoxIntegration.RestartCommandPrefix} and " +
+                        $"{Integrations.ChatBoxIntegration.RejoinCommandPrefix} commands.");
+        Integrations.ChatBoxIntegration.InitializeChatBox();
 
         // Setup the instances selected listener
         InstanceSelected += (instanceId, isInitial) => {
@@ -196,9 +188,9 @@ public class Instances : MelonMod {
 
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
             && ModConfig.MeRejoinPreviousLocation.Value
-            && MetaPort.Instance.CurrentInstanceId != ""
+            && ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId != ""
             && PlayerConfig?.LastInstance?.InstanceId != null
-            && PlayerConfig.LastInstance.InstanceId == MetaPort.Instance.CurrentInstanceId
+            && PlayerConfig.LastInstance.InstanceId == ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId
             && BetterBetterCharacterController.Instance.CanFly()) {
 
             var pos = PlayerSetup.Instance.GetPlayerPosition();
@@ -208,7 +200,7 @@ public class Instances : MelonMod {
             var rot = PlayerSetup.Instance.GetPlayerRotation();
 
             PlayerConfig.RejoinLocation = new JsonRejoinLocation {
-                InstanceId = MetaPort.Instance.CurrentInstanceId,
+                InstanceId = ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId,
                 AttemptToTeleport = true,
                 ClosedDateTime = DateTime.UtcNow,
                 Position = new JsonVector3(pos),
@@ -222,7 +214,7 @@ public class Instances : MelonMod {
     public override void OnApplicationQuit() {
 
         // Stop the job that updates the rejoin location
-        if (_startedJob) SchedulerSystem.RemoveJob(UpdateRejoinLocation);
+        if (_startedJob) BetterScheduleSystem.RemoveJob(_startedJobInstance);
 
         MelonLogger.Msg($"Saving current location to teleport when rejoining...You need to rejoin within {TeleportToLocationTimeout} minutes!");
         UpdateRejoinLocation();
@@ -505,7 +497,7 @@ public class Instances : MelonMod {
 
             // Load into the instance
             MelonLogger.Msg($"The previous instance {instanceDetails.Data.Name} is still up! Attempting to join...");
-            ABI_RC.Core.Networking.IO.Instancing.Instances.SetJoinTarget(instanceDetails.Data.Id);
+            ABI_RC.Core.Networking.IO.Instancing.Instances.TryJoinInstance(instanceDetails.Data.Id, CVRInstances.JoinInstanceSource.Mod);
         }
 
         _isChangingInstance = false;
@@ -513,7 +505,7 @@ public class Instances : MelonMod {
 
     internal static async Task SaveCurrentInstanceToken() {
         var baseResponse = await ApiConnection.MakeRequest<InstanceJoinResponse>(ApiConnection.ApiOperation.InstanceJoin, new {
-            instanceID = MetaPort.Instance.CurrentInstanceId,
+            instanceID = ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId,
         });
         if (baseResponse is { Data: not null }) {
             // Check for token updates
@@ -671,19 +663,22 @@ public class Instances : MelonMod {
         public static void After_RichPresence_ReadPresenceUpdateFromNetwork() {
             try {
                 #if DEBUG
-                MelonLogger.Msg($"[After_RichPresence_ReadPresenceUpdateFromNetwork] CurrentWorldId: {MetaPort.Instance.CurrentWorldId}, CurrentInstanceId: {MetaPort.Instance.CurrentInstanceId}, Name: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+                MelonLogger.Msg($"[After_RichPresence_ReadPresenceUpdateFromNetwork] " +
+                                $"CurrentWorldId: {ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId}, " +
+                                $"CurrentInstanceId: {ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId}, " +
+                                $"Name: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
                 #endif
 
                 // Update current instance
                 MelonCoroutines.Start(UpdateLastInstance(
-                    MetaPort.Instance.CurrentWorldId,
-                    MetaPort.Instance.CurrentInstanceId,
-                    MetaPort.Instance.CurrentInstanceName,
+                    ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId,
+                    ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId,
+                    ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceName,
                     CVRPlayerManager.Instance.NetworkPlayers.Count));
 
                 // Initialize the save config job when we reach an online instance
                 if (!_startedJob) {
-                    SchedulerSystem.AddJob(UpdateRejoinLocation, 10f);
+                    _startedJobInstance = BetterScheduleSystem.AddJob(UpdateRejoinLocation, 10f);
                     _startedJob = true;
                 }
 
@@ -694,7 +689,7 @@ public class Instances : MelonMod {
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.X) <= 200000.0
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Y) <= 200000.0
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Z) <= 200000.0
-                    && PlayerConfig.RejoinLocation.InstanceId == MetaPort.Instance.CurrentInstanceId
+                    && PlayerConfig.RejoinLocation.InstanceId == ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId
                     && BetterBetterCharacterController.Instance.CanFly()) {
 
 

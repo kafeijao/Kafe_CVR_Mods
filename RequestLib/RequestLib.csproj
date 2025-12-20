@@ -21,13 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
         <EmbeddedResource Include="Resources\Quadro_Toggle_AutoAccept.png">
             <LogicalName>resources.Quadro_Toggle_AutoAccept.png</LogicalName>
         </EmbeddedResource>

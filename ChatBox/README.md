@@ -1,6 +1,10 @@
 ﻿# ChatBox
 
-[![Download Latest ChatBox.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest ChatBox.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/ChatBox.dll)
+![Download Latest ChatBox.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest ChatBox.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was implemented natively.
 
 The mod adds a text ChatBox over the player's head, allowing them to send messages to each other via keyboard input.
 ChatBoxes of other players can be configured to display only from your friends (off by default), note that everyone will

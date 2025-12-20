@@ -18,10 +18,17 @@ $cvrDefaultPath = "C:\Program Files (x86)\Steam\steamapps\common\ChilloutVR"
 $dllsToStrip = @('Assembly-CSharp.dll','Assembly-CSharp-firstpass.dll','AVProVideo.Runtime.dll', 'Unity.TextMeshPro.dll', 'MagicaCloth.dll', 'MagicaClothV2.dll')
 
 # Array with the mods to grab
-$modNames = @("BTKUILib", "BTKSAImmersiveHud", "PortableMirrorMod", "VRBinding")
+$modNames = @("PortableMirrorMod", "VRBinding")
 
 # Array with dlls to ignore from ManagedLibs
-$cvrManagedLibNamesToIgnore = @("netstandard", "Mono.Cecil", "Unity.Burst.Cecil", "Microsoft.Win32.Registry")
+$cvrManagedLibNamesToIgnore = @(
+    "netstandard", # Breaks targeting netstandard on the mod
+    "Mono.Cecil",
+    "Unity.Burst.Cecil",
+    "Microsoft.Win32.Registry",
+    "System.Runtime.CompilerServices.Unsafe", # Gives a warning that it fails to resolve conflicts
+    "System.Runtime.CompilerServices.Unsafe.OSCQuery" # Gives a warning that it fails to resolve conflicts
+)
 
 if ($cvrPath -and (Test-Path "$cvrPath\$cvrExecutable")) {
     # Found ChilloutVR.exe in the existing CVRPATH

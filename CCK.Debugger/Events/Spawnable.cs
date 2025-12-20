@@ -1,15 +1,10 @@
-﻿using ABI_RC.Core.Networking.IO.UserGeneratedContent;
-using ABI.CCK.Components;
+﻿using ABI.CCK.Components;
 
 namespace Kafe.CCK.Debugger.Events;
 
 internal static class Spawnable {
 
     public static readonly Dictionary<string, string> SpawnableNamesCache = new();
-
-    public static void OnSpawnableDetailsRecycled(Spawnable_t details) {
-        SpawnableNamesCache[details.SpawnableId] = details.SpawnableName;
-    }
 
     // Spawnable Triggers
     public static event Action<CVRSpawnableTriggerTask> SpawnableTriggerTriggered;

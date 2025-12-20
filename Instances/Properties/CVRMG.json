@@ -1,8 +1,8 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.22",
-  "gameversion": "2025r180",
+  "modversion": "1.0.23",
+  "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -10,12 +10,11 @@
   "searchtags": [
     "rejoin",
     "history",
-    "instance",
-    "BTKUILib"
+    "instance"
   ],
-  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r79/Instances.dll",
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed for 2025r180\n- Removed starting the game in an online instance (this is native in the game now)",
+  "changelog": "- Fixed for 2025r181",
   "embedcolor": "16C60C"
 }

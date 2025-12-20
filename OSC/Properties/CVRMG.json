@@ -1,8 +1,8 @@
 {
   "_id": 79,
   "name": "OSC",
-  "modversion": "2.0.1",
-  "gameversion": "2025r180",
+  "modversion": "3.0.0",
+  "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r79/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
-  "changelog": "- Fixed an issue that broke using trackers in VR (they would freeze)\n- Reintroduced the /config endpoint for older OSC compatibility\n- Minor other fixes that I forgot",
+  "changelog": "- Fixed for 2025r181\n- Removed the avatar and input modules (they were added natively)",
   "embedcolor": "16C60C"
 }

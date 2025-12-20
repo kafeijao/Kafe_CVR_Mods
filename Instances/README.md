@@ -4,8 +4,6 @@
 
 Instances is a simple mod for ChilloutVR that enhances the management of world instances.
 
-Requires [BTKUILib](https://github.com/BTK-Development/BTKUILib)
-
 ## Features
 
 * Rejoin the last instance you were in last time you closed the game (if it still exists).

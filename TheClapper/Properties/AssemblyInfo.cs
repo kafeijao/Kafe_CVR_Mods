@@ -26,6 +26,6 @@ using MelonLoader;
 
 namespace Kafe.TheClapper.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "1.0.7";
+    public const string Version = "1.0.8";
     public const string Author = "kafeijao";
 }

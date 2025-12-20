@@ -4,7 +4,6 @@
 
 This mod gives you more control over the world's Post Processing configurations.
 
-Requires [BTKUILib](https://github.com/BTK-Development/BTKUILib)
 
 ## Features
 

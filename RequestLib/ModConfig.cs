@@ -1,7 +1,9 @@
 ﻿using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking.IO.Social;
-using BTKUILib.UIObjects;
+using ABI_RC.Systems.UI.UILib;
+using ABI_RC.Systems.UI.UILib.UIObjects;
+using ABI_RC.Systems.UI.UILib.UIObjects.Components;
 using MelonLoader;
 using UnityEngine;
 
@@ -32,10 +34,10 @@ internal static class ModConfig {
     }
 
     public static void InitializeBTKUI() {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static void AddMelonToggle(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<bool> entry, string nameOverride = "") {
+    private static void AddMelonToggle(Category category, MelonPreferences_Entry<bool> entry, string nameOverride = "") {
         var toggle = category.AddToggle(string.IsNullOrWhiteSpace(nameOverride) ? entry.DisplayName : nameOverride, entry.Description, entry.Value);
         toggle.OnValueUpdated += b => {
             if (b != entry.Value) entry.Value = b;
@@ -45,7 +47,7 @@ internal static class ModConfig {
         });
     }
 
-    private static void AddMelonSlider(BTKUILib.UIObjects.Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
+    private static void AddMelonSlider(Category category, MelonPreferences_Entry<float> entry, float min, float max, int decimalPlaces) {
         var slider = category.AddSlider(entry.DisplayName, entry.Description, entry.Value, min, max, decimalPlaces);
         slider.OnValueUpdated += f => {
             if (!Mathf.Approximately(f, entry.Value)) entry.Value = f;
@@ -60,7 +62,7 @@ internal static class ModConfig {
     private const string IconDefault = $"{nameof(RequestLib)}-Default";
     private const string IconLetMeDecide = $"{nameof(RequestLib)}-LetMeDecide";
 
-    private static BTKUILib.UIObjects.Components.Button GetOverrideButton(BTKUILib.UIObjects.Category cat, string buttonName, ConfigJson.UserOverride userOverride, string playerName = "", string modName = "") {
+    private static Button GetOverrideButton(Category cat, string buttonName, ConfigJson.UserOverride userOverride, string playerName = "", string modName = "") {
         var sourceInfo = string.IsNullOrWhiteSpace(playerName) ? " " : $" from {playerName} ";
         sourceInfo = string.IsNullOrWhiteSpace(modName) ? sourceInfo : $"{sourceInfo} via {modName} ";
         var buttonTooltip = userOverride switch {
@@ -81,15 +83,15 @@ internal static class ModConfig {
     }
 
     private static void SetupBTKUI(CVR_MenuManager manager) {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
         // Load icons
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconAutoAccept, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_AutoAccept.png"));
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconAutoDecline, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_AutoDecline.png"));
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconDefault, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_Default.png"));
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconLetMeDecide, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_LetMeDecide.png"));
+        QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconAutoAccept, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_AutoAccept.png"));
+        QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconAutoDecline, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_AutoDecline.png"));
+        QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconDefault, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_Default.png"));
+        QuickMenuAPI.PrepareIcon(nameof(RequestLib), IconLetMeDecide, Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.Quadro_Toggle_LetMeDecide.png"));
 
-        var miscPage = BTKUILib.QuickMenuAPI.MiscTabPage;
+        var miscPage = QuickMenuAPI.MiscTabPage;
         var miscCategory = miscPage.AddCategory(nameof(RequestLib), nameof(RequestLib));
 
         AddMelonToggle(miscCategory, MeOnlyReceiveFromFriends, "Only from friends");
@@ -106,7 +108,7 @@ internal static class ModConfig {
         CreateGlobalOverrideButton();
 
         // Player visibility overrides
-        var playerCat = BTKUILib.QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(RequestLib), nameof(RequestLib));
+        var playerCat = QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(RequestLib), nameof(RequestLib));
         Page playerModPage = null;
 
         void PopulatePlayerCategory(string playerName, string playerID) {
@@ -157,6 +159,6 @@ internal static class ModConfig {
             playerModPage.SubpageButton.OnPress += PopulatePlayerModPage;
         }
 
-        BTKUILib.QuickMenuAPI.OnPlayerSelected += PopulatePlayerCategory;
+        QuickMenuAPI.OnPlayerSelected += PopulatePlayerCategory;
     }
 }

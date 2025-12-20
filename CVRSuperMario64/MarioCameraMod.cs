@@ -97,7 +97,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
         _rigidbody = _camera.gameObject.GetComponent<Rigidbody>();
 
-        camera.@interface.AddAndGetHeader(this, typeof(MarioCameraMod));
+        camera.@interface.AddAndGetHeader(this, nameof(MarioCameraMod));
 
         // Hide mario renderers from the camera
         Camera.onPreCull += cam => {
@@ -121,19 +121,19 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
         var nextMarioButton = camera.@interface.AddAndGetSetting(PortableCameraSettingType.Bool);
         nextMarioButton.BoolChanged = _ => ChangeMario();
-        nextMarioButton.SettingName = "MarioNext";
+        nextMarioButton.SettingIdentifier = "MarioNext";
         nextMarioButton.DisplayName = "Mario Next";
         nextMarioButton.isExpertSetting = false;
-        nextMarioButton.OriginType = typeof(MarioCameraMod);
+        nextMarioButton.OriginType = nameof(MarioCameraMod);
         nextMarioButton.DefaultValue = false;
         nextMarioButton.Load();
 
         var radiusSetting = camera.@interface.AddAndGetSetting(PortableCameraSettingType.Float);
         radiusSetting.FloatChanged = f => _distance = f;
-        radiusSetting.SettingName = "MarioCamDistance";
+        radiusSetting.SettingIdentifier = "MarioCamDistance";
         radiusSetting.DisplayName = "Mario Camera Distance";
         radiusSetting.isExpertSetting = false;
-        radiusSetting.OriginType = typeof(MarioCameraMod);
+        radiusSetting.OriginType = nameof(MarioCameraMod);
         radiusSetting.DefaultValue = 1f;
         radiusSetting.MinValue = 0f;
         radiusSetting.MaxValue = 2f;
@@ -141,10 +141,10 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
         var elevationSetting = camera.@interface.AddAndGetSetting(PortableCameraSettingType.Float);
         elevationSetting.FloatChanged = f => _elevation = f;
-        elevationSetting.SettingName = "MarioCamElevation";
+        elevationSetting.SettingIdentifier = "MarioCamElevation";
         elevationSetting.DisplayName = "Mario Camera Elevation";
         elevationSetting.isExpertSetting = false;
-        elevationSetting.OriginType = typeof(MarioCameraMod);
+        elevationSetting.OriginType = nameof(MarioCameraMod);
         elevationSetting.DefaultValue = 0.40f;
         elevationSetting.MinValue = 0f;
         elevationSetting.MaxValue = 2f;
@@ -162,7 +162,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
             if (!ChangeMario()) {
                 // Disable the camera mod since we got no marios
                 CohtmlHud.Instance.ViewDropText("CVRSM64Camera exited since we are not controlling any marios.", "", "", false);
-                SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
+                BetterScheduleSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
                 _wasNullAlready = true;
                 return;
             }
@@ -224,13 +224,13 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
             _camera.transform.LookAt( marioPosition );
         }
 
-        _portableCamera.RefreshFadeOut();
+        // _portableCamera.RefreshFadeOut();
     }
 
     public void Enable() {
         if (BetterBetterCharacterController.Instance.IsSitting()) {
             CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while in seat", "", "", false);
-            SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
+            BetterScheduleSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
         }
 
         else {
@@ -238,7 +238,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
             // Check if mario is null, and if it is attempt to get one
             if (_currentMario == null && !ChangeMario()) {
                 CohtmlHud.Instance.ViewDropText("Unable to enter CVRSM64Camera while not controlling any mario", "", "", false);
-                SchedulerSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
+                BetterScheduleSystem.AddJob(DisableDelayed, 0.05f, 0.0f, 1);
                 return;
             }
 
@@ -273,5 +273,10 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         transform.SetParent(_cameraParent, false);
         transform.localPosition = Vector3.zero;
         _portableCamera.ApplyFlip(false);
+    }
+
+    public PortableCamera.CaptureMode GetSupportedCaptureModes()
+    {
+        return PortableCamera.CaptureMode.Picture;
     }
 }

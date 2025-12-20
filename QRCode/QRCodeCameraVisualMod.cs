@@ -24,7 +24,7 @@ public class QRCodeCameraVisualMod : ICameraVisualMod {
             var qrMenu = UnityEngine.Object.Instantiate(ModConfig.QRCodePrefab, targetTransform, false);
             _qrCodeBehavior = qrMenu.AddComponent<QRCodeBehavior>();
 
-            camera.@interface.AddAndGetHeader(this, typeof(QRCodeCameraVisualMod));
+            camera.@interface.AddAndGetHeader(this, nameof(QRCodeCameraVisualMod));
             Disable();
         }
         catch (Exception e) {
@@ -39,5 +39,10 @@ public class QRCodeCameraVisualMod : ICameraVisualMod {
 
     public void Disable() {
         _qrCodeBehavior.gameObject.SetActive(false);
+    }
+
+    public PortableCamera.CaptureMode GetSupportedCaptureModes()
+    {
+        return PortableCamera.CaptureMode.Picture;
     }
 }

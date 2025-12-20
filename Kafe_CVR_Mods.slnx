@@ -1,0 +1,26 @@
+<Solution>
+  <Project Path="BetterPlayerCollider/BetterPlayerCollider.csproj" />
+  <Project Path="CCK.Debugger/CCK.Debugger.csproj" />
+  <Project Path="ChatBox/ChatBox.csproj" />
+  <Project Path="CompanionProp/CompanionProp.csproj" />
+  <Project Path="CVRSuperMario64/CVRSuperMario64.csproj" />
+  <Project Path="CVRUnverifiedModUpdaterPlugin/CVRUnverifiedModUpdaterPlugin.csproj" />
+  <Project Path="GrabbyBones/GrabbyBones.csproj" />
+  <Project Path="Instances/Instances.csproj" />
+  <Project Path="Logger++/Logger++.csproj" />
+  <Project Path="MenuCSSLoader/MenuCSSLoader.csproj" />
+  <Project Path="MinimizeWindows/MinimizeWindows.csproj" />
+  <Project Path="NavMeshFollower/NavMeshFollower.csproj" />
+  <Project Path="NavMeshTools/NavMeshTools.csproj" />
+  <Project Path="OSC/OSC.csproj" />
+  <Project Path="PickupOverrides/PickupOverrides.csproj" />
+  <Project Path="PostProcessingOverrides/PostProcessingOverrides.csproj" />
+  <Project Path="ProfilesExtended/ProfilesExtended.csproj" />
+  <Project Path="QRCode/QRCode.csproj" />
+  <Project Path="RealisticFlight/RealisticFlight.csproj" />
+  <Project Path="RequestLib/RequestLib.csproj" />
+  <Project Path="RetroCVR/RetroCVR.csproj" />
+  <Project Path="SteamAudioOverrides/SteamAudioOverrides.csproj" />
+  <Project Path="TeleportRequest/TeleportRequest.csproj" />
+  <Project Path="TheClapper/TheClapper.csproj" />
+</Solution>

@@ -1,5 +1,7 @@
 ﻿using ABI_RC.Core.InteractionSystem;
-using ABI_RC.Core.Savior;
+using ABI_RC.Core.Networking.IO.Instancing;
+using ABI_RC.Systems.UI.UILib;
+using ABI_RC.Systems.UI.UILib.UIObjects;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -82,7 +84,7 @@ public static class Config {
     }
 
     public static bool ShouldAttemptToLoadWorldColliders() {
-        return _config.WorldConfigs.TryGetValue(MetaPort.Instance.CurrentWorldId, out var worldConfig)
+        return Instances.CurrentWorldId != null && _config.WorldConfigs.TryGetValue(Instances.CurrentWorldId, out var worldConfig)
             ? worldConfig.LoadWorldColliders
             : MeAttemptToLoadWorldColliders.Value;
     }
@@ -126,18 +128,18 @@ public static class Config {
     }
 
     public static void InitializeBTKUI() {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate += LoadBTKUILib;
+        QuickMenuAPI.OnMenuRegenerate += LoadBTKUILib;
     }
 
     private static void LoadBTKUILib(CVR_MenuManager manager) {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate -= LoadBTKUILib;
+        QuickMenuAPI.OnMenuRegenerate -= LoadBTKUILib;
 
         // Load the Mario Icon
         using (var stream = new MemoryStream(CVRSuperMario64.GetMarioSprite().texture.EncodeToPNG())) {
-            BTKUILib.QuickMenuAPI.PrepareIcon(nameof(CVRSuperMario64), "MarioIcon", stream);
+            QuickMenuAPI.PrepareIcon(nameof(CVRSuperMario64), "MarioIcon", stream);
         }
 
-        var page = new BTKUILib.UIObjects.Page(nameof(CVRSuperMario64), nameof(CVRSuperMario64), true, "MarioIcon") {
+        var page = new Page(nameof(CVRSuperMario64), nameof(CVRSuperMario64), true, "MarioIcon") {
             MenuTitle = nameof(CVRSuperMario64),
             MenuSubtitle = "Configure CVR Super Mario 64 Mod",
         };
@@ -149,12 +151,14 @@ public static class Config {
             "to have their colliders generated... If that's the case disable this and use props to create colliders!",
             ShouldAttemptToLoadWorldColliders());
         // Update/Create the value in the config for the current world
-        attemptToLoadWorldColliders.OnValueUpdated += isOn => {
-            if (_config.WorldConfigs.TryGetValue(MetaPort.Instance.CurrentWorldId, out var worldConfig)) {
+        attemptToLoadWorldColliders.OnValueUpdated += isOn =>
+        {
+            if (string.IsNullOrEmpty(Instances.CurrentWorldId)) return;
+            if (_config.WorldConfigs.TryGetValue(Instances.CurrentWorldId, out var worldConfig)) {
                 worldConfig.LoadWorldColliders = isOn;
             }
             else {
-                _config.WorldConfigs.Add(MetaPort.Instance.CurrentWorldId, new JsonConfigWorld());
+                _config.WorldConfigs.Add(Instances.CurrentWorldId, new JsonConfigWorld());
             }
             SaveJsonConfig();
             CVRSM64Context.QueueStaticSurfacesUpdate();
@@ -273,7 +277,7 @@ public static class Config {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
         private static void After_CVRWorld_Awake() {
-            var worldId = MetaPort.Instance.CurrentWorldId;
+            var worldId = Instances.CurrentWorldId;
             if (_config.WorldConfigs.ContainsKey(worldId)) return;
             _config.WorldConfigs.Add(worldId, new JsonConfigWorld());
             SaveJsonConfig();

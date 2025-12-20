@@ -115,11 +115,7 @@ public class CVRSuperMario64 : MelonMod {
             return;
         }
 
-        // Check for BTKUILib
-        if (RegisteredMelons.Any(m => m.Info.Name == AssemblyInfoParams.BTKUILibName)) {
-            MelonLogger.Msg($"Detected BTKUILib mod, we're adding the integration!");
-            Config.InitializeBTKUI();
-        }
+        Config.InitializeBTKUI();
 
         // Calling on melon initializing was causing issues sometimes
         CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
@@ -173,19 +169,35 @@ public class CVRSuperMario64 : MelonMod {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRInputManager), nameof(CVRInputManager.Start))]
         public static void After_CVRInputManager_Start(CVRInputManager __instance) {
-            var moduleMario = new MarioInputModule();
-            __instance.AddInputModule(moduleMario);
+            try
+            {
+                var moduleMario = new MarioInputModule();
+                __instance.AddInputModule(moduleMario);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(After_CVRInputManager_Start)}");
+                MelonLogger.Error(e);
+            }
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PortableCamera), nameof(PortableCamera.Start))]
-        public static void After_PortableCamera_Start(PortableCamera __instance) {
-            var marioCamMod = new MarioCameraMod();
-            var marioFreeCamMod = new MarioCameraModFreeCam();
-            __instance.RegisterMod(marioCamMod);
-            __instance.RequireUpdate(marioCamMod);
-            __instance.RegisterMod(marioFreeCamMod);
-            __instance.UpdateOptionsDisplay();
+        [HarmonyPatch(typeof(PortableCamera), nameof(PortableCamera.SetupCameraSettings))]
+        public static void After_PortableCamera_SetupCameraSettings(PortableCamera __instance) {
+            try
+            {
+                var marioCamMod = new MarioCameraMod();
+                var marioFreeCamMod = new MarioCameraModFreeCam();
+                __instance.RegisterMod(marioCamMod);
+                __instance.RequireUpdate(marioCamMod);
+                __instance.RegisterMod(marioFreeCamMod);
+                __instance.UpdateOptionsDisplay();
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(After_PortableCamera_SetupCameraSettings)}");
+                MelonLogger.Error(e);
+            }
         }
     }
 }

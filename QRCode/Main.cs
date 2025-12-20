@@ -35,13 +35,13 @@ public class QRCode : MelonMod {
     [HarmonyPatch]
     internal class HarmonyPatches {
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PortableCamera), nameof(PortableCamera.Start))]
-        public static void After_PortableCamera_Start(PortableCamera __instance) {
+        [HarmonyPatch(typeof(PortableCamera), nameof(PortableCamera.SetupCameraSettings))]
+        public static void After_PortableCamera_SetupCameraSettings(PortableCamera __instance) {
             try {
                 __instance.RegisterMod(new QRCodeCameraVisualMod());
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patch: {nameof(After_PortableCamera_Start)}");
+                MelonLogger.Error($"Error during the patch: {nameof(After_PortableCamera_SetupCameraSettings)}");
                 MelonLogger.Error(e);
             }
         }

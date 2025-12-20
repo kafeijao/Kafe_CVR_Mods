@@ -185,7 +185,7 @@ public static class ModNetwork {
         }
     }
 
-    private static void SendGuid(ushort msgTag) {
+    private static void SendGuid(ushort msgTag, bool isSubscribe) {
 
         if (NetworkManager.Instance == null ||
             NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected) {
@@ -195,17 +195,20 @@ public static class ModNetwork {
 
         // Mandatory message parameters
         using var writer = DarkRiftWriter.Create();
+        // writer.Write(isSubscribe);
         writer.Write((ushort) 1);
         writer.Write(ModId);
 
         using var message = Message.Create(msgTag, writer);
 
         NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
+
+        // MelonLogger.Msg($"Sent Subscription [{isSubscribe}, {(ushort) 1}, {ModId}] to the server...");
     }
 
-    private static void Subscribe() => SendGuid((ushort) Tag.Subscribe);
+    private static void Subscribe() => SendGuid((ushort) Tag.Subscribe, true);
 
-    private static void Unsubscribe() => SendGuid((ushort) Tag.Unsubscribe);
+    private static void Unsubscribe() => SendGuid((ushort) Tag.Unsubscribe, false);
 
 
     private static bool SendMsgToAllPlayers(MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {

@@ -22,11 +22,7 @@ public class TeleportRequest : MelonMod {
 
         ModConfig.InitializeMelonPrefs();
 
-        // Check for ChatBox
-        if (RegisteredMelons.FirstOrDefault(m => m.Info.Name == Properties.AssemblyInfoParams.ChatBoxName) != null) {
-            MelonLogger.Msg("Detected ChatBox mod! Adding the integration...");
-            Integrations.ChatBoxIntegration.InitializeChatBox();
-        }
+        Integrations.ChatBoxIntegration.InitializeChatBox();
 
         ModConfig.InitializeBTKUI();
 

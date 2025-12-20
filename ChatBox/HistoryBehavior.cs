@@ -329,7 +329,6 @@ public class HistoryBehavior : MonoBehaviour
             _grabImage = _rootRectTransform.Find("TogglesView/Grab/Checkmark").GetComponent<Image>();
             _rootRectPickup = _rootRectTransform.GetComponent<CVRPickupObject>();
             _rootRectPickup.enabled = false;
-            _rootRectPickup.generateTeleTarget = false;
             _rootRectPickupHighlight = _rootRectTransform.Find("PickupHighlight").GetComponent<MeshRenderer>();
             _rootRectPickupHighlight.enabled = false;
             _grabToggle.onValueChanged.AddListener(isOn =>

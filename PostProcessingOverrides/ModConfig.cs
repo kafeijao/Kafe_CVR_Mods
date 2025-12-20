@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Systems.UI.UILib;
+using ABI_RC.Systems.UI.UILib.UIObjects;
 using MelonLoader;
 
 namespace Kafe.PostProcessingOverrides;
@@ -13,7 +15,7 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<OverrideType> MeDefaultWorldConfig;
 
     // BTKUI Stuff
-    private static BTKUILib.UIObjects.Page _page;
+    private static Page _page;
 
     // Internal
     private static readonly int TypeCount = Enum.GetValues(typeof(OverrideType)).Length;
@@ -31,23 +33,23 @@ public static class ModConfig {
     }
 
     public static void InitializeBTKUI() {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
     private static void SetupBTKUI(CVR_MenuManager manager) {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
         // Load icons
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "Icon",
+        QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "Icon",
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.BTKUIIcon.png"));
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Off",
+        QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Off",
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.TT_Off.png"));
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Original",
+        QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Original",
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.TT_Original.png"));
-        BTKUILib.QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Override",
+        QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Override",
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.TT_Override.png"));
 
-        _page = new BTKUILib.UIObjects.Page(nameof(PostProcessingOverrides), nameof(PostProcessingOverrides), true, "Icon") {
+        _page = new Page(nameof(PostProcessingOverrides), nameof(PostProcessingOverrides), true, "Icon") {
             MenuTitle = nameof(PostProcessingOverrides),
             MenuSubtitle = "Configure Post Processing Overrides per world",
         };
@@ -69,7 +71,7 @@ public static class ModConfig {
         };
     }
 
-    private static void CreateButton(BTKUILib.UIObjects.Category currentOverride, PostProcessingOverrides.JsonConfigPPSetting setting, string settingName) {
+    private static void CreateButton(Category currentOverride, PostProcessingOverrides.JsonConfigPPSetting setting, string settingName) {
         currentOverride.AddButton(settingName, GetTripleToggleIcon(setting.Active), $"{settingName} Control").OnPress += () => {
             setting.Active = (OverrideSetting)(((int)setting.Active + 1) % SettingCount);
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
@@ -95,7 +97,7 @@ public static class ModConfig {
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };
 
-        BTKUILib.UIObjects.Category currentOverride = null;
+        Category currentOverride = null;
 
         switch (config.ConfigType) {
 

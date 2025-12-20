@@ -27,7 +27,7 @@ To create a theme:
 - If you edit the files, close the menus and press `F5`, the new css will be loaded
 - You can press `Shift` + `F5` to reload the list of files (__only needed__ if you add/remove files or change themes)
 - The default theme "Default" is automatically created
-- You can select themes in the BTKUI Misc Menu
+- You can select themes in the UILib Misc Menu
 
 ### Credits
 

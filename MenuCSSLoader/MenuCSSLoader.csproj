@@ -15,9 +15,4 @@
 			<LogicalName>MenuCSSLoader.Reload.png</LogicalName>
 		</EmbeddedResource>
 	</ItemGroup>
-    <ItemGroup>
-      <Reference Include="BTKUILib">
-        <HintPath>..\.ManagedLibs\BTKUILib.dll</HintPath>
-      </Reference>
-    </ItemGroup>
 </Project>

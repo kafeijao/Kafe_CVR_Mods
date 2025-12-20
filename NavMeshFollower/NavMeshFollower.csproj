@@ -6,10 +6,6 @@
             <HintPath>$(CVRPATH)\Mods\NavMeshTools.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="CCK.Debugger">
             <HintPath>$(CVRPATH)\Mods\CCK.Debugger.dll</HintPath>
             <Private>False</Private>

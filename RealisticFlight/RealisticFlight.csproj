@@ -2,13 +2,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
         <EmbeddedResource Include="Resources\BTKUIIcon.png">
             <LogicalName>resources.BTKUIIcon.png</LogicalName>
         </EmbeddedResource>

@@ -2,16 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <Reference Include="BTKUILib">
-            <HintPath>$(MsBuildThisFileDirectory)\..\.ManagedLibs\BTKUILib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
         <Reference Include="RequestLib">
             <HintPath>$(CVRPATH)\Mods\RequestLib.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="ChatBox">
-            <HintPath>$(CVRPATH)\Mods\ChatBox.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
