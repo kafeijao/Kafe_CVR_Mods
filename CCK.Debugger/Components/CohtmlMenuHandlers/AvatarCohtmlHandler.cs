@@ -321,8 +321,6 @@ public class AvatarCohtmlHandler : ICohtmlHandler {
         // Set up the Tags
         var avatarTags = isLocal ? PlayerSetup.Instance.ContentMetadata.TagsData : currentPlayer.ContentMetadata.TagsData;
         var sectionTags = attributesSection.AddSection("Tags", "", true);
-        if (avatarTags.AdminBanned) sectionTags.AddSection(nameof(avatarTags.AdminBanned));
-        if (avatarTags.Incompatible) sectionTags.AddSection(nameof(avatarTags.Incompatible));
         if (avatarTags.Gore) sectionTags.AddSection(nameof(avatarTags.Gore));
         if (avatarTags.Horror) sectionTags.AddSection(nameof(avatarTags.Horror));
         if (avatarTags.Jumpscare) sectionTags.AddSection(nameof(avatarTags.Jumpscare));

@@ -27,7 +27,7 @@ using MelonLoader;
 
 namespace Kafe.CCK.Debugger.Properties;
 internal static class AssemblyInfoParams {
-    public const string Version = "2.0.16";
+    public const string Version = "2.0.17";
     public const string Author = "kafeijao";
     public const string AstroDoge = "AstroDoge";
     public const string Name = "CCK.Debugger";

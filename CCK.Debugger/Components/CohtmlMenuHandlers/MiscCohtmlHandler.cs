@@ -174,14 +174,20 @@ public class MiscCohtmlHandler : ICohtmlHandler {
         _faceTrackingSection = core.AddSection("Face Tracking", true);
 
         var hasFaceTracking = FaceTrackingManager.Instance.IsEyeDataAvailable;
-        var eyeSection = _faceTrackingSection.AddSection("Eye Tracking");
+        var eyeSection = _faceTrackingSection.AddSection("Eye Module");
+        eyeSection.AddSection("Current Module Name").AddValueGetter(() => FaceTrackingManager.Instance.ActiveEyeModule?.GetModuleName() ?? "N/A");
+        eyeSection.AddSection("Current Module ShortName").AddValueGetter(() => FaceTrackingManager.Instance.ActiveEyeModule?.GetModuleShortName() ?? "N/A");
         eyeSection.AddSection("Data Available").AddValueGetter(() => ToString(hasFaceTracking()));
         eyeSection.AddSection("Gaze Direction").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().gazePoint.ToString("F2") : "N/A");
+        eyeSection.AddSection("Left Blink").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().blinkLeft.ToString("F2") : "N/A");
+        eyeSection.AddSection("Right Blink").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().blinkRight.ToString("F2") : "N/A");
 
-        // Todo: Add the new ft stuff
-        // var hasLipTracking = FaceTrackingManager.Instance.IsLipDataAvailable;
-        // var lipSection = _faceTrackingSection.AddSection("Lip Tracking");
-        // lipSection.AddSection("Data Available").AddValueGetter(() => ToString(hasLipTracking()));
+        var hasLipTracking = FaceTrackingManager.Instance.IsMouthDataAvailable;
+        var lipSection = _faceTrackingSection.AddSection("Mouth Module");
+        lipSection.AddSection("Current Module Name").AddValueGetter(() => FaceTrackingManager.Instance.ActiveMouthModule?.GetModuleName() ?? "N/A");
+        lipSection.AddSection("Current Module ShortName").AddValueGetter(() => FaceTrackingManager.Instance.ActiveMouthModule?.GetModuleShortName() ?? "N/A");
+        lipSection.AddSection("Data Available").AddValueGetter(() => ToString(hasLipTracking()));
+        // FaceTrackingManager.Instance.ActiveMouthModule.GetTrackingData()
         // for (var i = 0; i < 37; i++) {
         //     var shapeKeyIdx = i;
         //     lipSection.AddSection($"BlendShape {i}").AddValueGetter(() => hasLipTracking() ? FaceTrackingManager.Instance.GetFacialTrackingData().LipShapeData[shapeKeyIdx].ToString(CultureInfo.InvariantCulture) : "N/A");
