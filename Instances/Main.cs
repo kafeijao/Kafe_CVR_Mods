@@ -4,6 +4,7 @@ using System.Text;
 using ABI_RC.Core;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.EventSystem;
+using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.API;
@@ -188,9 +189,9 @@ public class Instances : MelonMod {
 
         if (ModConfig.MeRejoinLastInstanceOnGameRestart.Value
             && ModConfig.MeRejoinPreviousLocation.Value
-            && ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId != ""
+            && CVRInstances.CurrentInstanceId != ""
             && PlayerConfig?.LastInstance?.InstanceId != null
-            && PlayerConfig.LastInstance.InstanceId == ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId
+            && PlayerConfig.LastInstance.InstanceId == CVRInstances.CurrentInstanceId
             && BetterBetterCharacterController.Instance.CanFly()) {
 
             var pos = PlayerSetup.Instance.GetPlayerPosition();
@@ -200,7 +201,7 @@ public class Instances : MelonMod {
             var rot = PlayerSetup.Instance.GetPlayerRotation();
 
             PlayerConfig.RejoinLocation = new JsonRejoinLocation {
-                InstanceId = ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId,
+                InstanceId = CVRInstances.CurrentInstanceId,
                 AttemptToTeleport = true,
                 ClosedDateTime = DateTime.UtcNow,
                 Position = new JsonVector3(pos),
@@ -476,9 +477,9 @@ public class Instances : MelonMod {
             }
 
             if (isInitial) {
-                // If failed to find the instance -> Load the offline instance home world
-                MelonLogger.Msg($"Failed to join the previous Instance... Sending you to your offline home world.");
-                Content.LoadIntoWorld(MetaPort.Instance.homeWorldGuid);
+                // If failed to find the instance -> Fallback to the original behaviour
+                MelonLogger.Msg("Failed to join the previous Instance during initial join... fallback to the original initial instance join behaviour");
+                yield return LoginRoom.LoadPlayerChosenContent();
             }
 
             else {
@@ -497,7 +498,16 @@ public class Instances : MelonMod {
 
             // Load into the instance
             MelonLogger.Msg($"The previous instance {instanceDetails.Data.Name} is still up! Attempting to join...");
-            ABI_RC.Core.Networking.IO.Instancing.Instances.TryJoinInstance(instanceDetails.Data.Id, CVRInstances.JoinInstanceSource.Mod);
+            Task<bool> joinTask = CVRInstances.TryJoinInstanceAsync(instanceDetails.Data.Id, CVRInstances.JoinInstanceSource.Mod);
+            yield return new WaitUntil(() => joinTask.IsCompleted);
+            MelonLogger.Msg($"The previous instance join {(joinTask.Result ? "was successful" : "has failed")}");
+
+            // Fallback to the original behaviour if it's the initial join
+            if (!joinTask.Result && isInitial)
+            {
+                MelonLogger.Msg("Since it was the initial join, we're falling back to the original initial instance join behaviour");
+                yield return LoginRoom.LoadPlayerChosenContent();
+            }
         }
 
         _isChangingInstance = false;
@@ -505,7 +515,7 @@ public class Instances : MelonMod {
 
     internal static async Task SaveCurrentInstanceToken() {
         var baseResponse = await ApiConnection.MakeRequest<InstanceJoinResponse>(ApiConnection.ApiOperation.InstanceJoin, new {
-            instanceID = ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId,
+            instanceID = CVRInstances.CurrentInstanceId,
         });
         if (baseResponse is { Data: not null }) {
             // Check for token updates
@@ -671,9 +681,9 @@ public class Instances : MelonMod {
 
                 // Update current instance
                 MelonCoroutines.Start(UpdateLastInstance(
-                    ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId,
-                    ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId,
-                    ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceName,
+                    CVRInstances.CurrentWorldId,
+                    CVRInstances.CurrentInstanceId,
+                    CVRInstances.CurrentInstanceName,
                     CVRPlayerManager.Instance.NetworkPlayers.Count));
 
                 // Initialize the save config job when we reach an online instance
@@ -689,7 +699,7 @@ public class Instances : MelonMod {
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.X) <= 200000.0
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Y) <= 200000.0
                     && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Z) <= 200000.0
-                    && PlayerConfig.RejoinLocation.InstanceId == ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId
+                    && PlayerConfig.RejoinLocation.InstanceId == CVRInstances.CurrentInstanceId
                     && BetterBetterCharacterController.Instance.CanFly()) {
 
 
@@ -711,6 +721,32 @@ public class Instances : MelonMod {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_ReadPresenceUpdateFromNetwork)}");
                 MelonLogger.Error(e);
             }
+        }
+
+        /// <summary>
+        /// Accept the group instance joint prompt (to be here we must have accepted it before)
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ViewManager), nameof(ViewManager.ShowGroupModeratedInstanceAlert))]
+        public static bool Before_ViewManager_ShowGroupModeratedInstanceAlert(ref Task<bool> __result) {
+            try
+            {
+                if (_isChangingInstance)
+                {
+                    MelonLogger.Msg("Got a group alert during initial instance join, accepting the prompt...");
+
+                    // Force the async method to immediately succeed
+                    __result = Task.FromResult(true);
+
+                    // Skip original method entirely
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error(e);
+            }
+            return true;
         }
     }
 }
