@@ -1,6 +1,6 @@
 # MiniMe++
 
-[![Download Latest MiniMe++.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest MiniMe++.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CompanionProp.dll)
+[![Download Latest MiniMe++.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest MiniMe++.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/MiniMe++.dll)
 
 Adds functionality to MiniMe
 
