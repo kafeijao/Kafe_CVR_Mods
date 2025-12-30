@@ -1,0 +1,21 @@
+{
+  "_id": -1,
+  "name": "MiniMe++",
+  "modversion": "1.0.1",
+  "gameversion": "2025r181",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Adds more functionality to MiniMe.\n\n- Scale your own MiniMe\n- View other people's MiniMe (synced)\n  - Requires the other person to have the mod\n  - Requires the other person anchor mode to be set to playspace or worldspace\n  - Requires the other person MiniMe to be enabled :)\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MiniMe++) for more in-depth info.\n\n",
+  "searchtags": [
+    "mini",
+    "me",
+    "scale",
+    "sync"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/MiniMe++.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MiniMe++",
+  "changelog": "- Initial release",
+  "embedcolor": "16C60C"
+}

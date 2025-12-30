@@ -9,6 +9,7 @@
   <Project Path="Instances/Instances.csproj" />
   <Project Path="Logger++/Logger++.csproj" />
   <Project Path="MenuCSSLoader/MenuCSSLoader.csproj" />
+  <Project Path="MiniMe++\MiniMe++.csproj" />
   <Project Path="MinimizeWindows/MinimizeWindows.csproj" />
   <Project Path="NavMeshFollower/NavMeshFollower.csproj" />
   <Project Path="NavMeshTools/NavMeshTools.csproj" />
