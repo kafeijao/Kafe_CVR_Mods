@@ -15,6 +15,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed starting with 2x the same launch argument (this makes newer melon loader versions explode)",
+  "changelog": "- Fixed starting with 2x the same launch argument when restarting via button multiple times (this makes newer melon loader versions explode)",
   "embedcolor": "16C60C"
 }
