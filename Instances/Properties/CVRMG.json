@@ -1,7 +1,7 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.24",
+  "modversion": "1.0.25",
   "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,6 +15,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed initial join failing on group instances when the token expired (would cause getting stuck on a black screen)\n- Failing to join the initial instance (when available) will now fallback to the game normal handling instead of falling back into joining an offline instance",
+  "changelog": "- Fixed starting with 2x the same launch argument (this makes newer melon loader versions explode)",
   "embedcolor": "16C60C"
 }

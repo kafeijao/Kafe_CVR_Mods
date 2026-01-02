@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.UI.UILib;
 using ABI_RC.Systems.UI.UILib.UIObjects;
 using ABI_RC.Systems.UI.UILib.UIObjects.Components;
@@ -197,8 +198,14 @@ public static class ModConfig
         var restartOtherPlatformButton = categorySettings.AddButton(
             $"Restart in {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}",
             GetName(MetaPort.Instance.isUsingVr ? Icon.RestartDesktop : Icon.RestartVR),
-            "Restart but switch the platform.");
+            $"Restart while switching mode to {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}");
         restartOtherPlatformButton.OnPress += () => MelonCoroutines.Start(RestartCVR(true));
+        CVRGameEventSystem.VRModeSwitch.OnPostSwitch.AddListener(isUsingVR =>
+        {
+            restartOtherPlatformButton.ButtonText = $"Restart in {(isUsingVR ? "Desktop" : "VR")}";
+            restartOtherPlatformButton.ButtonIcon = GetName(isUsingVR ? Icon.RestartDesktop : Icon.RestartVR);
+            restartOtherPlatformButton.ButtonTooltip = $"Restart while switching mode to {(MetaPort.Instance.isUsingVr ? "Desktop" : "VR")}";
+        });
 
         var configureHistoryLimit = categorySettings.AddButton("Set History Limit", GetName(Icon.History),
             "Define the number of instance to remember, needs to be between 4 and 24.");
@@ -244,15 +251,21 @@ public static class ModConfig
             var cvrArgs = "@()";
             var envArguments = Environment.GetCommandLineArgs().Skip(1).ToList();
 
-            envArguments.Add(Instances.RestartedWithInstancesMod);
+            if (!Instances.HasCommandLineArg(Instances.RestartedWithInstancesMod))
+                envArguments.Add(Instances.RestartedWithInstancesMod);
 
-            // Handle platform switches
+            bool shouldUseVr = MetaPort.Instance.isUsingVr;
             if (switchPlatform)
+                shouldUseVr = !shouldUseVr;
+            if (shouldUseVr)
+            {
+                if (!envArguments.Contains(VREnvArg))
+                    envArguments.Add(VREnvArg);
+            }
+            else
             {
                 if (envArguments.Contains(VREnvArg))
                     envArguments.Remove(VREnvArg);
-                else
-                    envArguments.Add(VREnvArg);
             }
 
             if (envArguments.Count > 0)

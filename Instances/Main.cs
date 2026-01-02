@@ -569,7 +569,7 @@ public class Instances : MelonMod {
         return false;
     }
 
-    private static bool HasCommandLineArg(string arg)
+    public static bool HasCommandLineArg(string arg)
     {
         foreach (string commandLineArg in Environment.GetCommandLineArgs()) {
             if (commandLineArg.Contains(arg))
