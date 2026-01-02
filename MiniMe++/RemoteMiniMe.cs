@@ -58,6 +58,13 @@ public class RemoteMiniMe
             miniMe.UpdatePosition(false);
     }
 
+    public static void NukeAll()
+    {
+        foreach (RemoteMiniMe miniMe in MiniMes.Values)
+            miniMe.DestroyClone();
+        MiniMes.Clear();
+    }
+
     public static void ShowFromNetwork(bool isUnreliableUpdate, Networking.RemoteMiniMeInfo remoteMiniMeInfo)
     {
         bool changedAttachType = false;
@@ -66,7 +73,6 @@ public class RemoteMiniMe
             // Let's not use unreliable updates to initialize it
             if (isUnreliableUpdate) return;
 
-            // Create hardcoded miniMe
             miniMe = new RemoteMiniMe
             {
                 _currentInfo = remoteMiniMeInfo,
@@ -93,7 +99,9 @@ public class RemoteMiniMe
             miniMe._avatar = remoteMiniMeInfo.Player.PuppetMaster.AvatarDescriptor;
         }
 
-        miniMe.CreateMiniMeIfNeeded();
+        // Only create mini me on reliable packets
+        if (!isUnreliableUpdate)
+            miniMe.CreateMiniMeIfNeeded();
 
         // Skip interpolation if we're changing attach type
         miniMe.UpdatePosition(changedAttachType);
@@ -162,7 +170,9 @@ public class RemoteMiniMe
                 break;
 
             case Networking.AttachType.Invalid:
+                #if DEBUG
                 MelonLogger.Warning("Invalid attach mode!");
+                #endif
                 return;
 
             default:
@@ -188,14 +198,18 @@ public class RemoteMiniMe
 
         if (!animator.isHuman)
         {
+            #if DEBUG
             MelonLogger.Warning($"Attempted to attach to {bone}, but the animator is not human");
+            #endif
             return;
         }
 
         Transform boneTransform = animator.GetBoneTransform(bone);
         if (!boneTransform)
         {
+            #if DEBUG
             MelonLogger.Warning($"Attempted to attach to {bone}, but the bone was not found");
+            #endif
             return;
         }
 
@@ -207,7 +221,9 @@ public class RemoteMiniMe
         if (_remotePlayerClone != null && !_remotePlayerClone.IsDestroyed)
         {
             ContentCloneManager.DestroyClone(_remotePlayerClone);
+            #if DEBUG
             MelonLogger.Msg($"Deleted MiniMe for {_currentInfo.Player?.Username}");
+            #endif
         }
         _remotePlayerClone = null;
 
@@ -220,17 +236,11 @@ public class RemoteMiniMe
     {
         var player = _currentInfo.Player;
         if (player == null)
-        {
-            MelonLogger.Warning("Failed to create MiniMe, Remote player is null");
             return;
-        }
 
         var avatarObject = player.PuppetMaster.AvatarObject;
         if (!avatarObject)
-        {
-            MelonLogger.Warning($"Failed to create MiniMe, the remote Avatar Object is null for {player.Username}");
             return;
-        }
 
         // Create the clone if needed
         if (!_cloneHolderObject || _remotePlayerClone == null || _remotePlayerClone.IsDestroyed)
@@ -241,7 +251,9 @@ public class RemoteMiniMe
 
             if (_remotePlayerClone == null)
             {
+                #if DEBUG
                 MelonLogger.Warning($"Failed to create MiniMe, failed to Create Clone for {player.Username}");
+                #endif
                 return;
             }
 
@@ -264,7 +276,9 @@ public class RemoteMiniMe
             _cloneHolderObject.transform.SetParent(null, true);
             _cloneHolderObject.SetActive(true);
 
+            #if DEBUG
             MelonLogger.Msg($"Created MiniMe for {player.Username}");
+            #endif
         }
     }
 }

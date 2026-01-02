@@ -26,6 +26,9 @@ public static class Networking
     private static ScheduledJob _sendUpdateJob;
     private static float _currentTickRate = MetaPort.SystemTickRate;
 
+    private static float _staleTime;
+    private const float StaleTimeThreshold = 5f;
+
     public readonly struct RemoteMiniMeInfo(
         CVRPlayerEntity player,
         AttachType attachType,
@@ -42,11 +45,32 @@ public static class Networking
 
     public static void Initialize()
     {
-        ModNetworkManager.Subscribe(ModGuid, msg => OnMessage(msg, false));
-        ModNetworkManager.Subscribe(ModGuid2, msg => OnMessage(msg, true));
+        UpdateMsgSubscriptions();
 
         // Send our state for late joiners
         CVRGameEventSystem.Player.OnJoinEntity.AddListener(player => SendUpdate(player.Uuid));
+    }
+
+    private static bool _isSubscribed;
+
+    public static void UpdateMsgSubscriptions()
+    {
+        // We're already subscribed
+        if (_isSubscribed == ModConfig.MeMiniSynced.Value)
+            return;
+
+        if (ModConfig.MeMiniSynced.Value)
+        {
+            ModNetworkManager.Subscribe(ModGuid, msg => OnMessage(msg, false));
+            ModNetworkManager.Subscribe(ModGuid2, msg => OnMessage(msg, true));
+            _isSubscribed = true;
+        }
+        else
+        {
+            ModNetworkManager.Unsubscribe(ModGuid);
+            ModNetworkManager.Unsubscribe(ModGuid2);
+            _isSubscribed = false;
+        }
     }
 
     public static void MiniMeInitialize()
@@ -94,6 +118,7 @@ public static class Networking
     public static void SendUpdate(string specificUserId = null)
     {
         if (_isLocalMiniMeEnabled
+            && ModConfig.MeMiniSynced.Value
             && MiniMe._cloneHolderObject != null && MiniMe._cloneHolderObject.activeSelf
             && MiniMe._currentAnchorMode != MiniMe.AnchorMode.QuickMenu)
         {
@@ -105,24 +130,33 @@ public static class Networking
         }
     }
 
-    public static void SendUnreliableUpdateIfNecessary()
+    private static void SendUnreliableUpdateIfNecessary()
     {
-        if (MiniMe._cloneHolderObject != null && MiniMe._cloneHolderObject.activeSelf &&
-            MiniMe._currentAnchorMode != MiniMe.AnchorMode.QuickMenu)
+        if (_isSubscribed
+            && _isLocalMiniMeEnabled
+            && MiniMe._cloneHolderObject != null
+            && MiniMe._cloneHolderObject.activeSelf
+            && MiniMe._currentAnchorMode != MiniMe.AnchorMode.QuickMenu)
         {
-            // In World Space only send updates if being grabbed
-            if (MiniMe._currentAnchorMode == MiniMe.AnchorMode.WorldSpacePickup)
+            // Only do skip checks if our last update is not stale
+            if (Time.time < _staleTime)
             {
-                CVRPickupObject cloneHolderPickup = MiniMe._cloneHolderObject.GetComponent<CVRPickupObject>();
-                if (!cloneHolderPickup.IsGrabbedByMe) return;
+                // In World Space only send updates if being grabbed
+                if (MiniMe._currentAnchorMode == MiniMe.AnchorMode.WorldSpacePickup)
+                {
+                    CVRPickupObject cloneHolderPickup = MiniMe._cloneHolderObject.GetComponent<CVRPickupObject>();
+                    if (!cloneHolderPickup.IsGrabbedByMe) return;
+                }
             }
+
+            _staleTime = Time.time + StaleTimeThreshold;
 
             // Otherwise always send (queue to late in the frame so the IK and stuff are accurate)
             MetaPort.Instance.StartCoroutine(SendUnreliableUpdateIfNecessaryRoutine());
         }
     }
 
-    public static IEnumerator SendUnreliableUpdateIfNecessaryRoutine()
+    private static IEnumerator SendUnreliableUpdateIfNecessaryRoutine()
     {
         yield return new WaitForEndOfFrame();
         SendShowUpdate(true, null);
@@ -130,6 +164,9 @@ public static class Networking
 
     private static void SendShowUpdate(bool isUpdate, string specificUserId)
     {
+        if (!_isSubscribed)
+            return;
+
         if (!NetworkManager.Instance.IsConnectedToGameNetwork())
             return;
 
@@ -251,6 +288,9 @@ public static class Networking
 
     private static void SendHideUpdate(string specificUserId)
     {
+        if (!_isSubscribed)
+            return;
+
         if (!NetworkManager.Instance.IsConnectedToGameNetwork())
             return;
 

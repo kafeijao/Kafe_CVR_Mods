@@ -12,9 +12,9 @@ public static class ModConfig
     private static MelonPreferences_Category _melonCategory;
 
     public static MelonPreferences_Entry<float> MeMiniMeScaleMultiplier;
-    // public static MelonPreferences_Entry<bool> MeMiniSynced;
+    public static MelonPreferences_Entry<bool> MeMiniSynced;
 
-    // public static ToggleButton IsSynced;
+    public static ToggleButton IsSynced;
     public static SliderFloat ScaledMultiplier;
 
     public static void InitializeMelonPrefs()
@@ -32,28 +32,22 @@ public static class ModConfig
             Networking.SendUpdate();
         });
 
-        // MeMiniSynced = _melonCategory.CreateEntry("MiniSynced", true,
-        //     description: "Whether should sync all MiniMe or not.");
-        // MeMiniSynced.OnEntryValueChanged.Subscribe((oldValue, newValue) =>
-        // {
-        //     if (oldValue == newValue) return;
-        //     if (IsSynced != null)
-        //         IsSynced.ToggleValue = newValue;
-        // });
+        MeMiniSynced = _melonCategory.CreateEntry("MiniSynced", true,
+            description: "Whether should sync all MiniMe (yours and others) or not.");
+        MeMiniSynced.OnEntryValueChanged.Subscribe((oldValue, newValue) =>
+        {
+            if (oldValue == newValue) return;
+            if (IsSynced != null)
+                IsSynced.ToggleValue = newValue;
+            Networking.SendUpdate();
+            if (!newValue)
+                RemoteMiniMe.NukeAll();
+            Networking.UpdateMsgSubscriptions();
+        });
     }
 
     public static void InitializeUILibMenu()
     {
-        // This button is stupid
-        // IsSynced = CVR_MenuManager.CVRUtilsCategory.AddToggle(
-        //     "MiniMe Synced",
-        //     "Whether should sync all MiniMe or not",
-        //     MeMiniSynced.Value);
-        // IsSynced.OnValueUpdated += newValue =>
-        // {
-        //     MeMiniSynced.Value = newValue;
-        // };
-
         ScaledMultiplier = CVR_MenuManager.CVRUtilsCategory.AddSlider(
             "MiniMe Scale",
             "",
@@ -68,6 +62,15 @@ public static class ModConfig
         ScaledMultiplier.OnValueUpdated += newValue =>
         {
             MeMiniMeScaleMultiplier.Value = newValue;
+        };
+
+        IsSynced = CVR_MenuManager.CVRUtilsCategory.AddToggle(
+            "MiniMe Synced",
+            "Whether should sync all MiniMe (yours and others) or not",
+            MeMiniSynced.Value);
+        IsSynced.OnValueUpdated += newValue =>
+        {
+            MeMiniSynced.Value = newValue;
         };
     }
 }

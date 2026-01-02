@@ -1,7 +1,7 @@
 {
   "_id": 275,
   "name": "MiniMe++",
-  "modversion": "1.0.1",
+  "modversion": "1.0.2",
   "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -16,6 +16,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/MiniMe++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MiniMe++",
-  "changelog": "- Initial release",
+  "changelog": "- Removed log spam\n- Fixed disabling the MiniMe sometimes not clearing it on remote people\n- Added button to whether sync or not the MiniMe (fully disables sending and receiving network updates)",
   "embedcolor": "16C60C"
 }
