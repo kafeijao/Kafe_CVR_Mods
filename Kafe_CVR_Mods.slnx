@@ -24,4 +24,5 @@
   <Project Path="SteamAudioOverrides/SteamAudioOverrides.csproj" />
   <Project Path="TeleportRequest/TeleportRequest.csproj" />
   <Project Path="TheClapper/TheClapper.csproj" />
+  <Project Path="YoutubeFixSABR\YoutubeFixSABR.csproj" />
 </Solution>

@@ -1,0 +1,23 @@
+{
+  "_id": -1,
+  "name": "YoutubeFixSABR",
+  "modversion": "0.0.1",
+  "gameversion": "2025r181",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Fixes youtube urls not loading on the video player due lack of SABR streaming\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR) for more in-depth info.",
+  "searchtags": [
+    "yt-dlp",
+    "yt",
+    "youtube",
+    "fix",
+    "video",
+    "player"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/YoutubeFixSABR.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR",
+  "changelog": "- Initial Release",
+  "embedcolor": "16C60C"
+}
