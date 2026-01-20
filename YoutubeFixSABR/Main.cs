@@ -67,9 +67,16 @@ public class YoutubeFixSABR : MelonMod
         {
             try
             {
+                string lower =  original.ToLower();
+                if (!lower.Contains("youtube.com") && !lower.Contains("youtu.be"))
+                {
+                    MelonLogger.Msg($"Skipping since it's not a youtube video, using the original yt-dlp args: {original}");
+                    return original;
+                }
+
                 if (!ModConfig.Enabled)
                 {
-                    MelonLogger.Msg($"Mod is disabled on settings, using the original yt-dlp args: {original}");
+                    MelonLogger.Msg($"Skipping since Mod is disabled on settings, using the original yt-dlp args: {original}");
                     return original;
                 }
 
