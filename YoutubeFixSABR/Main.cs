@@ -14,6 +14,7 @@ public class YoutubeFixSABR : MelonMod
 
     public override void OnInitializeMelon()
     {
+        ModConfig.InitializeMelonPrefs();
         MelonCoroutines.Start(EnsureDeno());
         RunPatches();
     }
@@ -66,15 +67,52 @@ public class YoutubeFixSABR : MelonMod
         {
             try
             {
+                if (!ModConfig.Enabled)
+                {
+                    MelonLogger.Msg($"Mod is disabled on settings, using the original yt-dlp args: {original}");
+                    return original;
+                }
+
                 MelonLogger.Msg($"About to call yt-dlp with the args: {original}");
 
                 // Remove un-wanted args
-                original = original.Replace(" --impersonate=Safari-15.3", "");
-                original = original.Replace(" --extractor-arg \"youtube:player_client=web\"", "");
+                if (ModConfig.UseCustomArgs)
+                {
+                    foreach (string argToRemove in ModConfig.ArgsToRemove)
+                        original = original.Replace(argToRemove, "");
+                }
+                else
+                {
+                    original = original.Replace(" --impersonate=Safari-15.3", "");
+                    original = original.Replace(" --extractor-arg \"youtube:player_client=web\"", "");
+                }
+
+                // if (!ModConfig.PreferWebM)
+                //     original = original.Replace("[ext=webm]", "");
+                //
+                // if (!ModConfig.DisallowAV1)
+                //     original = original.Replace("[vcodec!^=av01]", "");
+                //
+                // if (!ModConfig.ForceDash)
+                //     original = original.Replace("[protocol!=http_dash_segments]", "");
+                //
+                // foreach ((int formatId, bool ignore) in ModConfig.IgnoreFormats)
+                // {
+                //     if (!ignore)
+                //         original = original.Replace($"[format_id!={formatId}]", "");
+                // }
 
                 // Add our args
-                original += $" --js-runtimes \"deno:{DenoExePath}\"";
-                original += " --extractor-args \"youtube:player-client=default,-web_safari\"";
+                if (ModConfig.UseCustomArgs)
+                {
+                    foreach (string argToAdd in ModConfig.ArgsToAdd)
+                        original += argToAdd;
+                }
+                else
+                {
+                    original += $" --js-runtimes \"deno:{DenoExePath}\"";
+                    original += " --extractor-args \"youtube:player-client=default,-web_safari\"";
+                }
 
                 MelonLogger.Msg($"Replaced with our args: {original}");
             }

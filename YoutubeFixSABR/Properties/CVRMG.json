@@ -1,12 +1,12 @@
 {
   "_id": -1,
   "name": "YoutubeFixSABR",
-  "modversion": "0.0.1",
+  "modversion": "0.0.2",
   "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Fixes youtube urls not loading on the video player due lack of SABR streaming\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR) for more in-depth info.",
+  "description": "Fixes youtube urls not loading on the video player due lack of SABR streaming support. It downloads deno.exe and modify the yt-dlp args to make use of it.\n\n- **Note1:** This downloads the js runtime deno.exe onto the mod data folder\n- **Note2:** The videos will be crusty, like 360p level of crusty. I couldn't find args to get good quality mux supported formats\n- **Note3:** You can customize the arguments to remove and add in melon prefs (file only). If you do find args that makes the videos work and are not crusty, please do share\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR) for more in-depth info.",
   "searchtags": [
     "yt-dlp",
     "yt",
