@@ -12,6 +12,19 @@ public class YoutubeFixSABR : MelonMod
     public static readonly string UserDataFolderPath = Path.GetFullPath(Path.Combine("UserData", nameof(YoutubeFixSABR)));
     public static readonly string DenoExePath = Path.Combine(UserDataFolderPath, "deno.exe");
 
+    public static readonly List<string> ArgsToRemove = new List<string>();
+
+    public static readonly List<string> ArgsToAdd = new List<string>
+    {
+        $" --js-runtimes \"deno:{DenoExePath}\"",
+    };
+
+    public static string LastCvrVideoResolverHashUrl;
+    public static string LastCvrVideoResolverExecutableUrl;
+
+    public static string NightlyVideoResolverHashUrl;
+    public static string NightlyVideoResolverExecutableUrl;
+
     public override void OnInitializeMelon()
     {
         ModConfig.InitializeMelonPrefs();
@@ -37,6 +50,61 @@ public class YoutubeFixSABR : MelonMod
         );
 
         MelonLogger.Msg("Patches ran successfully!");
+    }
+
+    public static void UpdateYoutubeDlLinks()
+    {
+        if (!ModConfig.Enabled)
+        {
+            MelonLogger.Msg($"Skipping Updating YoutubeDl Links since Mod is disabled on settings");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(NightlyVideoResolverHashUrl))
+        {
+            MelonLogger.Msg("Skipping UpdateYoutubeDlLinks, oo Nightly Video Resolver Hash URL provided yet. " +
+                            "This should only happen if you're not logged in the game.");
+            return;
+        }
+
+        if (ModConfig.UseNightly)
+        {
+            YoutubeDl.VideoResolverHashUrl = NightlyVideoResolverHashUrl;
+            YoutubeDl.VideoResolverExecutableUrl = NightlyVideoResolverExecutableUrl;
+            MelonLogger.Msg($"Nightly yt-dlp setting enabled, using the nightly yt-dlp: {NightlyVideoResolverExecutableUrl}");
+        }
+        else
+        {
+            YoutubeDl.VideoResolverHashUrl = LastCvrVideoResolverHashUrl;
+            YoutubeDl.VideoResolverExecutableUrl = LastCvrVideoResolverExecutableUrl;
+            MelonLogger.Msg($"Nightly setting disabled, using the default cvr yt-dlp link: {LastCvrVideoResolverExecutableUrl}");
+        }
+    }
+
+    [HarmonyPatch]
+    private class HarmonyPatches
+    {
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(YoutubeDl), nameof(YoutubeDl.UpdateVideoResolver))]
+        private static void Before_YoutubeDl_UpdateVideoResolver()
+        {
+            try
+            {
+                // Cache results from last upload call (happens on login)
+                LastCvrVideoResolverHashUrl = YoutubeDl.VideoResolverHashUrl;
+                LastCvrVideoResolverExecutableUrl = YoutubeDl.VideoResolverExecutableUrl;
+
+                // Cache the nightly versions of it
+                NightlyVideoResolverHashUrl = YoutubeDl.VideoResolverHashUrl.Replace("yt-dlp/yt-dlp", "yt-dlp/yt-dlp-nightly-builds");
+                NightlyVideoResolverExecutableUrl = YoutubeDl.VideoResolverExecutableUrl.Replace("yt-dlp/yt-dlp", "yt-dlp/yt-dlp-nightly-builds");
+
+                UpdateYoutubeDlLinks();
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error executing {nameof(Before_YoutubeDl_UpdateVideoResolver)} Patch", e);
+            }
+        }
     }
 
     private static class YoutubeDlPatch
@@ -83,43 +151,12 @@ public class YoutubeFixSABR : MelonMod
                 MelonLogger.Msg($"About to call yt-dlp with the args: {original}");
 
                 // Remove un-wanted args
-                if (ModConfig.UseCustomArgs)
-                {
-                    foreach (string argToRemove in ModConfig.ArgsToRemove)
-                        original = original.Replace(argToRemove, "");
-                }
-                else
-                {
-                    original = original.Replace(" --impersonate=Safari-15.3", "");
-                    original = original.Replace(" --extractor-arg \"youtube:player_client=web\"", "");
-                }
-
-                // if (!ModConfig.PreferWebM)
-                //     original = original.Replace("[ext=webm]", "");
-                //
-                // if (!ModConfig.DisallowAV1)
-                //     original = original.Replace("[vcodec!^=av01]", "");
-                //
-                // if (!ModConfig.ForceDash)
-                //     original = original.Replace("[protocol!=http_dash_segments]", "");
-                //
-                // foreach ((int formatId, bool ignore) in ModConfig.IgnoreFormats)
-                // {
-                //     if (!ignore)
-                //         original = original.Replace($"[format_id!={formatId}]", "");
-                // }
+                foreach (string argToRemove in ModConfig.UseCustomArgs ? ModConfig.CustomArgsToRemove : ArgsToRemove)
+                    original = original.Replace(argToRemove, "");
 
                 // Add our args
-                if (ModConfig.UseCustomArgs)
-                {
-                    foreach (string argToAdd in ModConfig.ArgsToAdd)
-                        original += argToAdd;
-                }
-                else
-                {
-                    original += $" --js-runtimes \"deno:{DenoExePath}\"";
-                    original += " --extractor-args \"youtube:player-client=default,-web_safari\"";
-                }
+                foreach (string argToAdd in ModConfig.UseCustomArgs ? ModConfig.CustomArgsToAdd : ArgsToAdd)
+                    original += argToAdd;
 
                 MelonLogger.Msg($"Replaced with our args: {original}");
             }

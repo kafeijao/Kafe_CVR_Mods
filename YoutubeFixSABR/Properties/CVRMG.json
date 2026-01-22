@@ -1,19 +1,21 @@
 {
-  "_id": -1,
+  "_id": 280,
   "name": "YoutubeFixSABR",
-  "modversion": "0.0.2",
+  "modversion": "1.0.0",
   "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
-  "description": "Fixes youtube urls not loading on the video player due lack of SABR streaming support. It downloads deno.exe and modify the yt-dlp args to make use of it.\n\n- **Note1:** This downloads the js runtime deno.exe onto the mod data folder\n- **Note2:** The videos will be crusty, like 360p level of crusty. I couldn't find args to get good quality mux supported formats\n- **Note3:** You can customize the arguments to remove and add in melon prefs (file only). If you do find args that makes the videos work and are not crusty, please do share\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR) for more in-depth info.",
+  "description": "Fixes youtube urls not loading on the video player due lack of SABR streaming support. It downloads deno.exe and modify the yt-dlp args to make use of it.\n\n- **Note1:** This downloads the js runtime deno.exe onto the mod data folder\n- **Note2:** By default this uses the nightly yt-dlp since the current stable results in crusty quality (there is a setting to disable nightly)\n- **Note3:** You can customize the arguments to remove and add in melon prefs (file only)\n\n-# Check [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR) for more in-depth info.",
   "searchtags": [
     "yt-dlp",
     "yt",
     "youtube",
     "fix",
     "video",
-    "player"
+    "player",
+    "SABR",
+    "url"
   ],
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/YoutubeFixSABR.dll",

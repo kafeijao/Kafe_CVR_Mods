@@ -10,20 +10,8 @@ Fixes the SABR issue that causes youtube not loading in video players. This work
    download logic as the official deno installer https://github.com/denoland/deno_install/blob/master/install.ps1 but we
    __exclude__ writing the Path env vars
 2. Changes CVR's yt-dlp arguments:
-    - Removes `--impersonate=Safari-15.3`
-    - Removes `--extractor-arg "youtube:player_client=web"`
     - Adds `--js-runtimes "deno:<ChilloutVR\UserData\YoutubeFixSABR\deno.exe>"`
-    - Adds `--extractor-args "youtube:player-client=default,-web_safari"`
-
-I yoinked the fix from: <https://github.com/yt-dlp/yt-dlp/issues/15569#issuecomment-3756488415>
-
-## Garbo quality
-
-Currently, CVR filters out the good quality options by iterating over the available formats and ignoring any that
-doesn't have both audio and video (the way it's currently setup it doesn't allow separated video and audio formats)
-
-You can customize the arguments being used (look at the next topic), if you do find arguments that make the quality not
-trash, please do share them on the CVRMG discord
+3. Changes the game to download the nightly version of yt-dlp instead of stable
 
 ## Customize Arguments
 
