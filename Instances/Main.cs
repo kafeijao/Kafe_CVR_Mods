@@ -457,9 +457,9 @@ public class Instances : MelonMod {
 
         _isChangingInstance = true;
 
-        var task = ApiConnection.MakeRequest<InstanceDetailsResponse>(ApiConnection.ApiOperation.InstanceDetail, new { instanceID = instanceId });
+        Task<BaseResponse<InstanceDetailsResponse>> task = CVRInstances.GetInstanceDetailsAsync(instanceId);
         yield return new WaitUntil(() => task.IsCompleted);
-        var instanceDetails = task.Result;
+        BaseResponse<InstanceDetailsResponse> instanceDetails = task.Result;
 
         var hasOtherUsers = instanceDetails?.Data?.Members?.Exists(u => u.Name != AuthManager.Username);
 
@@ -527,17 +527,30 @@ public class Instances : MelonMod {
 
     private static IEnumerator LoadWorldUsingToken(JsonConfigInstance instanceInfo) {
 
-        // I don't know why, but on r173 vivox won't connect when joining using the token... prob race condition
-        yield return new WaitForSeconds(2f);
+        // // I don't know why, but on r173 vivox won't connect when joining using the token... prob race condition
+        // yield return new WaitForSeconds(2f);
+
+        // Get instance details
+        Task<BaseResponse<InstanceDetailsResponse>> getInstanceDetailsTask = CVRInstances.GetInstanceDetailsAsync(instanceInfo.InstanceId);
+        yield return new WaitUntil(() => getInstanceDetailsTask.IsCompleted);
+        BaseResponse<InstanceDetailsResponse> instanceDetails = getInstanceDetailsTask.Result;
 
         CVRInstances.RequestedInstance = instanceInfo.InstanceId;
         Content.LoadIntoWorld(instanceInfo.WorldId);
-        // This fixes more bs race conditions
-        yield return new WaitForSeconds(0.2f);
-        CVRInstances.RequestedInstance = instanceInfo.InstanceId;
+        CVRInstances.OverrideWorldId = string.Empty;
         CVRInstances.InstanceJoinJWT = instanceInfo.JoinToken.Token;
         CVRInstances.Fqdn = instanceInfo.JoinToken.FQDN;
         CVRInstances.Port = instanceInfo.JoinToken.Port;
+
+        if (instanceDetails.HasValidData && instanceDetails.Data != null)
+        {
+            CVRInstances.InstancesJoinInfo[instanceInfo.InstanceId] = new CVRInstances.JoinInfo(instanceDetails.Data, DateTime.UtcNow, true);
+        }
+        else
+        {
+            MelonLogger.Warning($"Failed to fetch the instance info when joining using the token, " +
+                                $"some game functionality might break (for example instance type param stream)");
+        }
     }
 
     private static bool _skipInitialLoad;

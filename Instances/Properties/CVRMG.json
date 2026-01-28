@@ -1,7 +1,7 @@
 {
   "_id": 133,
   "name": "Instances",
-  "modversion": "1.0.25",
+  "modversion": "1.0.26",
   "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -15,6 +15,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed starting with 2x the same launch argument when restarting via button multiple times (this makes newer melon loader versions explode)",
+  "changelog": "- Fixed rejoining instance using ticket making instAnce type parameter stream not work properly sometimes",
   "embedcolor": "16C60C"
 }
