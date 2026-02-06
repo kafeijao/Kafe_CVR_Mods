@@ -1,7 +1,7 @@
 {
   "_id": 280,
   "name": "YoutubeFixSABR",
-  "modversion": "1.0.0",
+  "modversion": "1.0.1",
   "gameversion": "2025r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -20,6 +20,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/YoutubeFixSABR.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/YoutubeFixSABR",
-  "changelog": "- Initial Release",
+  "changelog": "- Added hack to work in MelonLoader 0.7.1",
   "embedcolor": "16C60C"
 }

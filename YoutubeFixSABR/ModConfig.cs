@@ -55,7 +55,7 @@ public static class ModConfig
         });
         CustomArgsToAdd = customArgsToAddEntry.Value;
 
-        MelonLogger.Msg($"Using the {(UseNightly ? "cvr default" : "nightly")} version of yt-dlp");
+        MelonLogger.Msg($"Using the {(UseNightly ? "nightly" : "cvr default")} version of yt-dlp");
         if (UseCustomArgs)
         {
             MelonLogger.Msg("Using custom args");

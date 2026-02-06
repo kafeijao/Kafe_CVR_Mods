@@ -25,7 +25,7 @@ public class YoutubeFixSABR : MelonMod
     public static string NightlyVideoResolverHashUrl;
     public static string NightlyVideoResolverExecutableUrl;
 
-    public override void OnInitializeMelon()
+    public override void OnLateInitializeMelon()
     {
         ModConfig.InitializeMelonPrefs();
         MelonCoroutines.Start(EnsureDeno());
