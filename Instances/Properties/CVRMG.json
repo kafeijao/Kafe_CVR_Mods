@@ -15,6 +15,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Instances.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Instances",
-  "changelog": "- Fixed rejoining instance using ticket making instAnce type parameter stream not work properly sometimes",
+  "changelog": "- Possibly fixed the Instance World change feature to teleport you when it shouldn't",
   "embedcolor": "16C60C"
 }

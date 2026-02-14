@@ -64,11 +64,14 @@ public class MiniMePlusPlus : MelonMod
                     return;
 
                 Transform transform = MiniMe._cloneHolderObject.transform;
+                CapsuleCollider collider = MiniMe._cloneHolderObject.GetComponent<CapsuleCollider>();
                 switch (MiniMe._currentAnchorMode)
                 {
                     case MiniMe.AnchorMode.QuickMenu:
+                        collider.enabled = false;
                         break;
                     case MiniMe.AnchorMode.PlaySpacePickup:
+                        collider.enabled = true;
                         var localScalePlaySpace = Vector3.one * ModConfig.MeMiniMeScaleMultiplier.Value;
                         if (localScalePlaySpace != transform.localScale)
                         {
@@ -77,6 +80,7 @@ public class MiniMePlusPlus : MelonMod
                         }
                         break;
                     case MiniMe.AnchorMode.WorldSpacePickup:
+                        collider.enabled = true;
                         var localScaleWorldSpace = Vector3.one * ModConfig.MeMiniMeScaleMultiplier.Value;
                         if (localScaleWorldSpace != transform.localScale)
                         {
