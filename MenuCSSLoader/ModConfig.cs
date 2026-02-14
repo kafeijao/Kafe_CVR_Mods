@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using MelonLoader;
 
-namespace MenuCSSLoader;
+namespace Kafe.MenuCSSLoader;
 
 public static class ModConfig {
 

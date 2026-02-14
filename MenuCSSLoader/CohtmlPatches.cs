@@ -3,7 +3,7 @@ using ABI_RC.Core.UI.UIRework.Managers;
 using HarmonyLib;
 using MelonLoader;
 
-namespace MenuCSSLoader;
+namespace Kafe.MenuCSSLoader;
 
 internal static class CohtmlPatches {
 

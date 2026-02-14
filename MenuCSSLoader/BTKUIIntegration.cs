@@ -5,7 +5,7 @@ using ABI_RC.Systems.UI.UILib.UIObjects.Components;
 using ABI_RC.Systems.UI.UILib.UIObjects.Objects;
 using MelonLoader;
 
-namespace MenuCSSLoader
+namespace Kafe.MenuCSSLoader
 {
     internal static class BTKUIIntegration
     {

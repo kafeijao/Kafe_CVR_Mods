@@ -1,18 +1,18 @@
 ﻿using System.Reflection;
-using Kafe.Test.Properties;
+using Kafe.MenuCSSLoader.Properties;
 using MelonLoader;
 
 
 [assembly: AssemblyVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfoParams.Version)]
 [assembly: AssemblyInformationalVersion(AssemblyInfoParams.Version)]
-[assembly: AssemblyTitle(nameof(Kafe.Test))]
+[assembly: AssemblyTitle(nameof(Kafe.MenuCSSLoader))]
 [assembly: AssemblyCompany(AssemblyInfoParams.Author)]
-[assembly: AssemblyProduct(nameof(Kafe.Test))]
+[assembly: AssemblyProduct(nameof(Kafe.MenuCSSLoader))]
 
 [assembly: MelonInfo(
-    typeof(MenuCSSLoader.MenuCSSLoader),
-    nameof(MenuCSSLoader.MenuCSSLoader),
+    typeof(Kafe.MenuCSSLoader.MenuCSSLoader),
+    nameof(Kafe.MenuCSSLoader),
     AssemblyInfoParams.Version,
     AssemblyInfoParams.Author,
     downloadLink: "https://github.com/kafeijao/Kafe_CVR_Mods"
@@ -25,7 +25,7 @@ using MelonLoader;
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 [assembly: MelonAdditionalCredits(AssemblyInfoParams.JillTheSomething)]
 
-namespace Kafe.Test.Properties;
+namespace Kafe.MenuCSSLoader.Properties;
 internal static class AssemblyInfoParams {
     public const string Version = "1.1.1";
     public const string Author = "kafeijao";

@@ -4,7 +4,7 @@ using ABI_RC.Systems.InputManagement;
 using MelonLoader;
 using UnityEngine;
 
-namespace MenuCSSLoader;
+namespace Kafe.MenuCSSLoader;
 
 public class MenuCSSLoader : MelonMod
 {
