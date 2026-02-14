@@ -196,12 +196,12 @@ public class Instances : MelonMod {
 
             var pos = PlayerSetup.Instance.GetPlayerPosition();
             // Don't save the rejoining location if the location is invalid...
-            if (pos.IsBad()) return;
-            if (Vector3.Distance(Vector3.zero, pos) > 200000.0 || Mathf.Abs(pos.x) > 200000.0 || Mathf.Abs(pos.y) > 200000.0 || Mathf.Abs(pos.z) > 200000.0) return;
+            if (!CVRTools.IsWithinMaxBounds(pos)) return;
             var rot = PlayerSetup.Instance.GetPlayerRotation();
 
             PlayerConfig.RejoinLocation = new JsonRejoinLocation {
                 InstanceId = CVRInstances.CurrentInstanceId,
+                WorldId = CVRInstances.CurrentWorldId,
                 AttemptToTeleport = true,
                 ClosedDateTime = DateTime.UtcNow,
                 Position = new JsonVector3(pos),
@@ -375,6 +375,7 @@ public class Instances : MelonMod {
 
     public record JsonRejoinLocation {
         public string InstanceId;
+        public string WorldId;
         public bool AttemptToTeleport;
         public DateTime ClosedDateTime = DateTime.UtcNow;
         public JsonVector3 Position = null;
@@ -382,9 +383,13 @@ public class Instances : MelonMod {
     }
 
     public record JsonVector3 {
+        // ReSharper disable once MemberCanBePrivate.Global - Needed for Newtonsoft.Json to work
         public float X;
+        // ReSharper disable once MemberCanBePrivate.Global - Needed for Newtonsoft.Json to work
         public float Y;
+        // ReSharper disable once MemberCanBePrivate.Global - Needed for Newtonsoft.Json to work
         public float Z;
+        // ReSharper disable once UnusedMember.Global - Needed for Newtonsoft.Json to work
         public JsonVector3() { }
         public JsonVector3(Vector3 vector) { X = vector.x; Y = vector.y; Z = vector.z; }
         public JsonVector3(Quaternion quaternion) { var vector = quaternion.eulerAngles; X = vector.x; Y = vector.y; Z = vector.z; }
@@ -646,23 +651,26 @@ public class Instances : MelonMod {
                         }
 
                         // Check if joining last instance timed out
-                        var timeSinceLeavingInstance = DateTime.UtcNow - PlayerConfig.RejoinLocation.ClosedDateTime;
-                        var timeToTimeoutJoiningLastInstance = TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value);
-                        if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && timeSinceLeavingInstance > timeToTimeoutJoiningLastInstance) {
-                            MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
-                        }
-
-                        // Otherwise just attempt to join the last instance
-                        else {
-                            // We're manually joining an instance, lets load our avatar since we're skipping normal init
-                            AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
-                            OnInstanceSelected(PlayerConfig.LastInstance.InstanceId, true);
-                            return false;
+                        if (PlayerConfig?.RejoinLocation != null)
+                        {
+                            var timeSinceLeavingInstance = DateTime.UtcNow - PlayerConfig.RejoinLocation.ClosedDateTime;
+                            var timeToTimeoutJoiningLastInstance = TimeSpan.FromMinutes(ModConfig.MeJoiningLastInstanceMinutesTimeout.Value);
+                            if (ModConfig.MeJoiningLastInstanceMinutesTimeout.Value >= 0 && timeSinceLeavingInstance > timeToTimeoutJoiningLastInstance) {
+                                MelonLogger.Msg($"Skip attempting to join the last instance, because it has been over {ModConfig.MeJoiningLastInstanceMinutesTimeout.Value} minutes...");
+                            }
+                            // Otherwise just attempt to join the last instance
+                            else {
+                                // We're manually joining an instance, lets load our avatar since we're skipping normal init
+                                AssetManagement.Instance.LoadLocalAvatar(MetaPort.Instance.currentAvatarGuid);
+                                OnInstanceSelected(PlayerConfig.LastInstance.InstanceId, true);
+                                return false;
+                            }
                         }
                     }
 
                     // Reset the last instance, there was a reason we didn't use it
-                    PlayerConfig.LastInstance = null;
+                    if (PlayerConfig != null)
+                        PlayerConfig.LastInstance = null;
 
                     // We didn't use our initialization, let's let the game do its thing
                     return true;
@@ -687,17 +695,11 @@ public class Instances : MelonMod {
             try {
                 #if DEBUG
                 MelonLogger.Msg($"[After_RichPresence_ReadPresenceUpdateFromNetwork] " +
-                                $"CurrentWorldId: {ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentWorldId}, " +
-                                $"CurrentInstanceId: {ABI_RC.Core.Networking.IO.Instancing.Instances.CurrentInstanceId}, " +
-                                $"Name: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+                                $"CurrentWorldId: {CVRInstances.CurrentWorldId}, " +
+                                $"CurrentInstanceId: {CVRInstances.CurrentInstanceId}, " +
+                                $"CurrentInstanceName: {CVRInstances.CurrentInstanceName}, " +
+                                $"Scene Name: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
                 #endif
-
-                // Update current instance
-                MelonCoroutines.Start(UpdateLastInstance(
-                    CVRInstances.CurrentWorldId,
-                    CVRInstances.CurrentInstanceId,
-                    CVRInstances.CurrentInstanceName,
-                    CVRPlayerManager.Instance.NetworkPlayers.Count));
 
                 // Initialize the save config job when we reach an online instance
                 if (!_startedJob) {
@@ -708,11 +710,10 @@ public class Instances : MelonMod {
                 if (!_consumedTeleport &&
                     ModConfig.MeRejoinLastInstanceOnGameRestart.Value
                     && ModConfig.MeRejoinPreviousLocation.Value
-                    && PlayerConfig.RejoinLocation is { AttemptToTeleport: true }
-                    && Mathf.Abs(PlayerConfig.RejoinLocation.Position.X) <= 200000.0
-                    && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Y) <= 200000.0
-                    && Mathf.Abs(PlayerConfig.RejoinLocation.Position.Z) <= 200000.0
+                    && PlayerConfig.RejoinLocation?.AttemptToTeleport == true
+                    && CVRTools.IsWithinMaxBounds(PlayerConfig.RejoinLocation.Position.GetPosition())
                     && PlayerConfig.RejoinLocation.InstanceId == CVRInstances.CurrentInstanceId
+                    && PlayerConfig.RejoinLocation.WorldId == CVRInstances.CurrentWorldId
                     && BetterBetterCharacterController.Instance.CanFly()) {
 
 
@@ -729,6 +730,12 @@ public class Instances : MelonMod {
                 // Mark the teleport as consumed. We don't want to mistakenly teleport
                 _consumedTeleport = true;
 
+                // Update current instance
+                MelonCoroutines.Start(UpdateLastInstance(
+                    CVRInstances.CurrentWorldId,
+                    CVRInstances.CurrentInstanceId,
+                    CVRInstances.CurrentInstanceName,
+                    CVRPlayerManager.Instance.NetworkPlayers.Count));
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_ReadPresenceUpdateFromNetwork)}");
