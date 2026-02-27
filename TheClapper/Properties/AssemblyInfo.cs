@@ -25,7 +25,8 @@ using MelonLoader;
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 
 namespace Kafe.TheClapper.Properties;
-internal static class AssemblyInfoParams {
+internal static class AssemblyInfoParams
+{
     public const string Version = "1.0.8";
     public const string Author = "kafeijao";
 }

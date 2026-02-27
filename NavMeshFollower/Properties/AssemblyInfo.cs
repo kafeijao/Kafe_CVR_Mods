@@ -27,7 +27,8 @@ using MelonLoader;
 [assembly: MelonAdditionalDependencies(AssemblyInfoParams.NavMeshToolsName, AssemblyInfoParams.RequestLibName)]
 
 namespace Kafe.NavMeshFollower.Properties;
-internal static class AssemblyInfoParams {
+internal static class AssemblyInfoParams
+{
     public const string Version = "1.0.1";
     public const string Author = "kafeijao";
     public const string NavMeshToolsName = "NavMeshTools";

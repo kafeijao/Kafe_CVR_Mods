@@ -25,7 +25,8 @@ using MelonLoader;
 [assembly: MelonAuthorColor(255, 119, 77, 79)]
 
 namespace Kafe.PickupOverrides.Properties;
-internal static class AssemblyInfoParams {
+internal static class AssemblyInfoParams
+{
     public const string Version = "1.0.9";
     public const string Author = "kafeijao";
 }
