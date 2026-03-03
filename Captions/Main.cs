@@ -28,8 +28,6 @@ namespace Kafe.Captions;
 
 public class Captions : MelonPlugin
 {
-    public static Action ReloadModel;
-
     private const int Channels = 1;
     private const int Frequency = 48_000;
     // private const int Frequency = 16_000;
@@ -75,7 +73,6 @@ public class Captions : MelonPlugin
         // it will result in native crashes when used. Thanks Bono for suggesting using a Plugin~
 
         ModConfig.LoadMelonPrefs();
-        ModConfig.LoadEmbedResources(MelonAssembly.Assembly);
 
         MelonLogger.Msg("Loading the native binaries for whisper...");
 
@@ -141,31 +138,57 @@ public class Captions : MelonPlugin
         // Run the patches manually (needed because it's a plugin)
         HarmonyInstance.PatchAll(MelonAssembly.Assembly);
 
-        InitWhisper();
-
         // On auth reload the model, so the username and user id are set
         CVRGameEventSystem.Authentication.OnLogin.AddListener(_ =>
         {
             TryRegisterLocalPlayer(null);
         });
 
-        ReloadModel += InitWhisper;
-
         ModConfig.LoadUILib(MelonAssembly.Assembly);
+
+        ReloadConfig();
     }
 
-    public static void InitWhisper()
+    public static void ReloadConfig()
+    {
+        if (ModConfig.Enabled)
+        {
+            if (string.IsNullOrEmpty(ModConfig.SelectedModelFileName))
+            {
+                MelonLogger.Warning("There is no model selected, select a model before attempting to enable the mod");
+                ModConfig.DisableMod();
+                return;
+            }
+
+            string selectedModel = ModConfig.GetSelectedModelPath();
+            if (!File.Exists(selectedModel))
+            {
+                MelonLogger.Warning($"The model {ModConfig.SelectedModelFileName} is select, but there's not file at {selectedModel}. Try re-selecting the model to fix this");
+                ModConfig.ResetModelSelection();
+                return;
+            }
+
+            InitWhisper(selectedModel);
+        }
+        else
+        {
+            MelonLogger.Msg("The mod is Disabled, you can enable in the QuickMenu Captions menu");
+            DeInitWhisper();
+        }
+    }
+
+    private static void InitWhisper(string selectedModel)
     {
         #if WHISPER_UNITY
         InitWhisperUnity();
         #endif
 
         #if WHISPER_NET
-        StartWhisperNet(ModConfig.SelectedModelPath, ModConfig.UseGpu, ModConfig.ThreadsCount);
+        StartWhisperNet(selectedModel, ModConfig.UseGpu, ModConfig.ThreadsCount);
         #endif
     }
 
-    public static void DeInitWhisper()
+    private static void DeInitWhisper()
     {
         #if WHISPER_UNITY
         DeInitWhisperUnity();

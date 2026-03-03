@@ -6,17 +6,21 @@ Use [whisper.cpp](https://github.com/ggml-org/whisper.cpp) to populate ChatBoxes
 It does its best attempt to translate foreign languages to English, although not very well.
 
 **⚠️NOTE0⚠️:** THIS IS A **PLUGIN**, NOT MOD, IT GOES IN THE `Plugins` folder!
+
 **⚠️NOTE1⚠️:** This plugin is heavy on performance, both GPU, GPU and Memory!
+
 **⚠️NOTE2⚠️:** Is this still very much a rough implementation, expect lack of polish and issues
 
 In the quick menu, you have the Captions settings:
-- Download models
-- Select the current active model
-- Fine control the audio detection
+
 - Enable/Disable the plugin
+- Download Whisper models
+- Select the current active model
 - Control who it should process the voice
+- Fine control the audio detection (these are just for testing, they are nor persistent)
 
 In the melon prefs, you have some extra Captions settings:
+
 - Enable Logs
 - Change the CPU thread count (currently it uses half of the available system thread count)
 - Skip the native binary extraction (not recommended unless you want to provide your own)
@@ -28,7 +32,7 @@ You can use any whisper.cpp model from: https://huggingface.co/ggerganov/whisper
 The models should be placed in `\UserData\Captions\Models`, that `UserData` folder should be next to the `Mods` folder
 
 I heavily recommend the `ggml-large-v3-turbo.bin` model, it's the best for accuracy while still being fast
- 
+
 ## Update Whisper Net
 
 1. Update [kafeijao's whisper.net fork on captions branch](<https://github.com/kafeijao/whisper.net/tree/captions>)

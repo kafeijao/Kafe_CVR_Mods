@@ -15,39 +15,44 @@ public static class ModConfig
 
     private static MelonPreferences_Entry<bool> _skipExtractingNativeBinaries;
 
-    private static MelonPreferences_Entry<string> _modelToUse;
-    // private static MelonPreferences_Entry<bool> _useGpu;
+    private static MelonPreferences_Entry<bool> _mlPrefEnabled;
+    private static ToggleButton _uiLibEnabled;
+
+    private static MelonPreferences_Entry<string> _mlPrefSelectedModel;
+    private static Button _uiLibSelectModelButton;
+
+
     private static MelonPreferences_Entry<int> _threadsCount;
 
     private static MelonPreferences_Entry<bool> _verbose;
     private static MelonPreferences_Entry<bool> _verboseWhisperNet;
 
-    private const string EmbedModel = "ggml-tiny.bin";
-
     private static readonly string ModelsFolderPath = Path.Combine("UserData", nameof(Captions), "Models");
 
-    public static readonly string NativeBinariesFolderPath = Path.Combine("UserData", nameof(Captions), "NativeBinaries");
+    private static readonly string NativeBinariesFolderPath = Path.Combine("UserData", nameof(Captions), "NativeBinaries");
 
-    public static string[] GetModelNames() => Directory.GetFiles(ModelsFolderPath).Select(Path.GetFileName).ToArray();
+    private static string[] GetModelNames() => Directory.GetFiles(ModelsFolderPath).Select(Path.GetFileName).ToArray();
 
-    public static string SelectedModelPath => Path.GetFullPath(Path.Combine(ModelsFolderPath, _modelToUse.Value));
+    public static string SelectedModelFileName { get; private set; }
+
+    public static string GetSelectedModelPath()
+    {
+        if (string.IsNullOrEmpty(SelectedModelFileName))
+            throw new Exception($"{nameof(SelectedModelFileName)} is empty :(");
+        return Path.GetFullPath(Path.Combine(ModelsFolderPath, SelectedModelFileName));
+    }
 
     public static string NativeBinariesFolderFullPath => $"{Path.GetFullPath(NativeBinariesFolderPath)}{Path.DirectorySeparatorChar}";
 
-    public static string ModelFileName
-    {
-        get => _modelToUse.Value;
-        set => _modelToUse.Value = value;
-    }
-
     public static bool UseGpu => true;
+
     public static int ThreadsCount => _threadsCount.Value;
 
     public static bool Verbose { get; private set; }
 
     public static bool VerboseWhisperNet { get; private set; }
 
-    public static bool Enabled { get; private set; } = true;
+    public static bool Enabled { get; private set; }
 
     public static bool ProcessLocalPlayer { get; private set; } = true;
     public static bool ProcessFriends { get; private set; } = true;
@@ -61,31 +66,15 @@ public static class ModConfig
     {
         _melonCategory = MelonPreferences.CreateCategory(nameof(Captions));
 
-        _modelToUse = _melonCategory.CreateEntry("Model", EmbedModel,
-            description: $"Name of the model to use. They need to exist in the folder: {Path.GetFullPath(ModelsFolderPath)}");
-        _modelToUse.OnEntryValueChanged.Subscribe((oldValue, newValue) =>
-        {
-            if (oldValue == newValue) return;
-            string newModelPath = Path.GetFullPath(Path.Combine(ModelsFolderPath, newValue));
-            if (!File.Exists(newModelPath))
-            {
-                MelonLogger.Warning($"Attempted to load a non-existing model at {newModelPath}, resetting to the default: {EmbedModel}");
-                _modelToUse.Value = EmbedModel;
-                return;
-            }
-            MelonLogger.Msg($"Changed mode. Reloading with the model: {_modelToUse.Value}");
-            Captions.ReloadModel?.Invoke();
-        });
-        MelonLogger.Msg($"Using the model {_modelToUse.Value}");
+        _mlPrefEnabled = _melonCategory.CreateEntry("Enabled", false,
+            description: "Whether this mod is enabled or not");
+        _mlPrefEnabled.OnEntryValueChanged.Subscribe((_, newValue) => OnEnabledChange(newValue, true));
+        Enabled = _mlPrefEnabled.Value;
 
-        // _useGpu = _melonCategory.CreateEntry("UseGpu", true,
-        //     description: "Whether to use GPU or not. This will use Vulkan");
-        // _useGpu.OnEntryValueChanged.Subscribe((oldValue, newValue) =>
-        // {
-        //     if (oldValue == newValue) return;
-        //     MelonLogger.Msg($"Changed useGpu setting. Reloading with useGpu: {_useGpu.Value}");
-        //     Captions.ReloadModel?.Invoke();
-        // });
+        _mlPrefSelectedModel = _melonCategory.CreateEntry("Model", string.Empty,
+            description: $"Name of the model to use. They need to exist in the folder: {ModelsFolderPath}");
+        _mlPrefSelectedModel.OnEntryValueChanged.Subscribe((_, newValue) => OnModelChange(newValue));
+        SelectedModelFileName = _mlPrefSelectedModel.Value;
 
         _skipExtractingNativeBinaries = _melonCategory.CreateEntry("SkipNativeBinaryExtraction", false,
             description: "Whether to skip extracting the native binaries or not");
@@ -101,8 +90,8 @@ public static class ModConfig
                 _threadsCount.Value = oldValue;
                 return;
             }
-            MelonLogger.Msg($"Changed threads setting. Reloading with threads: {_threadsCount.Value}");
-            Captions.ReloadModel?.Invoke();
+            MelonLogger.Msg($"Changed threads setting. Reloading with thread count: {_threadsCount.Value}");
+            Captions.ReloadConfig();
         });
 
         _verbose = _melonCategory.CreateEntry("Verbose", false,
@@ -118,6 +107,13 @@ public static class ModConfig
     {
         const string logoName = $"{nameof(Captions)}-Logo";
         QuickMenuAPI.PrepareIcon(nameof(Captions), logoName, assembly.GetManifestResourceStream("resources.logo.png"));
+
+        const string selectName = $"{nameof(Captions)}-Select";
+        QuickMenuAPI.PrepareIcon(nameof(Captions), selectName, assembly.GetManifestResourceStream("resources.select.png"));
+
+        const string downloadName = $"{nameof(Captions)}-Download";
+        QuickMenuAPI.PrepareIcon(nameof(Captions), downloadName, assembly.GetManifestResourceStream("resources.download.png"));
+
         var page = new Page(nameof(Captions), nameof(Captions), true, logoName)
         {
             MenuTitle = nameof(Captions),
@@ -125,12 +121,19 @@ public static class ModConfig
         };
         var cat = page.AddCategory("");
 
-        cat.AddToggle("Enable", "Whether to enable or disable the mod (it will unload the model if disabled)", Enabled)
-            .OnValueUpdated += newValue =>
+        _uiLibEnabled = cat.AddToggle("Enable", "Whether to enable or disable the mod (it will unload the model if disabled)", Enabled);
+        _uiLibEnabled.OnValueUpdated += newEnabledValue =>
         {
-            Enabled = newValue;
-            if (newValue) Captions.InitWhisper();
-            else Captions.DeInitWhisper();
+            if (newEnabledValue == Enabled) return;
+            if (newEnabledValue && string.IsNullOrEmpty(SelectedModelFileName))
+            {
+                QuickMenuAPI.ShowNotice("No model selected",
+                    "To enable this mod you first need to select a model from within the Caption button in the Quick Menu",
+                    okText: "Sounds good");
+                _uiLibEnabled.ToggleValue = false;
+                return;
+            }
+            OnEnabledChange(newEnabledValue, true);
         };
 
         cat.AddToggle("Process Self", "Process our own audio", ProcessLocalPlayer)
@@ -151,75 +154,115 @@ public static class ModConfig
         cat.AddSlider("Silent Seconds", "Time in seconds for lack of talking to stop sentence", SilenceStopSeconds, 1f, 5f, 1, SilenceStopSeconds, true)
             .OnValueUpdated += newValue => SilenceStopSeconds = newValue;
 
-        var modelButton = cat.AddButton($"Selected Model {ModelFileName}", "", "Pick the model to use", ButtonStyle.TextOnly);
-        modelButton.OnPress += () =>
+        _uiLibSelectModelButton = cat.AddButton($"Selected Model {SelectedModelFileName}", selectName, $"Pick the model to use. Current: {SelectedModelFileName}", ButtonStyle.TextWithIcon);
+        _uiLibSelectModelButton.OnPress += () =>
         {
             var availableModels = GetModelNames();
             if (availableModels.Length == 0)
             {
                 QuickMenuAPI.ShowNotice(
                     "No Models Available",
-                    "There are no available models in the models folder\nCheck the mod's readme for instructions",
-                    okText: "Ok, I will");
+                    "There are no available models in the models folder. You can use the download model button to fetch a model",
+                    okText: "Aye Aye");
                 return;
             }
-            var currentModelIndex = availableModels.IndexOf(ModelFileName);
+            var currentModelIndex = availableModels.IndexOf(SelectedModelFileName);
             MultiSelection selection = new MultiSelection("Whisper Model", availableModels, currentModelIndex);
             selection.OnOptionUpdated += selectedOption =>
             {
-                if (selectedOption == -1) return;
+                if (selectedOption == -1)
+                {
+                    OnModelChange(string.Empty);
+                    return;
+                }
                 string newModel = availableModels[selectedOption];
-                ModelFileName = newModel;
-                modelButton.ButtonText = $"Selected Model {newModel}";
+                OnModelChange(newModel);
             };
             QuickMenuAPI.OpenMultiSelect(selection);
         };
 
-        var downloadModelButton = cat.AddButton("Download Models", "", $"Chose a model to download from {WhisperModelDownloader.BaseUrl}", ButtonStyle.TextOnly);
+        cat.AddSpacer();
+        cat.AddSpacer();
+
+        var downloadModelButton = cat.AddButton("Download Models", downloadName, $"Chose a model to download from {WhisperModelDownloader.BaseUrl}");
         downloadModelButton.OnPress += () =>
         {
             MultiSelection selection = new MultiSelection("Whisper Model to Download", WhisperModelDownloader.ModelOptions, -1);
             selection.OnOptionUpdated += selectedOption =>
             {
                 if (selectedOption == -1) return;
-                string selectedFileName = WhisperModelDownloader.ModelOptions[selectedOption];
-                Task.Run(async () => await WhisperModelDownloader.DownloadModelAsync(selectedFileName, ModelsFolderPath));
+                string modelKey = WhisperModelDownloader.ModelOptions[selectedOption];
+                var modelInfo = WhisperModelDownloader.GetModelInfo(modelKey);
+                var downloadUrl = WhisperModelDownloader.GetModelDownloadUrl(modelInfo.FileName);
+                // Add space in the url, so the url is more readable
+                downloadUrl = downloadUrl.Replace(WhisperModelDownloader.BaseUrl, WhisperModelDownloader.BaseUrl + ' ');
+                QuickMenuAPI.ShowConfirm(
+                    "Download whisper model",
+                    $"This will download the model {modelKey} onto your disk into the {ModelsFolderPath} folder. " +
+                    $"Download Url: {downloadUrl}",
+                    onYes: () => Task.Run(async () => await WhisperModelDownloader.DownloadModelAsync(modelKey, ModelsFolderPath)),
+                    yesText: "Sure",
+                    noText: "Nah man");
             };
             QuickMenuAPI.OpenMultiSelect(selection);
         };
     }
 
-    public static void LoadEmbedResources(Assembly assembly)
+    public static void DisableMod()
     {
-        // Copy the embedded model
-        string dstEmbedModelPath = Path.GetFullPath(Path.Combine(ModelsFolderPath, EmbedModel));
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(dstEmbedModelPath)!);
+        OnEnabledChange(false, true);
+    }
 
-            if (!File.Exists(dstEmbedModelPath))
-            {
-                if (assembly.GetManifestResourceNames().Contains(EmbedModel))
-                {
-                    MelonLogger.Msg($"Extracting the {EmbedModel} model to {dstEmbedModelPath}");
-                    using Stream resourceStream = assembly.GetManifestResourceStream(EmbedModel);
-                    using FileStream fileStream = File.Open(dstEmbedModelPath, FileMode.Create, FileAccess.Write);
-                    resourceStream!.CopyTo(fileStream);
-                }
-                else
-                {
-                    MelonLogger.Msg($"This mod doesn't include an embedded {EmbedModel} model, you need to grab your own...");
-                }
-            }
-            else
-            {
-                MelonLogger.Msg($"{EmbedModel} already exists in {dstEmbedModelPath}, skip extracting it...");
-            }
-        }
-        catch (Exception ex)
+    private static void OnEnabledChange(bool newEnabled, bool reloadConfig)
+    {
+        if (Enabled == newEnabled) return;
+        Enabled = newEnabled;
+
+        // Update the values on the UI Buttons
+        if (_mlPrefEnabled != null) _mlPrefEnabled.Value = newEnabled;
+        if (_uiLibEnabled != null) _uiLibEnabled.ToggleValue = newEnabled;
+
+        MelonLogger.Msg($"Changed the Enabled setting to Enabled: {Enabled}");
+
+        if (reloadConfig)
+            Captions.ReloadConfig();
+    }
+
+    public static void ResetModelSelection()
+    {
+        OnModelChange(string.Empty);
+    }
+
+    private static void OnModelChange(string newModelFileName)
+    {
+        if (SelectedModelFileName == newModelFileName) return;
+
+        if (!string.IsNullOrEmpty(newModelFileName))
         {
-            MelonLogger.Error($"Failed to copy {EmbedModel} native library into {dstEmbedModelPath}", ex);
+            string newModelPath = Path.GetFullPath(Path.Combine(ModelsFolderPath, newModelFileName));
+            if (!File.Exists(newModelPath))
+            {
+                MelonLogger.Warning($"Attempted to load a non-existing model at {newModelPath}, resetting to no model");
+                newModelFileName = string.Empty;
+            }
         }
+        SelectedModelFileName = newModelFileName;
+
+        // Update the values on the UI Buttons
+        if (_mlPrefSelectedModel != null) _mlPrefSelectedModel.Value = newModelFileName;
+        if (_uiLibSelectModelButton != null)
+        {
+            _uiLibSelectModelButton.ButtonText = $"Selected Model {newModelFileName}";
+            _uiLibSelectModelButton.ButtonTooltip = $"Pick the model to use. Current: {newModelFileName}";
+        }
+
+        MelonLogger.Msg($"Changed the selected Model to: {SelectedModelFileName}");
+
+        // Update the Enabled setting without reloading, since we're going to reload already
+        if (string.IsNullOrEmpty(SelectedModelFileName))
+            OnEnabledChange(false, false);
+
+        Captions.ReloadConfig();
     }
 
     #region whiper.net

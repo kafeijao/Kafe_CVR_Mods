@@ -15,7 +15,7 @@ public static class WhisperModelDownloader
 
     private static bool _isDownloading;
 
-    private sealed class WhisperModelInfo(string fileName, string sizeText, string sha1, bool isRecommended = false)
+    public sealed class WhisperModelInfo(string fileName, string sizeText, string sha1, bool isRecommended = false)
     {
         public readonly string FileName = fileName;
         public readonly string SizeText = sizeText;
@@ -56,6 +56,10 @@ public static class WhisperModelDownloader
     }
 
     public static readonly string[] ModelOptions = Models.Keys.ToArray();
+
+    public static WhisperModelInfo GetModelInfo(string key) => Models[key];
+
+    public static string GetModelDownloadUrl(string modelFileName) => $"{BaseUrlResolve}/{modelFileName}";
 
     public static async Task DownloadModelAsync(string modelOptionKey, string destinationFolder)
     {
@@ -124,7 +128,7 @@ public static class WhisperModelDownloader
                 return;
             }
 
-            string url = $"{BaseUrlResolve}/{model.FileName}";
+            string url = GetModelDownloadUrl(model.FileName);
 
             using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
 
