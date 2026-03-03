@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="BetterPlayerCollider/BetterPlayerCollider.csproj" />
+  <Project Path="Captions\Captions.csproj" />
   <Project Path="CCK.Debugger/CCK.Debugger.csproj" />
   <Project Path="ChatBox/ChatBox.csproj" />
   <Project Path="CompanionProp/CompanionProp.csproj" />

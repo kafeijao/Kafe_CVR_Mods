@@ -1,0 +1,25 @@
+{
+  "_id": -1,
+  "name": "Captions",
+  "modversion": "0.0.1",
+  "gameversion": "2025r181",
+  "loaderversion": "v0.6.1",
+  "modtype": "Plugin",
+  "author": "kafeijao",
+  "description": "Use whisper to add captions into people's ChatBoxes.\n\n**Note:** This is heavy on performance, both processing and Memory\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Captions) for more info.\n\n",
+  "searchtags": [
+    "whisper",
+    "captions",
+    "chat",
+    "box",
+    "chatbox",
+    "speech",
+    "to",
+    "text"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Captions.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Captions",
+  "changelog": "- Initial Release",
+  "embedcolor": "16C60C"
+}

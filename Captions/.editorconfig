@@ -1,0 +1,4 @@
+﻿# Ignore specific warnings for whisper compiler warnings
+[Resources/whisper.unity/**/*.cs]
+dotnet_diagnostic.CS0169.severity = none
+dotnet_diagnostic.CS0649.severity = none

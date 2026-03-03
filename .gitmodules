@@ -1,0 +1,5 @@
+[submodule "Captions/Resources/whisper.net"]
+	path = Captions/Resources/whisper.net
+	url = https://github.com/kafeijao/whisper.net.git
+	branch = captions
+	ignore = dirty

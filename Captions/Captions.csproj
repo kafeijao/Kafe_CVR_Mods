@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Enabled Configs -->
+    <PropertyGroup>
+        <WhisperNetEnabled>true</WhisperNetEnabled>
+        <WhisperUnityEnabled>false</WhisperUnityEnabled>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Put your Chillout vr path in a new environnment variable CVRPATH in Windows -->
+        <OutputPath>$(CVRPATH)\Plugins\</OutputPath>
+    </PropertyGroup>
+
+    <!-- Mod Resources -->
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\logo.png">
+            <LogicalName>resources.logo.png</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <!-- Project Specific properties -->
+    <PropertyGroup>
+        <DefineConstants>$(DefineConstants);UNITY_2020_1_OR_NEWER</DefineConstants>
+    </PropertyGroup>
+
+    <!-- Compile Flags -->
+    <PropertyGroup Condition="'$(WhisperNetEnabled)' == 'true'">
+        <Nullable>enable</Nullable>
+        <DefineConstants>$(DefineConstants);WHISPER_NET</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(WhisperUnityEnabled)' == 'true'">
+        <DefineConstants>$(DefineConstants);WHISPER_UNITY</DefineConstants>
+    </PropertyGroup>
+
+    <!-- whiper.unity Stuff -->
+    <ItemGroup Condition="'$(WhisperUnityEnabled)' != 'true'">
+        <Compile Remove="Resources\whisper.unity\**\*.cs" />
+        <None Remove="Resources\whisper.unity\**\*" />
+        <EmbeddedResource Remove="Resources\whisper.unity\**\*" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(WhisperUnityEnabled)' == 'true'">
+        <Compile Remove="Resources\whisper.unity\Packages\com.whisper.unity\Editor\**" />
+        <Compile Remove="Resources\whisper.unity\Packages\com.whisper.unity\Tests\**" />
+        <EmbeddedResource Remove="Resources\whisper.unity\Packages\com.whisper.unity\Editor\**" />
+        <EmbeddedResource Remove="Resources\whisper.unity\Packages\com.whisper.unity\Tests\**" />
+        <None Remove="Resources\whisper.unity\Packages\com.whisper.unity\Editor\**" />
+        <None Remove="Resources\whisper.unity\Packages\com.whisper.unity\Tests\**" />
+    </ItemGroup>
+    <!-- whiper.unity Native Libs -->
+    <ItemGroup Condition="'$(WhisperUnityEnabled)' == 'true'">
+        <EmbeddedResource Include="Resources\whisper.unity\Packages\com.whisper.unity\Plugins\Windows\ggml.dll">
+            <LogicalName>ggml.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.unity\Packages\com.whisper.unity\Plugins\Windows\ggml-base.dll">
+            <LogicalName>ggml-base.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.unity\Packages\com.whisper.unity\Plugins\Windows\ggml-cpu.dll">
+            <LogicalName>ggml-cpu.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.unity\Packages\com.whisper.unity\Plugins\Windows\ggml-vulkan.dll">
+            <LogicalName>ggml-vulkan.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.unity\Packages\com.whisper.unity\Plugins\Windows\libwhisper.dll">
+            <LogicalName>libwhisper.dll</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <!-- whiper.net Stuff -->
+    <ItemGroup>
+        <Compile Remove="Resources\whisper.net\**\*.cs" />
+        <None Remove="Resources\whisper.net\**\*" />
+        <EmbeddedResource Remove="Resources\whisper.net\**\*" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(WhisperNetEnabled)' == 'true'">
+        <Compile Include="Resources\whisper.net\Whisper.net\**\*.cs" />
+        <Compile Remove="Resources\whisper.net\Whisper.net\SpeechToTextClient\**\*.cs" />
+    </ItemGroup>
+    <!-- whiper.net Native Libs -->
+    <ItemGroup Condition="'$(WhisperNetEnabled)' == 'true'">
+        <EmbeddedResource Include="Resources\whisper.net.binaries\runtimes\vulkan\win-x64\ggml-base-whisper.dll">
+            <LogicalName>ggml-base-whisper.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.net.binaries\runtimes\vulkan\win-x64\ggml-cpu-whisper.dll">
+            <LogicalName>ggml-cpu-whisper.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.net.binaries\runtimes\vulkan\win-x64\ggml-vulkan-whisper.dll">
+            <LogicalName>ggml-vulkan-whisper.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.net.binaries\runtimes\vulkan\win-x64\ggml-whisper.dll">
+            <LogicalName>ggml-whisper.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\whisper.net.binaries\runtimes\vulkan\win-x64\whisper.dll">
+            <LogicalName>whisper.dll</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+    <!-- Place to fetch the binaries for whisper.net -->
+    <!-- <ItemGroup>-->
+    <!--   <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.9.0" />-->
+    <!-- </ItemGroup>-->
+
+    <!-- Models: They make the dll too chunky, maybe when releasing I'll add it back -->
+    <!--    <ItemGroup>-->
+    <!--        <EmbeddedResource Include="Resources\whisper.unity\Assets\StreamingAssets\Whisper\ggml-tiny.bin">-->
+    <!--            <LogicalName>ggml-tiny.bin</LogicalName>-->
+    <!--        </EmbeddedResource>-->
+    <!--    </ItemGroup>-->
+
+</Project>

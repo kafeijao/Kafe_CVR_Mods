@@ -2,8 +2,8 @@
 
 namespace Kafe.MinimizeWindows;
 
-public static class ModConfig {
-
+public static class ModConfig
+{
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<bool> MeMinimizeGameWindowInDesktop;
@@ -11,7 +11,8 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeMinimizeGameWindowInVR;
     internal static MelonPreferences_Entry<bool> MeMinimizeMelonConsoleWindowInVR;
 
-    public static void InitializeMelonPrefs() {
+    public static void InitializeMelonPrefs()
+    {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(MinimizeWindows));
@@ -29,5 +30,4 @@ public static class ModConfig {
             description: "Whether to minimize the Melon Console Window when starting the game in VR Mode or not.");
 
     }
-
 }
