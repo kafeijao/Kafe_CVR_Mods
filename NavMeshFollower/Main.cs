@@ -30,7 +30,6 @@ public class NavMeshFollower : MelonMod
         {
             ModConfig.UpdatePickupList();
             ModConfig.UpdateFollowerControllerPage();
-            ModConfig.UpdatePlayerPage();
             ModConfig.UpdatePickupList();
         });
 

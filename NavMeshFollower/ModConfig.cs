@@ -124,13 +124,11 @@ public static class ModConfig
     internal static void UpdatePlayerPage()
     {
         if (CVRPlayerManager.Instance == null
+            || string.IsNullOrEmpty(QuickMenuAPI.SelectedPlayerID)
             || !CVRPlayerManager.Instance.UserIdToPlayerEntity.ContainsKey(QuickMenuAPI.SelectedPlayerID))
             return;
 
         if (!CVR_MenuManager.Instance.IsViewShown)
-            return;
-
-        if (!QuickMenuAPI.PlayerSelectPage.IsPageOpen)
             return;
 
         UpdatePlayerPage(QuickMenuAPI.SelectedPlayerName, QuickMenuAPI.SelectedPlayerID);
@@ -405,7 +403,6 @@ public static class ModConfig
             }
             else if (openedElementId == _pickupPage.ElementID) UpdatePickupList();
             else if (openedElementId == _followerControllerPage.ElementID) UpdateFollowerControllerPage();
-            else if (openedElementId == QuickMenuAPI.PlayerSelectPage.ElementID) UpdatePlayerPage();
         };
     }
 }
