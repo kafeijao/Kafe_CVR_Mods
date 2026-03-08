@@ -16,4 +16,11 @@
         </Reference>
     </ItemGroup>
 
+    <!-- Mod Resources -->
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\logo.png">
+            <LogicalName>resources.logo.png</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
 </Project>

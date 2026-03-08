@@ -17,6 +17,6 @@
   "requirements": ["[NavMeshTools](https://api.cvrmg.com/v1/mods/download/193)", "[RequestLib](https://api.cvrmg.com/v1/mods/download/169)"],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/NavMeshFollower.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshFollower",
-  "changelog": "- Fixed for 2025r181",
+  "changelog": "- Fixed the game sometimes freezing when any prop with a pickup was spawned/destroyed\n- Added logo to the menu\n- Overall menu performance improvements",
   "embedcolor": "16C60C"
 }

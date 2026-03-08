@@ -11,33 +11,42 @@ using UnityEngine;
 
 namespace Kafe.NavMeshFollower;
 
-public class NavMeshFollower : MelonMod {
-
+public class NavMeshFollower : MelonMod
+{
     internal static readonly Dictionary<string, Vector3> PlayerViewpoints = new();
 
     internal static bool TestMode;
 
-    public override void OnInitializeMelon() {
-
+    public override void OnInitializeMelon()
+    {
         ModConfig.InitializeMelonPrefs();
 
-        ModConfig.InitializeBTKUI();
+        ModConfig.SetupBTKUI(MelonAssembly.Assembly);
 
         FollowerController.Initialize();
 
-        // Calling on melon initializing was causing issues sometimes
-        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
+        // Update all QM pages when opening QM (it will check if the page is actually opened)
+        CVRGameEventSystem.QuickMenu.OnOpen.AddListener(() =>
+        {
+            ModConfig.UpdatePickupList();
+            ModConfig.UpdateFollowerControllerPage();
+            ModConfig.UpdatePlayerPage();
+            ModConfig.UpdatePickupList();
+        });
 
+        // Calling on melon initializing was causing issues sometimes
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() =>
+        {
             MelonLogger.Msg($"Adding {nameof(NavMeshFollower)} components to the whitelist");
 
             // Add our CCK script because duh
             SharedFilter.SpawnableWhitelist.Add(typeof(FollowerInfo));
-
         });
 
         // Check if it is in debug mode
         // Keeping it hard-ish to enable so people don't abuse it
-        foreach (var commandLineArg in Environment.GetCommandLineArgs()) {
+        foreach (var commandLineArg in Environment.GetCommandLineArgs())
+        {
             if (!commandLineArg.StartsWith("--cck-debugger-test=")) continue;
             var input = commandLineArg.Split(new[] { "=" }, StringSplitOptions.None)[1];
             using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
@@ -63,8 +72,8 @@ public class NavMeshFollower : MelonMod {
     }
 
     [HarmonyPatch]
-    private class HarmonyPatches {
-
+    private class HarmonyPatches
+    {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerBase), nameof(PlayerBase.LateUpdate))]
         public static void After_PlayerSetup_LateUpdate(PlayerBase __instance)
@@ -72,16 +81,21 @@ public class NavMeshFollower : MelonMod {
             if (__instance is not PlayerSetup) return;
 
             // Save view point positions. This late update runs after VRIK, so all viewpoints should be gucci
-            try {
+            try
+            {
                 // Save player's viewpoints
-                if (PlayerViewpoints.Count != CVRPlayerManager.Instance.NetworkPlayers.Count + 1) PlayerViewpoints.Clear();
+                if (PlayerViewpoints.Count != CVRPlayerManager.Instance.NetworkPlayers.Count + 1)
+                    PlayerViewpoints.Clear();
                 PlayerViewpoints[MetaPort.Instance.ownerId] = PlayerSetup.Instance.ViewPoint.GetPointPosition();
-                foreach (var player in CVRPlayerManager.Instance.NetworkPlayers) {
-                    if (!player.PuppetMaster.IsAvatarLoaded) continue; // GetPointPosition can have the fallback transform null on first frame
+                foreach (var player in CVRPlayerManager.Instance.NetworkPlayers)
+                {
+                    if (!player.PuppetMaster.IsAvatarLoaded)
+                        continue; // GetPointPosition can have the fallback transform null on first frame
                     PlayerViewpoints[player.Uuid] = player.PuppetMaster.ViewPoint.GetPointPosition();
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_LateUpdate)}.");
                 MelonLogger.Error(e);
             }
@@ -89,33 +103,39 @@ public class NavMeshFollower : MelonMod {
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.FixedUpdate))]
-        public static void Before_CVRSpawnable_FixedUpdate(CVRSpawnable __instance) {
+        public static void Before_CVRSpawnable_FixedUpdate(CVRSpawnable __instance)
+        {
             // Update the synced values driven by UpdateBy so it's independent from our controls
-            try {
-
+            try
+            {
                 // Ignore props that are not grabbed by me (when followers grab it's as if I was grabbing)
                 if (__instance.pickup == null || !__instance.pickup.IsGrabbedByMe) return;
 
-                foreach (var availableSpawnablePickup in Pickups.AvailableSpawnablePickups) {
-
+                foreach (var availableSpawnablePickup in Pickups.AvailableSpawnablePickups)
+                {
                     // Ignore if spawnable doesn't include this pickup, or doesn't have updated by owner sync values
-                    if (availableSpawnablePickup.Spawnable != __instance || !availableSpawnablePickup.HasUpdatedByOwnerSyncValues) continue;
+                    if (availableSpawnablePickup.Spawnable != __instance ||
+                        !availableSpawnablePickup.HasUpdatedByOwnerSyncValues) continue;
 
                     // Ignore if this pickup is not grabbed by a follower
                     if (!availableSpawnablePickup.GrabbedByFollower(out var controller)) continue;
 
                     var index = -1;
-                    foreach (var syncValue in __instance.syncValues) {
+                    foreach (var syncValue in __instance.syncValues)
+                    {
                         ++index;
 
                         // Ignore non-owner updated by
                         if (!Pickups.SpawnablePickupWrapper.OwnerUpdatedBy.Contains(syncValue.updatedBy)) continue;
 
                         // Set the value as 0 if it's not defined, otherwise use the overriden value
-                        var num = !controller.UpdatedByValues.TryGetValue(syncValue.updatedBy, out var overrideValue) ? 0f : overrideValue;
+                        var num = !controller.UpdatedByValues.TryGetValue(syncValue.updatedBy, out var overrideValue)
+                            ? 0f
+                            : overrideValue;
 
                         // Process the updated method
-                        switch (syncValue.updateMethod) {
+                        switch (syncValue.updateMethod)
+                        {
                             case CVRSpawnableValue.UpdateMethod.AddToDefault:
                                 num = syncValue.startValue + num;
                                 break;
@@ -139,15 +159,16 @@ public class NavMeshFollower : MelonMod {
                         }
 
                         // Update the value on the animator if it's not equal to the current one
-                        if (!Mathf.Approximately(num, syncValue.currentValue)) {
+                        if (!Mathf.Approximately(num, syncValue.currentValue))
+                        {
                             __instance.needsUpdate = true;
                             __instance.UpdateMultiPurposeFloat(syncValue, num, index);
                         }
                     }
                 }
-
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 MelonLogger.Error($"Error during the patched function {nameof(Before_CVRSpawnable_FixedUpdate)}.");
                 MelonLogger.Error(e);
             }
