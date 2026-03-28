@@ -1,6 +1,10 @@
 # YoutubeFixSABR
 
-[![Download Latest YoutubeFixSABR.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest YoutubeFixSABR.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/YoutubeFixSABR.dll)
+![Download Latest YoutubeFixSABR.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest YoutubeFixSABR.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was fixed in the game natively.
 
 Fixes the SABR issue that causes youtube not loading in video players. This works for me without using cookies.
 
