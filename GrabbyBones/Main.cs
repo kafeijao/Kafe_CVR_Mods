@@ -140,6 +140,14 @@ public class GrabbyBones : MelonMod {
                         MelonLogger.Msg("  Found Child: " + firstChild.Transform.name);
                     }
                     #endif
+
+                    // When this was null it was exploding hard
+                    if (firstChild == null)
+                    {
+                        MelonLogger.Warning($"[GrabMessage] Received a grab message from: {playerHandId}, but {nameof(firstChild)} was null. Ignoring it...");
+                        return;
+                    };
+
                     if (AvatarHandInfo.Hands.TryGetValue(playerHandId, out var handInfo))
                     {
                         handInfo.GrabbingOffset.localPosition = grabMessage.PositionOffset;
