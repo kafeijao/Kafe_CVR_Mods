@@ -13,6 +13,7 @@ using ABI.CCK.Components;
 using HarmonyLib;
 using Kafe.CCK.Debugger.Components;
 using MelonLoader;
+using NAK.Contacts;
 using UnityEngine;
 
 namespace Kafe.CCK.Debugger;
@@ -149,68 +150,6 @@ public class CCKDebugger : MelonMod
             }
         }
 
-        // Spawnable Trigger Task
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSpawnableTriggerTask), nameof(CVRSpawnableTriggerTask.ExecuteTrigger))]
-        private static void AfterSpawnableTriggerExecuted(CVRSpawnableTriggerTask __instance)
-        {
-            try
-            {
-                Events.Spawnable.OnSpawnableTriggerExecuted(__instance);
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error during {nameof(AfterSpawnableTriggerExecuted)} patch", e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSpawnableTriggerTask), nameof(CVRSpawnableTriggerTask.Trigger))]
-        [HarmonyPatch(argumentTypes: new Type[] { })]
-        private static void AfterSpawnableTriggerTriggeredByHelper(CVRSpawnableTriggerTask __instance)
-        {
-            try
-            {
-                Events.Spawnable.OnSpawnableTriggerTriggered(__instance);
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error during {nameof(AfterSpawnableTriggerTriggeredByHelper)} patch", e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSpawnableTriggerTask), nameof(CVRSpawnableTriggerTask.Trigger))]
-        [HarmonyPatch(argumentTypes: new[] { typeof(CVRPointer), typeof(bool), typeof(float), typeof(bool) })]
-        private static void AfterSpawnableTriggerTriggered(CVRSpawnableTriggerTask __instance, bool exit)
-        {
-            try
-            {
-                // Ignore the exit events on the enterTasks
-                if (exit) return;
-                Events.Spawnable.OnSpawnableTriggerTriggered(__instance);
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error during {nameof(AfterSpawnableTriggerTriggered)} patch", e);
-            }
-        }
-
-        // Spawnable Trigger Task Stay
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSpawnableTriggerTaskStay), nameof(CVRSpawnableTriggerTaskStay.trigger))]
-        private static void AfterSpawnableStayTriggerTriggered(CVRSpawnableTriggerTaskStay __instance)
-        {
-            try
-            {
-                Events.Spawnable.OnSpawnableStayTriggerTriggered(__instance);
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error during {nameof(AfterSpawnableStayTriggerTriggered)} patch", e);
-            }
-        }
-
         // Avatar
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Avatar_t), MethodType.Constructor)]
@@ -240,71 +179,93 @@ public class CCKDebugger : MelonMod
             }
         }
 
-        // Avatar AAS Trigger Task
+        #region TriggerToContact
+
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAdvancedAvatarSettingsTriggerTask),
-            nameof(CVRAdvancedAvatarSettingsTriggerTask.ExecuteTrigger))]
-        private static void AfterAasTriggerExecuted(CVRAdvancedAvatarSettingsTriggerTask __instance)
+        [HarmonyPatch(typeof(TriggerToContact), nameof(TriggerToContact.Start))]
+        private static void After_TriggerToContact_Start(TriggerToContact __instance)
         {
             try
             {
-                Events.Avatar.OnAasTriggerExecuted(__instance);
+                Events.TriggerToContactEvents.OnTriggerToContactStarted(__instance);
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"Error during {nameof(AfterAasTriggerExecuted)} patch", e);
+                MelonLogger.Error($"Error during {nameof(After_TriggerToContact_Start)} patch", e);
             }
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAdvancedAvatarSettingsTriggerTask),
-            nameof(CVRAdvancedAvatarSettingsTriggerTask.Trigger))]
-        [HarmonyPatch(argumentTypes: new Type[] { })]
-        private static void AfterAasTriggerTriggeredByHelper(CVRAdvancedAvatarSettingsTriggerTask __instance)
+        [HarmonyPatch(typeof(TriggerToContact), nameof(TriggerToContact.OnDestroy))]
+        private static void After_TriggerToContact_OnDestroy(TriggerToContact __instance)
         {
             try
             {
-                Events.Avatar.OnAasTriggerTriggered(__instance);
+                Events.TriggerToContactEvents.OnTriggerToContactDestroyed(__instance);
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"Error during {nameof(AfterAasTriggerTriggeredByHelper)} patch", e);
+                MelonLogger.Error($"Error during {nameof(After_TriggerToContact_OnDestroy)} patch", e);
             }
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAdvancedAvatarSettingsTriggerTask),
-            nameof(CVRAdvancedAvatarSettingsTriggerTask.Trigger))]
-        [HarmonyPatch(argumentTypes: new[] { typeof(CVRPointer), typeof(bool), typeof(float), typeof(bool) })]
-        private static void AfterAasTriggerTriggered(CVRAdvancedAvatarSettingsTriggerTask __instance, bool exit)
+        [HarmonyPatch(typeof(TriggerToContact), nameof(TriggerToContact.OnContactEnter))]
+        private static void After_TriggerToContact_OnContactEnter(TriggerToContact __instance, ContactCollisionInfo info)
         {
             try
             {
-                // Ignore the exit events on the enterTasks
-                if (exit) return;
-                Events.Avatar.OnAasTriggerTriggered(__instance);
+                Events.TriggerToContactEvents.OnTriggerToContactEntered(__instance);
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"Error during {nameof(AfterAasTriggerTriggered)} patch", e);
+                MelonLogger.Error($"Error during {nameof(After_TriggerToContact_OnContactEnter)} patch", e);
             }
         }
 
-        // Avatar AAS Trigger Task Stay
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAdvancedAvatarSettingsTriggerTaskStay),
-            nameof(CVRAdvancedAvatarSettingsTriggerTaskStay.trigger))]
-        private static void AfterAasStayTriggerTriggered(CVRAdvancedAvatarSettingsTriggerTaskStay __instance)
+        [HarmonyPatch(typeof(TriggerToContact), nameof(TriggerToContact.OnContactExit))]
+        private static void After_TriggerToContact_OnContactExit(TriggerToContact __instance, ContactCollisionInfo info)
         {
             try
             {
-                Events.Avatar.OnAasStayTriggerTriggered(__instance);
+                Events.TriggerToContactEvents.OnTriggerToContactExited(__instance);
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"Error during {nameof(AfterAasStayTriggerTriggered)} patch", e);
+                MelonLogger.Error($"Error during {nameof(After_TriggerToContact_OnContactExit)} patch", e);
             }
         }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TriggerToContact.ContactTriggerTask), nameof(TriggerToContact.ContactTriggerTask.Execute))]
+        private static void After_ContactTriggerTask_Execute(TriggerToContact.ContactTriggerTask __instance)
+        {
+            try
+            {
+                Events.TriggerToContactEvents.OnTriggerExecuted(__instance);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(After_ContactTriggerTask_Execute)} patch", e);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TriggerToContact.ContactTriggerStayTask), nameof(TriggerToContact.ContactTriggerStayTask.Execute))]
+        private static void After_ContactTriggerStayTask_Execute(TriggerToContact.ContactTriggerStayTask __instance)
+        {
+            try
+            {
+                Events.TriggerToContactEvents.OnTriggerExecuted(__instance);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(After_ContactTriggerStayTask_Execute)} patch", e);
+            }
+        }
+
+        #endregion TriggerToContact
 
         // Worlds
         [HarmonyPostfix]

@@ -1,23 +1,24 @@
 ﻿using ABI.CCK.Components;
+using NAK.Contacts;
 
 namespace Kafe.CCK.Debugger.Events;
 
-internal static class Spawnable {
-
+internal static class Spawnable
+{
     public static readonly Dictionary<string, string> SpawnableNamesCache = new();
 
     // Spawnable Triggers
-    public static event Action<CVRSpawnableTriggerTask> SpawnableTriggerTriggered;
-    public static void OnSpawnableTriggerTriggered(CVRSpawnableTriggerTask triggerTask) {
-        SpawnableTriggerTriggered?.Invoke(triggerTask);
+    public static event Action<TriggerToContact, TriggerToContact.ContactTriggerTask> SpawnableTriggerCollided;
+    public static void OnSpawnableTriggerCollision(TriggerToContact trigger, TriggerToContact.ContactTriggerTask triggerTask) {
+        SpawnableTriggerCollided?.Invoke(trigger, triggerTask);
     }
-    public static event Action<CVRSpawnableTriggerTask> SpawnableTriggerExecuted;
-    public static void OnSpawnableTriggerExecuted(CVRSpawnableTriggerTask triggerTask) {
-        SpawnableTriggerExecuted?.Invoke(triggerTask);
+    public static event Action<TriggerToContact, TriggerToContact.ContactTriggerTask> SpawnableTriggerExecuted;
+    public static void OnSpawnableTriggerExecuted(TriggerToContact trigger, TriggerToContact.ContactTriggerTask triggerTask) {
+        SpawnableTriggerExecuted?.Invoke(trigger, triggerTask);
     }
-    public static event Action<CVRSpawnableTriggerTaskStay> SpawnableStayTriggerTriggered;
-    public static void OnSpawnableStayTriggerTriggered(CVRSpawnableTriggerTaskStay triggerTask) {
-        SpawnableStayTriggerTriggered?.Invoke(triggerTask);
+    public static event Action<TriggerToContact, TriggerToContact.ContactTriggerStayTask> SpawnableStayTriggerExecuted;
+    public static void OnSpawnableStayTriggerExecuted(TriggerToContact trigger, TriggerToContact.ContactTriggerStayTask triggerTask) {
+        SpawnableStayTriggerExecuted?.Invoke(trigger, triggerTask);
     }
 
     public static void OnCVRSpawnableStarted(CVRSpawnable spawnable) => DebuggerMenu.OnSpawnableLoad(spawnable, true);

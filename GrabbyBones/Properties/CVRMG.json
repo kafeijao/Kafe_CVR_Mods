@@ -2,7 +2,7 @@
   "_id": 160,
   "name": "GrabbyBones",
   "modversion": "1.0.11",
-  "gameversion": "2025r181",
+  "gameversion": "2026r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,7 +15,7 @@
     "bone"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/GrabbyBones.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/GrabbyBones.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/GrabbyBones",
   "changelog": "- Fixed for 2025r181\n- Added integration with mod network, so grabbing should be synced and controlled by the grab receiver. Thanks arti! (<@172347620709236737>)",
   "embedcolor": "16C60C"

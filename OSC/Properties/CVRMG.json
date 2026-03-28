@@ -2,7 +2,7 @@
   "_id": 79,
   "name": "OSC",
   "modversion": "3.0.0",
-  "gameversion": "2025r181",
+  "gameversion": "2026r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -13,7 +13,7 @@
     "tracking"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/OSC.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/OSC.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/OSC",
   "changelog": "- Fixed for 2025r181\n- Removed the avatar and input modules (they were added natively)",
   "embedcolor": "16C60C"

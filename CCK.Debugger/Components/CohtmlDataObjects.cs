@@ -92,7 +92,7 @@ public class Core {
         // Reset Button Handlers
         reset.StateUpdater = button => {
             var hasActive = PointerVisualizer.HasActive() ||
-                            TriggerVisualizer.HasActive() ||
+                            TriggerToContactVisualizer.HasActive() ||
                             GameObjectVisualizer.HasActive() ||
                             TrackerVisualizer.HasTrackersActive() && MetaPort.Instance.isUsingVr;
             button.IsOn = hasActive || ICohtmlHandler.Crashed;

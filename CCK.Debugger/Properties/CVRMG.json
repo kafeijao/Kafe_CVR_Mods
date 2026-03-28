@@ -1,8 +1,8 @@
 {
   "_id": 74,
   "name": "CCK.Debugger",
-  "modversion": "2.0.17",
-  "gameversion": "2025r181",
+  "modversion": "2.0.18",
+  "gameversion": "2026r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -21,8 +21,8 @@
     "layer"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
-  "changelog": "- Fixed for 2025r181h1",
+  "changelog": "- Fixed for 2026r181",
   "embedcolor": "16C60C"
 }

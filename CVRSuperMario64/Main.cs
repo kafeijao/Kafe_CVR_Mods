@@ -141,7 +141,7 @@ public class CVRSuperMario64 : MelonMod {
             SharedFilter.SpawnableWhitelist.UnionWith(allTypes);
 
             // Add our CCK component to the worlds whitelist
-            WorldFilter._Base.UnionWith(allTypes);
+            WorldFilter.Whitelist[nameof(CVRSuperMario64)] = allTypes;
         });
 
         #if DEBUG

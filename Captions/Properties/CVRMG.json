@@ -2,7 +2,7 @@
   "_id": -1,
   "name": "Captions",
   "modversion": "0.0.2",
-  "gameversion": "2025r181",
+  "gameversion": "2026r181",
   "loaderversion": "v0.6.1",
   "modtype": "Plugin",
   "author": "kafeijao",
@@ -18,7 +18,7 @@
     "text"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/Captions.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/Captions.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Captions",
   "changelog": "- Initial Release",
   "embedcolor": "16C60C"

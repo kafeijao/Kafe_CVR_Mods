@@ -6,8 +6,8 @@ using MelonLoader;
 
 namespace Kafe.PostProcessingOverrides;
 
-public static class ModConfig {
-
+public static class ModConfig
+{
     private const int Multiplier = 10;
 
     // Melon Prefs
@@ -21,22 +21,25 @@ public static class ModConfig {
     private static readonly int TypeCount = Enum.GetValues(typeof(OverrideType)).Length;
     private static readonly int SettingCount = Enum.GetValues(typeof(OverrideSetting)).Length;
 
-    public static void InitializeMelonPrefs() {
-
+    public static void InitializeMelonPrefs()
+    {
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(nameof(PostProcessingOverrides));
 
         MeDefaultWorldConfig = _melonCategory.CreateEntry("DefaultWorldConfig", OverrideType.Original,
-            description: "When joining a world for the first time which configuration should be used? Original = It won't override the world PP, " +
-                         "Default options will override with the respective configurations, Custom will override with a custom config with the defaults " +
-                         "matching the device you're using. Off is disabled PP.");
+            description:
+            "When joining a world for the first time which configuration should be used? Original = It won't override the world PP, " +
+            "Default options will override with the respective configurations, Custom will override with a custom config with the defaults " +
+            "matching the device you're using. Off is disabled PP.");
     }
 
-    public static void InitializeBTKUI() {
+    public static void InitializeBTKUI()
+    {
         QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
-    private static void SetupBTKUI(CVR_MenuManager manager) {
+    private static void SetupBTKUI(CVR_MenuManager manager)
+    {
         QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
 
         // Load icons
@@ -49,7 +52,8 @@ public static class ModConfig {
         QuickMenuAPI.PrepareIcon(nameof(PostProcessingOverrides), "TT_Override",
             Assembly.GetExecutingAssembly().GetManifestResourceStream("resources.TT_Override.png"));
 
-        _page = new Page(nameof(PostProcessingOverrides), nameof(PostProcessingOverrides), true, "Icon") {
+        _page = new Page(nameof(PostProcessingOverrides), nameof(PostProcessingOverrides), true, "Icon")
+        {
             MenuTitle = nameof(PostProcessingOverrides),
             MenuSubtitle = "Configure Post Processing Overrides per world",
         };
@@ -62,24 +66,33 @@ public static class ModConfig {
         PostProcessingOverrides.ConfigChanged += SetupOverrideButtons;
     }
 
-    private static string GetTripleToggleIcon(OverrideSetting setting) {
-        return setting switch {
+    private static string GetTripleToggleIcon(OverrideSetting setting)
+    {
+        return setting switch
+        {
             OverrideSetting.Off => "TT_Off",
             OverrideSetting.Original => "TT_Original",
             OverrideSetting.Override => "TT_Override",
-            _ => ""
+            _ => "",
         };
     }
 
-    private static void CreateButton(Category currentOverride, PostProcessingOverrides.JsonConfigPPSetting setting, string settingName) {
-        currentOverride.AddButton(settingName, GetTripleToggleIcon(setting.Active), $"{settingName} Control").OnPress += () => {
+    private static void CreateButton(
+        Category currentOverride,
+        PostProcessingOverrides.JsonConfigPPSetting setting,
+        string settingName)
+    {
+        var button =
+            currentOverride.AddButton(settingName, GetTripleToggleIcon(setting.Active), $"{settingName} Control");
+        button.OnPress += () =>
+        {
             setting.Active = (OverrideSetting)(((int)setting.Active + 1) % SettingCount);
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };
     }
 
-    private static void SetupOverrideButtons() {
-
+    private static void SetupOverrideButtons()
+    {
         _page.ClearChildren();
 
         var currentWorld = _page.AddCategory("Current World");
@@ -91,7 +104,8 @@ public static class ModConfig {
             "Which override type should we use? Original: Original Post processing of the world. " +
             "Global: Uses your Global override. Custom: Override specific for this world. Off: Disables PP.");
 
-        overrideButton.OnPress += () => {
+        overrideButton.OnPress += () =>
+        {
             var nextType = (OverrideType)(((int)config.ConfigType + 1) % TypeCount);
             config.ConfigType = nextType;
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
@@ -99,8 +113,8 @@ public static class ModConfig {
 
         Category currentOverride = null;
 
-        switch (config.ConfigType) {
-
+        switch (config.ConfigType)
+        {
             case OverrideType.Original:
             case OverrideType.Off:
                 return;
@@ -126,15 +140,19 @@ public static class ModConfig {
         CreateButton(currentOverride, current.Grain, "Grain");
         CreateButton(currentOverride, current.LensDistortion, "Lens Distortion");
         CreateButton(currentOverride, current.MotionBlur, "Motion Blur");
-        CreateButton(currentOverride, current.SpaceReflections, "Space Reflections");
         CreateButton(currentOverride, current.Vignette, "Vignette");
 
         // Sliders
-        currentOverride.AddSlider("Bloom Intensity", "Set the Bloom Intensity", current.Bloom.Intensity/Multiplier, 0f, 5f, 2).OnValueUpdated += newValue => {
+        var bloomIntensity = currentOverride.AddSlider("Bloom Intensity", "Set the Bloom Intensity", current.Bloom.Intensity/Multiplier, 0f, 5f, 2);
+        bloomIntensity.OnValueUpdated += newValue =>
+        {
             current.Bloom.Intensity = newValue * Multiplier;
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };
-        currentOverride.AddSlider("Bloom Threshold", "Set the Bloom Threshold", current.Bloom.Threshold, 0f, 5f, 2).OnValueUpdated += newValue => {
+
+        var bloomThreshold = currentOverride.AddSlider("Bloom Threshold", "Set the Bloom Threshold", current.Bloom.Threshold, 0f, 5f, 2);
+        bloomThreshold.OnValueUpdated += newValue =>
+        {
             current.Bloom.Threshold = newValue;
             PostProcessingOverrides.SaveConfigAndApplyChanges(true);
         };

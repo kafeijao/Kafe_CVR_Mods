@@ -2,7 +2,7 @@
   "_id": 275,
   "name": "MiniMe++",
   "modversion": "1.0.3",
-  "gameversion": "2025r181",
+  "gameversion": "2026r181",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,7 +14,7 @@
     "sync"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r80/MiniMe++.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/MiniMe++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MiniMe++",
   "changelog": "- Fixed MiniMe blocking the raycast when attached to the menu",
   "embedcolor": "16C60C"

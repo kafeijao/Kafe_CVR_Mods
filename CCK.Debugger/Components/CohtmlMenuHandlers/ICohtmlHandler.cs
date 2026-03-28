@@ -39,7 +39,7 @@ public abstract class ICohtmlHandler {
 
         // Disable all visualizers
         PointerVisualizer.DisableAll();
-        TriggerVisualizer.DisableAll();
+        TriggerToContactVisualizer.DisableAll();
         GameObjectVisualizer.DisableAll();
 
         // Disable trackers
@@ -165,6 +165,6 @@ public abstract class ICohtmlHandler {
 
     // Pointers, Triggers, Bones, and Trackers
     protected static readonly List<PointerVisualizer> CurrentEntityPointerList = new();
-    protected static readonly List<TriggerVisualizer> CurrentEntityTriggerList = new();
+    protected static readonly List<TriggerToContactVisualizer> CurrentEntityTriggerList = new();
     protected static readonly List<BoneVisualizer> CurrentEntityBoneList = new();
 }

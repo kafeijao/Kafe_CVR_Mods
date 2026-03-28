@@ -180,6 +180,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\MeshBakerCore.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Meta.XR.BuildingBlocks.AIBlocks">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.BuildingBlocks.AIBlocks.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="Meta.XR.BuildingBlocks">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Meta.XR.BuildingBlocks.dll</HintPath>
             <Private>False</Private>
@@ -606,10 +610,6 @@
         </Reference>
         <Reference Include="Unity.XR.MockHMD">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.MockHMD.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Unity.XR.Oculus">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Unity.XR.Oculus.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Unity.XR.OpenVR">
