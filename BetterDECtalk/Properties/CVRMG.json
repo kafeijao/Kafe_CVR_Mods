@@ -1,0 +1,23 @@
+{
+  "_id": -1,
+  "name": "BetterDECtalk",
+  "modversion": "0.0.1",
+  "gameversion": "2026r181",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Adds DECtalk as a TTS Module and Voices\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterDECtalk) for more info.\n\n",
+  "searchtags": [
+    "DECtalk",
+    "Better",
+    "tts",
+    "text",
+    "to",
+    "speech"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/BetterDECtalk.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterDECtalk",
+  "changelog": "- Initial Release",
+  "embedcolor": "16C60C"
+}

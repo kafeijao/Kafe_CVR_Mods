@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="BetterDECtalk\BetterDECtalk.csproj"/>
   <Project Path="BetterPlayerCollider/BetterPlayerCollider.csproj" />
   <Project Path="Captions\Captions.csproj" />
   <Project Path="CCK.Debugger/CCK.Debugger.csproj" />

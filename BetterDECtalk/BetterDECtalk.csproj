@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- DECTalk Resources from https://github.com/dectalk/dectalk -->
+    <ItemGroup>
+        <EmbeddedResource Include="Resources/DECtalk.dll">
+            <LogicalName>DECtalk.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources/dtalk_us.dll">
+            <LogicalName>dtalk_us.dll</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources/dtalk_us.dic">
+            <LogicalName>dtalk_us.dic</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+    
+</Project>
