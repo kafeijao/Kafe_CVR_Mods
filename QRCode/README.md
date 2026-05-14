@@ -17,3 +17,6 @@ Urls (opens in the browser):
 
 Text (copies content to clipboard:
 - Anything that didn't match the previous.
+
+## Credits
+- Thanks [LensError](https://github.com/LensError) for improving the QR code detection and performance
