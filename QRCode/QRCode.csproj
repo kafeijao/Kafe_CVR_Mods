@@ -4,10 +4,17 @@
 <!--    <PropertyGroup>-->
 <!--        <DefineConstants>UNITY_6</DefineConstants>-->
 <!--    </PropertyGroup>-->
+    <PropertyGroup>
+        <FodyVerbose>true</FodyVerbose>
+    </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.31" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Costura.Fody" Version="6.0.0">
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Fody" Version="6.9.3">
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="TextCopy" Version="6.2.1" />
         <PackageReference Include="ZXing.Net" Version="0.16.9" />
         <Reference Include="ZXing.Unity">
@@ -21,14 +28,4 @@
             <LogicalName>qrcode.assetbundle</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
-    
-    <Target Name="CopyToManagedLibs" BeforeTargets="BeforeBuild">
-        <!-- Copy the zxing.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
-        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\zxing.net\0.16.9\lib\netstandard2.1\zxing.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
-        <!-- Copy the TextCopy.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
-        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\textcopy\6.2.1\lib\netstandard2.1\TextCopy.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
-        <!-- Copy the Microsoft.Extensions.DependencyInjection.Abstractions.net DLL to a known location, you might have to modify the location if it doesn't match with yours -->
-        <Exec Command="copy /y &quot;%USERPROFILE%\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\7.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll&quot; &quot;$(MsBuildThisFileDirectory)\..\.ManagedLibs\&quot;" />
-    </Target>
-    
 </Project>

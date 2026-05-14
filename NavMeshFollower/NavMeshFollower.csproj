@@ -3,15 +3,15 @@
 
     <ItemGroup>
         <Reference Include="NavMeshTools">
-            <HintPath>$(CVRPATH)\Mods\NavMeshTools.dll</HintPath>
+            <HintPath>$(CVRPATH)/Mods/NavMeshTools.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="CCK.Debugger">
-            <HintPath>$(CVRPATH)\Mods\CCK.Debugger.dll</HintPath>
+            <HintPath>$(CVRPATH)/Mods/CCK.Debugger.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="RequestLib">
-            <HintPath>$(CVRPATH)\Mods\RequestLib.dll</HintPath>
+            <HintPath>$(CVRPATH)/Mods/RequestLib.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

@@ -2,6 +2,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <!-- Put your Chillout vr path in a new environnment variable CVRPATH in Windows -->
-        <OutputPath>$(CVRPATH)\Plugins\</OutputPath>
+        <OutputPath>$(CVRPATH)/Plugins/</OutputPath>
     </PropertyGroup>
 </Project>

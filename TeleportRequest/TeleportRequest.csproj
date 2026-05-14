@@ -3,7 +3,7 @@
 
     <ItemGroup>
         <Reference Include="RequestLib">
-            <HintPath>$(CVRPATH)\Mods\RequestLib.dll</HintPath>
+            <HintPath>$(CVRPATH)/Mods/RequestLib.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
