@@ -10,7 +10,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using ZXing;
+using ZXing.Common;
 using ZXing.Unity;
+using UnityBarcodeReader = ZXing.Unity.IBarcodeReader;
 
 namespace Kafe.QRCode;
 
@@ -23,7 +26,7 @@ public class QRCodeBehavior : MonoBehaviour {
     private readonly ConcurrentDictionary<string, DateTime> _lastPrintTime = new();
 
     private Camera _cam;
-    private IBarcodeReader _reader;
+    private UnityBarcodeReader[] _barcodeReaders;
 
     private volatile int _camPixelHeight;
     private volatile int _camPixelWidth;
@@ -40,7 +43,7 @@ public class QRCodeBehavior : MonoBehaviour {
 
     private void Start() {
         _cam = PortableCamera.Instance._camera;
-        _reader = new BarcodeReader();
+        _barcodeReaders = CreateBarcodeReaders();
 
         name = $"[{nameof(QRCode)} Mod]";
         gameObject.layer = LayerMask.NameToLayer("UI Internal");
@@ -134,7 +137,7 @@ public class QRCodeBehavior : MonoBehaviour {
                 return;
             }
             var colors = request.GetData<Color32>().ToArray();
-            Task.Run(() => DecodeColor32(colors));
+            Task.Run(() => DecodeFrame(colors));
         }
         catch (Exception e) {
             MelonLogger.Error("Error while trying to decode QRCodes from a AsyncGPUReadbackRequest.");
@@ -143,35 +146,80 @@ public class QRCodeBehavior : MonoBehaviour {
         }
     }
 
-    private void DecodeColor32(Color32[] colors) {
+    private void DecodeFrame(Color32[] colors) {
         try {
-            var results = _reader.DecodeMultiple(colors, _camPixelWidth, _camPixelHeight);
-            if (results == null) {
-                return;
-            }
-
-            foreach (var result in results) {
-                if (result == null || string.IsNullOrWhiteSpace(result.Text)) continue;
-
-                // Get the current time
-                var now = DateTime.UtcNow;
-
-                var hasLastTime = _lastPrintTime.TryGetValue(result.Text, out var lastTime);
-
-                // If the barcode has not been printed in the last 20 seconds
-                if (!hasLastTime || now - lastTime > TimeSpan.FromSeconds(20)) {
-
-                    MelonLogger.Msg($"Scanned Barcode with the content: {result.Text}");
-
-                    // Update the last print time
-                    _lastPrintTime.TryAdd(result.Text, now);
-
-                    ResultHandler.ProcessText(result.Text);
-                }
-            }
+            // Scan both polarities so standard and light-on-dark QR codes are handled consistently.
+            DecodeWithConfiguredReaders(colors);
+            DecodeWithConfiguredReaders(CreateOppositePolarityFrame(colors));
         }
         finally {
             _captureInProgress = false;
+        }
+    }
+
+    private static UnityBarcodeReader[] CreateBarcodeReaders() {
+        return new[] {
+            CreateBarcodeReader(luminanceSource => new HybridBinarizer(luminanceSource)),
+            CreateBarcodeReader(luminanceSource => new GlobalHistogramBinarizer(luminanceSource)),
+        };
+    }
+
+    private static UnityBarcodeReader CreateBarcodeReader(Func<LuminanceSource, Binarizer> createBinarizer) {
+        return new BarcodeReader(
+            null,
+            (rawColor32, width, height) => new Color32LuminanceSource(rawColor32, width, height),
+            createBinarizer) {
+            AutoRotate = true,
+            Options = new DecodingOptions {
+                PossibleFormats = new List<BarcodeFormat> { BarcodeFormat.QR_CODE },
+                TryHarder = true,
+            },
+        };
+    }
+
+    private void DecodeWithConfiguredReaders(Color32[] colors) {
+        foreach (var reader in _barcodeReaders) {
+            DecodeResults(reader.DecodeMultiple(colors, _camPixelWidth, _camPixelHeight));
+        }
+    }
+
+    private static Color32[] CreateOppositePolarityFrame(Color32[] colors) {
+        var oppositePolarityFrame = new Color32[colors.Length];
+        for (var i = 0; i < colors.Length; i++) {
+            var color = colors[i];
+            oppositePolarityFrame[i] = new Color32(
+                (byte)(byte.MaxValue - color.r),
+                (byte)(byte.MaxValue - color.g),
+                (byte)(byte.MaxValue - color.b),
+                color.a);
+        }
+
+        return oppositePolarityFrame;
+    }
+
+    private void DecodeResults(ZXing.Result[] results) {
+        if (results == null) {
+            return;
+        }
+
+        foreach (var result in results) {
+            if (result == null || string.IsNullOrWhiteSpace(result.Text)) continue;
+
+            // Get the current time
+            var now = DateTime.UtcNow;
+
+            var hasLastTime = _lastPrintTime.TryGetValue(result.Text, out var lastTime);
+
+            // If the barcode has not been printed in the last 20 seconds
+            if (!hasLastTime || now - lastTime > TimeSpan.FromSeconds(20)) {
+
+                MelonLogger.Msg($"Scanned Barcode with the content: {result.Text}");
+
+                // Update the last print time
+                _lastPrintTime.TryAdd(result.Text, now);
+
+                ResultHandler.ProcessText(result.Text);
+            }
         }
     }
 }
