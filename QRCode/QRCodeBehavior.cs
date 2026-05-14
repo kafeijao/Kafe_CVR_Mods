@@ -173,7 +173,6 @@ public class QRCodeBehavior : MonoBehaviour {
             Options = new DecodingOptions {
                 PossibleFormats = new List<BarcodeFormat> { BarcodeFormat.QR_CODE },
                 TryHarder = true,
-                TryInverted = true,
             },
         };
     }
