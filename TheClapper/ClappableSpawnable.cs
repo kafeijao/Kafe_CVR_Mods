@@ -1,6 +1,6 @@
 ﻿using ABI_RC.Core.Networking.IO.Social;
+using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Savior;
-using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
@@ -37,7 +37,7 @@ public class ClappableSpawnable : Clappable {
         TheClapper.EmitParticles(clappablePosition, new Color(0f, 1f, 0f), 2f);
     }
 
-    public static void Create(CVRSyncHelper.PropData propData) {
+    public static void Create(PropSoul propData) {
 
         var rootTarget = propData.Spawnable.gameObject;
 

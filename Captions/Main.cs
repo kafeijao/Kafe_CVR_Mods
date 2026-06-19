@@ -271,6 +271,16 @@ public class Captions : MelonPlugin
         return output;
     }
 
+    private static readonly List<string> CommonWords = new List<string>
+    {
+        "ChilloutVR",
+        "CVRMG",
+        "MelonLoader",
+        "CVR",
+    };
+
+    public static string InitialPrompt = string.Join(" ", CommonWords);
+
     private static async Task RunWhisperNet(string modelPath, bool useGpu, int threads, Task previousTask)
     {
         // Kill the previous instance
@@ -300,6 +310,8 @@ public class Captions : MelonPlugin
                 .WithNoContext()
                 .WithSingleSegment()
                 .WithThreads(threads)
+                // .WithPrompt(GetInitialPrompt(""))
+                .WithPrompt(InitialPrompt)
                 .Build();
 
             try

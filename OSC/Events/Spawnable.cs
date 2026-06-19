@@ -1,5 +1,5 @@
 ﻿using ABI_RC.Core.Player;
-using ABI_RC.Core.Util;
+using ABI_RC.Core.PropManagement;
 using ABI_RC.Systems.Safety.AdvancedSafety;
 using ABI.CCK.Components;
 using MelonLoader;
@@ -12,11 +12,11 @@ public static class Spawnable
     private static bool _debugMode;
 
     // Caches for spawnable output (because some parameters might get spammed like hell)
-    private static readonly Dictionary<string, CVRSyncHelper.PropData> PropCache;
+    private static readonly Dictionary<string, PropSoul> PropCache;
     private static readonly Dictionary<string, Dictionary<string, float>> SpawnableParametersCacheOutFloat;
-    private static readonly Dictionary<CVRSyncHelper.PropData, bool> PropAvailabilityCache;
+    private static readonly Dictionary<PropSoul, bool> PropAvailabilityCache;
 
-    public static event Action<CVRSyncHelper.PropData> SpawnableCreated;
+    public static event Action<PropSoul> SpawnableCreated;
     public static event Action<CVRSpawnable> SpawnableDeleted;
     public static event Action<CVRSpawnable, CVRSpawnableValue> SpawnableParameterChanged;
     public static event Action<CVRSpawnable, bool> SpawnableAvailable;
@@ -29,9 +29,9 @@ public static class Spawnable
         OSC.Instance.meOSCDebug.OnEntryValueChanged.Subscribe((_, newValue) => _debugMode = newValue);
 
         // Instantiate caches
-        PropCache = new Dictionary<string, CVRSyncHelper.PropData>();
+        PropCache = new Dictionary<string, PropSoul>();
         SpawnableParametersCacheOutFloat = new Dictionary<string, Dictionary<string, float>>();
-        PropAvailabilityCache = new Dictionary<CVRSyncHelper.PropData, bool>();
+        PropAvailabilityCache = new Dictionary<PropSoul, bool>();
     }
 
     // Events from the game
@@ -52,7 +52,7 @@ public static class Spawnable
         }
     }
 
-    internal static void OnSpawnableCreated(CVRSyncHelper.PropData propData)
+    internal static void OnSpawnableCreated(PropSoul propData)
     {
         if (propData?.Spawnable == null || !propData.Spawnable.IsMine()) return;
 
@@ -96,7 +96,7 @@ public static class Spawnable
         SpawnableParameterChanged?.Invoke(spawnable, spawnableValue);
     }
 
-    internal static void OnSpawnableUpdateFromNetwork(CVRSyncHelper.PropData propData)
+    internal static void OnSpawnableUpdateFromNetwork(PropSoul propData)
     {
         var spawnable = propData.Spawnable;
         if (spawnable == null || !spawnable.IsMine()) return;
@@ -243,8 +243,8 @@ public static class Spawnable
 
     internal static void OnSpawnableDelete(string spawnableInstanceId)
     {
-        var propData = CVRSyncHelper.Props.Find(match => match.InstanceId == spawnableInstanceId);
-        if (propData != null && propData.Spawnable != null) propData.Spawnable.Delete();
+        if (Props.TryGet(spawnableInstanceId, out PropSoul propSoul) && propSoul.Spawnable != null)
+            propSoul.Spawnable.Delete();
     }
 
     // Utils

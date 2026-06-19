@@ -14,7 +14,7 @@ public class WorldCohtmlHandler : ICohtmlHandler {
             _isLoaded = true;
             SetupWorld();
         });
-        CVRGameEventSystem.World.OnUnload.AddListener(worldId => {
+        CVRGameEventSystem.World.OnWorldUnload.AddListener((worldId, _) => {
             if (string.IsNullOrEmpty(worldId)) return;
             _isLoaded = false;
             SetupWorld();

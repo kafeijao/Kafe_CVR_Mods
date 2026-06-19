@@ -91,7 +91,7 @@ public class PostProcessingOverrides : MelonMod
         // Check for BTKUILib
         ModConfig.InitializeBTKUI();
 
-        CVRGameEventSystem.World.OnUnload.AddListener(_ =>
+        CVRGameEventSystem.World.OnWorldUnload.AddListener((_, _) =>
         {
             // Reset world
             _currentWorldPPLoaded = false;

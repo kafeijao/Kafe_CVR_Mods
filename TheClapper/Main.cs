@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core.Player;
+using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Savior;
-using ABI_RC.Core.Util;
+using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -154,9 +155,11 @@ public class TheClapper : MelonMod {
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn))]
-        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(CVRSyncHelper.PropData propData) {
-            ClappableSpawnable.Create(propData);
+        [HarmonyPatch(typeof(Props), nameof(Props.OnInstanceAttached))]
+        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(string instanceId, CVRSpawnable spawnable) {
+            if (!Props._byId.TryGetValue(instanceId, out var propSoul) || propSoul.State != PropInstanceState.Spawned)
+                return;
+            ClappableSpawnable.Create(propSoul);
         }
     }
 }

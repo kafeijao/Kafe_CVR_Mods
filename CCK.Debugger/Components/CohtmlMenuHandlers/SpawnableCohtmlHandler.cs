@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Util;
 using ABI.CCK.Components;
 using Kafe.CCK.Debugger.Components.PointerVisualizers;
@@ -14,7 +15,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
 {
     static SpawnableCohtmlHandler()
     {
-        PropsData = new LooseList<CVRSyncHelper.PropData>(CVRSyncHelper.Props, propData => propData != null && propData.Spawnable != null);
+        PropsData = new LooseList<PropSoul>(Props.All, propData => propData != null && propData.Spawnable != null);
 
         // Triggers
         TrackedTriggers = new HashSet<TriggerToContact>();
@@ -75,7 +76,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
 
     // Triggers
     private static readonly Dictionary<int, string> SyncTypeDict;
-    private static readonly LooseList<CVRSyncHelper.PropData> PropsData;
+    private static readonly LooseList<PropSoul> PropsData;
     private static readonly HashSet<TriggerToContact> TrackedTriggers;
     private static readonly Dictionary<TriggerToContact.ContactTriggerTask, float> TriggerTaskLastTriggered;
     private static readonly Dictionary<TriggerToContact.ContactTriggerTask, float> TriggerTasksLastExecuted;
@@ -150,7 +151,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
     }
 
 
-    private void UpdateHeader(out CVRSpawnable currentSpawnable, out CVRSyncHelper.PropData currentSpawnablePropData)
+    private void UpdateHeader(out CVRSpawnable currentSpawnable, out PropSoul currentSpawnablePropData)
     {
         PropsData.UpdateViaSource();
 
@@ -163,7 +164,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
         currentSpawnable = currentSpawnablePropData?.Spawnable;
     }
 
-    private void SetupPropBase(CVRSpawnable currentSpawnable, CVRSyncHelper.PropData currentSpawnablePropData,
+    private void SetupPropBase(CVRSpawnable currentSpawnable, PropSoul currentSpawnablePropData,
         bool isLoaded)
     {
         // Attributes sections
@@ -173,7 +174,9 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
         attributesSection.AddSection("Is Loading").AddValueGetter(() => ToString(!isLoaded));
         attributesSection.AddSection("Spawned By")
             .AddValueGetter(() => GetUsername(currentSpawnablePropData.SpawnedBy));
-        attributesSection.AddSection("Synced By").AddValueGetter(() => GetUsername(currentSpawnablePropData.syncedBy));
+        attributesSection.AddSection("Kind").AddValueGetter(() => GetUsername(currentSpawnablePropData.Kind.ToString()));
+        attributesSection.AddSection("Custom Float Count").AddValueGetter(() => GetUsername(currentSpawnablePropData.CustomFloatsCount.ToString()));
+        attributesSection.AddSection("Synced By").AddValueGetter(() => GetUsername(currentSpawnablePropData.SyncedBy));
         attributesSection.AddSection("Sync Type").AddValueGetter(() =>
         {
             // Todo: Update the prop data!!!

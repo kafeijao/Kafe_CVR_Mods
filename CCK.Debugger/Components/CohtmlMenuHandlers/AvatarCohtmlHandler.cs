@@ -64,7 +64,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler
             else if (PlayerEntities.CurrentObject.PuppetMaster == null)
             {
                 #if DEBUG
-                MelonLogger.Warning("Tried to inspect a remote player with a null PuppetMaster (this should never happen).");
+                MelonLoader.MelonLogger.Warning("Tried to inspect a remote player with a null PuppetMaster (this should never happen).");
                 #endif
                 return false;
             }

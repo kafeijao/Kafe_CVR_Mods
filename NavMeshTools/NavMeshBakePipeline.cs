@@ -23,7 +23,7 @@ public static class NavMeshBakePipeline {
         UnityEngine.Object.DontDestroyOnLoad(_navMeshToolsGo);
         _bakerExecutor = _navMeshToolsGo.AddComponent<MainThreadExecutor>();
 
-        CVRGameEventSystem.World.OnUnload.AddListener(_ => {
+        CVRGameEventSystem.World.OnWorldUnload.AddListener((_, _) => {
 
             // Clear all instances of nav mesh upon leaving the world
             foreach (var instance in CurrentWorldNavMeshDataInstances) {

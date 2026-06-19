@@ -1,6 +1,10 @@
 # CompanionProp
 
-[![Download Latest CompanionProp.dll](../.Resources/DownloadButtonEnabled.svg "Download Latest CompanionProp.dll")](https://github.com/kafeijao/Kafe_CVR_Mods/releases/latest/download/CompanionProp.dll)
+![Download Latest CompanionProp.dll](../.Resources/DownloadButtonDisabled.svg "Download Latest CompanionProp.dll")
+
+## Retired ⚠️
+
+#### This mod has been retired because it was confusing new users with random props on spawn
 
 Very simple mod that automatically spawn a prop upon joining an instance (that allows props), while being able to
 optionally exclude them from being removed when pressing the Remove All Props or Remove my Props buttons.

@@ -91,6 +91,9 @@ public abstract class Clappable : MonoBehaviour {
     }
 
     internal static void UpdateVisualizersShown(bool isVisible) {
+        #if DEBUG
+        MelonLoader.MelonLogger.Msg($"{nameof(UpdateVisualizersShown)}({isVisible.ToString()})");
+        #endif
         foreach (var clappable in Clappables) {
             if (clappable == null) continue;
 

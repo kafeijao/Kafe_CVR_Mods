@@ -135,8 +135,11 @@ internal static class Data {
             }
         }
 
-        internal static void Create(CVRAvatar avatar, PuppetMaster puppetMaster) {
+        internal static void Create(CVRAvatar avatar) {
             var animator = avatar.GetComponent<Animator>();
+
+            var puppetMaster = avatar.PuppetMaster;
+
             if (!animator.isHuman) {
                 #if DEBUG
                 MelonLogger.Msg($"[AvatarHandInfo.Create] [{GrabbyBones.GetPlayerName(puppetMaster)}] Avatar is not Human...");

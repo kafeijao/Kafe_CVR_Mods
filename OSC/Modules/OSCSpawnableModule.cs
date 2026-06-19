@@ -1,4 +1,4 @@
-﻿using ABI_RC.Core.Util;
+﻿using ABI_RC.Core.PropManagement;
 using ABI_RC.Helpers;
 using ABI_RC.Systems.OSC;
 using ABI_RC.Systems.OSC.Jobs;
@@ -26,7 +26,7 @@ public class OSCSpawnableModule : OSCModule
     private bool _enabled;
     private bool _debugConfigWarnings;
 
-    private readonly Action<CVRSyncHelper.PropData> _spawnableCreated;
+    private readonly Action<PropSoul> _spawnableCreated;
     private readonly Action<CVRSpawnable> _spawnableDeleted;
     private readonly Action<CVRSpawnable, bool> _spawnableAvailabilityChanged;
     private readonly Action<CVRSpawnable, CVRSpawnableValue> _spawnableParameterChanged;

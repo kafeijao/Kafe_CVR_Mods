@@ -84,9 +84,7 @@ internal static class ModNetwork {
     }
 
     private static void SendSyncUpdateToAll() {
-        var playersToSend = CVRPlayerManager.Instance.NetworkPlayers.Select(p => p.Uuid).ToArray();
-        if (playersToSend.Length == 0) return;
-        SendMsgToSpecificPlayers(playersToSend, MessageType.SyncUpdate, writer => {
+        SendMsgToAllPlayers(MessageType.SyncUpdate, writer => {
             writer.Write(API.RegisteredMods.Keys.ToArray());
         });
     }

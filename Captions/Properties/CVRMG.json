@@ -1,12 +1,12 @@
 {
   "_id": -1,
   "name": "Captions",
-  "modversion": "0.0.2",
-  "gameversion": "2026r181",
+  "modversion": "0.0.3",
+  "gameversion": "2026r182",
   "loaderversion": "v0.6.1",
   "modtype": "Plugin",
   "author": "kafeijao",
-  "description": "Use whisper to add captions into people's ChatBoxes.\n\n**Note:** This is heavy on performance, both processing and Memory\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Captions) for more info.\n\n",
+  "description": "Use whisper.cpp to add captions of people's voices into their ChatBoxes.\n\nI would heavily recommend using the model `ggml-large-v3-turbo.bin`. Or any other that says `turbo`, otherwise it might be too slow.\n\n- **Note1:** ⚠️ This is a **__PLUGIN__**, not a Mod\n- **Note2:** This is heavy on performance, both processing and Memory\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Captions) for more info.\n\n",
   "searchtags": [
     "whisper",
     "captions",
@@ -18,7 +18,7 @@
     "text"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/Captions.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/Captions.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Captions",
   "changelog": "- Initial Release",
   "embedcolor": "16C60C"

@@ -1,4 +1,4 @@
-using ABI_RC.Core.Util;
+using ABI_RC.Core.PropManagement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -59,11 +59,11 @@ public class CVRSM64ColliderStatic : MonoBehaviour {
     internal class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn))]
-        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(CVRSyncHelper.PropData propData) {
+        [HarmonyPatch(typeof(Props), nameof(Props.OnInstanceAttached))]
+        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(string instanceId, CVRSpawnable spawnable) {
             try {
                 // If we load a prop with static colliders, let's queue a static colliders refresh!
-                if (propData.Spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
+                if (spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
                     #if DEBUG
                     MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
                                     $"all static colliders. You might notice some lag spike...");
