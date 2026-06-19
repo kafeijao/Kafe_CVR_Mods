@@ -6,8 +6,36 @@
     <File Path="Directory.Build.props" />
     <File Path="References.Items.props" />
   </Folder>
+  <Folder Name="/Deprecated/">
+    <File Path="BetterLipsync/BetterLipsync.csproj" />
+    <File Path="AMDQuestWirelessStutterFix/AMDQuestWirelessStutterFix.csproj" />
+    <File Path="BetterAFK/BetterAFK.csproj" />
+    <File Path="BetterCache/BetterCache.csproj" />
+    <File Path="BetterPortals/BetterPortals.csproj" />
+    <File Path="ChatBox/ChatBox.csproj" />
+    <File Path="CompanionProp/CompanionProp.csproj" />
+    <File Path="EyeMovementFix/EyeMovementFix.csproj" />
+    <File Path="FirstPersonHider/FirstPersonHider.csproj" />
+    <File Path="FreedomFingers/FreedomFingers.csproj" />
+    <File Path="FuckRTSP/FuckRTSP.csproj" />
+    <File Path="LoginProfiles/LoginProfiles.csproj" />
+    <File Path="QuickMenuAccessibility/QuickMenuAccessibility.csproj" />
+    <File Path="RealisticFlight/RealisticFlight.csproj" />
+    <File Path="WrongMic/WrongMic.csproj" />
+    <File Path="YoutubeFixSABR/YoutubeFixSABR.csproj" />
+  </Folder>
+  <Folder Name="/WorkInProgress/">
+    <Project Path="BetterPlayerCollider/BetterPlayerCollider.csproj">
+      <Build Solution="*|*" Project="false" />
+    </Project>
+    <Project Path="RCCOverrides/RCCOverrides.csproj">
+      <Build Solution="*|*" Project="false" />
+    </Project>
+    <Project Path="RetroCVR/RetroCVR.csproj">
+      <Build Solution="*|*" Project="false" />
+    </Project>
+  </Folder>
   <Project Path="BetterDECtalk\BetterDECtalk.csproj" />
-  <Project Path="BetterPlayerCollider/BetterPlayerCollider.csproj" />
   <Project Path="Captions\Captions.csproj" />
   <Project Path="CCK.Debugger/CCK.Debugger.csproj" />
   <Project Path="CVRSuperMario64/CVRSuperMario64.csproj" />
@@ -26,7 +54,6 @@
   <Project Path="ProfilesExtended/ProfilesExtended.csproj" />
   <Project Path="QRCode/QRCode.csproj" />
   <Project Path="RequestLib/RequestLib.csproj" />
-  <Project Path="RetroCVR/RetroCVR.csproj" />
   <Project Path="SteamAudioOverrides/SteamAudioOverrides.csproj" />
   <Project Path="TeleportRequest/TeleportRequest.csproj" />
   <Project Path="TheClapper/TheClapper.csproj" />
