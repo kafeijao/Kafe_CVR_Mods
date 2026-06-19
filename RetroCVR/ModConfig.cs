@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Systems.UI.UILib;
 using MelonLoader;
 using MelonLoader.ICSharpCode.SharpZipLib.Zip;
 using MelonLoader.Utils;
@@ -37,11 +38,11 @@ public static class ModConfig {
     }
 
     internal static void InitializeBTKUI() {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate += SetupBTKUI;
     }
 
     private static void SetupBTKUI(CVR_MenuManager manager) {
-        BTKUILib.QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
+        QuickMenuAPI.OnMenuRegenerate -= SetupBTKUI;
     }
 
     internal static void InitializeFolders() {

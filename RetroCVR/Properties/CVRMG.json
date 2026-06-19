@@ -14,7 +14,7 @@
     "emulator",
     "emulation"
   ],
-  "requirements": ["[BTKUILib](https://api.cvrmg.com/v1/mods/download/113)"],
+  "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r62/RetroCVR.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/RetroCVR",
   "changelog": "- Fixed for 2024r176",

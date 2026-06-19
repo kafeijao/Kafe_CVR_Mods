@@ -1,26 +1,28 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Target Name="NotILRepack" AfterTargets="Build">
-        <PropertyGroup>
-            <DoILRepack>false</DoILRepack>
-        </PropertyGroup>
-        <ItemGroup>
-            <!-- Folder with the libraries used that are not supposed to be merged, but are used by our dll -->
-            <IlRepackLibs Include="$(SolutionDir).ManagedLibs\"/>
-            <!-- Our output dll without any dependency embedded -->
-            <InputAssemblies Include="$(OutputPath)$(AssemblyName).dll"/>
-            <!-- Our dll dependencies to be merged, you can add multiple lines, one per dll -->
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\SK.Libretro.dll"/>
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\SK.Libretro.NAudio.dll"/>
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\SK.Libretro.Unity.dll"/>
-
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\Microsoft.Win32.Registry.dll"/>
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\NAudio.Core.dll"/>
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\NAudio.WinMM.dll"/>
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\System.Security.AccessControl.dll"/>
-            <InputAssemblies Include="$(SolutionDir).ManagedLibs\System.Security.Principal.Windows.dll"/>
-        </ItemGroup>
-        <Message Text="MERGING: @(InputAssemblies->'%(Filename)') into $(OutputAssembly)" Importance="High"/>
-        <ILRepack Internalize="false" LibraryPath="@(IlRepackLibs)" OutputFile="$(OutputPath)$(AssemblyName).dll" InputAssemblies="@(InputAssemblies)"/>
-    </Target>
+  <!-- Named "NotILRepack" so it does not clash with the package's built-in "ILRepack" target.
+       The package's auto-merge globs $(OutputPath)*.dll, which here is the shared CVR Mods folder,
+       so we drive the merge ourselves from the resolved dependency set instead. -->
+  <Target Name="NotILRepack" AfterTargets="Build">
+    <PropertyGroup>
+      <DoILRepack>false</DoILRepack>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Assemblies the game already ships in its Managed folder; we must never merge our own copies (duplicate System.Memory/Buffers/etc would break type identity at runtime). -->
+      <GameProvided Include="$(CVRPATH)\ChilloutVR_Data\Managed\*.dll"/>
+      <!-- Runtime assemblies from our NuGet packages (plus their transitive deps), resolved to their package-cache paths. -->
+      <MergeInputs Include="@(RuntimeCopyLocalItems)" Condition="'%(Extension)' == '.dll'"/>
+      <!-- Prebuilt local assemblies shipped in-project that must also be merged -->
+      <MergeInputs Include="$(MSBuildThisFileDirectory)Resources\SK.Libretro\SK.Libretro.dll"/>
+      <MergeInputs Include="$(MSBuildThisFileDirectory)Resources\SK.Libretro\SK.Libretro.NAudio.dll"/>
+      <MergeInputs Include="$(MSBuildThisFileDirectory)Resources\SK.Libretro\SK.Libretro.Unity.dll"/>
+      <!-- Drop any transitive package dep the game already provides (System.Buffers, System.Memory, etc.) -->
+      <MergeInputs Remove="@(GameProvided)" MatchOnMetadata="Filename"/>
+      <!-- Search paths for the runtime-provided references we do NOT merge -->
+      <IlRepackLibs Include="$(CVRPATH)\MelonLoader\net35\"/>
+      <IlRepackLibs Include="$(CVRPATH)\ChilloutVR_Data\Managed\"/>
+    </ItemGroup>
+    <Message Text="MERGING: @(MergeInputs->'%(Filename)') into $(OutputPath)$(AssemblyName).dll" Importance="High"/>
+    <ILRepack Internalize="false" LibraryPath="@(IlRepackLibs)" OutputFile="$(OutputPath)$(AssemblyName).dll" InputAssemblies="$(OutputPath)$(AssemblyName).dll;@(MergeInputs)"/>
+  </Target>
 </Project>
