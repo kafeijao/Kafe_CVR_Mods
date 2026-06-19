@@ -6,6 +6,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Player.EyeMovement;
 using ABI_RC.Core.Player.EyeMovement.Targets;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.InputManagement;
 using ABI_RC.Systems.Movement;
 using ABI_RC.Systems.RuntimeDebug;
@@ -47,6 +48,9 @@ public class CCKDebugger : MelonMod
 
         Integrations.UILib.InitializeUILib();
 
+        CVRGameEventSystem.Avatar.OnLocalAvatarLoad.AddListener(Events.Avatar.OnCVRAvatarStarted);
+        CVRGameEventSystem.Avatar.OnRemoteAvatarLoad.AddListener((_, avatar) => Events.Avatar.OnCVRAvatarStarted(avatar));
+
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
         #endif
@@ -73,21 +77,6 @@ public class CCKDebugger : MelonMod
             catch (Exception e)
             {
                 MelonLogger.Error($"Error executing {nameof(After_CVAvatar_OnDestroy)} Postfix...", e);
-            }
-        }
-
-        // Avatar Started
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.Start))]
-        private static void After_CVAvatar_Start(CVRAvatar __instance)
-        {
-            try
-            {
-                Events.Avatar.OnCVRAvatarStarted(__instance);
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error executing {nameof(After_CVAvatar_Start)} Postfix...", e);
             }
         }
 

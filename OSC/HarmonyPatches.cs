@@ -1,5 +1,6 @@
 ﻿using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Util;
 using ABI_RC.Core.Util.AnimatorManager;
 using ABI_RC.Systems.IK.TrackingModules;
@@ -81,8 +82,8 @@ internal class HarmonyPatches
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateFromNetwork), typeof(CVRSyncHelper.PropData))]
-    internal static void After_CVRSpawnable_UpdateFromNetwork(CVRSyncHelper.PropData propData, CVRSpawnable __instance)
+    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateFromNetwork), typeof(PropSoul))]
+    internal static void After_CVRSpawnable_UpdateFromNetwork(PropSoul propData, CVRSpawnable __instance)
     {
         try
         {
@@ -96,12 +97,15 @@ internal class HarmonyPatches
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRSyncHelper), nameof(CVRSyncHelper.ApplyPropValuesSpawn), typeof(CVRSyncHelper.PropData))]
-    internal static void After_CVRSyncHelper_ApplyPropValuesSpawn(CVRSyncHelper.PropData propData)
+    [HarmonyPatch(typeof(Props), nameof(Props.OnInstanceAttached))]
+    internal static void After_CVRSyncHelper_ApplyPropValuesSpawn(string instanceId, CVRSpawnable spawnable)
     {
         try
         {
-            Events.Spawnable.OnSpawnableCreated(propData);
+            if (!Props._byId.TryGetValue(instanceId, out var propSoul) || propSoul.State == PropInstanceState.Spawned)
+                return;
+
+            Events.Spawnable.OnSpawnableCreated(propSoul);
         }
         catch (Exception e)
         {

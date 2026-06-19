@@ -104,8 +104,8 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DarkRift.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="DiscordRPC">
-            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\DiscordRPC.dll</HintPath>
+        <Reference Include="Discord.Sdk">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Discord.Sdk.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="dotmore">
@@ -932,6 +932,10 @@
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\Valve.Newtonsoft.Json.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="VLCUnity">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\VLCUnity.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
         <Reference Include="WasmScripting.UnsafeUtils">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\WasmScripting.UnsafeUtils.dll</HintPath>
             <Private>False</Private>
@@ -950,6 +954,10 @@
         </Reference>
         <Reference Include="ZLinq.Unity.UnityCollectoins">
             <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\ZLinq.Unity.UnityCollectoins.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="_AVProVideo.Extensions.VideoPlayer">
+            <HintPath>$(MsBuildThisFileDirectory)\.ManagedLibs\_AVProVideo.Extensions.VideoPlayer.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

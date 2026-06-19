@@ -541,7 +541,7 @@ public class Instances : MelonMod {
         BaseResponse<InstanceDetailsResponse> instanceDetails = getInstanceDetailsTask.Result;
 
         CVRInstances.RequestedInstance = instanceInfo.InstanceId;
-        Content.LoadIntoWorld(instanceInfo.WorldId);
+        Content.LoadIntoWorld(instanceInfo.WorldId, CVRObjectLoader.WorldLoadIntent.Join);
         CVRInstances.OverrideWorldId = string.Empty;
         CVRInstances.InstanceJoinJWT = instanceInfo.JoinToken.Token;
         CVRInstances.Fqdn = instanceInfo.JoinToken.FQDN;

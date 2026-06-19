@@ -29,6 +29,12 @@ public static class Networking
     private static float _staleTime;
     private const float StaleTimeThreshold = 5f;
 
+    /// <summary>
+    /// Whether the game event system says we're connected.
+    /// We need to use this to prevent sending messages before the mod network sent the subscription messages
+    /// </summary>
+    private static bool _actuallyConnected;
+
     public readonly struct RemoteMiniMeInfo(
         CVRPlayerEntity player,
         AttachType attachType,
@@ -49,6 +55,12 @@ public static class Networking
 
         // Send our state for late joiners
         CVRGameEventSystem.Player.OnJoinEntity.AddListener(player => SendUpdate(player.Uuid));
+
+        // Hackery because the mod network does other callbacks before sending the subscribe mod network messages, bruh
+        CVRGameEventSystem.Instance.OnConnected.AddListener(_ => _actuallyConnected = true);
+        CVRGameEventSystem.Instance.OnConnectionRecovered.AddListener(_ => _actuallyConnected = true);
+        CVRGameEventSystem.Instance.OnDisconnected.AddListener(_ => _actuallyConnected = false);
+        CVRGameEventSystem.Instance.OnConnectionLost.AddListener(_ => _actuallyConnected = false);
     }
 
     private static bool _isSubscribed;
@@ -133,6 +145,7 @@ public static class Networking
     private static void SendUnreliableUpdateIfNecessary()
     {
         if (_isSubscribed
+            && _actuallyConnected
             && _isLocalMiniMeEnabled
             && MiniMe._cloneHolderObject != null
             && MiniMe._cloneHolderObject.activeSelf
@@ -164,7 +177,7 @@ public static class Networking
 
     private static void SendShowUpdate(bool isUpdate, string specificUserId)
     {
-        if (!_isSubscribed)
+        if (!_isSubscribed || !_actuallyConnected)
             return;
 
         if (!NetworkManager.Instance.IsConnectedToGameNetwork())
@@ -288,7 +301,7 @@ public static class Networking
 
     private static void SendHideUpdate(string specificUserId)
     {
-        if (!_isSubscribed)
+        if (!_isSubscribed || !_actuallyConnected)
             return;
 
         if (!NetworkManager.Instance.IsConnectedToGameNetwork())

@@ -2,7 +2,7 @@
   "_id": -1,
   "name": "BetterDECtalk",
   "modversion": "0.0.1",
-  "gameversion": "2026r181",
+  "gameversion": "2026r182",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -16,7 +16,7 @@
     "speech"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r81/BetterDECtalk.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/BetterDECtalk.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/BetterDECtalk",
   "changelog": "- Initial Release",
   "embedcolor": "16C60C"

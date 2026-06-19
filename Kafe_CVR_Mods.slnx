@@ -1,9 +1,15 @@
 <Solution>
-  <Project Path="BetterDECtalk\BetterDECtalk.csproj"/>
+  <Folder Name="/Common/">
+    <File Path="README.md" />
+    <File Path=".gitignore" />
+    <File Path="copy_and_nstrip_dll.ps1" />
+    <File Path="Directory.Build.props" />
+    <File Path="References.Items.props" />
+  </Folder>
+  <Project Path="BetterDECtalk\BetterDECtalk.csproj" />
   <Project Path="BetterPlayerCollider/BetterPlayerCollider.csproj" />
   <Project Path="Captions\Captions.csproj" />
   <Project Path="CCK.Debugger/CCK.Debugger.csproj" />
-  <Project Path="CompanionProp/CompanionProp.csproj" />
   <Project Path="CVRSuperMario64/CVRSuperMario64.csproj" />
   <Project Path="CVRUnverifiedModUpdaterPlugin/CVRUnverifiedModUpdaterPlugin.csproj" />
   <Project Path="GrabbyBones/GrabbyBones.csproj" />

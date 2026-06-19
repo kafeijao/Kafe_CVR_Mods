@@ -7,3 +7,7 @@ root = true
 [*]
 end_of_line = lf
 insert_final_newline = true
+
+
+[*.{json,yml,yaml,xml,csproj,props,targets,sln,slnx}]
+indent_size = 2

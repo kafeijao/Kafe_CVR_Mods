@@ -5,6 +5,7 @@ using ABI.CCK.Components;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.ModNetwork;
 using HarmonyLib;
 using MagicaCloth;
@@ -31,9 +32,13 @@ public class GrabbyBones : MelonMod {
     private const byte GrabBonePacketId = 1;
     private const byte ReleaseBonePacketId = 2;
 
-    public override void OnInitializeMelon() {
+    public override void OnInitializeMelon()
+    {
         ModConfig.InitializeMelonPrefs();
         ModConfig.InitializeBTKUI();
+
+        CVRGameEventSystem.Avatar.OnLocalAvatarLoad.AddListener(AvatarHandInfo.Create);
+        CVRGameEventSystem.Avatar.OnRemoteAvatarLoad.AddListener((_, avatar) => AvatarHandInfo.Create(avatar));
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
@@ -406,22 +411,6 @@ public class GrabbyBones : MelonMod {
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_LateUpdate)}.");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRAvatar), nameof(CVRAvatar.Start))]
-        public static void After_CVRAvatar_Start(CVRAvatar __instance) {
-            // Initialize the avatar's hand info
-            try {
-
-                // Need to get it like this because if the avatars are hidden via distance seem to not call the whole enumerator
-                var puppetMaster = __instance.transform.parent.GetComponentInParent<PuppetMaster>();
-                AvatarHandInfo.Create(__instance, puppetMaster);
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_CVRAvatar_Start)}.");
                 MelonLogger.Error(e);
             }
         }
