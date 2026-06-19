@@ -1,7 +1,7 @@
 {
   "_id": 119,
   "name": "TheClapper",
-  "modversion": "1.0.8",
+  "modversion": "1.0.9",
   "gameversion": "2026r182",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
@@ -16,6 +16,6 @@
   "requirements": [],
   "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/TheClapper.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper",
-  "changelog": "- Fixed for 2025r181",
+  "changelog": "- Fixed for 2025r182",
   "embedcolor": "16C60C"
 }
