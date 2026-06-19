@@ -2,9 +2,8 @@
   <Folder Name="/Common/">
     <File Path="README.md" />
     <File Path=".gitignore" />
-    <File Path="copy_and_nstrip_dll.ps1" />
     <File Path="Directory.Build.props" />
-    <File Path="References.Items.props" />
+    <File Path=".ManagedLibs" />
   </Folder>
   <Folder Name="/Deprecated/">
     <File Path="BetterLipsync/BetterLipsync.csproj" />

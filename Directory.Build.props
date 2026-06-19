@@ -11,6 +11,11 @@
         <ManagedLibsPath>$(CVRPATH)/ChilloutVR_Data/Managed/</ManagedLibsPath>
         <!-- Required for NStrip to work -->
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- The game ships BCL facade assemblies (System.Net.Http, System.Runtime, System.Buffers, etc.)
+             that also exist in the netstandard2.1 reference pack. We keep the game copies because their
+             type forwarders are needed (e.g. System.Net.Http.HttpClient), so we just demote the resulting
+             harmless reference version-conflict warning to a message instead of removing them. -->
+        <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3243</MSBuildWarningsAsMessages>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -40,9 +45,10 @@
 
     <!-- Hack! MelonLoader is locking the Mod files, this way I can build and output the mod dll with the game running -->
     <Target Condition="'$(OS)' == 'Windows_NT'" Name="DeleteOutputDLLIfExists" BeforeTargets="BeforeBuild">
-        <Exec Command="if exist &quot;$(OutputPath)$(TargetName).dll&quot; del /F /Q &quot;$(OutputPath)$(TargetName).dll&quot;" />
+        <Delete Files="$(OutputPath)$(TargetName).dll" />
     </Target>
 
+    <!-- Dlls that require publicizing -->
     <ItemGroup>
         <Publicize Include="Assembly-CSharp" IncludeCompilerGeneratedMembers="false" />
         <Publicize Include="Assembly-CSharp-firstpass" IncludeCompilerGeneratedMembers="false" />
@@ -67,9 +73,11 @@
         
         <!-- Game Dependancies -->
         <GameLibs Include="$(ManagedLibsPath)*.dll" />
+        <!-- Removals -->
         <GameLibs Remove="$(ManagedLibsPath)Microsoft.Win32.Registry.dll" />
     </ItemGroup>
 
+    <!-- Load all dlls in GameLibs -->
     <Target Name="AddDynamicReferences" BeforeTargets="ResolveAssemblyReferences">
         <ItemGroup>
             <Reference Include="@(GameLibs->'%(Filename)')">
