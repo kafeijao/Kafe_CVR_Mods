@@ -1,4 +1,4 @@
-﻿
+
 let cckDebugger = {
     initialized: false,
     lastHoverTarget: null,
@@ -324,19 +324,18 @@ const scrollerComponents = {
     mouseScrolling: false,
     pauseScrolling: false,
 
-    startY: 0,
-    startScrollY: 0,
+    // Last pointer position while dragging (used to apply incremental scroll deltas)
     oldY: 0,
     speedY: 0,
-
-    startX: 0,
-    startScrollX: 0,
     oldX: 0,
     speedX: 0,
 
     scrollWheelTarget: null,
 
-    mouseDebounceToken: null,
+    // Accumulated pointer travel during a press, used to tell a click apart from a drag
+    dragDistance: 0,
+    // Pixel travel past which a press counts as a drag (and the collapse click is suppressed)
+    dragThreshold: 10,
 
     wasJustDragged: false,
 
@@ -397,59 +396,55 @@ const scrollerComponents = {
     initialize: () => {
 
         document.addEventListener('mousedown', function(e) {
-            // if(e.target.hasAttribute("data-x")) {
-            //     return;
-            // }
+            // Cohtml recycles the event object once the handler returns, so every value must be
+            // read synchronously here. Arm the drag immediately and let mousemove decide if it
+            // ends up being a click or a drag.
+            scrollerComponents.scrollTarget = e.target.closest('.cck-debugger-scroll-content');
+            if (scrollerComponents.scrollTarget === null) return;
 
-            scrollerComponents.mouseDebounceToken = setTimeout(() => {
-
-                scrollerComponents.scrollTarget = e.target.closest('.cck-debugger-scroll-content');
-                scrollerComponents.startY = e.clientY;
-                scrollerComponents.startX = e.clientX;
-                if (scrollerComponents.scrollTarget !== null) {
-                    scrollerComponents.mouseScrolling = true;
-                    scrollerComponents.startScrollY = scrollerComponents.scrollTarget.scrollTop;
-                    scrollerComponents.startScrollX = scrollerComponents.scrollTarget.scrollLeft;
-                }
-
-                scrollerComponents.mouseDebounceToken = null;
-
-            }, 200);
-
+            scrollerComponents.mouseScrolling = true;
+            scrollerComponents.wasJustDragged = false;
+            scrollerComponents.dragDistance = 0;
+            scrollerComponents.oldY = e.screenY;
+            scrollerComponents.oldX = e.screenX;
+            scrollerComponents.speedY = 0;
+            scrollerComponents.speedX = 0;
         });
 
         document.addEventListener('mousemove', function(e) {
-            if (scrollerComponents.scrollTarget !== null && scrollerComponents.mouseScrolling && !scrollerComponents.pauseScrolling) {
-                scrollerComponents.scrollTarget.scrollTop = scrollerComponents.startScrollY - e.clientY + scrollerComponents.startY;
-                scrollerComponents.scrollTarget.scrollLeft = scrollerComponents.startScrollX - e.clientX + scrollerComponents.startX;
-                scrollerComponents.speedY = e.clientY - scrollerComponents.oldY;
-                scrollerComponents.speedX = e.clientX - scrollerComponents.oldX;
-                scrollerComponents.oldY = e.clientY;
-                scrollerComponents.oldX = e.clientX;
-                //console.log(`Mouse Move: ${scrollerComponents.scrollTarget.scrollTop} => ${scrollerComponents.startScrollY} - ${e.clientY} + ${scrollerComponents.startY} = ${scrollerComponents.startScrollY - e.clientY + scrollerComponents.startY}`);
-                scrollerComponents.UpdateScrollViews();
+            // Keep the wheel/thumbstick target up to date with whatever we're hovering
+            scrollerComponents.scrollWheelTarget = e.target.closest('.cck-debugger-scroll-content');
+
+            if (scrollerComponents.scrollTarget === null || !scrollerComponents.mouseScrolling || scrollerComponents.pauseScrolling) return;
+
+            // Apply the movement since the last event as an incremental scroll delta
+            scrollerComponents.speedY = e.screenY - scrollerComponents.oldY;
+            scrollerComponents.speedX = e.screenX - scrollerComponents.oldX;
+            scrollerComponents.oldY = e.screenY;
+            scrollerComponents.oldX = e.screenX;
+
+            scrollerComponents.scrollTarget.scrollTop -= scrollerComponents.speedY;
+            scrollerComponents.scrollTarget.scrollLeft -= scrollerComponents.speedX;
+
+            // Once the pointer travels past the threshold, treat it as a drag (not a click) so the
+            // collapsible section's click handler ignores the toggle on mouse up.
+            scrollerComponents.dragDistance += Math.abs(scrollerComponents.speedY) + Math.abs(scrollerComponents.speedX);
+            if (scrollerComponents.dragDistance > scrollerComponents.dragThreshold) {
+                scrollerComponents.wasJustDragged = true;
             }
 
-            scrollerComponents.scrollWheelTarget = e.target.closest('.cck-debugger-scroll-content');
+            scrollerComponents.UpdateScrollViews();
         });
 
         document.addEventListener('mouseup', function(e) {
 
-            if (scrollerComponents.mouseDebounceToken === null) {
+            scrollerComponents.mouseScrolling = false;
 
-                scrollerComponents.mouseScrolling = false;
-                if (scrollerComponents.scrollTarget != null) {
-                    scrollerComponents.startScrollY = scrollerComponents.scrollTarget.scrollTop;
-                    scrollerComponents.startScrollX = scrollerComponents.scrollTarget.scrollLeft;
-                }
-
-                scrollerComponents.wasJustDragged = true;
+            // If this was a drag, keep wasJustDragged set through the click event that cohtml fires
+            // right after, so the collapse/expand toggle is ignored. Clear it shortly after so that
+            // genuine clicks still work.
+            if (scrollerComponents.wasJustDragged) {
                 setTimeout(() => scrollerComponents.wasJustDragged = false, 10);
-
-            }
-            else {
-                clearTimeout(scrollerComponents.mouseDebounceToken);
-                scrollerComponents.mouseDebounceToken = null;
             }
 
             // Update the scroll bar when stuff gets collapsed/expanded
