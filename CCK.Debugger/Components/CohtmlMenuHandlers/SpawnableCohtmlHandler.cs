@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Util;
 using ABI.CCK.Components;
@@ -56,9 +56,9 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
 
         Events.DebuggerMenu.SpawnableLoaded += (spawnable, isLoaded) =>
         {
-            // If the inspected element is destroyed, lets reset
-            var isActuallyLoaded = isLoaded || PropsData.CurrentObject == null || PropsData.CurrentObject.Spawnable != spawnable;
-            ResetProp(isActuallyLoaded);
+            // Only rebuild when the prop we're currently inspecting changes its loaded state
+            if (PropsData.CurrentObject?.Spawnable != spawnable) return;
+            ResetProp(isLoaded);
         };
 
         Events.DebuggerMenu.EntityChanged += () =>

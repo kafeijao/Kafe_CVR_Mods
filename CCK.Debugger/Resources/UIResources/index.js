@@ -4,6 +4,9 @@ let cckDebugger = {
     lastHoverTarget: null,
     sectionCache: {},
     buttonsCache: {},
+    // Collapsible sections the user has expanded, keyed by their title path. Survives menu rebuilds
+    // (e.g. swapping/reloading the inspected avatar or prop) so the expanded state isn't lost.
+    expandedSections: new Set(),
     systemCall: function(type, arg1, arg2, arg3, arg4) {
         arg1 = arg1?.toString() || null;
         arg2 = arg2?.toString() || null;
@@ -86,7 +89,7 @@ let cckDebugger = {
         buttonNode.classList.toggle("hidden", !button['IsVisible']);
         buttonNode.classList.toggle('on', button['IsOn']);
     },
-    onSectionCreation: function(parent, section, isRoot = false) {
+    onSectionCreation: function(parent, section, isRoot = false, parentPath = "") {
         // Properties: Id [int], Title [string], Value [string], Collapsable [bool], SubSections [Section[]]
 
         // Create the section on the parent provided
@@ -94,13 +97,17 @@ let cckDebugger = {
         const hasSubsections = section['SubSections'].length > 0;
         const isCollapsable = section['Collapsable'];
 
+        // Stable key used to remember the expanded state across rebuilds (independent of the
+        // positional section Id, which gets reassigned every time the menu is recreated)
+        const sectionPath = parentPath + "/" + section['Title'];
+
         // Add class to do the vertical margin
         if (hasSubsections) sectionNode.classList.add("cck-debugger-section-has-children");
 
         // Iterate the children and handle them recursively
         const subSectionNodes = []
         for (let button of section['SubSections']) {
-            const subSectionNode = cckDebugger.onSectionCreation(sectionNode, button);
+            const subSectionNode = cckDebugger.onSectionCreation(sectionNode, button, false, sectionPath);
 
             if (!isCollapsable) continue;
 
@@ -119,15 +126,30 @@ let cckDebugger = {
             key.classList.add("cck-debugger-section-key-button");
             key.setAttribute("cck-debugger-feedback", "Hover")
 
+            // Apply an expanded/collapsed state to the prefix and children. When remember is true we
+            // also persist it so the same section stays expanded after the menu is rebuilt.
+            const setExpanded = (expanded, remember) => {
+                prefixClosed.classList.toggle("hidden", expanded);
+                prefixOpened.classList.toggle("hidden", !expanded);
+                sectionNode.classList.toggle('has-hidden-children', expanded);
+                for (const subSectionNode of subSectionNodes) {
+                    subSectionNode.classList.toggle('hidden', !expanded);
+                }
+                if (remember) {
+                    if (expanded) cckDebugger.expandedSections.add(sectionPath);
+                    else cckDebugger.expandedSections.delete(sectionPath);
+                }
+            };
+
+            // Restore the previously expanded state (sections default to collapsed)
+            if (cckDebugger.expandedSections.has(sectionPath)) setExpanded(true, false);
+
             // Add the click event to the section to show/hide the prefix on the section key, and hide/show the children
             const clickEvent = (event) => {
                 if (scrollerComponents.wasJustDragged) return;
-                prefixClosed.classList.toggle("hidden");
-                prefixOpened.classList.toggle("hidden");
-                sectionNode.classList.toggle('has-hidden-children');
-                for (const subSectionNode of subSectionNodes) {
-                    subSectionNode.classList.toggle('hidden');
-                }
+                // Currently collapsed (the opened prefix is hidden) means the click should expand it
+                const willExpand = prefixOpened.classList.contains("hidden");
+                setExpanded(willExpand, true);
                 event.stopPropagation();
             }
             sectionNode.addEventListener("click", clickEvent);
