@@ -354,10 +354,15 @@ const scrollerComponents = {
 
     scrollWheelTarget: null,
 
-    // Accumulated pointer travel during a press, used to tell a click apart from a drag
-    dragDistance: 0,
-    // Pixel travel past which a press counts as a drag (and the collapse click is suppressed)
-    dragThreshold: 10,
+    // Pointer position where the press started, used for the net displacement drag test
+    downY: 0,
+    downX: 0,
+    // Net distance from the press point past which a press counts as a drag (and the collapse
+    // click is suppressed). Uses straight-line displacement so VR controller jitter cancels out
+    dragThreshold: 20,
+    // Per-move travel below this is treated as jitter and ignored, so a held shaky pointer
+    // neither scrolls the panel nor builds up toward a drag
+    deadzone: 5,
 
     wasJustDragged: false,
 
@@ -426,9 +431,10 @@ const scrollerComponents = {
 
             scrollerComponents.mouseScrolling = true;
             scrollerComponents.wasJustDragged = false;
-            scrollerComponents.dragDistance = 0;
             scrollerComponents.oldY = e.screenY;
             scrollerComponents.oldX = e.screenX;
+            scrollerComponents.downY = e.screenY;
+            scrollerComponents.downX = e.screenX;
             scrollerComponents.speedY = 0;
             scrollerComponents.speedX = 0;
         });
@@ -439,19 +445,26 @@ const scrollerComponents = {
 
             if (scrollerComponents.scrollTarget === null || !scrollerComponents.mouseScrolling || scrollerComponents.pauseScrolling) return;
 
-            // Apply the movement since the last event as an incremental scroll delta
-            scrollerComponents.speedY = e.screenY - scrollerComponents.oldY;
-            scrollerComponents.speedX = e.screenX - scrollerComponents.oldX;
+            // Movement since the last event, used as an incremental scroll delta
+            const moveY = e.screenY - scrollerComponents.oldY;
+            const moveX = e.screenX - scrollerComponents.oldX;
+
+            // Ignore sub-deadzone jitter so a held shaky pointer neither scrolls nor trips the drag
+            if (Math.abs(moveY) + Math.abs(moveX) < scrollerComponents.deadzone) return;
+
+            scrollerComponents.speedY = moveY;
+            scrollerComponents.speedX = moveX;
             scrollerComponents.oldY = e.screenY;
             scrollerComponents.oldX = e.screenX;
 
             scrollerComponents.scrollTarget.scrollTop -= scrollerComponents.speedY;
             scrollerComponents.scrollTarget.scrollLeft -= scrollerComponents.speedX;
 
-            // Once the pointer travels past the threshold, treat it as a drag (not a click) so the
-            // collapsible section's click handler ignores the toggle on mouse up.
-            scrollerComponents.dragDistance += Math.abs(scrollerComponents.speedY) + Math.abs(scrollerComponents.speedX);
-            if (scrollerComponents.dragDistance > scrollerComponents.dragThreshold) {
+            // Once the pointer travels past the threshold from the press point, treat it as a drag
+            // (not a click) so the collapsible section's click handler ignores the toggle on mouse up.
+            const netY = e.screenY - scrollerComponents.downY;
+            const netX = e.screenX - scrollerComponents.downX;
+            if (Math.hypot(netY, netX) > scrollerComponents.dragThreshold) {
                 scrollerComponents.wasJustDragged = true;
             }
 
