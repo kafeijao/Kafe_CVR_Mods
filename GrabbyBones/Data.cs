@@ -181,7 +181,7 @@ internal static class Data {
             // Release all bones this avatar is grabbing
             var removeHands = Hands.Where(x =>
             {
-                if (x.Value.Avatar != avatar) return false;
+                if (!ReferenceEquals(x.Value.Avatar, avatar)) return false;
                 x.Value.Release();
                 return true;
             }).Select(x => x.Key).ToArray();
@@ -189,7 +189,27 @@ internal static class Data {
                 Hands.Remove(k);
             }
             // Release all bones that are being grabbed on this avatar
-            foreach (var grabbingInfo in GrabbedBones.Where(gb => gb.Key.BoneOwnerAvatar == avatar).ToList()) {
+            foreach (var grabbingInfo in GrabbedBones.Where(gb => ReferenceEquals(gb.Key.BoneOwnerAvatar, avatar)).ToList()) {
+                grabbingInfo.Value.Release();
+            }
+        }
+
+        internal static void Delete(PuppetMaster puppetMaster) {
+            // Release all bones this player is grabbing
+            var removeHands = Hands.Where(x =>
+            {
+                if (!ReferenceEquals(x.Value.PuppetMaster, puppetMaster)) return false;
+                x.Value.Release();
+                return true;
+            }).Select(x => x.Key).ToArray();
+            foreach (var k in removeHands) {
+                Hands.Remove(k);
+            }
+            // Release all bones owned by this player, including orphaned grabs whose hand lookup was replaced during an avatar change
+            foreach (var grabbingInfo in GrabbedBones.Where(gb =>
+                 ReferenceEquals(gb.Key.GrabberHandPuppetMaster, puppetMaster) ||
+                 ReferenceEquals(gb.Key.BoneOwnerPuppetMaster, puppetMaster)).ToList())
+            {
                 grabbingInfo.Value.Release();
             }
         }

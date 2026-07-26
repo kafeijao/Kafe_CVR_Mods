@@ -432,10 +432,10 @@ public class GrabbyBones : MelonMod {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.OnDestroy))]
         public static void Before_PuppetMaster_AvatarDestroyed(PuppetMaster __instance) {
-            // Cleanup the avatar's hand info, this happens before CVRAvatar OnDestroy and sets some fields to null ;_;
+            // Clean up by the PuppetMaster itself. AvatarDescriptor can already be null or reference a replacement avatar while a remote player is disconnecting.
             try {
 
-                AvatarHandInfo.Delete(__instance.AvatarDescriptor);
+                AvatarHandInfo.Delete(__instance);
             }
             catch (Exception e) {
                 MelonLogger.Error($"Error during the patched function {nameof(Before_PuppetMaster_AvatarDestroyed)}.");
