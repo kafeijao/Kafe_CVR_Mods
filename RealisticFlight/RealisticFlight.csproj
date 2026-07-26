@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\BTKUIIcon.png">
-            <LogicalName>resources.BTKUIIcon.png</LogicalName>
+        <EmbeddedResource Include="Resources\UILibIcon.png">
+            <LogicalName>resources.UILibIcon.png</LogicalName>
         </EmbeddedResource>
     </ItemGroup>
 

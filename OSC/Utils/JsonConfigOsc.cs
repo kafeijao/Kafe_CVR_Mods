@@ -50,7 +50,7 @@ namespace Kafe.OSC.Utils
             try
             {
                 List<JsonConfigParameter> parameters = new();
-                foreach (var parameter in animatorManager.Animator.parameters)
+                foreach (var parameter in animatorManager.Parameters.Values)
                 {
                     // Ignore triggers because the configs don't support them
                     if (parameter.type == AnimatorControllerParameterType.Trigger) continue;

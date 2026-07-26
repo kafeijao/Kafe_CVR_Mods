@@ -1,26 +1,20 @@
-﻿using ABI_RC.Core.Player;
+using ABI_RC.Core.Player;
 using HarmonyLib;
-using Kafe.RealisticFlight.Properties;
 using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.RealisticFlight;
 
-public class RealisticFlight : MelonMod {
-
-    public override void OnInitializeMelon() {
-
+public class RealisticFlight : MelonMod
+{
+    public override void OnInitializeMelon()
+    {
         ModConfig.InitializeMelonPrefs();
 
         // Initialize the json config
         ConfigJson.LoadConfigJson();
 
-        // Check for BTKUILib
-        var possibleBTKUILib = RegisteredMelons.FirstOrDefault(m => m.Info.Name == AssemblyInfoParams.BTKUILibName);
-        if (possibleBTKUILib != null) {
-            MelonLogger.Msg($"Detected {AssemblyInfoParams.BTKUILibName} mod, we're adding the integration!");
-            Integrations.BTKUILibIntegration.InitializeBTKUI();
-        }
+        Integrations.UILibIntegration.InitializeUI();
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
@@ -28,9 +22,10 @@ public class RealisticFlight : MelonMod {
     }
 
     [HarmonyPatch]
-    internal class HarmonyPatches {
-
-        private static readonly List<HumanBodyBones> BonesToCheck = new() {
+    internal class HarmonyPatches
+    {
+        private static readonly List<HumanBodyBones> BonesToCheck = new()
+        {
             HumanBodyBones.Hips,
             HumanBodyBones.Neck,
             HumanBodyBones.Head,
@@ -47,50 +42,58 @@ public class RealisticFlight : MelonMod {
         };
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.SetupAvatar))]
-        public static void After_PlayerSetup_SetupAvatar(PlayerSetup __instance) {
-            try {
-
-                if (__instance._avatar == null || __instance._animator == null || !__instance._animator.isHuman) {
-                    MelonLogger.Warning($"[After_PlayerSetup_SetupAvatar] Loaded a null or non-human avatar...");
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.OnSetupAvatar))]
+        public static void After_PlayerSetup_OnSetupAvatar(PlayerSetup __instance)
+        {
+            try
+            {
+                if (__instance.AvatarObject == null || __instance.Animator == null || !__instance.Animator.isHuman)
+                {
+                    MelonLogger.Warning("[After_PlayerSetup_OnSetupAvatar] Loaded a null or non-human avatar...");
                     return;
                 }
 
                 // Check all bones existence
-                var animator = __instance._animator;
+                var animator = __instance.Animator;
                 var missingBones = new List<HumanBodyBones>();
-                foreach (var bone in BonesToCheck) {
-                    if (animator.GetBoneTransform(bone) == null) {
+                foreach (var bone in BonesToCheck)
+                {
+                    if (animator.GetBoneTransform(bone) == null)
+                    {
                         missingBones.Add(bone);
                     }
                 }
-                if (missingBones.Count > 0) {
-                    MelonLogger.Warning($"[After_PlayerSetup_SetupAvatar] Loaded an avatar without required bones: {missingBones.Join()}");
+
+                if (missingBones.Count > 0)
+                {
+                    MelonLogger.Warning($"[After_PlayerSetup_OnSetupAvatar] Loaded an avatar without required bones: {missingBones.Join()}");
                     return;
                 }
 
-                MelonLogger.Msg($"Adding the Action Detector to the avatar {__instance._avatar.name} game object...");
+                MelonLogger.Msg($"Adding the Action Detector to the avatar {__instance.AvatarObject.name} game object...");
 
-                var actionDetector = __instance._avatar.AddComponent<ActionDetector>();
-                actionDetector.avatarDescriptor = __instance._avatarDescriptor;
-                actionDetector.animator = __instance._animator;
+                var actionDetector = __instance.AvatarObject.AddComponent<ActionDetector>();
+                actionDetector.avatarDescriptor = __instance.AvatarDescriptor;
+                actionDetector.animator = __instance.Animator;
             }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_SetupAvatar)}");
-                MelonLogger.Error(e);
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_OnSetupAvatar)}", e);
             }
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.Start))]
-        public static void After_PlayerSetup_Start(PlayerSetup __instance) {
-            try {
+        public static void After_PlayerSetup_Start(PlayerSetup __instance)
+        {
+            try
+            {
                 MelonLogger.Msg($"Initializing the FlightController...");
                 __instance.gameObject.AddComponent<FlightController>();
             }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}");
-                MelonLogger.Error(e);
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}", e);
             }
         }
     }

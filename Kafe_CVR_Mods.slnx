@@ -19,7 +19,6 @@
     <File Path="FuckRTSP/FuckRTSP.csproj" />
     <File Path="LoginProfiles/LoginProfiles.csproj" />
     <File Path="QuickMenuAccessibility/QuickMenuAccessibility.csproj" />
-    <File Path="RealisticFlight/RealisticFlight.csproj" />
     <File Path="WrongMic/WrongMic.csproj" />
     <File Path="YoutubeFixSABR/YoutubeFixSABR.csproj" />
   </Folder>
@@ -52,6 +51,7 @@
   <Project Path="PostProcessingOverrides/PostProcessingOverrides.csproj" />
   <Project Path="ProfilesExtended/ProfilesExtended.csproj" />
   <Project Path="QRCode/QRCode.csproj" />
+  <Project Path="RealisticFlight/RealisticFlight.csproj" />
   <Project Path="RequestLib/RequestLib.csproj" />
   <Project Path="SteamAudioOverrides/SteamAudioOverrides.csproj" />
   <Project Path="TeleportRequest/TeleportRequest.csproj" />

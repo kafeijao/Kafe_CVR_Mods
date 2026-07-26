@@ -6,7 +6,6 @@ Attempt of introducing a Flap/Glide realistic flight mode.
 Small tweaks to the movement of the player when airborne (not in flight mode).
 
 ## Features
-- Fixes falloff of velocity to not be instantly (for example when you get pushed by an explosion)
 - `Flap` your arms to fling yourself up as if you had wings.
 - `Spread` your arms when airborne in order to `Glide`. Going up reduces speed, going down gains speed.
 - You can use the `bool` parameter `IsGliding` in your animator.
