@@ -34,6 +34,7 @@ public class PlayFetch : Behavior {
     public void StartPlayingFetch(Pickups.PickupWrapper target) {
         IsPlayingFetch = true;
         _target = target;
+        _currentState = State.Idle;
     }
 
     public void StopPlayingFetch() {

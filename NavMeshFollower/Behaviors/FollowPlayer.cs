@@ -22,6 +22,7 @@ public class FollowPlayer : Behavior {
                     followPlayerInstance.IsFollowing = false;
                 }
             }
+            ModConfig.RefreshMenus();
         });
     }
 

@@ -233,7 +233,6 @@ public class FollowerController : MonoBehaviour {
                 // Make it follow us behavior on by default
                 var followController = new FollowPlayer(controller, true, "Follows a player.");
                 followController.SetTarget(MetaPort.Instance.ownerId);
-                controller.LastHandledBehavior = followController;
 
                 controller.Behaviors.Add(followController);
                 controller.Behaviors.Add(new PlayFetch(controller, true, "Plays fetch with a pickup."));
@@ -279,7 +278,6 @@ public class FollowerController : MonoBehaviour {
     internal Quaternion RootControllerRayOffsetRot;
 
     internal readonly List<Behavior> Behaviors = new();
-    internal Behavior LastHandledBehavior;
 
     internal readonly Dictionary<CVRSpawnableValue.UpdatedBy, float> UpdatedByValues = new() {
         { CVRSpawnableValue.UpdatedBy.OwnerCurrentGrip,     0f },
@@ -329,18 +327,8 @@ public class FollowerController : MonoBehaviour {
         return false;
     }
 
-    public static bool TryGetPlayerViewPoint(string guid, out Vector3 pos) {
-        if (guid == MetaPort.Instance.ownerId) {
-            pos = NavMeshFollower.PlayerViewpoints[MetaPort.Instance.ownerId];
-            return true;
-        }
-        if (NavMeshFollower.PlayerViewpoints.TryGetValue(guid, out var point)) {
-            pos = point;
-            return true;
-        }
-        pos = Vector3.zero;
-        return false;
-    }
+    public static bool TryGetPlayerViewPoint(string guid, out Vector3 pos) =>
+        NavMeshFollower.PlayerViewpoints.TryGetValue(guid, out pos);
 
     public static string GetClosestPlayerGuid(Vector3 source) {
         var closestPlayerGuid = "";
@@ -404,13 +392,22 @@ public class FollowerController : MonoBehaviour {
     private void GrabPickup(Pickups.PickupWrapper pickup, bool isRightHand) {
         if (pickup == null || pickup.pickupObject == null) return;
         var controllerRay = GetRayController(isRightHand, out var posOffset, out var rotOffset);
+
+        if (controllerRay.grabbedObject != null && controllerRay.grabbedObject != pickup.pickupObject) {
+            controllerRay.DropObject(true);
+        }
+
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
         var attachPoint = controllerRay.attachmentPoint.transform.position;
-        pickup.pickupObject.ControllerRay = controllerRay;
         pickup.pickupObject.transform.position = attachPoint;
-        pickup.pickupObject.Grab(new InteractionContext(InteractionContext.SourceType.Internal), controllerRay, attachPoint);
+        if (!pickup.pickupObject.Grab(new InteractionContext(InteractionContext.SourceType.Internal), controllerRay, attachPoint)) return;
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
-        pickup.pickupObject._initialPositionOffset = Vector3.zero;
+
+        var pickupHandler = pickup.pickupObject._pickupImplementation;
+        if (pickupHandler != null) {
+            pickupHandler.InitialPositionOffset = Vector3.zero;
+        }
+
         foreach (var key in Pickups.SpawnablePickupWrapper.OwnerUpdatedBy) {
             UpdatedByValues[key] = 1f;
         }
@@ -429,8 +426,8 @@ public class FollowerController : MonoBehaviour {
     public void DropPickupLeftHand(Pickups.PickupWrapper pickup) => DropPickup(pickup, false);
     public void DropPickupRightHand(Pickups.PickupWrapper pickup) => DropPickup(pickup, true);
     public static bool IsGrabbed(Pickups.PickupWrapper pickup) => pickup != null && pickup.pickupObject != null && pickup.pickupObject.GrabbedBy != "";
-    public bool IsGrabbedByMyLeftHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(false, out _, out _) == pickup.pickupObject._controllerRay;
-    public bool IsGrabbedByMyRightHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(true, out _, out _) == pickup.pickupObject._controllerRay;
+    public bool IsGrabbedByMyLeftHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(false, out _, out _) == pickup.pickupObject.ControllerRay;
+    public bool IsGrabbedByMyRightHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(true, out _, out _) == pickup.pickupObject.ControllerRay;
 
 
     internal void InitializeParameter(string syncedValueName) =>
@@ -454,8 +451,6 @@ public class FollowerController : MonoBehaviour {
         // Iterate behaviors until one returns true (which means it ran and it was handled)
         foreach (var behavior in Behaviors) {
             if (!behavior.Handle(ref destinationPos, ref lookAtPos, ref leftArmTargetPos, ref rightArmTargetPos, ref isIdle)) continue;
-
-            LastHandledBehavior = behavior;
 
             // Handle the destination
             if (destinationPos.HasValue) {
@@ -525,9 +520,13 @@ public class FollowerController : MonoBehaviour {
         throw new Exception($"All followers must have all behaviors. Requested behavior: {typeof(T)}");
     }
 
+    internal string GetStatus() {
+        return Behaviors.First(b => b.IsEnabled()).GetStatus();
+    }
+
     private void Start() {
         FollowerControllers.Add(this);
-        ModConfig.UpdateMainPage();
+        ModConfig.RefreshMenus();
         Initialized = true;
     }
 
@@ -536,7 +535,7 @@ public class FollowerController : MonoBehaviour {
         foreach (var behavior in Behaviors) {
             behavior.OnDestroyed();
         }
-        ModConfig.UpdateMainPage();
+        ModConfig.RefreshMenus();
     }
 
     [HarmonyPatch]

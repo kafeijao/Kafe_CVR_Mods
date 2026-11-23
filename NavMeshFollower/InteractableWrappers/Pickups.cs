@@ -34,14 +34,14 @@ public static class Pickups
             }
 
             StartCall();
-            ModConfig.UpdatePickupList();
+            ModConfig.RefreshPickupPage();
         }
 
         private void OnDestroy()
         {
             AvailablePickups.Remove(this);
             DestroyCall();
-            ModConfig.UpdatePickupList();
+            ModConfig.RefreshPickupPage();
         }
     }
 

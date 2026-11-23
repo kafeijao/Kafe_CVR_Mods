@@ -25,14 +25,6 @@ public class NavMeshFollower : MelonMod
 
         FollowerController.Initialize();
 
-        // Update all QM pages when opening QM (it will check if the page is actually opened)
-        CVRGameEventSystem.QuickMenu.OnOpen.AddListener(() =>
-        {
-            ModConfig.UpdatePickupList();
-            ModConfig.UpdateFollowerControllerPage();
-            ModConfig.UpdatePickupList();
-        });
-
         // Calling on melon initializing was causing issues sometimes
         CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() =>
         {

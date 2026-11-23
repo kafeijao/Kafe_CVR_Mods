@@ -154,7 +154,7 @@ public class FollowerBehaviorControl : FollowerStateMachine {
             targetBehavior.DisableAllBehaviorsExcept(targetBehavior);
 
             // Update the Menus
-            ModConfig.UpdateFollowerControllerPage();
+            ModConfig.RefreshMenus();
         }
 
         private bool GetClosestProp(Vector3 sourcePos, out Pickups.PickupWrapper pickupWrapper) {
@@ -197,7 +197,7 @@ public class FollowerBehaviorControl : FollowerStateMachine {
 
             // There's only remote players, if there's a valid closer one pick it
             playerGuid = closestRemotePlayer?.Uuid;
-            return closestRemotePlayer == null;
+            return closestRemotePlayer != null;
         }
 
         [Serializable]

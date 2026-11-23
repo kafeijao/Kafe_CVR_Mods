@@ -1,17 +1,17 @@
 ﻿using System.Reflection;
-using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.UI.UILib;
 using ABI_RC.Systems.UI.UILib.UIObjects;
 using ABI_RC.Systems.UI.UILib.UIObjects.Components;
+using ABI.CCK.Components;
 using Kafe.NavMeshFollower.Behaviors;
 using Kafe.NavMeshFollower.Integrations;
 using Kafe.NavMeshFollower.InteractableWrappers;
 using MelonLoader;
 using UnityEngine;
-using ZLinq;
 
 namespace Kafe.NavMeshFollower;
 
@@ -31,378 +31,345 @@ public static class ModConfig
                          "generated the first time you spawn a follower in a world.");
     }
 
-    private static Page _pickupPage;
-    private static Category _pickupSpawnableCategory;
-    private static Category _pickupObjectSyncCategory;
-
-    private static Action<Pickups.PickupWrapper> _onPickupSelected;
-
-    private static void PromptPickup(Page currentPage, Action<Pickups.PickupWrapper> callback)
-    {
-        _onPickupSelected = pickupWrapper =>
-        {
-            callback?.Invoke(pickupWrapper);
-            currentPage.OpenPage();
-        };
-        _pickupPage.OpenPage();
-    }
-
-    internal static void UpdatePickupList()
-    {
-        if (_pickupSpawnableCategory == null
-            || PlayerSetup.Instance == null
-            || CVR_MenuManager.Instance == null)
-            return;
-
-        // No point if the QM is not opened
-        if (!CVR_MenuManager.Instance.IsViewShown)
-            return;
-
-        // No point if the Pickup page is not opened
-        if (!_pickupPage.IsPageOpen)
-            return;
-
-        _pickupSpawnableCategory.ClearChildren();
-
-        // Sort by distance
-        var sortedSpawnablePickups = Pickups.AvailableSpawnablePickups
-            .AsValueEnumerable()
-            .OrderBy(p => Vector3.Distance(p.transform.position, PlayerSetup.Instance.GetPlayerPosition()));
-
-        foreach (var spawnablePickup in sortedSpawnablePickups)
-        {
-            string guid = spawnablePickup.Spawnable.guid;
-            bool gotImage = FollowerImages.TryGetPropImageUrl(guid, out string url);
-            var button = _pickupSpawnableCategory.AddButton("", url, "Select this spawnable pickup");
-            if (!gotImage) FollowerImages.QueueSetFollowerButtonImage(button, guid);
-            button.OnPress += () => _onPickupSelected?.Invoke(spawnablePickup);
-        }
-
-        _pickupObjectSyncCategory.ClearChildren();
-
-        var sortedObjectSyncPickups = Pickups.AvailableObjectSyncPickups
-            .AsValueEnumerable()
-            .OrderBy(p => Vector3.Distance(p.transform.position, PlayerSetup.Instance.GetPlayerPosition()));
-
-        foreach (var objectSyncPickup in sortedObjectSyncPickups)
-        {
-            var button = _pickupObjectSyncCategory.AddButton(objectSyncPickup.objectSync.name, "", "Select this world pickup");
-            button.OnPress += () => _onPickupSelected?.Invoke(objectSyncPickup);
-        }
-    }
-
     private static Page _mainPage;
-    private static Category _mainCategory;
-
-    internal static void UpdateMainPage()
-    {
-        if (_mainCategory == null)
-            return;
-
-        if (!CVR_MenuManager.Instance.IsViewShown)
-            return;
-
-        if (!_mainPage.IsPageOpen)
-            return;
-
-        _mainCategory.ClearChildren();
-
-        foreach (var controller in FollowerController.FollowerControllers)
-        {
-            string guid = controller.Spawnable.guid;
-            bool gotImage = FollowerImages.TryGetPropImageUrl(guid, out string url);
-            var button = _mainCategory.AddButton(controller.LastHandledBehavior.GetStatus(), url, "Control this follower.");
-            if (!gotImage) FollowerImages.QueueSetFollowerButtonImage(button, guid);
-            button.OnPress += () =>
-            {
-                _selectedFollowerController = controller;
-                _followerControllerPage.OpenPage();
-            };
-        }
-    }
-
-    internal static void UpdatePlayerPage()
-    {
-        if (CVRPlayerManager.Instance == null
-            || string.IsNullOrEmpty(QuickMenuAPI.SelectedPlayerID)
-            || !CVRPlayerManager.Instance.UserIdToPlayerEntity.ContainsKey(QuickMenuAPI.SelectedPlayerID))
-            return;
-
-        if (!CVR_MenuManager.Instance.IsViewShown)
-            return;
-
-        UpdatePlayerPage(QuickMenuAPI.SelectedPlayerName, QuickMenuAPI.SelectedPlayerID);
-    }
-
-    private static Button _requestLibButton;
-
-    private static void UpdatePlayerPage(string playerName, string playerID)
-    {
-        if (_playersNavMeshCat == null) return;
-
-        // Update the all follow target button
-        _startFollowingTargetButton.ButtonText = $"All Follow {playerName}";
-        _startFollowingTargetButton.ButtonTooltip = $"Make all followers follow {playerName}.";
-
-        // Delete RequestLib button
-        _requestLibButton?.Delete();
-
-        var hasPermission = true;
-        if (!NavMeshFollower.TestMode && !Friends.FriendsWith(playerID) &&
-            !RequestLibIntegration.HasPermission(playerID))
-        {
-            hasPermission = false;
-
-            if (RequestLibIntegration.HasRequestLib(playerID))
-            {
-                if (RequestLibIntegration.IsRequestPending(playerID))
-                {
-                    _requestLibButton = _playersNavMeshCat.AddButton("Waiting...", "", "Waiting for the Reply....");
-                    _requestLibButton.Disabled = true;
-                }
-                else
-                {
-                    _requestLibButton = _playersNavMeshCat.AddButton("Request Permission", "",
-                        $"Requests {playerName} permission to interact using RequestLib. It will last until the {playerName} leaves the instance.");
-                    _requestLibButton.OnPress += () =>
-                    {
-                        RequestLibIntegration.RequestToInteract(playerName, playerID);
-                        UpdatePlayerPage();
-                    };
-                }
-            }
-        }
-
-        _startFollowingTargetButton.Disabled = !hasPermission;
-        if (hasPermission)
-        {
-            _startFollowingTargetButton.OnPress += () =>
-            {
-                foreach (var followPlayerInstance in FollowPlayer.FollowPlayerInstances)
-                {
-                    followPlayerInstance.SetTarget(playerID);
-                }
-
-                UpdateMainPage();
-                UpdatePlayerPage();
-            };
-        }
-        else
-        {
-            _startFollowingTargetButton.ButtonText = "No Permission";
-            _startFollowingTargetButton.ButtonTooltip = $"You can't send the props to interact with {playerName} " +
-                                                        $"because they're not your friends and they haven't given " +
-                                                        $"you permission via RequestLib.";
-            _startFollowingTargetButton.OnPress += () =>
-            {
-                MelonLogger.Warning($"You don't have permission from {playerName} to let the props interact with them...");
-            };
-        }
-
-        // Restore the advanced page
-        _playersNavMeshAdvancedPageCat.ClearChildren();
-        _playersNavMeshAdvancedPageCat.CategoryName = hasPermission ? "No Permission" : "Advanced";
-
-        if (!hasPermission) return;
-
-        foreach (var controller in FollowerController.FollowerControllers)
-        {
-            string guid = controller.Spawnable.guid;
-            bool gotImage = FollowerImages.TryGetPropImageUrl(guid, out string url);
-            var button = _playersNavMeshAdvancedPageCat.AddButton(controller.LastHandledBehavior.GetStatus(), url, "Control this follower.");
-            if (!gotImage) FollowerImages.QueueSetFollowerButtonImage(button, guid);
-            button.OnPress += () =>
-            {
-                _selectedFollowerController = controller;
-                _followerControllerPage.OpenPage();
-            };
-        }
-    }
-
-    private static Category _playersNavMeshCat;
-    private static Page _playersNavMeshAdvancedPage;
-    private static Category _playersNavMeshAdvancedPageCat;
-    private static Button _stopFollowingButton;
-    private static Button _startFollowingMeButton;
-    private static Button _startFollowingTargetButton;
-
-
-    private static Page _followerControllerPage;
-    private static Category _followerControllerCategory;
-    private static Category _followerControllerBehaviorsCategory;
-    private static FollowerController _selectedFollowerController;
-
-    internal static void UpdateFollowerControllerPage()
-    {
-        _followerControllerCategory.ClearChildren();
-        if (_selectedFollowerController == null) return;
-
-        var reBakeButton =
-            _followerControllerCategory.AddButton("Re-Bake Nav Mesh", "", "Re-Bakes the Nav Mesh for this agent.");
-        reBakeButton.OnPress += () =>
-        {
-            NavMeshTools.API.BakeCurrentWorldNavMesh(_selectedFollowerController.BakeAgent,
-                (_, _) =>
-                {
-                    MelonLogger.Msg(
-                        $"Finished baking the NavMeshData for {_selectedFollowerController.Spawnable.guid}");
-                }, true);
-            MelonLogger.Msg($"Re-Baking the Nav Mesh for {_selectedFollowerController.Spawnable.guid}");
-            QuickMenuAPI.ShowNotice("Re-Bake Request",
-                "Request to bake the nav mesh for the current agent was queued!");
-        };
-
-        _followerControllerBehaviorsCategory.ClearChildren();
-        foreach (var behavior in _selectedFollowerController.Behaviors)
-        {
-            if (!behavior.IsToggleable) continue;
-            var behaviorToggle = _followerControllerBehaviorsCategory.AddToggle(behavior.GetStatus(),
-                behavior.Description, behavior.IsEnabled());
-            behaviorToggle.OnValueUpdated += isOn =>
-            {
-                // Disable all other behaviors
-                behavior.DisableAllBehaviorsExcept(behavior);
-
-                switch (behavior)
-                {
-                    case FetchPickup fetchPickup:
-                        if (isOn)
-                        {
-                            PromptPickup(_followerControllerPage,
-                                pickupWrapper =>
-                                {
-                                    fetchPickup.FetchPickupTo(pickupWrapper, _currentMenuTargetPlayerGuid);
-                                });
-                        }
-                        else
-                        {
-                            fetchPickup.FinishFetch();
-                        }
-
-                        break;
-
-                    case PlayFetch playFetch:
-                        if (isOn)
-                        {
-                            PromptPickup(_followerControllerPage,
-                                pickupWrapper => { playFetch.StartPlayingFetch(pickupWrapper); });
-                        }
-                        else
-                        {
-                            playFetch.StopPlayingFetch();
-                        }
-
-                        break;
-
-                    case FollowPlayer followPlayer:
-                        if (isOn)
-                        {
-                            followPlayer.SetTarget(_currentMenuTargetPlayerGuid);
-                        }
-                        else
-                        {
-                            followPlayer.ClearTarget();
-                        }
-
-                        break;
-                }
-
-                UpdateFollowerControllerPage();
-            };
-        }
-    }
-
-    private static string _currentMenuTargetPlayerGuid;
+    private static Category _followersCategory;
+    private static Page _followerPage;
+    private static FollowerController _selectedFollower;
+    private static Page _pickupPage;
+    private static Category _propPickupsCategory;
+    private static Category _worldPickupsCategory;
+    private static Action<Pickups.PickupWrapper> _onPickupChosen;
 
     public static void SetupBTKUI(Assembly assembly)
     {
-
         const string logoName = $"{nameof(NavMeshFollower)}-Logo";
         QuickMenuAPI.PrepareIcon(nameof(NavMeshFollower), logoName, assembly.GetManifestResourceStream("resources.logo.png"));
 
-        // Create the Main Menu
+        // Main page
         _mainPage = new Page(nameof(NavMeshFollower), nameof(NavMeshFollower), true, logoName)
         {
             MenuTitle = nameof(NavMeshFollower),
-            MenuSubtitle = "Choose the follower you want to interact with.",
+            MenuSubtitle = "Pick a follower to control it, or command all of them at once",
         };
-        _mainCategory = _mainPage.AddCategory("");
+        _mainPage.OnVisibilityChanged += (isVisible, _) => { if (isVisible) RefreshMainPage(); };
+        _followersCategory = _mainPage.AddCategory("Followers");
 
-        // Follower Controller Page
-        // _followerControllerPage = _mainCategory.AddPage(nameof(NavMeshFollower) + " Controller", "", "", nameof(NavMeshFollower));
-        _followerControllerPage = Page.GetOrCreatePage(nameof(NavMeshFollower), nameof(NavMeshFollower) + " Controller");
-        _followerControllerPage.MenuTitle = nameof(NavMeshFollower) + " Controller";
-        _followerControllerPage.MenuSubtitle = "Control the follower.";
-        _followerControllerPage.Disabled = true;
-        _followerControllerCategory = _followerControllerPage.AddCategory("General");
-        _followerControllerBehaviorsCategory = _followerControllerPage.AddCategory("Behaviors");
-
-        // Pickup Selector Page
-        // _pickupPage = _followerControllerCategory.AddPage(nameof(NavMeshFollower) + " Pickup Selector", "", "", nameof(NavMeshFollower));
-        _pickupPage = Page.GetOrCreatePage(nameof(NavMeshFollower), nameof(NavMeshFollower) + " Pickup Selector");
-        _pickupPage.MenuTitle = nameof(NavMeshFollower) + " Pickup Selector";
-        _pickupPage.MenuSubtitle = "Chose the pickup you want to interact with.";
-        _pickupPage.Disabled = true;
-        _pickupSpawnableCategory = _pickupPage.AddCategory("Props");
-        _pickupObjectSyncCategory = _pickupPage.AddCategory("World Pickups");
-
-        // Create the Player Selection Menu
-        _playersNavMeshCat = QuickMenuAPI.PlayerSelectPage.AddCategory(nameof(NavMeshFollower), nameof(NavMeshFollower));
-
-        _stopFollowingButton = _playersNavMeshCat.AddButton("Stop all", "",
-            "Stops all followers from following whoever they're following.");
-        _stopFollowingButton.OnPress += () =>
+        var allCategory = _mainPage.AddCategory("All Followers");
+        allCategory.AddButton("All Follow Me", "", "Makes all followers follow you").OnPress += () =>
         {
-            foreach (var followPlayerInstance in FollowPlayer.FollowPlayerInstances)
+            foreach (var controller in FollowerController.FollowerControllers)
+                Follow(controller, MetaPort.Instance.ownerId);
+            RefreshMenus();
+        };
+        allCategory.AddButton("All Follow Player", "", "Pick a player for all followers to follow").OnPress += () =>
+        {
+            QuickMenuAPI.OpenPlayerSelector("Who should they follow?", player => RunIfAllowed(player, () =>
             {
-                followPlayerInstance.ClearTarget();
+                foreach (var controller in FollowerController.FollowerControllers)
+                    Follow(controller, player.Uuid);
+            }));
+        };
+        allCategory.AddButton("Stop All", "", "Makes all followers stop").OnPress += () =>
+        {
+            foreach (var controller in FollowerController.FollowerControllers)
+                Stop(controller);
+            RefreshMenus();
+        };
+
+        // Follower page
+        _followerPage = Page.GetOrCreatePage(nameof(NavMeshFollower), "Follower");
+        _followerPage.OnVisibilityChanged += (isVisible, _) => { if (isVisible) RefreshFollowerPage(); };
+
+        var followCategory = _followerPage.AddCategory("Follow");
+        followCategory.AddButton("Follow Me", "", "Makes this follower follow you").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            Follow(controller, MetaPort.Instance.ownerId);
+            RefreshMenus();
+        };
+        followCategory.AddButton("Follow Player", "", "Pick a player to follow").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            QuickMenuAPI.OpenPlayerSelector("Who should it follow?",
+                player => RunIfAllowed(player, () => Follow(controller, player.Uuid)));
+        };
+
+        var fetchCategory = _followerPage.AddCategory("Fetch");
+        fetchCategory.AddButton("Fetch for Me", "", "Pick a pickup for this follower bring to you").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            ChoosePickup(pickup =>
+            {
+                QuickMenuAPI.GoBack();
+                FetchFor(controller, pickup, MetaPort.Instance.ownerId);
+            });
+        };
+        fetchCategory.AddButton("Fetch for Player", "", "Pick a pickup and a player to deliver it").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            ChoosePickup(pickup => QuickMenuAPI.OpenPlayerSelector("Who should get it?", player =>
+            {
+                // The player list goes back on its own, this one closes the pickup page too
+                QuickMenuAPI.GoBack();
+                RunIfAllowed(player, () => FetchFor(controller, pickup, player.Uuid));
+            }));
+        };
+        fetchCategory.AddButton("Play Fetch", "", "Pick a pickup to play fetch with. Throw it and the follower brings it back").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            ChoosePickup(pickup =>
+            {
+                QuickMenuAPI.GoBack();
+                PlayFetchWith(controller, pickup);
+            });
+        };
+
+        var otherCategory = _followerPage.AddCategory("Other");
+        otherCategory.AddButton("Stop", "", "Makes this follower stop what it's doing").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            Stop(controller);
+            RefreshMenus();
+        };
+        otherCategory.AddButton("Re-Bake Nav Mesh", "", "Re-calculates the nav mesh").OnPress += () =>
+        {
+            if (!TryGetSelectedFollower(out var controller)) return;
+            var guid = controller.Spawnable.guid;
+            MelonLogger.Msg($"Re-Baking the Nav Mesh for {guid}");
+            NavMeshTools.API.BakeCurrentWorldNavMesh(controller.BakeAgent,
+                (_, _) => MelonLogger.Msg($"Finished baking the NavMeshData for {guid}"), true);
+            QuickMenuAPI.ShowAlertToast("Re-baking the nav mesh for this follower...", 3);
+        };
+
+        // Pickup page
+        _pickupPage = Page.GetOrCreatePage(nameof(NavMeshFollower), "Choose a Pickup");
+        _pickupPage.OnVisibilityChanged += (isVisible, _) =>
+        {
+            if (isVisible)
+            {
+                RefreshPickupPage();
+                return;
             }
 
-            UpdateMainPage();
-            UpdatePlayerPage();
+            // Don't keep a long list around while nobody is looking at it
+            _propPickupsCategory.ClearChildren();
+            _worldPickupsCategory.ClearChildren();
         };
+        _propPickupsCategory = _pickupPage.AddCategory("Props");
+        _worldPickupsCategory = _pickupPage.AddCategory("World Pickups");
+    }
 
-        _startFollowingMeButton = _playersNavMeshCat.AddButton("All Follow me", "", "Make all followers follow me.");
-        _startFollowingMeButton.OnPress += () =>
+    /// <summary>
+    /// Updates the follower menus that are currently open
+    /// </summary>
+    internal static void RefreshMenus()
+    {
+        RefreshMainPage();
+        RefreshFollowerPage();
+    }
+
+    /// <summary>
+    /// Rebuilds the follower list on the main page if it's open
+    /// </summary>
+    private static void RefreshMainPage()
+    {
+        if (_mainPage == null || !_mainPage.IsThisPageOpen) return;
+
+        _followersCategory.ClearChildren();
+        _followersCategory.CategoryName = $"Followers ({FollowerController.FollowerControllers.Count})";
+
+        if (FollowerController.FollowerControllers.Count == 0)
         {
-            foreach (var followPlayerInstance in FollowPlayer.FollowPlayerInstances)
+            _followersCategory.AddTextBlock("You have no followers spawned. Spawn a NavMeshFollower prop to control it here");
+            return;
+        }
+
+        foreach (var controller in FollowerController.FollowerControllers)
+        {
+            var button = _followersCategory.AddContentButton(GetPropName(controller.Spawnable), "", "",
+                "Control this follower", "", new List<string> { controller.GetStatus() });
+            button.OnPress += () =>
             {
-                followPlayerInstance.SetTarget(MetaPort.Instance.ownerId);
-            }
+                _selectedFollower = controller;
+                _followerPage.OpenPage();
+            };
+            LoadPropImage(button, controller.Spawnable.guid);
+        }
+    }
 
-            UpdateMainPage();
-            UpdatePlayerPage();
-        };
+    private static void RefreshFollowerPage()
+    {
+        if (_followerPage == null || !_followerPage.IsThisPageOpen) return;
 
-        _startFollowingTargetButton = _playersNavMeshCat.AddButton("All Follow X", "", "Make all followers follow X.");
-
-        _playersNavMeshAdvancedPage = Page.GetOrCreatePage(nameof(NavMeshFollower), nameof(NavMeshFollower) + " Advanced");
-        _playersNavMeshCat.AddButton("Advanced", "", "Advanced following targeting").OnPress +=
-            () => { _playersNavMeshAdvancedPage.OpenPage(); };
-        // _playersNavMeshAdvancedPage = _playersNavMeshCat.AddPage("Advanced", "", "Advanced following targeting", nameof(NavMeshFollower));
-        _playersNavMeshAdvancedPageCat = _playersNavMeshAdvancedPage.AddCategory("");
-
-        QuickMenuAPI.OnPlayerSelected += UpdatePlayerPage;
-
-        // When a player is selected, set them as target.
-        QuickMenuAPI.OnPlayerSelected += (_, playerGuid) =>
+        // The follower was deleted while we were looking at it
+        if (_selectedFollower == null)
         {
-            _currentMenuTargetPlayerGuid = playerGuid;
-            _selectedFollowerController = null;
-        };
+            QuickMenuAPI.GoBack();
+            return;
+        }
 
-        // Handle triggers when pages get opened
-        QuickMenuAPI.OnOpenedPage += (openedElementId, lastElementId) =>
+        _followerPage.PageDisplayName = GetPropName(_selectedFollower.Spawnable);
+        _followerPage.MenuTitle = GetPropName(_selectedFollower.Spawnable);
+        _followerPage.MenuSubtitle = _selectedFollower.GetStatus();
+    }
+
+    internal static void RefreshPickupPage()
+    {
+        if (_pickupPage == null || !_pickupPage.IsThisPageOpen || PlayerSetup.Instance == null) return;
+
+        _propPickupsCategory.ClearChildren();
+        _worldPickupsCategory.ClearChildren();
+
+        var playerPos = PlayerSetup.Instance.GetPlayerPosition();
+
+        var propPickups = Pickups.AvailableSpawnablePickups
+            .Where(p => p != null && (_selectedFollower == null || p.Spawnable != _selectedFollower.Spawnable))
+            .OrderBy(p => Vector3.Distance(p.transform.position, playerPos))
+            .ToList();
+
+        _propPickupsCategory.CategoryName = $"Props ({propPickups.Count})";
+        foreach (var pickup in propPickups)
         {
-            if (openedElementId == _mainPage.ElementID)
+            var spawnerName = CVRPlayerManager.Instance.TryGetPlayerName(pickup.Spawnable.ownerId);
+            var distance = Vector3.Distance(pickup.transform.position, playerPos);
+            var button = _propPickupsCategory.AddContentButton(GetPropName(pickup.Spawnable), "", "",
+                "Choose this prop", "", new List<string> { $"Spawned by {spawnerName}", $"{distance:F1}m away" });
+            button.OnPress += () => OnPickupPressed(pickup);
+            LoadPropImage(button, pickup.Spawnable.guid);
+        }
+
+        var worldPickups = Pickups.AvailableObjectSyncPickups
+            .Where(p => p != null)
+            .OrderBy(p => Vector3.Distance(p.transform.position, playerPos))
+            .ToList();
+
+        _worldPickupsCategory.CategoryName = $"World Pickups ({worldPickups.Count})";
+        foreach (var pickup in worldPickups)
+        {
+            var distance = Vector3.Distance(pickup.transform.position, playerPos);
+            _worldPickupsCategory.AddButton($"{pickup.objectSync.name} ({distance:F1}m)", "", "Choose this world pickup")
+                .OnPress += () => OnPickupPressed(pickup);
+        }
+    }
+
+    private static void ChoosePickup(Action<Pickups.PickupWrapper> onChosen)
+    {
+        _onPickupChosen = onChosen;
+        _pickupPage.OpenPage();
+    }
+
+    private static void OnPickupPressed(Pickups.PickupWrapper pickup)
+    {
+        // The pickup can be deleted while the list is open
+        if (pickup == null)
+        {
+            QuickMenuAPI.ShowAlertToast("That pickup doesn't exist anymore", 3);
+            RefreshPickupPage();
+            return;
+        }
+
+        if (_selectedFollower == null)
+        {
+            QuickMenuAPI.ShowAlertToast("That follower doesn't exist anymore", 3);
+            QuickMenuAPI.GoBack();
+            return;
+        }
+
+        _onPickupChosen?.Invoke(pickup);
+    }
+
+    private static bool TryGetSelectedFollower(out FollowerController controller)
+    {
+        controller = _selectedFollower;
+        if (controller != null) return true;
+        QuickMenuAPI.ShowAlertToast("That follower doesn't exist anymore", 3);
+        return false;
+    }
+
+    private static void RunIfAllowed(UIPlayerObject player, Action action)
+    {
+        if (player.IsLocalUser
+            || NavMeshFollower.TestMode
+            || Friends.FriendsWith(player.Uuid)
+            || RequestLibIntegration.HasPermission(player.Uuid))
+        {
+            action();
+            return;
+        }
+
+        if (!RequestLibIntegration.HasRequestLib(player.Uuid))
+        {
+            QuickMenuAPI.ShowNotice("No Permission",
+                $"{player.Username} isn't your friend and doesn't have RequestLib, so your followers can't interact with them.");
+            return;
+        }
+
+        if (RequestLibIntegration.IsRequestPending(player.Uuid))
+        {
+            QuickMenuAPI.ShowAlertToast($"Still waiting for {player.Username} to reply", 3);
+            return;
+        }
+
+        QuickMenuAPI.ShowConfirm("Ask for Permission?",
+            $"{player.Username} isn't your friend. Ask them if they allow your followers to target them? " +
+            $"It lasts until they leave the instance.",
+            () => RequestLibIntegration.RequestToInteract(player.Username, player.Uuid, () =>
             {
-                // When the main page is opened the local player is set as target
-                _currentMenuTargetPlayerGuid = MetaPort.Instance.ownerId;
-                _selectedFollowerController = null;
-                UpdateMainPage();
-            }
-            else if (openedElementId == _pickupPage.ElementID) UpdatePickupList();
-            else if (openedElementId == _followerControllerPage.ElementID) UpdateFollowerControllerPage();
-        };
+                action();
+                RefreshMenus();
+            }),
+            yesText: "Ask", noText: "Cancel");
+    }
+
+    private static void Follow(FollowerController controller, string playerId)
+    {
+        if (controller == null) return;
+        var followPlayer = controller.GetBehavior<FollowPlayer>();
+        followPlayer.DisableAllBehaviorsExcept(followPlayer);
+        followPlayer.SetTarget(playerId);
+    }
+
+    private static void FetchFor(FollowerController controller, Pickups.PickupWrapper pickup, string playerId)
+    {
+        if (controller == null) return;
+        var fetchPickup = controller.GetBehavior<FetchPickup>();
+        fetchPickup.DisableAllBehaviorsExcept(fetchPickup);
+        fetchPickup.FetchPickupTo(pickup, playerId);
+    }
+
+    private static void PlayFetchWith(FollowerController controller, Pickups.PickupWrapper pickup)
+    {
+        if (controller == null) return;
+        var playFetch = controller.GetBehavior<PlayFetch>();
+        playFetch.DisableAllBehaviorsExcept(playFetch);
+        playFetch.StartPlayingFetch(pickup);
+    }
+
+    private static void Stop(FollowerController controller)
+    {
+        if (controller == null) return;
+        foreach (var behavior in controller.Behaviors)
+            behavior.Disable();
+    }
+
+    private static string GetPropName(CVRSpawnable spawnable)
+    {
+        var name = spawnable.PropSoul?.ContentMetadata.AssetName;
+        return string.IsNullOrEmpty(name) ? spawnable.guid : name;
+    }
+
+    private static async void LoadPropImage(ContentButton button, string propGuid)
+    {
+        button.ButtonIconLoading = true;
+        try
+        {
+            var response = await PedestalInfoBatchProcessor.QueuePedestalInfoRequest(PedestalType.Prop, propGuid);
+            if (response != null) button.ButtonIcon = response.ImageUrl;
+        }
+        catch (Exception e)
+        {
+            MelonLogger.Warning($"Failed to get the image for the prop {propGuid}: {e.Message}");
+        }
+        button.ButtonIconLoading = false;
     }
 }

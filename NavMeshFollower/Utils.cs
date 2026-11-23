@@ -21,7 +21,7 @@ public static class Utils {
         var controllerRay = controllerRayGo.AddComponent<ControllerRay>();
         controllerRay.enabled = false;
         var attachPoint = new GameObject("AttachmentPoint");
-        attachPoint.transform.SetParent(controllerRayGo.transform, false);
+        attachPoint.transform.SetParent(target, false);
         attachPoint.transform.position = worldSpaceOffset;
         controllerRay.attachmentPoint = attachPoint.transform;
         controllerRay.pivotPoint = attachPoint.transform;

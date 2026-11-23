@@ -27,6 +27,7 @@ public class FetchPickup : Behavior {
         _targetPlayer = playerGuid;
         _targetPickup = pickup;
         _isFetching = true;
+        _currentState = State.Fetching;
     }
 
     public void FinishFetch() {
@@ -35,7 +36,7 @@ public class FetchPickup : Behavior {
         Controller.DropPickupRightHand(_targetPickup);
         _targetPickup = null;
         // Update the menu after delivering
-        ModConfig.UpdateFollowerControllerPage();
+        ModConfig.RefreshMenus();
     }
 
     private bool _wasDown;
