@@ -75,11 +75,14 @@ public class GrabbyBones : MelonMod {
     }
     public class GrabMessage
     {
+        private const int TargetPlayerGuidSize = 16;
+
         public bool IsLeft;
         public Vector3 PositionOffset;
         public string NetworkPath;
         public string RootIndex;
         public string ChildIndex;
+        public Guid? TargetPlayerGuid;
 
         public static GrabMessage Deserialize(ModNetworkMessage e)
         {
@@ -89,6 +92,17 @@ public class GrabbyBones : MelonMod {
             e.Read(out msg.NetworkPath);
             e.Read(out msg.RootIndex);
             e.Read(out msg.ChildIndex);
+
+            if (e._helper._reader.Length - e._helper._reader.Position >= TargetPlayerGuidSize)
+            {
+                var targetPlayerGuidBytes = new byte[TargetPlayerGuidSize];
+                for (var i = 0; i < targetPlayerGuidBytes.Length; i++)
+                {
+                    e.Read(out targetPlayerGuidBytes[i]);
+                }
+                msg.TargetPlayerGuid = new Guid(targetPlayerGuidBytes);
+            }
+
             return msg;
         }
 
@@ -99,6 +113,14 @@ public class GrabbyBones : MelonMod {
             e.Write(msg.NetworkPath);
             e.Write(msg.RootIndex);
             e.Write(msg.ChildIndex);
+
+            if (msg.TargetPlayerGuid.HasValue)
+            {
+                foreach (var value in msg.TargetPlayerGuid.Value.ToByteArray())
+                {
+                    e.Write(value);
+                }
+            }
         }
     }
 
@@ -110,12 +132,19 @@ public class GrabbyBones : MelonMod {
             msg.Read(out GrabMessage grabMessage);
             var path = grabMessage.NetworkPath;
             var foundBones = GrabbyBonesCache.Where(x => x.NetworkPath == path);
+            if (grabMessage.TargetPlayerGuid.HasValue)
+            {
+                var targetPlayerGuid = grabMessage.TargetPlayerGuid.Value;
+                foundBones = foundBones.Where(x =>
+                    Guid.TryParse(x.PlayerGuid, out var playerGuid) && playerGuid == targetPlayerGuid);
+            }
             var foundBonesCount = foundBones.Count();
             var firstBone = foundBones.FirstOrDefault();
             #if DEBUG
             MelonLogger.Msg(
                 $"""
                 Received Grab Message (Sent by {msg.Sender})
+                Target Player: {grabMessage.TargetPlayerGuid?.ToString() ?? "Legacy/Unknown"}
                 NetworkPath: {grabMessage.NetworkPath}
                 Root Index: {grabMessage.RootIndex}
                 Child Index: {grabMessage.ChildIndex}
@@ -324,6 +353,10 @@ public class GrabbyBones : MelonMod {
             y.NetworkPath = closestGrabbyBoneInfo.NetworkPath;
             y.RootIndex = closestGrabbyBoneRoot.NetworkPath;
             y.ChildIndex = closestChildTransform.NetworkPath;
+            if (Guid.TryParse(closestGrabbyBoneInfo.PlayerGuid, out var targetPlayerGuid))
+            {
+                y.TargetPlayerGuid = targetPlayerGuid;
+            }
             modMsg.Write(y);
             modMsg.Send();
         }
