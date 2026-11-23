@@ -350,6 +350,7 @@ public class Captions : MelonPlugin
                                         false,
                                         true,
                                         true,
+                                        true,
                                         nameof(Captions)));
                                 });
                             }
