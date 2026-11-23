@@ -115,7 +115,7 @@ public class OSCSpawnableModule : OSCModule
 
     private void Enable()
     {
-        if (_enabled || !OSCServer.IsRunning || !OSC.Instance.meOSCSpawnableModule.Value) return;
+        if (_enabled || Server == null || !OSC.Instance.meOSCSpawnableModule.Value) return;
 
         Events.Spawnable.SpawnableCreated += _spawnableCreated;
         Events.Spawnable.SpawnableDeleted += _spawnableDeleted;

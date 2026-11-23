@@ -42,7 +42,7 @@ public static class Spawnable
         SpawnableParametersCacheOutFloat.Clear();
         foreach (var prop in PropCache.Values.ToList())
         {
-            if (prop.Spawnable == null) return;
+            if (prop.Spawnable == null) continue;
             OnSpawnableCreated(prop);
             OnSpawnableUpdateFromNetwork(prop);
             foreach (var syncValue in prop.Spawnable.syncValues)

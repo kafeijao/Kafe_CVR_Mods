@@ -96,23 +96,6 @@ internal class HarmonyPatches
         }
     }
 
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(Props), nameof(Props.OnInstanceAttached))]
-    internal static void After_CVRSyncHelper_ApplyPropValuesSpawn(string instanceId, CVRSpawnable spawnable)
-    {
-        try
-        {
-            if (!Props._byId.TryGetValue(instanceId, out var propSoul) || propSoul.State == PropInstanceState.Spawned)
-                return;
-
-            Events.Spawnable.OnSpawnableCreated(propSoul);
-        }
-        catch (Exception e)
-        {
-            MelonLogger.Error($"Error during {nameof(After_CVRSyncHelper_ApplyPropValuesSpawn)} patch", e);
-        }
-    }
-
     [HarmonyPrefix]
     [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.OnDestroy))]
     internal static void Before_Spawnable_OnDestroy(CVRSpawnable __instance)
