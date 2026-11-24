@@ -1,0 +1,23 @@
+{
+  "_id": -1,
+  "name": "MovementParentFlight",
+  "modversion": "1.0.0",
+  "gameversion": "2026.3.0",
+  "loaderversion": "v0.6.1",
+  "modtype": "Mod",
+  "author": "kafeijao",
+  "description": "Fly by standing on a movement parent that you're holding\n\nCheck [README.md](https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MovementParentFlight) for more info.\n\n",
+  "searchtags": [
+    "MovementParentFlight",
+    "Movement",
+    "Parent",
+    "Flight",
+    "fly",
+    "collider"
+  ],
+  "requirements": [],
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/MovementParentFlight.dll",
+  "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MovementParentFlight",
+  "changelog": "- Initial Release",
+  "embedcolor": "16C60C"
+}
