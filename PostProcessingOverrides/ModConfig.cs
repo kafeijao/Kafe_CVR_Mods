@@ -2,14 +2,14 @@
 using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Systems.UI.UILib;
 using ABI_RC.Systems.UI.UILib.UIObjects;
+using ABI_RC.Systems.UI.UILib.UIObjects.Components;
+using dotmore.Collections.Generic;
 using MelonLoader;
 
 namespace Kafe.PostProcessingOverrides;
 
 public static class ModConfig
 {
-    private const int Multiplier = 10;
-
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
     internal static MelonPreferences_Entry<OverrideType> MeDefaultWorldConfig;
@@ -17,8 +17,14 @@ public static class ModConfig
     // BTKUI Stuff
     private static Page _page;
 
+    private static Category _worldCategory;
+    private static CycleButton _worldTypeButton;
+    private static Category _settingsCategory;
+    private static readonly List<Action<PostProcessingOverrides.JsonConfigPPSettings>> EffectButtonUpdaters = new();
+    private static SliderFloat _bloomIntensity;
+    private static SliderFloat _bloomThreshold;
+
     // Internal
-    private static readonly int TypeCount = Enum.GetValues(typeof(OverrideType)).Length;
     private static readonly int SettingCount = Enum.GetValues(typeof(OverrideSetting)).Length;
 
     public static void InitializeMelonPrefs()
@@ -58,12 +64,51 @@ public static class ModConfig
             MenuSubtitle = "Configure Post Processing Overrides per world",
         };
 
-        if (PostProcessingOverrides.IsWorldLoaded())
-            SetupOverrideButtons();
+        _worldCategory = _page.AddCategory("Current World");
+        _worldTypeButton = _worldCategory.AddCycleButton(new OrderedDictionary<string, string>
+            {
+                { nameof(OverrideType.Original), GetTripleToggleIcon(OverrideSetting.Original) },
+                { nameof(OverrideType.Global), GetTripleToggleIcon(OverrideSetting.Override) },
+                { nameof(OverrideType.Custom), GetTripleToggleIcon(OverrideSetting.Override) },
+                { nameof(OverrideType.Off), GetTripleToggleIcon(OverrideSetting.Off) },
+            },
+            "Which override type should we use? Original: Original Post processing of the world. " +
+            "Global: Uses your Global override, shared by every world set to Global. " +
+            "Custom: Override specific for this world. Off: Disables PP.");
+        _worldTypeButton.OnChange += index =>
+        {
+            var worldConfig = PostProcessingOverrides.GetCurrentWorldConfig();
+            if (worldConfig == null) return;
+            worldConfig.ConfigType = (OverrideType)index;
+            PostProcessingOverrides.SaveConfigAndApplyChanges();
+            UpdateMenu();
+        };
 
-        // Since updating buttons is bugged currently in BTKUI I need to recreate the whole menu ;_;
-        // Todo: Implement Input updates instead of recreating, waiting on: https://github.com/BTK-Development/BTKUILib/issues/8
-        PostProcessingOverrides.ConfigChanged += SetupOverrideButtons;
+        _settingsCategory = _page.AddCategory("Overrides");
+        CreateEffectButton("Bloom", s => s.Bloom, true);
+        CreateEffectButton("Ambient Occlusion", s => s.AO);
+        CreateEffectButton("Color Grading", s => s.ColorGrading);
+        CreateEffectButton("Auto Exposure", s => s.AutoExposure);
+        CreateEffectButton("Chromatic Aberration", s => s.ChromaticAberration);
+        CreateEffectButton("Depth of Field", s => s.DepthOfField);
+        CreateEffectButton("Grain", s => s.Grain);
+        CreateEffectButton("Lens Distortion", s => s.LensDistortion);
+        CreateEffectButton("Motion Blur", s => s.MotionBlur);
+        CreateEffectButton("Vignette", s => s.Vignette);
+
+        var defaultBloom = new PostProcessingOverrides.JsonConfigPPSettingBloom();
+
+        _bloomIntensity = _settingsCategory.AddSlider("Bloom Intensity", "Set the Bloom Intensity",
+            defaultBloom.Intensity, 0f, 20f, 2, defaultBloom.Intensity, true);
+        // Only saves and applies, updating the menu here would fight the slider while it's being dragged
+        _bloomIntensity.OnValueUpdated += newValue => UpdateShownSettings(s => s.Bloom.Intensity = newValue);
+
+        _bloomThreshold = _settingsCategory.AddSlider("Bloom Threshold", "Set the Bloom Threshold",
+            defaultBloom.Threshold, 0f, 5f, 2, defaultBloom.Threshold, true);
+        _bloomThreshold.OnValueUpdated += newValue => UpdateShownSettings(s => s.Bloom.Threshold = newValue);
+
+        UpdateMenu();
+        PostProcessingOverrides.CurrentWorldChanged += UpdateMenu;
     }
 
     private static string GetTripleToggleIcon(OverrideSetting setting)
@@ -77,95 +122,84 @@ public static class ModConfig
         };
     }
 
-    private static void CreateButton(
-        Category currentOverride,
-        PostProcessingOverrides.JsonConfigPPSetting setting,
-        string settingName)
+    /// <summary>
+    /// Returns the setting to show on the button. Effects that can't be overridden show Override as Original
+    /// </summary>
+    private static OverrideSetting GetShownSetting(OverrideSetting setting, bool canOverride)
     {
-        var button =
-            currentOverride.AddButton(settingName, GetTripleToggleIcon(setting.Active), $"{settingName} Control");
-        button.OnPress += () =>
-        {
-            setting.Active = (OverrideSetting)(((int)setting.Active + 1) % SettingCount);
-            PostProcessingOverrides.SaveConfigAndApplyChanges(true);
-        };
+        return !canOverride && setting == OverrideSetting.Override ? OverrideSetting.Original : setting;
     }
 
-    private static void SetupOverrideButtons()
+    /// <summary>
+    /// Adds a button that cycles an effect between Off, Original and Override when it can be overridden
+    /// </summary>
+    private static void CreateEffectButton(
+        string effectName,
+        Func<PostProcessingOverrides.JsonConfigPPSettings, PostProcessingOverrides.JsonConfigPPSetting> getSetting,
+        bool canOverride = false)
     {
-        _page.ClearChildren();
+        var tooltip = canOverride
+            ? $"{effectName}: Off, Original from the world, or Override with the values below"
+            : $"{effectName}: Off, or Original from the world";
+        var button = _settingsCategory.AddButton(effectName, GetTripleToggleIcon(OverrideSetting.Original), tooltip);
+        var optionCount = canOverride ? SettingCount : SettingCount - 1;
 
-        var currentWorld = _page.AddCategory("Current World");
-
-        var config = PostProcessingOverrides.GetCurrentConfigSettings();
-        PostProcessingOverrides.JsonConfigPPSettings current = null;
-
-        var overrideButton = currentWorld.AddButton($"PostProcessing: {config.ConfigType.ToString()}", "",
-            "Which override type should we use? Original: Original Post processing of the world. " +
-            "Global: Uses your Global override. Custom: Override specific for this world. Off: Disables PP.");
-
-        overrideButton.OnPress += () =>
+        button.OnPress += () => UpdateShownSettings(settings =>
         {
-            var nextType = (OverrideType)(((int)config.ConfigType + 1) % TypeCount);
-            config.ConfigType = nextType;
-            PostProcessingOverrides.SaveConfigAndApplyChanges(true);
-        };
+            var setting = getSetting(settings);
+            var next = ((int)GetShownSetting(setting.Active, canOverride) + 1) % optionCount;
+            setting.Active = (OverrideSetting)next;
+            UpdateMenu();
+        });
 
-        Category currentOverride = null;
+        EffectButtonUpdaters.Add(settings =>
+            button.ButtonIcon = GetTripleToggleIcon(GetShownSetting(getSetting(settings).Active, canOverride)));
+    }
 
-        switch (config.ConfigType)
-        {
-            case OverrideType.Original:
-            case OverrideType.Off:
-                return;
+    /// <summary>
+    /// Returns the Global or Custom settings of the current world, or null when there are none to edit
+    /// </summary>
+    private static PostProcessingOverrides.JsonConfigPPSettings GetShownSettings()
+    {
+        var worldConfig = PostProcessingOverrides.GetCurrentWorldConfig();
+        return worldConfig == null ? null : PostProcessingOverrides.GetUsedSettings(worldConfig);
+    }
 
-            case OverrideType.Global:
-                currentOverride = _page.AddCategory("Global Override");
-                current = PostProcessingOverrides.Config.Global;
-                break;
+    /// <summary>
+    /// Changes the shown settings, then saves and applies them
+    /// </summary>
+    private static void UpdateShownSettings(Action<PostProcessingOverrides.JsonConfigPPSettings> change)
+    {
+        var settings = GetShownSettings();
+        if (settings == null) return;
+        change(settings);
+        PostProcessingOverrides.SaveConfigAndApplyChanges();
+    }
 
-            case OverrideType.Custom:
-                currentOverride = _page.AddCategory("Custom Override");
-                current = config.CustomConfig;
-                break;
-        }
+    /// <summary>
+    /// Updates the menu elements to show the current world settings
+    /// </summary>
+    private static void UpdateMenu()
+    {
+        var worldConfig = PostProcessingOverrides.GetCurrentWorldConfig();
+        _worldCategory.Hidden = worldConfig == null;
+        if (worldConfig != null) _worldTypeButton.SetOption((int)worldConfig.ConfigType);
 
-        // Toggles for the overrides
-        CreateButton(currentOverride, current!.Bloom, "Bloom");
-        CreateButton(currentOverride, current.AO, "Ambient Occlusion");
-        CreateButton(currentOverride, current.ColorGrading, "Color Grading");
-        CreateButton(currentOverride, current.AutoExposure, "Auto Exposure");
-        CreateButton(currentOverride, current.ChromaticAberration, "Chromatic Aberration");
-        CreateButton(currentOverride, current.DepthOfField, "Depth of Field");
-        CreateButton(currentOverride, current.Grain, "Grain");
-        CreateButton(currentOverride, current.LensDistortion, "Lens Distortion");
-        CreateButton(currentOverride, current.MotionBlur, "Motion Blur");
-        CreateButton(currentOverride, current.Vignette, "Vignette");
+        var settings = GetShownSettings();
+        _settingsCategory.Hidden = settings == null;
+        if (settings == null) return;
 
-        // Sliders
-        var bloomIntensity = currentOverride.AddSlider("Bloom Intensity", "Set the Bloom Intensity", current.Bloom.Intensity/Multiplier, 0f, 5f, 2);
-        bloomIntensity.OnValueUpdated += newValue =>
-        {
-            current.Bloom.Intensity = newValue * Multiplier;
-            PostProcessingOverrides.SaveConfigAndApplyChanges(true);
-        };
+        _settingsCategory.CategoryName = worldConfig!.ConfigType == OverrideType.Global
+            ? "Global Override"
+            : "Custom Override";
 
-        var bloomThreshold = currentOverride.AddSlider("Bloom Threshold", "Set the Bloom Threshold", current.Bloom.Threshold, 0f, 5f, 2);
-        bloomThreshold.OnValueUpdated += newValue =>
-        {
-            current.Bloom.Threshold = newValue;
-            PostProcessingOverrides.SaveConfigAndApplyChanges(true);
-        };
+        foreach (var updateButton in EffectButtonUpdaters)
+            updateButton(settings);
 
-        // currentOverride.AddSlider("ColorGrading Hue Shift", "Set the ColorGrading Hue Shift", current.ColorGrading.HueShift, 0f, 360f, 2).OnValueUpdated += newValue => {
-        //     current.ColorGrading.HueShift = newValue;
-        //     PostProcessingOverrides.SaveConfigAndApplyChanges(true);
-        // };
-        // Button hdrButton = currentOverride.AddButton($"ColorGrading Mode: {current.ColorGrading.GradingMode.ToString()}", "", $"ColorGrading Grading Mode", ButtonStyle.TextOnly);
-        // hdrButton.OnPress += () => {
-        //     current.ColorGrading.GradingMode = (GradingMode)(((int)current.ColorGrading.GradingMode + 1) % Enum.GetValues(typeof(GradingMode)).Length);
-        //     hdrButton.ButtonText = $"ColorGrading Mode: {current.ColorGrading.GradingMode.ToString()}";
-        //     PostProcessingOverrides.SaveConfigAndApplyChanges(true);
-        // };
+        var showBloomSliders = settings.Bloom.Active == OverrideSetting.Override;
+        _bloomIntensity.SetSliderValue(settings.Bloom.Intensity);
+        _bloomThreshold.SetSliderValue(settings.Bloom.Threshold);
+        _bloomIntensity.Hidden = !showBloomSliders;
+        _bloomThreshold.Hidden = !showBloomSliders;
     }
 }

@@ -25,5 +25,5 @@ This mod gives you more control over the world's Post Processing configurations.
 ### Configuration Override Setting
 
 - **Off:** Will disable this setting completely.
-- **Original:** Will use the original world's setting.
+- **Original:** Will use the original world's setting, also affected by your ChilloutVR graphics settings.
 - **Override:** Will use the setting from our defined Post Process configuration.
