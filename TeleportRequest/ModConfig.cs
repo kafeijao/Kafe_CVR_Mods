@@ -1,4 +1,5 @@
 ﻿using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Savior;
 using ABI_RC.Systems.Movement;
 using ABI_RC.Systems.UI.UILib;
 using ABI_RC.Systems.UI.UILib.UIObjects;
@@ -102,6 +103,7 @@ public static class ModConfig {
 
         QuickMenuAPI.OnPlayerSelected += (playerName, playerID) => {
             playerCat.ClearChildren();
+            if (playerID == MetaPort.Instance.ownerId) return;
             if (RequestLib.API.HasRequestLib(playerID)) {
                 if (BetterBetterCharacterController.Instance.CanFly()) {
                     var teleportButton = playerCat.AddButton("Request to Teleport", "", $"Send a request to teleport to the {playerName}");

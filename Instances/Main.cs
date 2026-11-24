@@ -437,10 +437,10 @@ public class Instances : MelonMod {
         return Convert.FromBase64String(output);
     }
 
-    public record JsonConfigJoinToken(string Token, string FQDN, short Port) {
+    public record JsonConfigJoinToken(string Token, string FQDN, ushort Port) {
         public string Token = Token;
         public string FQDN = FQDN;
-        public short Port = Port;
+        public ushort Port = Port;
         public DateTime ExpirationDate = GetJWTExpirationDateTime(Token);
     }
 
@@ -484,7 +484,7 @@ public class Instances : MelonMod {
             if (isInitial) {
                 // If failed to find the instance -> Fallback to the original behaviour
                 MelonLogger.Msg("Failed to join the previous Instance during initial join... fallback to the original initial instance join behaviour");
-                yield return LoginRoom.LoadPlayerChosenContent();
+                yield return BootSequence.LoadPlayerChosenContent();
             }
 
             else {
@@ -511,7 +511,7 @@ public class Instances : MelonMod {
             if (!joinTask.Result && isInitial)
             {
                 MelonLogger.Msg("Since it was the initial join, we're falling back to the original initial instance join behaviour");
-                yield return LoginRoom.LoadPlayerChosenContent();
+                yield return BootSequence.LoadPlayerChosenContent();
             }
         }
 
@@ -602,8 +602,8 @@ public class Instances : MelonMod {
     internal class HarmonyPatches {
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(LoginRoom), nameof(LoginRoom.LoadPlayerChosenContent))]
-        public static bool Before_LoginRoom_LoadPlayerChosenContent()
+        [HarmonyPatch(typeof(BootSequence), nameof(BootSequence.LoadPlayerChosenContent))]
+        public static bool Before_BootSequence_LoadPlayerChosenContent()
         {
             // Prevent the initial joining to the offline home world
             try {
@@ -676,8 +676,9 @@ public class Instances : MelonMod {
                     return true;
                 }
             }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(Before_LoginRoom_LoadPlayerChosenContent)}");
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during the patched function {nameof(Before_BootSequence_LoadPlayerChosenContent)}");
                 MelonLogger.Error(e);
             }
             return true;
@@ -685,14 +686,17 @@ public class Instances : MelonMod {
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.Start))]
-        public static void Before_CVRWorld_Start() {
+        public static void Before_CVRWorld_Start()
+        {
             _consumedTeleport = false;
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(RichPresence), nameof(RichPresence.ReadPresenceUpdateFromNetwork))]
-        public static void After_RichPresence_ReadPresenceUpdateFromNetwork() {
-            try {
+        public static void After_RichPresence_ReadPresenceUpdateFromNetwork()
+        {
+            try
+            {
                 #if DEBUG
                 MelonLogger.Msg($"[After_RichPresence_ReadPresenceUpdateFromNetwork] " +
                                 $"CurrentWorldId: {CVRInstances.CurrentWorldId}, " +
@@ -702,7 +706,8 @@ public class Instances : MelonMod {
                 #endif
 
                 // Initialize the save config job when we reach an online instance
-                if (!_startedJob) {
+                if (!_startedJob)
+                {
                     _startedJobInstance = BetterScheduleSystem.AddJob(UpdateRejoinLocation, 10f);
                     _startedJob = true;
                 }
@@ -714,14 +719,16 @@ public class Instances : MelonMod {
                     && CVRTools.IsWithinMaxBounds(PlayerConfig.RejoinLocation.Position.GetPosition())
                     && PlayerConfig.RejoinLocation.InstanceId == CVRInstances.CurrentInstanceId
                     && PlayerConfig.RejoinLocation.WorldId == CVRInstances.CurrentWorldId
-                    && BetterBetterCharacterController.Instance.CanFly()) {
-
+                    && BetterBetterCharacterController.Instance.CanFly())
+                {
 
                     var timeSinceClosed = DateTime.UtcNow - PlayerConfig.RejoinLocation.ClosedDateTime;
-                    if (timeSinceClosed > TimeSpan.FromMinutes(TeleportToLocationTimeout)) {
+                    if (timeSinceClosed > TimeSpan.FromMinutes(TeleportToLocationTimeout))
+                    {
                         MelonLogger.Msg($"Skip attempting to Teleport to the previous location of this Instance, because it has been over {TeleportToLocationTimeout} minutes...");
                     }
-                    else {
+                    else
+                    {
                         MelonLogger.Msg("Attempting to Teleport to the previous location of this Instance...");
                         BetterBetterCharacterController.Instance.TeleportPlayerTo(PlayerConfig.RejoinLocation.Position.GetPosition(), PlayerConfig.RejoinLocation.RotationEuler.GetRotation().eulerAngles, false, true);
                     }
@@ -737,7 +744,8 @@ public class Instances : MelonMod {
                     CVRInstances.CurrentInstanceName,
                     CVRPlayerManager.Instance.NetworkPlayers.Count));
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 MelonLogger.Error($"Error during the patched function {nameof(After_RichPresence_ReadPresenceUpdateFromNetwork)}");
                 MelonLogger.Error(e);
             }

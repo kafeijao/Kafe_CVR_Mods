@@ -49,7 +49,7 @@ public class RemoteMiniMe
                 miniMe.DestroyClone();
         });
 
-        LateEventsManager.OnPostLateUpdate += VeryLateUpdate;
+        CVRFrameDriver.OnPostLateUpdate += VeryLateUpdate;
     }
 
     private static void VeryLateUpdate()
@@ -265,7 +265,7 @@ public class RemoteMiniMe
             Transform cloneRootTransform = _remotePlayerClone.CloneRootTransform;
             Transform holderTransform = _cloneHolderObject.transform;
 
-            float avatarHeight = player.PuppetMaster.netIkController.GetRemoteHeight();
+            float avatarHeight = player.PuppetMaster.AvatarHeight;
             Vector3 lossyScale = avatarObject.transform.lossyScale;
             float num = 0.5f / avatarHeight;
 

@@ -3,7 +3,8 @@ using MelonLoader;
 
 namespace Kafe.LoggerPlusPlus;
 
-public static class ModConfig {
+public static class ModConfig
+{
 
     // Melon Prefs
     private static MelonPreferences_Category _melonCategory;
@@ -36,7 +37,8 @@ public static class ModConfig {
     internal static MelonPreferences_Entry<bool> MeFullStackForWarnings;
     internal static MelonPreferences_Entry<bool> MeFullStackForLogs;
 
-    public static void InitializeMelonPrefs() {
+    public static void InitializeMelonPrefs()
+    {
 
         // Melon Config
         _melonCategory = MelonPreferences.CreateCategory(AssemblyInfoParams.Name);

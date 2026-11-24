@@ -1,8 +1,8 @@
 {
   "_id": 275,
   "name": "MiniMe++",
-  "modversion": "1.0.4",
-  "gameversion": "2026r182",
+  "modversion": "1.0.5",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "sync"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/MiniMe++.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/MiniMe++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MiniMe++",
-  "changelog": "- Fixed MiniMe sending mod network messages before being subscribed",
+  "changelog": "- Fixed for 2026.3.0 (GS2)\n- Fixed errors when toggling sync",
   "embedcolor": "16C60C"
 }

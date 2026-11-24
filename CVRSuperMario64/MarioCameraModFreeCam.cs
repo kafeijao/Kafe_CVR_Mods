@@ -19,7 +19,7 @@ public class MarioCameraModFreeCam : ICameraVisualMod {
     }
 
     // Overrides
-    public string GetModName(string language) => "Mario Free Cam";
+    public string GetModName() => "Mario Free Cam";
     public Sprite GetModImage() => _image;
     public int GetSortingOrder() => 10;
     public bool ActiveIsOrange() => true;

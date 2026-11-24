@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.Movement;
@@ -535,10 +535,9 @@ public class ActionDetector : MonoBehaviour
     internal class HarmonyPatches
     {
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerBase), nameof(PlayerBase.LateUpdate))]
-        public static void After_PlayerSetup_LateUpdate(PlayerBase __instance)
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
+        public static void After_PlayerSetup_LateUpdate()
         {
-            if (__instance is not PlayerSetup) return;
             try
             {
                 _onLateUpdate?.Invoke();

@@ -64,7 +64,7 @@ public class FetchPickup : Behavior {
         destinationPos = pickupPos;
 
         // We successfully delivered (the target player picked it up)
-        if (!Controller.IsGrabbedByMyRightHand(_targetPickup) && _targetPickup.pickupObject.GrabbedBy == _targetPlayer) {
+        if (!Controller.IsGrabbedByMyRightHand(_targetPickup) && _targetPickup.pickupObject.GetHolderId() == _targetPlayer) {
             FinishFetch();
             return true;
         }

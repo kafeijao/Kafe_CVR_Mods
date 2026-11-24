@@ -19,6 +19,8 @@
 - [InterceptorResult](#T-Kafe-RequestLib-API-InterceptorResult 'Kafe.RequestLib.API.InterceptorResult')
   - [GetPreventShowingRequest(resultOverride,responseMetadata)](#M-Kafe-RequestLib-API-InterceptorResult-GetPreventShowingRequest-Kafe-RequestLib-API-RequestResult,System-String- 'Kafe.RequestLib.API.InterceptorResult.GetPreventShowingRequest(Kafe.RequestLib.API.RequestResult,System.String)')
   - [GetShowRequest()](#M-Kafe-RequestLib-API-InterceptorResult-GetShowRequest 'Kafe.RequestLib.API.InterceptorResult.GetShowRequest')
+- [ModNetwork](#T-Kafe-RequestLib-ModNetwork 'Kafe.RequestLib.ModNetwork')
+  - [TrySendMsg()](#M-Kafe-RequestLib-ModNetwork-TrySendMsg-System-Func{ABI_RC-Systems-ModNetwork-ModNetworkMessage},Kafe-RequestLib-ModNetwork-MessageType,System-Action{ABI_RC-Systems-ModNetwork-ModNetworkMessage}- 'Kafe.RequestLib.ModNetwork.TrySendMsg(System.Func{ABI_RC.Systems.ModNetwork.ModNetworkMessage},Kafe.RequestLib.ModNetwork.MessageType,System.Action{ABI_RC.Systems.ModNetwork.ModNetworkMessage})')
 - [PlayerInfo](#T-Kafe-RequestLib-API-PlayerInfo 'Kafe.RequestLib.API.PlayerInfo')
   - [Guid](#F-Kafe-RequestLib-API-PlayerInfo-Guid 'Kafe.RequestLib.API.PlayerInfo.Guid')
   - [Username](#F-Kafe-RequestLib-API-PlayerInfo-Username 'Kafe.RequestLib.API.PlayerInfo.Username')
@@ -251,6 +253,24 @@ will still appear for the user to reply to.
 ##### Returns
 
 An InterceptorResult for you to use on your Interceptor function.
+
+##### Parameters
+
+This method has no parameters.
+
+<a name='T-Kafe-RequestLib-ModNetwork'></a>
+## ModNetwork `type`
+
+##### Namespace
+
+Kafe.RequestLib
+
+<a name='M-Kafe-RequestLib-ModNetwork-TrySendMsg-System-Func{ABI_RC-Systems-ModNetwork-ModNetworkMessage},Kafe-RequestLib-ModNetwork-MessageType,System-Action{ABI_RC-Systems-ModNetwork-ModNetworkMessage}-'></a>
+### TrySendMsg() `method`
+
+##### Summary
+
+Writes our message header and data, then sends it. Returns false and logs when the game refuses to send it
 
 ##### Parameters
 

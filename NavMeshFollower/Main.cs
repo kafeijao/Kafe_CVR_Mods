@@ -1,8 +1,11 @@
-﻿using ABI_RC.Core.Player;
+﻿using ABI_RC.Core;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.Util.AssetFiltering;
 using ABI_RC.Systems.GameEventSystem;
+using ABI_RC.Systems.SyncedObjects;
 using ABI.CCK.Components;
+using GameCommon.Models.Sync;
 using HarmonyLib;
 using Kafe.NavMeshFollower.CCK;
 using Kafe.NavMeshFollower.InteractableWrappers;
@@ -24,6 +27,10 @@ public class NavMeshFollower : MelonMod
         ModConfig.SetupBTKUI(MelonAssembly.Assembly);
 
         FollowerController.Initialize();
+
+        // Runs after every LateUpdate, so the IK already posed the players and the followers
+        CVRFrameDriver.OnPostLateUpdate += SavePlayerViewpoints;
+        CVRFrameDriver.OnPostLateUpdate += FollowerController.UpdateCarriedPickups;
 
         // Calling on melon initializing was causing issues sometimes
         CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() =>
@@ -62,32 +69,52 @@ public class NavMeshFollower : MelonMod
         // #endif
     }
 
+    /// <summary>
+    /// Saves where every player's view point is this frame
+    /// </summary>
+    private static void SavePlayerViewpoints()
+    {
+        try
+        {
+            // Save player's viewpoints
+            if (PlayerViewpoints.Count != CVRPlayerManager.Instance.NetworkPlayers.Count + 1)
+                PlayerViewpoints.Clear();
+            PlayerViewpoints[MetaPort.Instance.ownerId] = PlayerSetup.Instance.ViewPoint.GetPointPosition();
+            foreach (var player in CVRPlayerManager.Instance.NetworkPlayers)
+            {
+                if (!player.PuppetMaster.IsAvatarLoaded)
+                    continue; // GetPointPosition can have the fallback transform null on first frame
+                PlayerViewpoints[player.Uuid] = player.PuppetMaster.ViewPoint.GetPointPosition();
+            }
+        }
+        catch (Exception e)
+        {
+            MelonLogger.Error($"Error during {nameof(SavePlayerViewpoints)}.", e);
+        }
+    }
+
     [HarmonyPatch]
     private class HarmonyPatches
     {
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerBase), nameof(PlayerBase.LateUpdate))]
-        public static void After_PlayerSetup_LateUpdate(PlayerBase __instance)
+        [HarmonyPatch(typeof(SyncedObjectManager), nameof(SyncedObjectManager.ClaimFor))]
+        public static void After_SyncedObjectManager_ClaimFor(SyncedObjectEntry entry, int slotIndex, ushort us, ref byte __result)
         {
-            if (__instance is not PlayerSetup) return;
-
-            // Save view point positions. This late update runs after VRIK, so all viewpoints should be gucci
             try
             {
-                // Save player's viewpoints
-                if (PlayerViewpoints.Count != CVRPlayerManager.Instance.NetworkPlayers.Count + 1)
-                    PlayerViewpoints.Clear();
-                PlayerViewpoints[MetaPort.Instance.ownerId] = PlayerSetup.Instance.ViewPoint.GetPointPosition();
-                foreach (var player in CVRPlayerManager.Instance.NetworkPlayers)
-                {
-                    if (!player.PuppetMaster.IsAvatarLoaded)
-                        continue; // GetPointPosition can have the fallback transform null on first frame
-                    PlayerViewpoints[player.Uuid] = player.PuppetMaster.ViewPoint.GetPointPosition();
-                }
+                // Impulse is the strongest claim nobody chose, so only a deliberate hold can take a carried pickup off us
+                if (__result >= (byte)SyncType.Impulse) return;
+
+                var kind = entry.Layout.Slots[slotIndex].Kind;
+                if (kind != SyncSlotKind.RootTransform && kind != SyncSlotKind.SubTransform) return;
+                if (!FollowerController.CarriedTransforms.Contains(entry.Bindings[slotIndex].Transform)) return;
+                if (SyncedObjectManager.IsHeldByThem(entry, slotIndex, us)) return;
+
+                __result = (byte)SyncType.Impulse;
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_LateUpdate)}.");
+                MelonLogger.Error($"Error during the patched function {nameof(After_SyncedObjectManager_ClaimFor)}.");
                 MelonLogger.Error(e);
             }
         }
@@ -99,8 +126,8 @@ public class NavMeshFollower : MelonMod
             // Update the synced values driven by UpdateBy so it's independent from our controls
             try
             {
-                // Ignore props that are not grabbed by me (when followers grab it's as if I was grabbing)
-                if (__instance.pickup == null || !__instance.pickup.IsGrabbedByMe) return;
+                // Followers can only carry props that have a pickup
+                if (__instance.pickup == null) return;
 
                 foreach (var availableSpawnablePickup in Pickups.AvailableSpawnablePickups)
                 {
@@ -152,8 +179,9 @@ public class NavMeshFollower : MelonMod
                         // Update the value on the animator if it's not equal to the current one
                         if (!Mathf.Approximately(num, syncValue.currentValue))
                         {
-                            __instance.needsUpdate = true;
-                            __instance.UpdateMultiPurposeFloat(syncValue, num, index);
+                            // The game wrote its own value this step, drop it so it doesn't get synced as a quick flicker
+                            syncValue.ClearHeld();
+                            __instance.SetValue(index, num);
                         }
                     }
                 }

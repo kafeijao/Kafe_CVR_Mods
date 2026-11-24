@@ -1,8 +1,8 @@
 {
   "_id": 235,
   "name": "MenuCSSLoader",
-  "modversion": "1.1.1",
-  "gameversion": "2026r182",
+  "modversion": "1.1.2",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao & Jill The Something",
@@ -16,8 +16,8 @@
     "loader"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/MenuCSSLoader.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/MenuCSSLoader.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/MenuCSSLoader",
-  "changelog": "- Fixed for 2025r181",
+  "changelog": "- Fixed for 2026.3.0 (GS2)",
   "embedcolor": "16C60C"
 }

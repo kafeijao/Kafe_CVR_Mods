@@ -1,6 +1,8 @@
-using ABI_RC.Core.Networking;
+﻿using ABI_RC.Core.Networking;
 using ABI_RC.Core.Player;
+using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
+using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using HarmonyLib;
@@ -28,6 +30,25 @@ public class TeleportRequest : MelonMod {
 
         // Register this mod on the request lib
         RequestLib.API.RegisterMod();
+
+        CVRGameEventSystem.World.OnLoad.AddListener(OnWorldLoad);
+    }
+
+    /// <summary>
+    /// Clears the previous teleport locations when we join a different world
+    /// </summary>
+    private static void OnWorldLoad(string worldId) {
+        try {
+            if (_currentWorld != worldId) {
+                PreviousTeleportLocations.Clear();
+                PreviousTeleportLocationsChanged?.Invoke();
+            }
+            _currentWorld = worldId;
+        }
+        catch (Exception e) {
+            MelonLogger.Error($"Error during {nameof(OnWorldLoad)}");
+            MelonLogger.Error(e);
+        }
     }
 
     private static void OnResponse(RequestLib.API.Request request, RequestLib.API.Response response) {
@@ -82,6 +103,11 @@ public class TeleportRequest : MelonMod {
 
     public static void RequestToTeleport(string playerName, string playerID) {
 
+        if (playerID == MetaPort.Instance.ownerId) {
+            MelonLogger.Warning("Attempted to send a teleport request to ourselves, ignoring...");
+            return;
+        }
+
         // Check for the Request Lib
         if (!RequestLib.API.HasRequestLib(playerID)) {
             MelonLogger.Warning($"Attempted to send a teleport request to {playerName}, but the player doesn't have the {nameof(RequestLib)} mod :(");
@@ -124,27 +150,5 @@ public class TeleportRequest : MelonMod {
     }
 
     internal static int GoBackCount() => PreviousTeleportLocations.Count;
-
-    [HarmonyPatch]
-    internal class HarmonyPatches {
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRWorld), nameof(CVRWorld.OnEnable))]
-        private static void After_CVRWorld_OnEnable(CVRWorld __instance) {
-            // Clear previous teleport locations upon joining different worlds
-            try {
-                var newWorldGuid = __instance.GetComponent<CVRAssetInfo>().objectId;
-                if (_currentWorld != newWorldGuid) {
-                    PreviousTeleportLocations.Clear();
-                    PreviousTeleportLocationsChanged?.Invoke();
-                }
-                _currentWorld = newWorldGuid;
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_CVRWorld_OnEnable)}");
-                MelonLogger.Error(e);
-            }
-        }
-    }
 
 }

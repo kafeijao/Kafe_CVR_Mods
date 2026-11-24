@@ -1,8 +1,8 @@
 {
   "_id": 159,
   "name": "Logger++",
-  "modversion": "1.0.1",
-  "gameversion": "2026r182",
+  "modversion": "1.0.2",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Plugin",
   "author": "kafeijao",
@@ -13,8 +13,8 @@
     "debug"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/Logger++.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/Logger++.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/Logger++",
-  "changelog": "- Fixed for 2025r181",
+  "changelog": "- Fixed for 2026.3.0 (GS2)",
   "embedcolor": "16C60C"
 }

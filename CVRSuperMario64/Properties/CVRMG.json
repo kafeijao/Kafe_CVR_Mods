@@ -1,8 +1,8 @@
 {
   "_id": 134,
   "name": "CVRSuperMario64",
-  "modversion": "1.0.15",
-  "gameversion": "2026r182",
+  "modversion": "1.0.16",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "engine"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/CVRSuperMario64.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/CVRSuperMario64.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CVRSuperMario64",
-  "changelog": "- Fixed for 2025r182",
+  "changelog": "- Fixed for 2026.3.0 (GS2)\n- Fixed the Mario camera starting flipped",
   "embedcolor": "16C60C"
 }

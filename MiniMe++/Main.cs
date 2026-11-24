@@ -1,8 +1,8 @@
 ﻿using ABI_RC.Core.InteractionSystem;
 using ABI_RC.Core.Networking.GameServer;
-using ABI_RC.Core.Savior;
 using ABI_RC.Systems.ContentClones;
 using ABI.CCK.Components;
+using GameCommon.Packets.Garrison.GameServer;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -20,6 +20,26 @@ public class MiniMePlusPlus : MelonMod
 
         Networking.Show += RemoteMiniMe.ShowFromNetwork;
         Networking.Hide += RemoteMiniMe.Hide;
+
+        GSInfoHandler.OnGSInfoUpdate += OnGSInfoUpdate;
+    }
+
+    /// <summary>
+    /// Make the MiniMe sync data updates respect the server tick rate updates
+    /// </summary>
+    private static void OnGSInfoUpdate(ServerInfoPacket update)
+    {
+        try
+        {
+            var newInvokeRate = 1f / update.TickRate;
+            RemoteMiniMe.NetworkInterval = newInvokeRate;
+            Networking.UpdateTickRate(newInvokeRate);
+            MelonLogger.Msg($"Updated the MiniMe sending data rate to {newInvokeRate}Hz");
+        }
+        catch (Exception e)
+        {
+            MelonLogger.Error($"Error during {nameof(OnGSInfoUpdate)}", e);
+        }
     }
 
     [HarmonyPatch]
@@ -115,27 +135,6 @@ public class MiniMePlusPlus : MelonMod
             catch (Exception e)
             {
                 MelonLogger.Error($"Error executing {nameof(After_MiniMe_TrySetupClone)} Patch", e);
-            }
-        }
-
-        /// <summary>
-        /// Make the MiniMe sync data updates respect the server tick rate updates
-        /// </summary>
-        /// <param name="update"></param>
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(MetaPort), nameof(MetaPort.OnGSInfoUpdate))]
-        private static void After_MetaPort_OnGSInfoUpdate(GSInfoUpdate update)
-        {
-            try
-            {
-                var newInvokeRate = 1f / update.TickRate;
-                RemoteMiniMe.NetworkInterval = newInvokeRate;
-                Networking.UpdateTickRate(newInvokeRate);
-                MelonLogger.Msg($"Updated the MiniMe sending data rate to {newInvokeRate}Hz");
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error executing {nameof(After_MetaPort_OnGSInfoUpdate)} Patch", e);
             }
         }
     }

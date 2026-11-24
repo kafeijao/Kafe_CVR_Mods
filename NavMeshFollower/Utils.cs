@@ -1,14 +1,23 @@
 ﻿using System.Text.RegularExpressions;
 using ABI_RC.Core.Base;
 using ABI_RC.Core.InteractionSystem;
+using ABI_RC.Core.Player;
 using ABI.CCK.Components;
 using UnityEngine;
 
 namespace Kafe.NavMeshFollower;
 
-public static class Utils {
+public static class Utils
+{
+    public static string GetHolderId(this CVRPickupObject pickup)
+    {
+        if (pickup.GrabbedBy != "") return pickup.GrabbedBy;
+        if (pickup.IsHeldByOther && CVRPlayerManager.Instance.TryGetPlayerBase(pickup.HeldBy, out var holder)) return holder.PlayerId;
+        return "";
+    }
 
-    public static string GetPrettyClassName(object obj) {
+    public static string GetPrettyClassName(object obj)
+    {
         var className = obj.GetType().Name;
         return Regex.Replace(className, "(?<!^)([A-Z])", " $1");
     }

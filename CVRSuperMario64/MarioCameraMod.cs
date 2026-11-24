@@ -1,16 +1,19 @@
-﻿using ABI_RC.Core.IO;
+﻿using ABI_RC.Core.Base;
+using ABI_RC.Core.IO;
 using ABI_RC.Core.UI;
 using ABI_RC.Systems.Camera;
-using ABI_RC.Systems.Camera.VisualMods;
 using ABI_RC.Systems.Movement;
 using ABI.CCK.Components;
 using UnityEngine;
 
 namespace Kafe.CVRSuperMario64;
 
-public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
+public class MarioCameraMod : ICameraMotionMod, ICameraVisualModRequireUpdate
+{
 
     public static MarioCameraMod Instance;
+
+    public bool NeedsPin => true;
 
     private readonly List<CVRSM64Mario> _ourMarios = new();
     private CVRSM64Mario _currentMario;
@@ -22,7 +25,6 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     private Sprite _image;
     private Transform _camera;
     private PortableCamera _portableCamera;
-    private Transform _cameraParent;
     private bool _isEnabled;
 
     private SphereCollider _collider;
@@ -66,7 +68,7 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
     private readonly List<Renderer> _renderersToTurnOn = new();
 
     // Overrides
-    public string GetModName(string language) => "Mario 64";
+    public string GetModName() => "Mario 64";
     public Sprite GetModImage() => _image;
     public int GetSortingOrder() => 10;
     public bool ActiveIsOrange() => false;
@@ -83,36 +85,43 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         return _currentMario != null;
     }
 
-    public void Setup(PortableCamera camera, Camera cameraComponent) {
+    public void Setup(PortableCamera camera, Camera cameraComponent)
+    {
 
         _image = CVRSuperMario64.GetMarioSprite();
 
         _portableCamera = camera;
-        _camera = cameraComponent.transform;
-        _cameraParent = _camera.transform.parent;
+        _camera = camera.Rig;
         _collider = _camera.gameObject.AddComponent<SphereCollider>();
+        _collider.isTrigger = true;
 
         _pickup = _camera.gameObject.GetComponent<CVRPickupObject>();
         // _pickup.SetWasUsingGravity(false);
 
-        _rigidbody = _camera.gameObject.GetComponent<Rigidbody>();
+        _rigidbody = _camera.gameObject.AddComponentIfMissing<Rigidbody>();
 
         camera.@interface.AddAndGetHeader(this, nameof(MarioCameraMod));
 
         // Hide mario renderers from the camera
-        Camera.onPreCull += cam => {
-            if (cam == cameraComponent && _isEnabled && _portableCamera.IsActive() && _currentMario != null) {
+        Camera.onPreCull += cam =>
+        {
+            if (cam == cameraComponent && _isEnabled && _portableCamera.IsActive() && _currentMario != null)
+            {
                 _renderersToTurnOn.Clear();
-                foreach (var renderer in _currentMario.GetRenderersToHideFromCamera()) {
+                foreach (var renderer in _currentMario.GetRenderersToHideFromCamera())
+                {
                     if (!renderer.enabled) continue;
                     renderer.enabled = false;
                     _renderersToTurnOn.Add(renderer);
                 }
             }
         };
-        Camera.onPostRender += cam => {
-            if (cam == cameraComponent && _renderersToTurnOn.Count > 0) {
-                foreach (var renderer in _renderersToTurnOn) {
+        Camera.onPostRender += cam =>
+        {
+            if (cam == cameraComponent && _renderersToTurnOn.Count > 0)
+            {
+                foreach (var renderer in _renderersToTurnOn)
+                {
                     renderer.enabled = true;
                 }
                 _renderersToTurnOn.Clear();
@@ -149,11 +158,10 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         elevationSetting.MinValue = 0f;
         elevationSetting.MaxValue = 2f;
         elevationSetting.Load();
-
-        Disable();
     }
 
-    public void Update() {
+    public void Update()
+    {
         if (!_isEnabled) return;
 
         // Disable if there is no more
@@ -171,7 +179,8 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
         if (Input.GetKeyDown(KeyCode.E)) _portableCamera.MakePhoto();
 
-        if (_currentMario.IsFirstPerson()) {
+        if (_currentMario.IsFirstPerson())
+        {
 
             var multiplier = _currentMario.IsSwimming() ? 3 : 2;
 
@@ -185,7 +194,8 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         }
 
 
-        else if (MarioCameraModFreeCam.IsFreeCamEnabled()) {
+        else if (MarioCameraModFreeCam.IsFreeCamEnabled())
+        {
             var cameraRotationInput = MarioInputModule.Instance.cameraRotation;
             var cameraPitchInput = MarioInputModule.Instance.cameraPitch;
 
@@ -244,17 +254,14 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
 
             _isEnabled = true;
 
-            _camera.transform.SetParent(null, true);
+            _portableCamera.EnsurePinned();
 
             _collider.isTrigger = true;
             _rigidbody.isKinematic = true;
             _rigidbody.useGravity = false;
             _pickup.enabled = false;
-            _portableCamera.DisableModByType(typeof(DroneMode));
-            _portableCamera.DisableModByType(typeof(AutoOrbit));
-            _portableCamera.DisableModByType(typeof(ImageStabilization));
 
-            _portableCamera.SetFlip(CameraFlip.Back);
+            _portableCamera.SetFlip(CameraFlip.Front);
 
             // Working rotation
             _currentYaw = 0;
@@ -268,11 +275,6 @@ public class MarioCameraMod : ICameraVisualMod, ICameraVisualModRequireUpdate {
         _isEnabled = false;
 
         _pickup.enabled = true;
-
-        var transform = _camera.transform;
-        transform.SetParent(_cameraParent, false);
-        transform.localPosition = Vector3.zero;
-        _portableCamera.ApplyFlip(false);
     }
 
     public PortableCamera.CaptureMode GetSupportedCaptureModes()

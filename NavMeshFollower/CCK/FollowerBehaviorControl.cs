@@ -179,7 +179,7 @@ public class FollowerBehaviorControl : FollowerStateMachine {
 
             var closestRemotePlayer = CVRPlayerManager.Instance.NetworkPlayers
                 .Where(np => np.PuppetMaster != null)
-                .OrderBy(p => Vector3.Distance(p.PuppetMaster.netIkController.avatarHeadPosition, sourcePos))
+                .OrderBy(p => Vector3.Distance(p.PuppetMaster.GetViewWorldPosition(), sourcePos))
                 .FirstOrDefault();
 
             if (PlayerSetup.Instance.AvatarDescriptor != null && PlayerSetup.Instance.Animator != null) {
@@ -190,7 +190,7 @@ public class FollowerBehaviorControl : FollowerStateMachine {
                     return true;
                 }
                 // Check whether local player is closer than closest remote player
-                var localPlayerCloser = Vector3.Distance(localHeadBonePos, sourcePos) < Vector3.Distance(closestRemotePlayer.PuppetMaster.netIkController.avatarHeadPosition, sourcePos);
+                var localPlayerCloser = Vector3.Distance(localHeadBonePos, sourcePos) < Vector3.Distance(closestRemotePlayer.PuppetMaster.GetViewWorldPosition(), sourcePos);
                 playerGuid = localPlayerCloser ? MetaPort.Instance.ownerId : closestRemotePlayer.Uuid;
                 return true;
             }

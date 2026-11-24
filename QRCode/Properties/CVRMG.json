@@ -1,8 +1,8 @@
 {
   "_id": 175,
   "name": "QRCode",
-  "modversion": "1.0.2",
-  "gameversion": "2026r182",
+  "modversion": "1.0.3",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -13,8 +13,8 @@
     "camera"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/QRCode.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/QRCode.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/QRCode",
-  "changelog": "Thanks LensError for the contributions:\n- Fixed white-on-black QR codes not being detected (inverted polarity scan)\n- Added GlobalHistogramBinarizer alongside HybridBinarizer for better detection in low-contrast/bad lighting\n- Enabled TryHarder and locked format to QR only for cleaner, faster scans",
+  "changelog": "- Fixed for 2026.3.0 (GS2)",
   "embedcolor": "16C60C"
 }

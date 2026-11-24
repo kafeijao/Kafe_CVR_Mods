@@ -50,6 +50,7 @@ public class CCKDebugger : MelonMod
 
         CVRGameEventSystem.Avatar.OnLocalAvatarLoad.AddListener(Events.Avatar.OnCVRAvatarStarted);
         CVRGameEventSystem.Avatar.OnRemoteAvatarLoad.AddListener((_, avatar) => Events.Avatar.OnCVRAvatarStarted(avatar));
+        CVRGameEventSystem.Player.OnJoinEntity.AddListener(player => Events.Player.OnPlayerLoaded(player.Uuid, player.Username));
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
@@ -312,40 +313,6 @@ public class CCKDebugger : MelonMod
             catch (Exception e)
             {
                 MelonLogger.Error($"Error during {nameof(AfterUpdateAnimatorManager)} patch", e);
-            }
-        }
-
-        // Players
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(CVRPlayerManager), nameof(CVRPlayerManager.TryCreatePlayer))]
-        private static void BeforeCreatePlayer(ref CVRPlayerManager __instance, out int __state)
-        {
-            try
-            {
-                __state = __instance.NetworkPlayers.Count;
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error during {nameof(BeforeCreatePlayer)} patch", e);
-                __state = -1;
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(CVRPlayerManager), nameof(CVRPlayerManager.TryCreatePlayer))]
-        private static void AfterCreatePlayer(ref CVRPlayerManager __instance, int __state)
-        {
-            try
-            {
-                if (__state < __instance.NetworkPlayers.Count && __state != -1)
-                {
-                    var player = __instance.NetworkPlayers[__state];
-                    Events.Player.OnPlayerLoaded(player.Uuid, player.Username);
-                }
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error($"Error during {nameof(AfterCreatePlayer)} patch", e);
             }
         }
 

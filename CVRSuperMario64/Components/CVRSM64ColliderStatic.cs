@@ -1,4 +1,4 @@
-using ABI_RC.Core.PropManagement;
+﻿using ABI_RC.Core.PropManagement;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -55,26 +55,30 @@ public class CVRSM64ColliderStatic : MonoBehaviour {
     //     #endif
     // }
 
-    [HarmonyPatch]
-    internal class HarmonyPatches {
+    /// <summary>
+    /// Refreshes the static colliders when a prop that has some finishes spawning
+    /// </summary>
+    internal static void OnPropSpawned(string spawnedBy, PropSoul propSoul) {
+        try {
+            // Placement previews are holograms, Mario shouldn't stand on them
+            if (propSoul.Kind == PropKind.Preview || propSoul.Spawnable == null) return;
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Props), nameof(Props.OnInstanceAttached))]
-        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(string instanceId, CVRSpawnable spawnable) {
-            try {
-                // If we load a prop with static colliders, let's queue a static colliders refresh!
-                if (spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
-                    #if DEBUG
-                    MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
-                                    $"all static colliders. You might notice some lag spike...");
-                    #endif
-                    CVRSM64Context.QueueStaticSurfacesUpdate();
-                }
-            }
-            catch (Exception e) {
-                MelonLogger.Error(e);
+            // If we load a prop with static colliders, let's queue a static colliders refresh!
+            if (propSoul.Spawnable.GetComponentInChildren<CVRSM64ColliderStatic>(true) != null) {
+                #if DEBUG
+                MelonLogger.Msg($"A prop with {nameof(CVRSM64ColliderStatic)} has been spawned, we need to reload " +
+                                $"all static colliders. You might notice some lag spike...");
+                #endif
+                CVRSM64Context.QueueStaticSurfacesUpdate();
             }
         }
+        catch (Exception e) {
+            MelonLogger.Error(e);
+        }
+    }
+
+    [HarmonyPatch]
+    internal class HarmonyPatches {
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.OnDestroy))]

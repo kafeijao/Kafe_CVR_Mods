@@ -178,9 +178,9 @@ public class MiscCohtmlHandler : ICohtmlHandler {
         eyeSection.AddSection("Current Module Name").AddValueGetter(() => FaceTrackingManager.Instance.ActiveEyeModule?.GetModuleName() ?? "N/A");
         eyeSection.AddSection("Current Module ShortName").AddValueGetter(() => FaceTrackingManager.Instance.ActiveEyeModule?.GetModuleShortName() ?? "N/A");
         eyeSection.AddSection("Data Available").AddValueGetter(() => ToString(hasFaceTracking()));
-        eyeSection.AddSection("Gaze Direction").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().gazePoint.ToString("F2") : "N/A");
-        eyeSection.AddSection("Left Blink").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().blinkLeft.ToString("F2") : "N/A");
-        eyeSection.AddSection("Right Blink").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetEyeTrackingData().blinkRight.ToString("F2") : "N/A");
+        eyeSection.AddSection("Gaze Direction").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetTrackingData().gazePoint.ToString("F2") : "N/A");
+        eyeSection.AddSection("Left Blink").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetTrackingData().blinkLeft.ToString("F2") : "N/A");
+        eyeSection.AddSection("Right Blink").AddValueGetter(() => hasFaceTracking() ? FaceTrackingManager.Instance.GetTrackingData().blinkRight.ToString("F2") : "N/A");
 
         var hasLipTracking = FaceTrackingManager.Instance.IsMouthDataAvailable;
         var lipSection = _faceTrackingSection.AddSection("Mouth Module");

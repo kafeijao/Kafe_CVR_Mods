@@ -1,4 +1,6 @@
-﻿using ABI.CCK.Components;
+﻿using ABI_RC.Systems.SyncedObjects;
+using ABI.CCK.Components;
+using GameCommon.Models.Sync;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -18,7 +20,11 @@ public static class Pickups
         public bool hasInteractable;
         public CVRInteractable interactable;
 
-        public abstract bool IsGrabbable();
+        /// <summary>
+        /// Whether nobody is holding, attaching or sitting on this pickup
+        /// </summary>
+        public bool IsGrabbable() => SyncedObjectManager.GetSyncType(transform) < SyncType.TeleGrab
+                                     && !FollowerController.CarriedTransforms.Contains(transform);
 
         protected abstract void StartCall();
         protected abstract void DestroyCall();
@@ -63,28 +69,11 @@ public static class Pickups
             CVRSpawnableValue.UpdatedBy.OwnerRightTrigger,
         };
 
-        public override bool IsGrabbable() => Spawnable.SyncType == 0
-                                              // For some reason the SyncType doesn't go back to 0 when we drop it... So let's consider this grabbable!
-                                              || Spawnable.SyncType == 1 && Spawnable.IsMine() &&
-                                              Spawnable.pickup != null && Spawnable.pickup.GrabbedBy == "";
-
         public bool GrabbedByFollower(out FollowerController controller)
         {
-            // When our followers are grabbing it's as if we were grabbing it. So ignore all others.
-            if (pickupObject == null || !pickupObject.IsGrabbedByMe || pickupObject._controllerRay == null)
-            {
-                controller = null;
-                return false;
-            }
-
-            var controllerRay = pickupObject._controllerRay;
-            // Look for a follower matching the controller ray
             foreach (var followerController in FollowerController.FollowerControllers)
             {
-                if (followerController.RootControllerRay != controllerRay
-                    && followerController.HeadControllerRay != controllerRay
-                    && followerController.LeftArmControllerRay != controllerRay
-                    && followerController.RightArmControllerRay != controllerRay) continue;
+                if (!followerController.IsGrabbedByMyLeftHand(this) && !followerController.IsGrabbedByMyRightHand(this)) continue;
                 controller = followerController;
                 return true;
             }
@@ -109,8 +98,6 @@ public static class Pickups
     public class ObjectSyncPickupWrapper : PickupWrapper
     {
         public CVRObjectSync objectSync;
-
-        public override bool IsGrabbable() => objectSync.SyncType == 0;
 
         protected override void StartCall()
         {

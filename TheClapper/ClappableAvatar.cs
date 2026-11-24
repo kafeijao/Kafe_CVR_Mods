@@ -34,7 +34,7 @@ public class ClappableAvatar : Clappable {
         MetaPort.Instance.SelfModerationManager.SetPlayerAvatarVisibility(_playerId, isHidden);
 
         // Emit particles on the clappable
-        TheClapper.EmitParticles(clappablePosition, new Color(0f, 1f, 1f), 3f);
+        TheClapper.EmitParticles(clappablePosition, new Color(0f, 1f, 1f));
     }
 
     public static void Create(PuppetMaster target, string playerId, string username, Animator animator) {

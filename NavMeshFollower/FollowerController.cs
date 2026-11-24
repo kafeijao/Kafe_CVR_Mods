@@ -389,45 +389,128 @@ public class FollowerController : MonoBehaviour {
         controllerRay.attachmentPoint.transform.localRotation = rotOffset;
     }
 
-    private void GrabPickup(Pickups.PickupWrapper pickup, bool isRightHand) {
+    /// <summary>
+    /// A pickup one of the follower's hands is carrying, and how it sits in that hand
+    /// </summary>
+    private class CarriedPickup
+    {
+        internal Pickups.PickupWrapper Pickup;
+        internal Transform Transform;
+        internal Transform Anchor;
+        internal Quaternion RotationOffset;
+    }
+
+    internal static readonly HashSet<Transform> CarriedTransforms = new();
+
+    private CarriedPickup _carriedLeft;
+
+    private CarriedPickup _carriedRight;
+
+    private void GrabPickup(Pickups.PickupWrapper pickup, bool isRightHand)
+    {
         if (pickup == null || pickup.pickupObject == null) return;
+
+        var carried = isRightHand ? _carriedRight : _carriedLeft;
+        if (carried != null)
+        {
+            if (carried.Pickup == pickup) return;
+            Release(isRightHand);
+        }
+
         var controllerRay = GetRayController(isRightHand, out var posOffset, out var rotOffset);
-
-        if (controllerRay.grabbedObject != null && controllerRay.grabbedObject != pickup.pickupObject) {
-            controllerRay.DropObject(true);
-        }
-
         ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
-        var attachPoint = controllerRay.attachmentPoint.transform.position;
-        pickup.pickupObject.transform.position = attachPoint;
-        if (!pickup.pickupObject.Grab(new InteractionContext(InteractionContext.SourceType.Internal), controllerRay, attachPoint)) return;
-        ResetRayControllerOffsets(controllerRay, posOffset, rotOffset);
+        var anchor = controllerRay.attachmentPoint;
 
-        var pickupHandler = pickup.pickupObject._pickupImplementation;
-        if (pickupHandler != null) {
-            pickupHandler.InitialPositionOffset = Vector3.zero;
-        }
+        var pickupObject = pickup.pickupObject;
+        var pickupTransform = pickupObject.transform;
+        pickupTransform.position = anchor.position;
+
+        var newCarried = new CarriedPickup
+        {
+            Pickup = pickup,
+            Transform = pickupTransform,
+            Anchor = anchor,
+            RotationOffset = Quaternion.Inverse(anchor.rotation) * pickupTransform.rotation,
+        };
+        if (isRightHand) _carriedRight = newCarried;
+        else _carriedLeft = newCarried;
+
+        // Kinematic and without gravity while carried, the same as an attached pickup
+        pickupObject._physicsController.SetAttachedState(true, pickupObject.collisionWithPlayer);
+        CarriedTransforms.Add(pickupTransform);
+
+        // Run the prop's own on grab actions, the same as a real grab does
+        if (pickupObject._interactable != null)
+            pickupObject._interactable.OnPickupGrab(new InteractionContext(InteractionContext.SourceType.Internal));
 
         foreach (var key in Pickups.SpawnablePickupWrapper.OwnerUpdatedBy) {
             UpdatedByValues[key] = 1f;
         }
     }
 
-    private void DropPickup(Pickups.PickupWrapper pickup, bool isRightHand) {
-        foreach (var key in Pickups.SpawnablePickupWrapper.OwnerUpdatedBy) {
+    private void DropPickup(Pickups.PickupWrapper pickup, bool isRightHand)
+    {
+        if (pickup == null || (isRightHand ? !IsGrabbedByMyRightHand(pickup) : !IsGrabbedByMyLeftHand(pickup))) return;
+        Release(isRightHand);
+    }
+
+    /// <summary>
+    /// Lets go whatever the hand is carrying and gives the pickup its physics back
+    /// </summary>
+    private void Release(bool isRightHand)
+    {
+        var carried = isRightHand ? _carriedRight : _carriedLeft;
+        if (carried == null) return;
+
+        if (isRightHand) _carriedRight = null;
+        else _carriedLeft = null;
+
+        CarriedTransforms.Remove(carried.Transform);
+
+        foreach (var key in Pickups.SpawnablePickupWrapper.OwnerUpdatedBy)
+        {
             UpdatedByValues[key] = 0f;
         }
-        if (pickup == null || pickup.pickupObject == null || isRightHand && !IsGrabbedByMyRightHand(pickup) || (!isRightHand && !IsGrabbedByMyLeftHand(pickup))) return;
-        pickup.pickupObject.Drop(new InteractionContext(InteractionContext.SourceType.Internal));
+
+        var pickupObject = carried.Pickup != null ? carried.Pickup.pickupObject : null;
+        if (pickupObject == null) return;
+        pickupObject._physicsController.SetAttachedState(false, pickupObject.collisionWithPlayer);
+
+        // Skipped when we grabbed it out of the follower's hand, our grab already ran the on grab actions
+        if (pickupObject._interactable != null && !pickupObject.IsGrabbedByMe)
+            pickupObject._interactable.OnPickupDrop(new InteractionContext(InteractionContext.SourceType.Internal));
+    }
+
+    internal static void UpdateCarriedPickups()
+    {
+        foreach (var controller in FollowerControllers)
+        {
+            controller.UpdateCarried(false);
+            controller.UpdateCarried(true);
+        }
+    }
+
+    private void UpdateCarried(bool isRightHand)
+    {
+        var carried = isRightHand ? _carriedRight : _carriedLeft;
+        if (carried == null) return;
+
+        var pickupObject = carried.Pickup != null ? carried.Pickup.pickupObject : null;
+        if (pickupObject == null || carried.Anchor == null || pickupObject.IsGrabbedByMe || pickupObject.IsHeldByOther)
+        {
+            Release(isRightHand);
+            return;
+        }
+
+        carried.Transform.SetPositionAndRotation(carried.Anchor.position, carried.Anchor.rotation * carried.RotationOffset);
     }
 
     public void GrabPickupLeftHand(Pickups.PickupWrapper pickup) => GrabPickup(pickup, false);
     public void GrabPickupRightHand(Pickups.PickupWrapper pickup) => GrabPickup(pickup, true);
     public void DropPickupLeftHand(Pickups.PickupWrapper pickup) => DropPickup(pickup, false);
     public void DropPickupRightHand(Pickups.PickupWrapper pickup) => DropPickup(pickup, true);
-    public static bool IsGrabbed(Pickups.PickupWrapper pickup) => pickup != null && pickup.pickupObject != null && pickup.pickupObject.GrabbedBy != "";
-    public bool IsGrabbedByMyLeftHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(false, out _, out _) == pickup.pickupObject.ControllerRay;
-    public bool IsGrabbedByMyRightHand(Pickups.PickupWrapper pickup) => IsGrabbed(pickup) && GetRayController(true, out _, out _) == pickup.pickupObject.ControllerRay;
+    public bool IsGrabbedByMyLeftHand(Pickups.PickupWrapper pickup) => pickup != null && _carriedLeft != null && _carriedLeft.Pickup == pickup;
+    public bool IsGrabbedByMyRightHand(Pickups.PickupWrapper pickup) => pickup != null && _carriedRight != null && _carriedRight.Pickup == pickup;
 
 
     internal void InitializeParameter(string syncedValueName) =>
@@ -506,9 +589,6 @@ public class FollowerController : MonoBehaviour {
         SetParameter(SyncedParamNames.MovementX, localVelocity.x / Agent.speed);
         SetParameter(SyncedParamNames.Grounded, !Agent.isOnOffMeshLink && Agent.isOnNavMesh ? 1f : 0f);
         SetParameter(SyncedParamNames.Idle, Mathf.Approximately(localVelocity.magnitude, 0f) && (!isIdle.HasValue || isIdle.Value) ? 1f : 0f);
-
-        // Keep the prop synced by us
-        Spawnable.needsUpdate = true;
     }
 
 
@@ -532,6 +612,8 @@ public class FollowerController : MonoBehaviour {
 
     private void OnDestroy() {
         FollowerControllers.Remove(this);
+        Release(false);
+        Release(true);
         foreach (var behavior in Behaviors) {
             behavior.OnDestroyed();
         }

@@ -1,4 +1,4 @@
-using ABI.CCK.Components;
+﻿using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
 
@@ -258,7 +258,7 @@ internal static class Utils {
             MelonLogger.Msg($"[GetAllStaticSurfaces] As per configuration we're skipping auto generating this world's colliders.");
         }
 
-        foreach (var obj in UnityEngine.Object.FindObjectsOfType<Collider>()) {
+        foreach (var obj in UnityEngine.Object.FindObjectsByType<Collider>(FindObjectsSortMode.None)) {
 
             var cvrSM64ColliderStatic = obj.GetComponent<CVRSM64ColliderStatic>();
             var hasDedicatedComponent = cvrSM64ColliderStatic != null;

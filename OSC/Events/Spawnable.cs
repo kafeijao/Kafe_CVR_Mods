@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core.Player;
 using ABI_RC.Core.PropManagement;
 using ABI_RC.Systems.Safety.AdvancedSafety;
+using ABI_RC.Systems.SyncedObjects;
 using ABI.CCK.Components;
 using MelonLoader;
 using UnityEngine;
@@ -112,6 +113,14 @@ public static class Spawnable
         SpawnableAvailable?.Invoke(spawnable, shouldControl);
     }
 
+    internal static void OnSyncStateReceived()
+    {
+        foreach (var prop in PropCache.Values)
+        {
+            OnSpawnableUpdateFromNetwork(prop);
+        }
+    }
+
     internal static void OnTrackingTick()
     {
         foreach (var prop in PropCache)
@@ -206,7 +215,8 @@ public static class Spawnable
             if (_debugMode)
             {
                 MelonLogger.Msg($"[Debug] Attempted to control {spawnableInstanceId} but got refused! " +
-                                $"Sync: {spawnable.SyncType} IsPhysics: {spawnable.isPhysicsSynced}");
+                                $"Sync: {SyncedObjectManager.GetSyncType(spawnable.transform)} " +
+                                $"DrivenByUs: {SyncedObjectManager.IsDrivenByUs(spawnable.transform)}");
             }
 
             return;
@@ -215,7 +225,6 @@ public static class Spawnable
         // Update location
         transformToSet.position = pos;
         transformToSet.eulerAngles = rot;
-        spawnable.ForceUpdate();
 
         if (_debugMode)
             MelonLogger.Msg(
@@ -254,11 +263,12 @@ public static class Spawnable
         // Spawned by other people -> Ignore
         if (!spawnable.IsMine()) return false;
 
-        // Other people are syncing it (grabbing/telegrabbing/attatched) -> Ignore
-        if (spawnable.SyncType != 0) return false;
+        // Other people are syncing it (grabbing/telegrabbing/attatched/pushing) -> Ignore
+        if (SyncedObjectManager.IsDrivenByThem(spawnable.transform)) return false;
 
-        // This will be true when being synced by us (grabbing/telegrabbing/attatched) or physics -> Ignore
-        if (!allowWhenLocalPlayerIsInteracting && spawnable.isPhysicsSynced) return false;
+        // We're grabbing/telegrabbing/attached/seated on it -> Ignore
+        SyncedObjectManager.IsDrivenByUs(spawnable.transform, out var heldByUs);
+        if (!allowWhenLocalPlayerIsInteracting && heldByUs) return false;
 
         return true;
     }

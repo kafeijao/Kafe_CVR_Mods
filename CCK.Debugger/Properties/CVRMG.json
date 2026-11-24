@@ -1,8 +1,8 @@
 {
   "_id": 74,
   "name": "CCK.Debugger",
-  "modversion": "2.0.20",
-  "gameversion": "2026r182",
+  "modversion": "2.1.0",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -21,8 +21,8 @@
     "layer"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/CCK.Debugger.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/CCK.Debugger.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/CCK.Debugger",
-  "changelog": "- Fixed dragging using click and drag on the CCK.Debugger menu\n- Fixed expanded sections collapsing when an avatar/prop load",
+  "changelog": "- Fixed for 2026.3.0 (GS2)\n- Added the prop sync slots view",
   "embedcolor": "16C60C"
 }

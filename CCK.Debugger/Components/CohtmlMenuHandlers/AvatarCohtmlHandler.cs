@@ -536,7 +536,7 @@ public class AvatarCohtmlHandler : ICohtmlHandler
 
         var avatarHeight = isLocal
             ? PlayerSetup.Instance.AvatarHeight
-            : currentPlayer.PuppetMaster.netIkController.GetRemoteHeight();
+            : currentPlayer.PuppetMaster.AvatarHeight;
 
         // Set up the Humanoid Bones
         CurrentEntityBoneList.Clear();

@@ -1,6 +1,8 @@
-﻿using ABI_RC.Core.Player;
+﻿using ABI_RC.Core;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.PropManagement;
-using ABI_RC.Core.Savior;
+using ABI_RC.Systems.GameEventSystem;
+using ABI_RC.Systems.GestureRecognition;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -21,11 +23,6 @@ public class TheClapper : MelonMod {
     internal static MelonPreferences_Entry<bool> ClappablePropSubSyncs;
     private static MelonPreferences_Entry<bool> _showVisualizerAfterOpenHands;
     private static MelonPreferences_Entry<float> _showVisualizerDelay;
-
-    private static ParticleSystem _particleSystem;
-    private static ParticleSystemRenderer _particleSystemRenderer;
-    private static Vector3 _baseScale;
-    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
     public override void OnInitializeMelon() {
         // Melon Config
@@ -66,6 +63,32 @@ public class TheClapper : MelonMod {
             if (newValue < 0) _showVisualizerDelay.Value = Mathf.Abs(newValue);
             _wasPreparingClap = false;
         });
+
+        CVRGameEventSystem.Avatar.OnRemoteAvatarLoad.AddListener((player, _) =>
+        {
+            try
+            {
+                var puppetMaster = player.PuppetMaster;
+                if (puppetMaster == null || puppetMaster.AvatarObject == null) return;
+                ClappableAvatar.Create(puppetMaster, puppetMaster.PlayerId, player.Username, puppetMaster.Animator);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(CVRGameEventSystem.Avatar.OnRemoteAvatarLoad)} listener", e);
+            }
+        });
+
+        CVRGameEventSystem.Spawnable.OnPropSpawned.AddListener((_, propSoul) =>
+        {
+            try
+            {
+                ClappableSpawnable.Create(propSoul);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(CVRGameEventSystem.Spawnable.OnPropSpawned)} listener", e);
+            }
+        });
     }
 
     private static bool _isInitialized;
@@ -75,8 +98,9 @@ public class TheClapper : MelonMod {
     public override void OnUpdate() {
         if (!_isInitialized || !_showVisualizerAfterOpenHands.Value) return;
 
-        var isPreparingClap = CVRGestureRecognizer.Instance.currentGestureLeft == CVRGestureStep.Gesture.Open &&
-                              CVRGestureRecognizer.Instance.currentGestureRight == CVRGestureStep.Gesture.Open;
+        var inputManager = CVRGestureRecognizer.Instance.inputManager;
+        var isPreparingClap = CVRGestureRecognizer.Sign(inputManager.gestureLeftRaw) == CVRGesture.Sign.Open &&
+                              CVRGestureRecognizer.Sign(inputManager.gestureRightRaw) == CVRGesture.Sign.Open;
 
         if (isPreparingClap) {
             if (!_wasPreparingClap) {
@@ -94,72 +118,34 @@ public class TheClapper : MelonMod {
         }
     }
 
-    internal static void EmitParticles(Vector3 pos, Color color, float scale = 1f) {
-        var _ = _particleSystem.main;
-
-        var material = _particleSystemRenderer.material;
-        material.color = color;
-        material.SetColor(EmissionColor, color * 5f);
-
-        _particleSystem.gameObject.transform.localScale = _baseScale * scale;
-
-        _particleSystem.transform.position = pos;
-        _particleSystem.Emit(100);
-        //_particleSystem.Emit(new ParticleSystem.EmitParams { position = pos }, 100);
+    internal static void EmitParticles(Vector3 pos, Color color)
+    {
+        RootLogic.Instance.SpawnPoof(pos, color, color * 5f);
     }
 
     [HarmonyPatch]
     private static class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(GesturePlaneTest), nameof(GesturePlaneTest.Start))]
-        private static void After_GesturePlaneTest_Start(GesturePlaneTest __instance) {
+        [HarmonyPatch(typeof(CVRGestureRecognizer), nameof(CVRGestureRecognizer.Start))]
+        private static void After_CVRGestureRecognizer_Start(CVRGestureRecognizer __instance) {
+            // Start destroys duplicate recognizers, only register on the one that stayed
+            if (CVRGestureRecognizer.Instance != __instance) return;
 
             // Create the Clap gesture and add its handler
             var gesture = new CVRGesture {
                 name = "avatarClap",
                 type = CVRGesture.GestureType.OneShot,
-            };
-            gesture.steps.Add(new CVRGestureStep {
-                firstGesture = CVRGestureStep.Gesture.Open,
-                secondGesture = CVRGestureStep.Gesture.Open,
+                firstSign = CVRGesture.Sign.Open,
+                secondSign = CVRGesture.Sign.Open,
                 startDistance = 0.4f,
                 endDistance = 0.25f,
-                direction = CVRGestureStep.GestureDirection.MovingIn,
-            });
+                direction = CVRGesture.Direction.MovingIn,
+            };
             gesture.onEnd.AddListener(Clappable.OnGestureClapped);
-            CVRGestureRecognizer.Instance.gestures.Add(gesture);
-
-            // Copy the camera clap particles
-            var particlesGo = UnityEngine.Object.Instantiate(__instance.particles);
-            UnityEngine.Object.DontDestroyOnLoad(particlesGo);
-            var particleSystem = particlesGo.GetComponent<ParticleSystem>();
-            var particleSystemRenderer = particlesGo.GetComponent<ParticleSystemRenderer>();
-            var mainModule = particleSystem.main;
-            mainModule.playOnAwake = false;
-            mainModule.scalingMode = ParticleSystemScalingMode.Hierarchy;
-            mainModule.startSpeedMultiplier *= 3f;
-            particlesGo.SetActive(true);
-            _baseScale = particlesGo.transform.localScale;
-            _particleSystem = particleSystem;
-            _particleSystemRenderer = particleSystemRenderer;
+            __instance.gestures.Add(gesture);
 
             _isInitialized = true;
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PuppetMaster), nameof(PuppetMaster.OnSetupAvatar))]
-        private static void After_PuppetMaster_AvatarInstantiated(PuppetMaster __instance) {
-            if (__instance.AvatarObject == null) return;
-            ClappableAvatar.Create(__instance, __instance.PlayerId, __instance.CVRPlayerEntity.Username, __instance.Animator);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Props), nameof(Props.OnInstanceAttached))]
-        private static void After_CVRSyncHelper_ApplyPropValuesSpawn(string instanceId, CVRSpawnable spawnable) {
-            if (!Props._byId.TryGetValue(instanceId, out var propSoul) || propSoul.State != PropInstanceState.Spawned)
-                return;
-            ClappableSpawnable.Create(propSoul);
         }
     }
 }

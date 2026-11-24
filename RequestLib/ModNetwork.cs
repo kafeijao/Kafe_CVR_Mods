@@ -1,29 +1,23 @@
 ﻿using System.Collections;
-using System.Text;
 using ABI_RC.Core.IO;
 using ABI_RC.Core.Networking;
 using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
 using ABI_RC.Core.UI;
-using DarkRift;
-using DarkRift.Client;
+using ABI_RC.Systems.GameEventSystem;
+using ABI_RC.Systems.ModNetwork;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
 
 namespace Kafe.RequestLib;
 
-internal static class ModNetwork {
+internal static class ModNetwork
+{
 
     private const uint Version = 1;
     private static readonly HashSet<string> PlayerOldVersionWarned = new();
-
-    private enum Tag : ushort {
-        Subscribe = 13997,
-        Unsubscribe = 13998,
-        Message = 13999,
-    }
 
     private const string ModId = $"MelonMod.Kafe.{nameof(RequestLib)}";
 
@@ -38,11 +32,6 @@ internal static class ModNetwork {
 
     private static readonly TimeSpan RequestTimeoutOffset = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RequestTimeoutMax = TimeSpan.FromHours(1);
-
-    private enum SeedPolicy {
-        ToSpecific = 0,
-        ToAll = 1,
-    }
 
     private enum MessageType : byte {
         SyncRequest,
@@ -90,7 +79,7 @@ internal static class ModNetwork {
     }
 
     internal static bool IsOfflineInstance() {
-        return NetworkManager.Instance == null || NetworkManager.Instance.GameNetwork.ConnectionState != ConnectionState.Connected;
+        return NetworkManager.Instance == null || !NetworkManager.Instance.IsConnectedToGameNetwork();
     }
 
     private static bool IsPlayerInInstance(string playerGuid) {
@@ -135,11 +124,11 @@ internal static class ModNetwork {
         PendingRequests.Add(guid, request);
 
         SendMsgToSpecificPlayers(new[] { request.TargetPlayerGuid }, MessageType.Request, writer => {
-            writer.Write(guid, Encoding.UTF8);
-            writer.Write(request.ModName, Encoding.UTF8);
-            writer.Write(request.Metadata, Encoding.UTF8);
+            writer.Write(guid);
+            writer.Write(request.ModName);
+            writer.Write(request.Metadata);
             writer.Write((uint) timeoutInSeconds.TotalSeconds);
-            writer.Write(request.Message, Encoding.UTF8);
+            writer.Write(request.Message);
         });
 
         RequestLib.CreateSentRequest(request, guid, request.TargetPlayerGuid, request.ModName, request.Message);
@@ -269,9 +258,9 @@ internal static class ModNetwork {
         }
 
         SendMsgToSpecificPlayers(new [] { request.SourcePlayerGuid }, MessageType.Response, writer => {
-            writer.Write(guid, Encoding.UTF8);
+            writer.Write(guid);
             writer.Write(accepted);
-            writer.Write(responseMetadata, Encoding.UTF8);
+            writer.Write(responseMetadata);
         });
     }
 
@@ -303,19 +292,9 @@ internal static class ModNetwork {
         RequestLib.CreateAnsweredInfo(pendingRequestGuid, request.TargetPlayerGuid, request.ModName, request.Message, apiResponse);
     }
 
-    private static void OnMessage(object _, MessageReceivedEventArgs e) {
+    private static void OnMessage(ModNetworkMessage reader) {
 
-        // Ignore Messages that are not Mod Network Messages
-        if (e.Tag != (ushort) Tag.Message) return;
-
-        using var message = e.GetMessage();
-        using var reader = message.GetReader();
-        var modId = reader.ReadString();
-
-        // Ignore Messages not for our mod
-        if (modId != ModId) return;
-
-        var senderGuid = reader.ReadString();
+        var senderGuid = reader.Sender;
 
         // Ignore messages from blocked people
         if (MetaPort.Instance.blockedUserIds.Contains(senderGuid)) return;
@@ -326,7 +305,7 @@ internal static class ModNetwork {
         try {
 
             // Read the version of the message
-            var msgVersion = reader.ReadUInt32();
+            reader.Read(out uint msgVersion);
             if (msgVersion != Version) {
                 if (PlayerOldVersionWarned.Contains(senderGuid)) return;
                 var isNewer = msgVersion > Version;
@@ -337,7 +316,7 @@ internal static class ModNetwork {
                 return;
             }
 
-            var msgTypeRaw = reader.ReadByte();
+            reader.Read(out byte msgTypeRaw);
 
             // Ignore wrong msg types
             if (!Enum.IsDefined(typeof(MessageType), msgTypeRaw)) return;
@@ -354,24 +333,24 @@ internal static class ModNetwork {
                     break;
 
                 case MessageType.SyncUpdate:
-                    var playerMods = reader.ReadStrings();
+                    reader.Read(out string[] playerMods);
                     API.RemotePlayerMods[senderGuid] = playerMods;
                     API.PlayerInfoUpdate?.Invoke(new API.PlayerInfo(senderGuid));
                     break;
 
                 case MessageType.Request:
-                    var possibleRequestGuid = reader.ReadString(Encoding.UTF8);
-                    var requestModName = reader.ReadString(Encoding.UTF8);
-                    var requestMeta = reader.ReadString(Encoding.UTF8);
-                    var requestTimeoutSeconds = reader.ReadUInt32();
-                    var requestMessage = reader.ReadString(Encoding.UTF8);
+                    reader.Read(out string possibleRequestGuid);
+                    reader.Read(out string requestModName);
+                    reader.Read(out string requestMeta);
+                    reader.Read(out uint requestTimeoutSeconds);
+                    reader.Read(out string requestMessage);
                     OnRequest(senderGuid, possibleRequestGuid, requestModName, requestMeta, requestTimeoutSeconds, requestMessage);
                     break;
 
                 case MessageType.Response:
-                    var possibleResponseGuid = reader.ReadString(Encoding.UTF8);
-                    var accepted = reader.ReadBoolean();
-                    var responseMetadata = reader.ReadString(Encoding.UTF8);
+                    reader.Read(out string possibleResponseGuid);
+                    reader.Read(out bool accepted);
+                    reader.Read(out string responseMetadata);
                     OnResponse(senderGuid, possibleResponseGuid, accepted, responseMetadata);
                     break;
             }
@@ -383,33 +362,17 @@ internal static class ModNetwork {
         }
     }
 
-    private static bool SendMsgToAllPlayers(MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
+    private static bool SendMsgToAllPlayers(MessageType msgType, Action<ModNetworkMessage> msgDataAction = null) {
 
         if (IsOfflineInstance()) {
             MelonLogger.Warning($"Attempted to {nameof(SendMsgToAllPlayers)} but the Game Network is Down...");
             return false;
         }
 
-        // Mandatory message parameters
-        using var writer = DarkRiftWriter.Create();
-        writer.Write(ModId);
-        writer.Write((int) SeedPolicy.ToAll);
-
-        // Set the message version
-        writer.Write(Version);
-
-        // Set the message type (for our internal behavior)
-        writer.Write((byte) msgType);
-
-        // Set the parameters we want to send
-        msgDataAction?.Invoke(writer);
-
-        using var message = Message.Create((ushort) Tag.Message, writer);
-        NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
-        return true;
+        return TrySendMsg(() => new ModNetworkMessage(ModId), msgType, msgDataAction);
     }
 
-    private static void SendMsgToSpecificPlayers(string[] playerGuids, MessageType msgType, Action<DarkRiftWriter> msgDataAction = null) {
+    private static void SendMsgToSpecificPlayers(string[] playerGuids, MessageType msgType, Action<ModNetworkMessage> msgDataAction = null) {
 
         if (IsOfflineInstance()) {
             MelonLogger.Warning($"Attempted to {nameof(SendMsgToSpecificPlayers)} but the Game Network is Down...");
@@ -421,26 +384,35 @@ internal static class ModNetwork {
             return;
         }
 
-        // Mandatory message parameters
-        using var writer = DarkRiftWriter.Create();
-        writer.Write(ModId);
-        writer.Write((int) SeedPolicy.ToSpecific);
-        writer.Write(playerGuids.Length);
-        foreach (var playerGuid in playerGuids) {
-            writer.Write(playerGuid);
+        TrySendMsg(() => new ModNetworkMessage(ModId, playerGuids), msgType, msgDataAction);
+    }
+
+    /// <summary>
+    /// Writes our message header and data, then sends it. Returns false and logs when the game refuses to send it
+    /// </summary>
+    private static bool TrySendMsg(Func<ModNetworkMessage> createMsg, MessageType msgType, Action<ModNetworkMessage> msgDataAction)
+    {
+        try
+        {
+            using var msg = createMsg();
+
+            // Set the message version
+            msg.Write(Version);
+
+            // Set the message type (for our internal behavior)
+            msg.Write((byte) msgType);
+
+            // Set the parameters we want to send
+            msgDataAction?.Invoke(msg);
+
+            msg.Send();
+            return true;
         }
-
-        // Set the message version
-        writer.Write(Version);
-
-        // Set the message type (for our internal behavior)
-        writer.Write((byte) msgType);
-
-        // Set the parameters we want to send
-        msgDataAction?.Invoke(writer);
-
-        using var message = Message.Create((ushort) Tag.Message, writer);
-        NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
+        catch (Exception e)
+        {
+            MelonLogger.Error($"Failed to send the {msgType} message", e);
+            return false;
+        }
     }
 
     private static void HandleTimeouts() {
@@ -470,28 +442,6 @@ internal static class ModNetwork {
             MelonLogger.Error(e);
         }
     }
-
-    private static void SendGuid(ushort msgTag) {
-
-        if (IsOfflineInstance()) {
-            MelonLogger.Warning($"Attempted to {nameof(SendGuid)} but the Game Network is Down...");
-            return;
-        }
-
-        // Mandatory message parameters
-        using var writer = DarkRiftWriter.Create();
-        writer.Write((ushort) 1);
-        writer.Write(ModId);
-
-        using var message = Message.Create(msgTag, writer);
-
-        NetworkManager.Instance.GameNetwork.SendMessage(message, SendMode.Reliable);
-    }
-
-    private static void Subscribe() => SendGuid((ushort) Tag.Subscribe);
-
-    private static void Unsubscribe() => SendGuid((ushort) Tag.Unsubscribe);
-
 
     private static object _sendSyncRequestCoroutine;
     private static IEnumerator HandleInitialSync() {
@@ -570,27 +520,19 @@ internal static class ModNetwork {
         public static void After_NetworkManager_Awake(NetworkManager __instance) {
             try {
                 MelonLogger.Msg($"Started the Game Server Messages Listener...");
-                __instance.GameNetwork.MessageReceived += OnMessage;
+                ModNetworkManager.Subscribe(ModId, OnMessage);
+                CVRGameEventSystem.Instance.OnConnected.AddListener(_ => OnConnected());
                 BetterScheduleSystem.AddJob(HandleTimeouts, 1f, 1f, -1);
             }
             catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_Awake)}");
-                MelonLogger.Error(e);
+                MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_Awake)}", e);
             }
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.ReceiveReconnectToken))]
-        public static void After_NetworkManager_ReceiveReconnectToken() {
-            // A new connection to the game server was made
-            try {
-                #if DEBUG
-                MelonLogger.Msg($"Reclaim Token Assigned... Subscribing to {ModId} on the Mod Network...");
-                #endif
-
-                // Subscribe to the mod network
-                Subscribe();
-
+        private static void OnConnected()
+        {
+            try
+            {
                 // Clear previous info
                 API.RemotePlayerMods.Clear();
                 RateLimiter.UserRateLimits.Clear();
@@ -598,9 +540,9 @@ internal static class ModNetwork {
                 // Wait some time and send the sync request to everyone
                 _sendSyncRequestCoroutine = MelonCoroutines.Start(HandleInitialSync());
             }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_NetworkManager_ReceiveReconnectToken)}");
-                MelonLogger.Error(e);
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(OnConnected)}", e);
             }
         }
     }

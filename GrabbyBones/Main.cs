@@ -1,4 +1,4 @@
-//#define DEBUG_ROOT_GEN
+﻿//#define DEBUG_ROOT_GEN
 //#define DEBUG_BONE_GEN
 
 using ABI.CCK.Components;
@@ -39,6 +39,7 @@ public class GrabbyBones : MelonMod {
 
         CVRGameEventSystem.Avatar.OnLocalAvatarLoad.AddListener(AvatarHandInfo.Create);
         CVRGameEventSystem.Avatar.OnRemoteAvatarLoad.AddListener((_, avatar) => AvatarHandInfo.Create(avatar));
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(OnPlayerSetupStart);
 
         #if DEBUG
         MelonLogger.Warning("This mod was compiled with the DEBUG mode on. There might be an excess of logging and performance overhead...");
@@ -52,8 +53,6 @@ public class GrabbyBones : MelonMod {
         MelonLogger.Warning("This mod was compiled with the DEBUG_ROOT_GEN mode on. There might be an excess of logging and performance overhead...");
         #endif
 
-        ModNetworkMessage.AddConverter(ReleaseMessage.Deserialize, ReleaseMessage.Serialize);
-        ModNetworkMessage.AddConverter(GrabMessage.Deserialize, GrabMessage.Serialize);
         ModNetworkManager.Subscribe(NetworkGuid, OnMessage);
     }
 
@@ -93,7 +92,7 @@ public class GrabbyBones : MelonMod {
             e.Read(out msg.RootIndex);
             e.Read(out msg.ChildIndex);
 
-            if (e._helper._reader.Length - e._helper._reader.Position >= TargetPlayerGuidSize)
+            if (e._payloadReader.Length - e._payloadReader.Position >= TargetPlayerGuidSize)
             {
                 var targetPlayerGuidBytes = new byte[TargetPlayerGuidSize];
                 for (var i = 0; i < targetPlayerGuidBytes.Length; i++)
@@ -129,7 +128,7 @@ public class GrabbyBones : MelonMod {
         msg.Read(out byte msgId);
         if (msgId == GrabBonePacketId)
         {
-            msg.Read(out GrabMessage grabMessage);
+            var grabMessage = GrabMessage.Deserialize(msg);
             var path = grabMessage.NetworkPath;
             var foundBones = GrabbyBonesCache.Where(x => x.NetworkPath == path);
             if (grabMessage.TargetPlayerGuid.HasValue)
@@ -197,7 +196,7 @@ public class GrabbyBones : MelonMod {
         }
         else if (msgId == ReleaseBonePacketId)
         {
-            msg.Read(out ReleaseMessage releaseMessage);
+            var releaseMessage = ReleaseMessage.Deserialize(msg);
             #if DEBUG
             var handName = releaseMessage.IsLeft ? "reft" : "right";
             MelonLogger.Msg($"Received Release Message for {handName} hand. (Sent by {msg.Sender})");
@@ -357,7 +356,7 @@ public class GrabbyBones : MelonMod {
             {
                 y.TargetPlayerGuid = targetPlayerGuid;
             }
-            modMsg.Write(y);
+            GrabMessage.Serialize(modMsg, y);
             modMsg.Send();
         }
     }
@@ -375,7 +374,7 @@ public class GrabbyBones : MelonMod {
             var x = new ReleaseMessage();
             x.IsLeft = handInfo.IsLeftHand;
             modMsg.Write(ReleaseBonePacketId);
-            modMsg.Write(x);
+            ReleaseMessage.Serialize(modMsg, x);
             modMsg.Send();
         }
     }
@@ -398,42 +397,44 @@ public class GrabbyBones : MelonMod {
         }
     }
 
+    /// <summary>
+    /// Creates the late update helper and hooks the enabled setting
+    /// </summary>
+    private static void OnPlayerSetupStart()
+    {
+        try
+        {
+
+            // Create a mono behavior so we can hack the execution order
+            var modGameObject = new GameObject($"[{nameof(GrabbyBones)} Mod]");
+            UnityEngine.Object.DontDestroyOnLoad(modGameObject);
+            modGameObject.AddComponent<TheVeryLast>();
+
+            // Release all grabbed bones if disabled
+            ModConfig.MeEnabled.OnEntryValueChanged.Subscribe((_, isEnabled) =>
+            {
+                if (isEnabled) return;
+                #if DEBUG
+                MelonLogger.Msg($"[Disabled] Releasing all grabbed bones...");
+                #endif
+                AvatarHandInfo.ReleaseAll();
+            });
+
+            _initialize = true;
+        }
+        catch (Exception e)
+        {
+            MelonLogger.Error($"Error during {nameof(OnPlayerSetupStart)}.", e);
+        }
+    }
+
     [HarmonyPatch]
     internal class HarmonyPatches {
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.Start))]
-        public static void After_PlayerSetup_Start(PlayerSetup __instance) {
-            try {
-
-                // Create a mono behavior so we can hack the execution order
-                var modGameObject = new GameObject($"[{nameof(GrabbyBones)} Mod]");
-                UnityEngine.Object.DontDestroyOnLoad(modGameObject);
-                modGameObject.AddComponent<TheVeryLast>();
-
-                // Release all grabbed bones if disabled
-                ModConfig.MeEnabled.OnEntryValueChanged.Subscribe((_, isEnabled) => {
-                    if (isEnabled) return;
-                    #if DEBUG
-                    MelonLogger.Msg($"[Disabled] Releasing all grabbed bones...");
-                    #endif
-                    AvatarHandInfo.ReleaseAll();
-                });
-
-                _initialize = true;
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}.");
-                MelonLogger.Error(e);
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerBase), nameof(PlayerBase.LateUpdate))]
-        public static void After_PlayerSetup_LateUpdate(PlayerBase __instance)
+        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.LateUpdate))]
+        public static void After_PlayerSetup_LateUpdate()
         {
-            if (__instance is not PlayerSetup) return;
-
             // This late update runs after VRIK but before db
             try {
                 if (!ModConfig.MeEnabled.Value) return;

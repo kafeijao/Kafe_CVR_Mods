@@ -18,37 +18,43 @@ public class LoggerPlusPlus : MelonPlugin {
         Logger = LoggerInstance;
     }
 
-    public override void OnApplicationEarlyStart() {
+    public override void OnApplicationEarlyStart()
+    {
 
         ModConfig.InitializeMelonPrefs();
 
         var defaultStackLogTypeError = Application.GetStackTraceLogType(LogType.Error);
         if (ModConfig.MeFullStackForErrors.Value) Application.SetStackTraceLogType(LogType.Error, StackTraceLogType.Full);
-        ModConfig.MeFullStackForErrors.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeFullStackForErrors.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             Application.SetStackTraceLogType(LogType.Error, newValue ? StackTraceLogType.Full : defaultStackLogTypeError);
         });
 
         var defaultStackLogTypeAssert = Application.GetStackTraceLogType(LogType.Assert);
         if (ModConfig.MeFullStackForAsserts.Value) Application.SetStackTraceLogType(LogType.Assert, StackTraceLogType.Full);
-        ModConfig.MeFullStackForAsserts.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeFullStackForAsserts.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             Application.SetStackTraceLogType(LogType.Assert, newValue ? StackTraceLogType.Full : defaultStackLogTypeAssert);
         });
 
         var defaultStackLogTypeException = Application.GetStackTraceLogType(LogType.Exception);
         if (ModConfig.MeFullStackForExceptions.Value) Application.SetStackTraceLogType(LogType.Exception, StackTraceLogType.Full);
-        ModConfig.MeFullStackForExceptions.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeFullStackForExceptions.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             Application.SetStackTraceLogType(LogType.Exception, newValue ? StackTraceLogType.Full : defaultStackLogTypeException);
         });
 
         var defaultStackLogTypeWarning = Application.GetStackTraceLogType(LogType.Warning);
         if (ModConfig.MeFullStackForWarnings.Value) Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.Full);
-        ModConfig.MeFullStackForWarnings.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeFullStackForWarnings.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             Application.SetStackTraceLogType(LogType.Warning, newValue ? StackTraceLogType.Full : defaultStackLogTypeWarning);
         });
 
         var defaultStackLogTypeLog = Application.GetStackTraceLogType(LogType.Log);
         if (ModConfig.MeFullStackForLogs.Value) Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.Full);
-        ModConfig.MeFullStackForLogs.OnEntryValueChanged.Subscribe((_, newValue) => {
+        ModConfig.MeFullStackForLogs.OnEntryValueChanged.Subscribe((_, newValue) =>
+        {
             Application.SetStackTraceLogType(LogType.Log, newValue ? StackTraceLogType.Full : defaultStackLogTypeLog);
         });
 
@@ -87,7 +93,8 @@ public class LoggerPlusPlus : MelonPlugin {
 
     private static void ActualActualLogMessage((LogType logType, string msg, Exception ex) log)
     {
-        switch (log.logType) {
+        switch (log.logType)
+        {
             case LogType.Error:
             case LogType.Assert:
             case LogType.Exception:
@@ -112,7 +119,8 @@ public class LoggerPlusPlus : MelonPlugin {
         }
     }
 
-    private static void ActualLogMessage(LogType type, string message, bool isStackTrace, Exception exception) {
+    private static void ActualLogMessage(LogType type, string message, bool isStackTrace, Exception exception)
+    {
 
         if (string.IsNullOrEmpty(message))
         {
@@ -120,54 +128,65 @@ public class LoggerPlusPlus : MelonPlugin {
         }
 
         // Check if it's a spam log
-        if (LogParser.IsSpamMessage(message)) {
+        if (LogParser.IsSpamMessage(message))
+        {
             if (!ModConfig.MeShowSpamMessages.Value) return;
         }
         // Check if it's a useless log
-        else if (LogParser.IsUselessMessage(message)) {
+        else if (LogParser.IsUselessMessage(message))
+        {
             if (!ModConfig.MeShowUselessMessages.Value) return;
         }
         // Check Cohtml logs
-        else if (LogParser.TryParseCohtml(ref message, ref type)) {
+        else if (LogParser.TryParseCohtml(ref message, ref type))
+        {
             if (!ModConfig.MeShowCohtmlInfo.Value && type == LogType.Log) return;
             if (!ModConfig.MeShowCohtmlWarning.Value && type == LogType.Warning) return;
             if (!ModConfig.MeShowCohtmlError.Value && type is LogType.Error or LogType.Assert) return;
         }
         // Check Missing Scripts logs
-        else if (LogParser.TryParseMissingScript(ref message)) {
+        else if (LogParser.TryParseMissingScript(ref message))
+        {
             if (!ModConfig.MeShowMissingScripts.Value) return;
         }
         // Check CVR Game logs
-        else if (LogParser.TryParseGame(ref message, ref type)) {
+        else if (LogParser.TryParseGame(ref message, ref type))
+        {
             if (!ModConfig.MeShowCVRInfo.Value && type == LogType.Log) return;
             if (!ModConfig.MeShowCVRWarning.Value && type == LogType.Warning) return;
             if (!ModConfig.MeShowCVRError.Value && type is LogType.Error) return;
         }
         // Check AV Pro logs
-        else if (LogParser.IsAvPro(message)) {
+        else if (LogParser.IsAvPro(message))
+        {
             if (!ModConfig.MeShowAvPro.Value) return;
         }
         // Check Stack Traces
-        else if (isStackTrace) {
+        else if (isStackTrace)
+        {
             if (!ModConfig.MeShowStackTraces.Value) return;
         }
         // Check Unknown logs
-        else {
+        else
+        {
             if (!ModConfig.MeShowUnknownInfo.Value) return;
             if (!ModConfig.MeShowUnknownWarning.Value) return;
             if (!ModConfig.MeShowUnknownError.Value) return;
         }
 
-        try {
+        try
+        {
             LOGQueue.Enqueue(new ValueTuple<LogType, string, Exception>(type, message, exception));
             // ActualActualLogMessage(new ValueTuple<LogType, string, Exception>(type, message, exception));
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             Logger.Error("Error while trying to enqueue the log...", e);
         }
     }
 
-    private static class RateLimitedLogger {
+    private static class RateLimitedLogger
+    {
 
         private static readonly ConcurrentDictionary<string, DateTime> MessageTimestamps = new();
         private static readonly TimeSpan RateLimit = TimeSpan.FromSeconds(5);
@@ -187,7 +206,8 @@ public class LoggerPlusPlus : MelonPlugin {
             bool loggedMsg = false;
 
             // Log it if it's a new message, or the rate limit has passed
-            if (isNewMessage || (now - lastLogged >= RateLimit)) {
+            if (isNewMessage || (now - lastLogged >= RateLimit))
+            {
                 ActualLogMessage(type, message, isStacktrace, exception);
                 loggedMsg = true;
             }
@@ -196,10 +216,13 @@ public class LoggerPlusPlus : MelonPlugin {
             MessageTimestamps.AddOrUpdate(message, now, (_, time) => loggedMsg ? now : time);
 
             // Cleanup the cache
-            lock (CleanupLock) {
-                if (now - _lastCleanup > CleanupInterval) {
+            lock (CleanupLock)
+            {
+                if (now - _lastCleanup > CleanupInterval)
+                {
                     var keysToRemove = (from kvp in MessageTimestamps where now - kvp.Value > RateLimit select kvp.Key).ToList();
-                    foreach (string key in keysToRemove) {
+                    foreach (string key in keysToRemove)
+                    {
                         MessageTimestamps.TryRemove(key, out _);
                     }
                     _lastCleanup = now;
@@ -208,29 +231,38 @@ public class LoggerPlusPlus : MelonPlugin {
         }
     }
 
-    private static void LogMessageReceived(string condition, string stackTrace, LogType type) {
-        try {
+    private static void LogMessageReceived(string condition, string stackTrace, LogType type)
+    {
+        try
+        {
             RateLimitedLogger.Log($"{condition}{(stackTrace.IsNullOrEmpty() ? "" : $"\n{stackTrace}")}", type, false, null);
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             Logger.Error(e);
         }
     }
 
-    private static void InternalLog(LogType level, LogOption options, string msg, UnityEngine.Object obj) {
-        try {
+    private static void InternalLog(LogType level, LogOption options, string msg, UnityEngine.Object obj)
+    {
+        try
+        {
             RateLimitedLogger.Log($"{msg}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", level, false, null);
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             Logger.Error(e);
         }
     }
 
-    private static void InternalLogException(Exception exception, UnityEngine.Object obj) {
-        try {
+    private static void InternalLogException(Exception exception, UnityEngine.Object obj)
+    {
+        try
+        {
             RateLimitedLogger.Log($"{exception}{(obj == null || obj.ToString().IsNullOrEmpty() ? "" : $"\n{obj}")}", LogType.Exception, true, exception);
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             Logger.Error(e);
         }
     }

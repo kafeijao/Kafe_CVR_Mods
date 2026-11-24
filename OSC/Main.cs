@@ -1,4 +1,5 @@
-﻿using ABI_RC.Systems.GameEventSystem;
+﻿using ABI_RC.Core.PropManagement;
+using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.OSC;
 using Kafe.OSC.Modules;
 using MelonLoader;
@@ -105,6 +106,18 @@ public class OSC : MelonMod
             catch (Exception e)
             {
                 MelonLogger.Error($"Error during {nameof(CVRGameEventSystem.Spawnable.OnPropSpawned)} listener", e);
+            }
+        });
+
+        CVRGameEventSystem.Spawnable.OnPropDestroyed.AddListener((_, propSoul) =>
+        {
+            try
+            {
+                Events.Spawnable.OnSpawnableDestroyed(propSoul.Spawnable);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Error during {nameof(CVRGameEventSystem.Spawnable.OnPropDestroyed)} listener", e);
             }
         });
     }

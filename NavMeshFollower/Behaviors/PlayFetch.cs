@@ -77,8 +77,9 @@ public class PlayFetch : Behavior {
                 }
 
                 // If someone grabbed it -> next stage
-                if (pickup.GrabbedBy != "") {
-                    _lastGrabber = pickup.GrabbedBy;
+                var idleHolderId = pickup.GetHolderId();
+                if (idleHolderId != "") {
+                    _lastGrabber = idleHolderId;
                     _fetchingStartTime = Time.time;
                     _currentState = State.WaitingThrow;
                     break;
@@ -93,8 +94,9 @@ public class PlayFetch : Behavior {
             case State.WaitingThrow:
 
                 // Update the last grabber, and reset the timer
-                if (pickup.GrabbedBy != "") {
-                    _lastGrabber = pickup.GrabbedBy;
+                var holderId = pickup.GetHolderId();
+                if (holderId != "") {
+                    _lastGrabber = holderId;
                     _fetchingStartTime = Time.time;
                     if (FollowerController.TryGetPlayerPos(_lastGrabber, out var possiblePlayerPos)) {
                         destinationPos = possiblePlayerPos;

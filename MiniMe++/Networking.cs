@@ -8,7 +8,7 @@ using ABI_RC.Systems.ContentClones;
 using ABI_RC.Systems.GameEventSystem;
 using ABI_RC.Systems.ModNetwork;
 using ABI.CCK.Components;
-using DarkRift;
+using GameCommon.Models.ModNetwork;
 using MelonLoader;
 using UnityEngine;
 
@@ -61,7 +61,15 @@ public static class Networking
         CVRGameEventSystem.Instance.OnConnectionRecovered.AddListener(_ => _actuallyConnected = true);
         CVRGameEventSystem.Instance.OnDisconnected.AddListener(_ => _actuallyConnected = false);
         CVRGameEventSystem.Instance.OnConnectionLost.AddListener(_ => _actuallyConnected = false);
+
+        ModNetworkManager.OnSubscriptionConfirmed += modId =>
+        {
+            if (modId == ModGuid)
+                SendUpdate();
+        };
     }
+
+    private static bool CanSend() => _isSubscribed && _actuallyConnected && ModNetworkManager.TryGetModNetworkId(ModGuid, out _);
 
     private static bool _isSubscribed;
 
@@ -144,8 +152,7 @@ public static class Networking
 
     private static void SendUnreliableUpdateIfNecessary()
     {
-        if (_isSubscribed
-            && _actuallyConnected
+        if (CanSend()
             && _isLocalMiniMeEnabled
             && MiniMe._cloneHolderObject != null
             && MiniMe._cloneHolderObject.activeSelf
@@ -177,7 +184,7 @@ public static class Networking
 
     private static void SendShowUpdate(bool isUpdate, string specificUserId)
     {
-        if (!_isSubscribed || !_actuallyConnected)
+        if (!CanSend())
             return;
 
         if (!NetworkManager.Instance.IsConnectedToGameNetwork())
@@ -219,10 +226,7 @@ public static class Networking
             }
         }
 
-        // Lol ModNetworkMessage doesn't support picking the sendMode
-        msg._helper._sendMode = isUpdate ? SendMode.Unreliable : SendMode.Reliable;
-
-        msg.Send();
+        msg.Send(isUpdate ? ModNetworkDelivery.None : ModNetworkDelivery.Reliable);
     }
 
     private static void WriteOffsets(ModNetworkMessage msg, AttachType anchorType)
@@ -301,7 +305,7 @@ public static class Networking
 
     private static void SendHideUpdate(string specificUserId)
     {
-        if (!_isSubscribed || !_actuallyConnected)
+        if (!CanSend())
             return;
 
         if (!NetworkManager.Instance.IsConnectedToGameNetwork())

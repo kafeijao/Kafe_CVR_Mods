@@ -1,8 +1,8 @@
 {
   "_id": 194,
   "name": "NavMeshFollower",
-  "modversion": "1.0.2",
-  "gameversion": "2026r182",
+  "modversion": "1.0.3",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -15,8 +15,8 @@
     "prop"
   ],
   "requirements": ["[NavMeshTools](https://api.cvrmg.com/v1/mods/download/193)", "[RequestLib](https://api.cvrmg.com/v1/mods/download/169)"],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/NavMeshFollower.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/NavMeshFollower.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/NavMeshFollower",
-  "changelog": "- Fixed the game sometimes freezing when any prop with a pickup was spawned/destroyed\n- Added logo to the menu\n- Overall menu performance improvements",
+  "changelog": "- Fixed for 2026.3.0 (GS2)\n- Fixed the pickup list not loading\n- Fixed followers getting stuck and no longer picking things up\n- Reworked the menu, removing them from the player list",
   "embedcolor": "16C60C"
 }

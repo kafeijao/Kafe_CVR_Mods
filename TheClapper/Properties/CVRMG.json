@@ -1,8 +1,8 @@
 {
   "_id": 119,
   "name": "TheClapper",
-  "modversion": "1.0.9",
-  "gameversion": "2026r182",
+  "modversion": "1.0.10",
+  "gameversion": "2026.3.0",
   "loaderversion": "v0.6.1",
   "modtype": "Mod",
   "author": "kafeijao",
@@ -14,8 +14,8 @@
     "prop"
   ],
   "requirements": [],
-  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r82/TheClapper.dll",
+  "downloadlink": "https://github.com/kafeijao/Kafe_CVR_Mods/releases/download/r83/TheClapper.dll",
   "sourcelink": "https://github.com/kafeijao/Kafe_CVR_Mods/tree/master/TheClapper",
-  "changelog": "- Fixed for 2025r182",
+  "changelog": "- Fixed for 2026.3.0 (GS2)",
   "embedcolor": "16C60C"
 }

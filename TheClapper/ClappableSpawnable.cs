@@ -34,7 +34,7 @@ public class ClappableSpawnable : Clappable {
         // Delete prop globally if spawned by us, locally otherwise
         _spawnable.Delete();
 
-        TheClapper.EmitParticles(clappablePosition, new Color(0f, 1f, 0f), 2f);
+        TheClapper.EmitParticles(clappablePosition, new Color(0f, 1f, 0f));
     }
 
     public static void Create(PropSoul propData) {

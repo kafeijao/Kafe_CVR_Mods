@@ -1,6 +1,7 @@
 ﻿using ABI_RC.Core.Networking.IO.Social;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Savior;
+using ABI_RC.Systems.NetworkIK;
 using ABI.CCK.Components;
 using MagicaCloth;
 using MelonLoader;
@@ -230,13 +231,27 @@ internal static class Data {
             GrabbingOffset.SetParent(GrabbingPoint);
         }
 
-        private PlayerAvatarMovementData GetMovementData() {
+        /// <summary>
+        /// Gets this hand's gesture and muscles. Returns false when a remote player has no data yet
+        /// </summary>
+        private bool TryGetHandData(out float gesture, out ReadOnlySpan<float> muscles) {
             if (IsLocalPlayerHand) {
-                return PlayerSetup.Instance._playerAvatarMovementData;
+                var data = PlayerSetup.Instance.GetPlayerMovementData();
+                gesture = IsLeftHand ? data.AnimatorGestureLeft : data.AnimatorGestureRight;
+                muscles = data.MuscleValues;
+                return true;
             }
-            else {
-                return PuppetMaster._playerAvatarMovementDataCurrent;
-            }
+
+            gesture = default;
+            muscles = default;
+            var frame = PuppetMaster._frameCurrent;
+            if (frame == null || !NetworkPlayerSystem.Instance.TryGetSlot(PuppetMaster.CVRPlayerEntity.NetworkId, out var slot))
+                return false;
+
+            gesture = IsLeftHand ? frame.GestureLeft : frame.GestureRight;
+            // Remote muscles live in the network IK store, one block of muscles per player slot
+            muscles = PlayerStore.OutM.AsReadOnlySpan().Slice(slot * PlayerStore.MCount, PlayerStore.MCount);
+            return true;
         }
 
         private const float OpenCurl = 0.7f;
@@ -263,26 +278,28 @@ internal static class Data {
             return GrabState.None;
         }
 
-        internal GrabState GetGrabState() {
-            var data = GetMovementData();
+        internal GrabState GetGrabState()
+        {
+            if (!TryGetHandData(out var gesture, out var muscles)) return GrabState.None;
             return IsLeftHand
                 ? GetGrabStateHand(
-                    (int) data.AnimatorGestureLeft,
-                    data.MuscleValues[MuscleIndex.LeftThumb1Stretched],
-                    data.MuscleValues[MuscleIndex.LeftIndex1Stretched],
-                    data.MuscleValues[MuscleIndex.LeftMiddle1Stretched],
-                    data.MuscleValues[MuscleIndex.LeftRing1Stretched],
-                    data.MuscleValues[MuscleIndex.LeftLittle1Stretched])
+                    (int) gesture,
+                    muscles[MuscleIndex.LeftThumb1Stretched],
+                    muscles[MuscleIndex.LeftIndex1Stretched],
+                    muscles[MuscleIndex.LeftMiddle1Stretched],
+                    muscles[MuscleIndex.LeftRing1Stretched],
+                    muscles[MuscleIndex.LeftLittle1Stretched])
                 : GetGrabStateHand(
-                    (int) data.AnimatorGestureRight,
-                    data.MuscleValues[MuscleIndex.RightThumb1Stretched],
-                    data.MuscleValues[MuscleIndex.RightIndex1Stretched],
-                    data.MuscleValues[MuscleIndex.RightMiddle1Stretched],
-                    data.MuscleValues[MuscleIndex.RightRing1Stretched],
-                    data.MuscleValues[MuscleIndex.RightLittle1Stretched]);
+                    (int) gesture,
+                    muscles[MuscleIndex.RightThumb1Stretched],
+                    muscles[MuscleIndex.RightIndex1Stretched],
+                    muscles[MuscleIndex.RightMiddle1Stretched],
+                    muscles[MuscleIndex.RightRing1Stretched],
+                    muscles[MuscleIndex.RightLittle1Stretched]);
         }
 
-        internal bool IsAllowed() {
+        internal bool IsAllowed()
+        {
             if (IsLocalPlayerHand) return true;
             if (PuppetMaster.IsAvatarHidden || PuppetMaster.IsAvatarBlocked || PuppetMaster.IsAvatarBlockedAlt) return false;
             if (ModConfig.MeOnlyFriends.Value && !Friends.FriendsWith(_playerGuid)) return false;
@@ -292,16 +309,19 @@ internal static class Data {
             return true;
         }
 
-        internal float GetAvatarHeight() {
-            return IsLocalPlayerHand ? PlayerSetup.Instance.AvatarHeight : PuppetMaster.netIkController.GetRemoteHeight();
+        internal float GetAvatarHeight()
+        {
+            return IsLocalPlayerHand ? PlayerSetup.Instance.AvatarHeight : PuppetMaster.AvatarHeight;
         }
 
-        internal static bool IsRootGrabbed(GrabbyBoneInfo.Root root) {
+        internal static bool IsRootGrabbed(GrabbyBoneInfo.Root root)
+        {
             return GrabbedBones.Any(gb => gb.Key.Root == root);
         }
     }
 
-    internal class GrabbedInfo {
+    internal class GrabbedInfo
+    {
 
         private const float AvatarSizeToBreakDistance = 2f;
 
@@ -317,7 +337,8 @@ internal static class Data {
         internal readonly GrabbyBoneInfo.Root Root;
         internal readonly Transform TargetChildBone;
 
-        public GrabbedInfo(AvatarHandInfo handInfo, GrabbyBoneInfo info, GrabbyBoneInfo.Root root, Transform targetChildBone) {
+        public GrabbedInfo(AvatarHandInfo handInfo, GrabbyBoneInfo info, GrabbyBoneInfo.Root root, Transform targetChildBone)
+        {
             IsGrabbedByLocalPlayer = handInfo.IsLocalPlayerHand;
             GrabberHandPuppetMaster = handInfo.PuppetMaster;
             IsBoneFromLocalPlayer = info.PuppetMaster == null;
@@ -329,9 +350,10 @@ internal static class Data {
             TargetChildBone = targetChildBone;
         }
 
-        internal bool ShouldBreak() {
-            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance.AvatarHeight : BoneOwnerPuppetMaster.netIkController.GetRemoteHeight();
-            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance.AvatarHeight : GrabberHandPuppetMaster.netIkController.GetRemoteHeight();
+        internal bool ShouldBreak()
+        {
+            var boneOwnerAvatarHeight = IsBoneFromLocalPlayer ? PlayerSetup.Instance.AvatarHeight : BoneOwnerPuppetMaster.AvatarHeight;
+            var grabbedAvatarHeight = IsGrabbedByLocalPlayer ? PlayerSetup.Instance.AvatarHeight : GrabberHandPuppetMaster.AvatarHeight;
             var breakDistance = (boneOwnerAvatarHeight + grabbedAvatarHeight) * AvatarSizeToBreakDistance;
             var currentDistance = Vector3.Distance(HandInfo.GrabbingOffset.position, TargetChildBone.position);
             if (currentDistance > breakDistance) {
@@ -352,19 +374,22 @@ internal static class Data {
         private Quaternion _initialRotation;
         private float _oldAngle;
 
-        internal void SetGrabbed(Transform grabbingOffset) {
+        internal void SetGrabbed(Transform grabbingOffset)
+        {
 
             // Component setup
             Info.DisablePhysics();
             Root.SetupIKChain(TargetChildBone, grabbingOffset);
 
             // Animator parameters
-            if (IsBoneFromLocalPlayer) {
+            if (IsBoneFromLocalPlayer)
+            {
                 // Set Grabbed parameter to true (both synced and local params)
                 PlayerSetup.Instance.AnimatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 1.0f);
                 PlayerSetup.Instance.AnimatorManager.SetParameter("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
-            else {
+            else
+            {
                 // Set Grabbed parameter on remotes to true (local params only)
                 BoneOwnerPuppetMaster.Animator.SetFloat("#" + Info.GetName() + ParameterGrabbedSuffix, 1.0f);
             }
@@ -375,14 +400,16 @@ internal static class Data {
             _oldAngle = -1;
         }
 
-        internal void SetReleased() {
+        internal void SetReleased()
+        {
 
             // Component setup
             Root.DisableIKChain();
             Info.RestorePhysics();
 
             // Animator parameters
-            if (IsBoneFromLocalPlayer) {
+            if (IsBoneFromLocalPlayer)
+            {
                 // Set Grabbed parameter to false (both synced and local params)
                 PlayerSetup.Instance.AnimatorManager.SetParameter(Info.GetName() + ParameterGrabbedSuffix, 0.0f);
                 // Reset the Angle parameter to 0 (both synced and local params)
@@ -393,8 +420,10 @@ internal static class Data {
                     PlayerSetup.Instance.Animator.SetFloat(_currentAngleParameterNameLocal, 0.0f);
                 }
             }
-            else {
-                if (BoneOwnerPuppetMaster != null && BoneOwnerPuppetMaster.Animator != null) {
+            else
+            {
+                if (BoneOwnerPuppetMaster != null && BoneOwnerPuppetMaster.Animator != null)
+                {
                     // Set Grabbed and Angle parameter on remotes (local params only)
                     BoneOwnerPuppetMaster.Animator.SetBool("#" + Info.GetName() + ParameterGrabbedSuffix, false);
                     BoneOwnerPuppetMaster.Animator.SetFloat(_currentAngleParameterNameLocal, 0f);
@@ -402,27 +431,32 @@ internal static class Data {
             }
         }
 
-        internal void UpdateCurrentAngle() {
+        internal void UpdateCurrentAngle()
+        {
             var newAngle = Mathf.Clamp01(Quaternion.Angle(_initialRotation, TargetChildBone.parent.localRotation) / 180f);
             // MelonLogger.Msg($"Angle: {Quaternion.Angle(_initialRotation, TargetChildBone.parent.localRotation)} / 180 = {newAngle} | {TargetChildBone.parent.localRotation.ToString("F3")}");
             if (Mathf.Approximately(newAngle, _oldAngle)) return;
             _oldAngle = newAngle;
-            if (IsBoneFromLocalPlayer) {
+            if (IsBoneFromLocalPlayer)
+            {
                 PlayerSetup.Instance.AnimatorManager.SetParameter(_currentAngleParameterName, newAngle);
                 PlayerSetup.Instance.Animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
-            else {
+            else
+            {
                 BoneOwnerPuppetMaster.Animator.SetFloat(_currentAngleParameterNameLocal, newAngle);
             }
         }
     }
 
-    internal class GrabbyMagicaBoneInfo : GrabbyBoneInfo {
+    internal class GrabbyMagicaBoneInfo : GrabbyBoneInfo
+    {
 
         private readonly MagicaBoneCloth _magicaBoneCloth;
         private readonly Vector3 _gravityDirection;
 
-        public GrabbyMagicaBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) : base(puppetMaster, avatar) {
+        public GrabbyMagicaBoneInfo(CVRAvatar avatar, PuppetMaster puppetMaster, MagicaBoneCloth magicaBoneCloth, Vector3 gravityDirection) : base(puppetMaster, avatar)
+        {
             _magicaBoneCloth = magicaBoneCloth;
             _gravityDirection = gravityDirection;
             _networkPath = GetHierarchyIndexPath(magicaBoneCloth, avatar.transform);

@@ -5,6 +5,7 @@ using ABI_RC.Core.Util;
 using ABI_RC.Core.Util.AnimatorManager;
 using ABI_RC.Systems.IK.TrackingModules;
 using ABI_RC.Systems.OSC;
+using ABI_RC.Systems.SyncedObjects;
 using ABI.CCK.Components;
 using HarmonyLib;
 using MelonLoader;
@@ -66,8 +67,7 @@ internal class HarmonyPatches
 
     // Spawnables
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateMultiPurposeFloat), typeof(CVRSpawnableValue),
-        typeof(float), typeof(int))]
+    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateMultiPurposeFloat), typeof(CVRSpawnableValue), typeof(float))]
     internal static void After_CVRSpawnable_UpdateMultiPurposeFloat(CVRSpawnableValue spawnableValue, CVRSpawnable __instance)
     {
         try
@@ -82,31 +82,32 @@ internal class HarmonyPatches
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.UpdateFromNetwork), typeof(PropSoul))]
-    internal static void After_CVRSpawnable_UpdateFromNetwork(PropSoul propData, CVRSpawnable __instance)
+    [HarmonyPatch(typeof(SyncedObjectManager), nameof(SyncedObjectManager.OnUpdateBroadcast))]
+    internal static void After_SyncedObjectManager_OnUpdateBroadcast()
     {
         try
         {
             if (_performanceMode) return;
-            Events.Spawnable.OnSpawnableUpdateFromNetwork(propData);
+            Events.Spawnable.OnSyncStateReceived();
         }
         catch (Exception e)
         {
-            MelonLogger.Error($"Error during {nameof(After_CVRSpawnable_UpdateFromNetwork)} patch", e);
+            MelonLogger.Error($"Error during {nameof(After_SyncedObjectManager_OnUpdateBroadcast)} patch", e);
         }
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(CVRSpawnable), nameof(CVRSpawnable.OnDestroy))]
-    internal static void Before_Spawnable_OnDestroy(CVRSpawnable __instance)
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(SyncedObjectManager), nameof(SyncedObjectManager.OnFullSync))]
+    internal static void After_SyncedObjectManager_OnFullSync()
     {
         try
         {
-            Events.Spawnable.OnSpawnableDestroyed(__instance);
+            if (_performanceMode) return;
+            Events.Spawnable.OnSyncStateReceived();
         }
         catch (Exception e)
         {
-            MelonLogger.Error($"Error during {nameof(Before_Spawnable_OnDestroy)} patch", e);
+            MelonLogger.Error($"Error during {nameof(After_SyncedObjectManager_OnFullSync)} patch", e);
         }
     }
 

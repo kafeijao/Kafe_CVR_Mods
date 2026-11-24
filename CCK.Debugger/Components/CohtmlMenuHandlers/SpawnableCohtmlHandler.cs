@@ -1,7 +1,10 @@
-using System.Globalization;
+﻿using System.Globalization;
+using ABI_RC.Core.Player;
 using ABI_RC.Core.PropManagement;
 using ABI_RC.Core.Util;
+using ABI_RC.Systems.SyncedObjects;
 using ABI.CCK.Components;
+using GameCommon.Models.Sync;
 using Kafe.CCK.Debugger.Components.PointerVisualizers;
 using Kafe.CCK.Debugger.Components.TriggerVisualizers;
 using Kafe.CCK.Debugger.Entities;
@@ -42,18 +45,6 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
             TriggerStayTasksLastTriggeredValue[triggerTask] = triggerTask.spawnable.GetValue(triggerTask.parameterIndex);
         };
 
-        SyncTypeDict = new Dictionary<int, string>
-        {
-            { -1, "None" },
-            { 0, "Physics" },
-            { 1, "Grabbed" },
-            { 2, "Attached" },
-            { 3, "Tele-Grabbed" },
-            { 4, "Seat" },
-            { 5, "Newton?" },
-            { 6, "Animator Driver" },
-        };
-
         Events.DebuggerMenu.SpawnableLoaded += (spawnable, isLoaded) =>
         {
             // Only rebuild when the prop we're currently inspecting changes its loaded state
@@ -75,7 +66,6 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
     private static bool _hasLoaded;
 
     // Triggers
-    private static readonly Dictionary<int, string> SyncTypeDict;
     private static readonly LooseList<PropSoul> PropsData;
     private static readonly HashSet<TriggerToContact> TrackedTriggers;
     private static readonly Dictionary<TriggerToContact.ContactTriggerTask, float> TriggerTaskLastTriggered;
@@ -134,8 +124,12 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
                 // Set up the base part of the menu
                 SetupPropBase(currentSpawnable, currentSpawnablePropData, _hasLoaded);
 
-                // Set up the body part of the menu
-                if (_hasLoaded) SetupPropBody(currentSpawnable);
+                // Set up the sync and body parts of the menu
+                if (_hasLoaded)
+                {
+                    SetupPropSync(currentSpawnable);
+                    SetupPropBody(currentSpawnable);
+                }
             }
 
             // Consume the prop change and send core create update
@@ -175,16 +169,100 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
         attributesSection.AddSection("Spawned By")
             .AddValueGetter(() => GetUsername(currentSpawnablePropData.SpawnedBy));
         attributesSection.AddSection("Kind").AddValueGetter(() => GetUsername(currentSpawnablePropData.Kind.ToString()));
-        attributesSection.AddSection("Custom Float Count").AddValueGetter(() => GetUsername(currentSpawnablePropData.CustomFloatsCount.ToString()));
-        attributesSection.AddSection("Synced By").AddValueGetter(() => GetUsername(currentSpawnablePropData.SyncedBy));
         attributesSection.AddSection("Sync Type").AddValueGetter(() =>
+            SyncedObjectManager.GetSyncType(currentSpawnable.transform).ToString());
+    }
+
+    private enum SyncOwnerType
+    {
+        Nobody,
+        Us,
+        Them,
+        Hidden,
+    }
+
+    private void SetupPropSync(CVRSpawnable currentSpawnable)
+    {
+        var syncSection = _core.AddSection("Sync", true);
+
+        if (!SyncedObjectManager.TryGetEntry(currentSpawnable, out var entry))
         {
-            // Todo: Update the prop data!!!
-            var syncType = currentSpawnable.SyncType;
-            if (syncType == 0 && !currentSpawnable.isPhysicsSynced) syncType = -1;
-            var syncTypeString = SyncTypeDict.TryGetValue(syncType, out var value) ? value : "Unknown";
-            return $"[{currentSpawnable.SyncType.ToString()}] {syncTypeString}";
-        });
+            syncSection.AddSection("Synced").AddValueGetter(() => ToString(false));
+            return;
+        }
+
+        syncSection.AddSection("Subscription").AddValueGetter(() => entry.State.ToString());
+        syncSection.AddSection("Handle").AddValueGetter(() => entry.Handle.ToString());
+        syncSection.AddSection("Revealed").AddValueGetter(() => ToString(entry.Revealed));
+        syncSection.AddSection("Slot Count").AddValueGetter(() => entry.Layout.SlotCount.ToString());
+
+        for (var i = 0; i < entry.Layout.SlotCount; i++)
+        {
+            var slotIndex = i;
+            var kind = entry.Layout.Slots[slotIndex].Kind;
+            var slotSection = syncSection.AddSection($"Slot {slotIndex} - {kind}", "", true);
+
+            slotSection.AddSection("Target").AddValueGetter(() => DescribeSlotTarget(entry, slotIndex));
+            slotSection.AddSection("Owner Type").AddValueGetter(() => GetSyncOwnerType(entry.Slots[slotIndex].Owner).ToString());
+            slotSection.AddSection("Owner").AddValueGetter(() => GetSyncOwnerName(entry.Slots[slotIndex].Owner));
+            slotSection.AddSection("State").AddValueGetter(() => DescribeSlotState(kind, entry.Slots[slotIndex].SyncType));
+            slotSection.AddSection("Our Claim").AddValueGetter(() => DescribeSlotState(kind, entry.Slots[slotIndex].Claim));
+            slotSection.AddSection("Sending").AddValueGetter(() => ToString(entry.Slots[slotIndex].Sending));
+            slotSection.AddSection("Locked").AddValueGetter(() => ToString(entry.Slots[slotIndex].Flags.HasFlag(SyncSlotFlags.Locked)));
+
+            if (kind == SyncSlotKind.Hold)
+                slotSection.AddSection("Anchor").AddValueGetter(() => DescribeHoldAnchor(entry, slotIndex));
+        }
+    }
+
+    private static string DescribeSlotTarget(SyncedObjectEntry entry, int slotIndex)
+    {
+        var binding = entry.Bindings[slotIndex];
+        switch (entry.Layout.Slots[slotIndex].Kind)
+        {
+            case SyncSlotKind.Value:
+                var syncValues = entry.Spawnable.syncValues;
+                return binding.SourceIndex >= 0 && binding.SourceIndex < syncValues.Count ? syncValues[binding.SourceIndex].name : Na;
+            case SyncSlotKind.Hold:
+                return $"Places slot {binding.RidesOnSlot}";
+            default:
+                return binding.Transform != null ? binding.Transform.name : Na;
+        }
+    }
+
+    private static string DescribeSlotState(SyncSlotKind kind, byte state)
+        => kind.UsesLadder() ? ((SyncType)state).ToString() : ((SyncValueState)state).ToString();
+
+    private static string DescribeHoldAnchor(SyncedObjectEntry entry, int slotIndex)
+    {
+        var binding = entry.Bindings[slotIndex];
+        var anchor = AnchorRef.ReadFrom(entry.Sent.AsSpan(binding.PayloadOffset, binding.PayloadSize));
+        return anchor.Kind switch
+        {
+            AnchorKind.None => "None (own world pose)",
+            AnchorKind.ObjectPoint => $"Object {anchor.TargetId}, point {anchor.AnchorId}",
+            _ => $"{anchor.Kind} {anchor.AnchorId} of {GetSyncOwnerName(anchor.TargetId)}",
+        };
+    }
+
+    private static SyncOwnerType GetSyncOwnerType(ushort owner)
+    {
+        if (owner == SyncLimits.NoOwnerId) return SyncOwnerType.Nobody;
+        if (owner == SyncLimits.HiddenOwnerId) return SyncOwnerType.Hidden;
+        return owner == SyncedObjectManager.LocalNetworkId ? SyncOwnerType.Us : SyncOwnerType.Them;
+    }
+
+    private static string GetSyncOwnerName(ushort owner)
+    {
+        switch (GetSyncOwnerType(owner))
+        {
+            case SyncOwnerType.Us:
+                return PlayerSetup.Instance.PlayerUsername;
+            case SyncOwnerType.Them:
+                return CVRPlayerManager.Instance.TryGetPlayerBase(owner, out var player) ? player.PlayerUsername : Na;
+            default:
+                return Na;
+        }
     }
 
     private void SetupPropBody(CVRSpawnable currentSpawnable)
@@ -298,7 +376,7 @@ public class SpawnableCohtmlHandler : ICohtmlHandler
         }
 
         // Restore Pickups
-        foreach (var pickup in currentSpawnable.pickups)
+        foreach (var pickup in currentSpawnable.GetComponentsInChildren<CVRPickupObject>(true))
         {
             var pickupSection = categoryPickups.AddSection(pickup.name);
             pickupSection.AddSection("GrabbedBy").AddValueGetter(() => GetUsername(pickup.GrabbedBy));

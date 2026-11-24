@@ -35,6 +35,8 @@ public class CVRSuperMario64 : MelonMod {
 
         Config.LoadJsonConfig();
 
+        CVRGameEventSystem.Spawnable.OnPropSpawned.AddListener(CVRSM64ColliderStatic.OnPropSpawned);
+
         // Extract the native binary to the plugins folder
         const string dllName = "sm64.dll";
         var dstPath = Path.GetFullPath(Path.Combine("ChilloutVR_Data", "Plugins", "x86_64", dllName));

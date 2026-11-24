@@ -28,6 +28,15 @@ internal class NavMeshTools : MelonMod {
         // Load the asset bundle
         ModConfig.LoadAssemblyResources(MelonAssembly.Assembly);
 
+        CVRGameEventSystem.Initialization.OnPlayerSetupStart.AddListener(() => {
+            try {
+                NavMeshBakePipeline.Initialize();
+            }
+            catch (Exception e) {
+                MelonLogger.Error($"Error during the {nameof(CVRGameEventSystem.Initialization.OnPlayerSetupStart)} listener.");
+                MelonLogger.Error(e);
+            }
+        });
 
         CVRGameEventSystem.World.OnLoad.AddListener(_ => {
 
@@ -130,7 +139,7 @@ internal class NavMeshTools : MelonMod {
 
         var boundsInitialized = false;
 
-        foreach (var col in UnityEngine.Object.FindObjectsOfType<Collider>(true)) {
+        foreach (var col in UnityEngine.Object.FindObjectsByType<Collider>(FindObjectsInactive.Include, FindObjectsSortMode.None)) {
 
             // Ignore if the collider is in the DontDestroyOnLoad scene
             if (col.gameObject.scene.name is null or "DontDestroyOnLoad") continue;
@@ -207,21 +216,5 @@ internal class NavMeshTools : MelonMod {
             && !col.isTrigger
             // Ignore movable colliders
             && rb == null;
-    }
-
-    [HarmonyPatch]
-    internal class HarmonyPatches {
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerSetup), nameof(PlayerSetup.Start))]
-        public static void After_PlayerSetup_Start() {
-            try {
-                NavMeshBakePipeline.Initialize();
-            }
-            catch (Exception e) {
-                MelonLogger.Error($"Error during the patched function {nameof(After_PlayerSetup_Start)}.");
-                MelonLogger.Error(e);
-            }
-        }
     }
 }
